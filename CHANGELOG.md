@@ -99,6 +99,7 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- A contrast pair measures a translucent foreground blended over its background, as WCAG does; `transparent` or `rgba(0,0,0,.05)` on white used to pass AAA. A translucent background gives `contrast-unknown`, as what is behind it is not known. A failing ratio is floored to two decimals, so 4.496 no longer prints as "4.50:1; AA needs 4.5:1".
 - MCP truncation keeps the most findings that fit, not a power-of-two fraction of them (120 that fit used to come back as 62), counts the `warnings` it adds in that fit, and keeps `counts` and `passed` when it falls back to cutting the text. The fallback cuts on code points, not inside a surrogate pair.
 - A plugin's finding message stays within 1000 characters with its ` (instance X)` suffix counted.
 - Every error and warning finding code, and every note but `asset-local-absent`, has a fix line, and a test fails when an error or warning code has none.

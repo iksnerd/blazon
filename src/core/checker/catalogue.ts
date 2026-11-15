@@ -128,8 +128,8 @@ export const CHECKS = {
   },
   'contrast-unknown': {
     severity: 'warning',
-    summary: 'Blazon cannot read a color of a pair, so it cannot measure the contrast.',
-    fix: 'Give both tokens of the pair a color value blazon can read, such as a hex color, or an alias of one.',
+    summary: 'Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast.',
+    fix: 'Give both tokens of the pair a color value blazon can read, such as a hex color, or an alias of one, and make the background opaque.',
     appliesTo: ['token'],
     rfc: '1#4',
     manual: '03-checks',

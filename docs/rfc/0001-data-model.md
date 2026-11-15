@@ -217,7 +217,7 @@ A new command, which also runs at the start of `blazon build`:
 | `circular-alias` | error | Aliases lead back to the token that started them. |
 | `config-invalid` | error | A key or value in blazon.config.ts is not valid. |
 | `contrast` | error | A color pair has less contrast than its level asks for. |
-| `contrast-unknown` | warning | Blazon cannot read a color of a pair, so it cannot measure the contrast. |
+| `contrast-unknown` | warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-collision` | error | Two tokens write the same CSS custom property. |
 | `deprecated-alias` | warning | A token aliases a token marked deprecated. |
 | `directive-invalid` | error | A page directive has wrong arguments or names something that does not exist. |

@@ -103,7 +103,7 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `circular-alias` | Error | Aliases lead back to the token that started them. |
 | `config-invalid` | Error | A key or value in blazon.config.ts is not valid. |
 | `contrast` | Error | A color pair has less contrast than its level asks for. |
-| `contrast-unknown` | Warning | Blazon cannot read a color of a pair, so it cannot measure the contrast. |
+| `contrast-unknown` | Warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-collision` | Error | Two tokens write the same CSS custom property. |
 | `deprecated-alias` | Warning | A token aliases a token marked deprecated. |
 | `directive-invalid` | Error | A page directive has wrong arguments or names something that does not exist. |
