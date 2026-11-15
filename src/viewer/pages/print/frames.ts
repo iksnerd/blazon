@@ -1,12 +1,14 @@
+import { SQUEEZE_FLOOR } from '@/lib/paginate';
 import { CONTENT } from './geometry';
 
 /**
  * A slide frame holding copies of its blocks, drawn smaller when they still overflow it. A split slide puts its text
  * in a column on the left and its figure (the last block) on the right.
  */
-export function frame(kind: 'opener' | 'content', blocks: HTMLElement[], layout?: 'split'): HTMLElement {
+export function frame(kind: 'opener' | 'content', blocks: HTMLElement[], layout?: 'split', squeeze?: boolean): HTMLElement {
   const slide = document.createElement('div');
   slide.dataset.printSlide = kind;
+  if (squeeze) slide.dataset.printSqueeze = '';
   const body = document.createElement('div');
   body.dataset.printSlideBody = '';
   // the prose classes the blocks were styled by, now that they are copied out of their columns
@@ -49,6 +51,30 @@ export function footer(title: string, page: number): HTMLElement {
   return el;
 }
 
+/** The pictures of a figure that a slide may draw shorter: a framed image or an asset's picture that does not claim a size of its own. */
+const SQUEEZABLE = '[data-frame] img:not([data-min-size]), [data-section-asset] img:not([data-min-size])';
+
+/** How much shorter (px) the pictures of a block can be drawn, down to SQUEEZE_FLOOR of their height. */
+export function slackOf(el: HTMLElement): number {
+  const imgs = el.matches(SQUEEZABLE) ? [el] : [...el.querySelectorAll<HTMLElement>(SQUEEZABLE)];
+  return Math.floor(imgs.reduce((sum, img) => sum + img.getBoundingClientRect().height * (1 - SQUEEZE_FLOOR), 0));
+}
+
+/** Draws the pictures of a squeezed slide shorter by what its body overflows by, each in its share, never below the floor. */
+function squeeze(body: HTMLElement): void {
+  const imgs = [...body.querySelectorAll<HTMLElement>(SQUEEZABLE)];
+  const heights = imgs.map((img) => img.getBoundingClientRect().height);
+  const total = heights.reduce((a, b) => a + b, 0);
+  for (let pass = 0; pass < FIT_PASSES; pass++) {
+    const over = body.scrollHeight - CONTENT.height;
+    if (over <= 1 || total <= 0) return;
+    imgs.forEach((img, i) => {
+      const now = img.getBoundingClientRect().height;
+      img.style.maxHeight = `${Math.max(heights[i]! * SQUEEZE_FLOOR, now - (over * heights[i]!) / total)}px`;
+    });
+  }
+}
+
 /** The most times `fit` measures again: a grid takes a different number of rows once its body is wider */
 const FIT_PASSES = 4;
 /**
@@ -86,6 +112,7 @@ function trueSize(body: HTMLElement, zoom: number): void {
 export function fit(slide: HTMLElement): void {
   const body = slide.querySelector<HTMLElement>('[data-print-slide-body]')!;
   if (slide.dataset.printSlide !== 'content') return;
+  if (slide.dataset.printSqueeze !== undefined) squeeze(body);
   let zoom = 1;
   // A picture is as wide as its frame allows, so a body drawn smaller (and wider by the same measure) would draw it wider
   // and as tall as before: held to the width it has now, it shrinks with the zoom as the text does
