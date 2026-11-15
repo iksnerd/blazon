@@ -22,6 +22,7 @@ Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a ty
 
 ## Traps
 
+- A merge made with `git merge` runs no pre-commit hook, so a failing test can land unseen: after merging, run `npm run check` and the tests the merge touched before the next commit.
 - `buildSite` and `emitTokenOutputs` refuse a brand with error findings, a pin that is not met, and an `outDir` that is or holds an input or is inside one (`src/core/preflight.ts`, `outputs.ts`). A test that builds a deliberately broken brand passes `{ allowErrors: true }`; the other two refusals are never lifted.
 - `projectInputs` (`src/core/inputs.ts`) is the one list of what a compile reads. The dev server watches it, `outputs.ts` protects it from `outDir` and plugin folders, and `emitTokenOutputs` neither overwrites nor deletes a file in it. A path a compile starts to read goes there.
 - A resolver context is stored as its changes. Put one back together with `contextItems` (`src/core/tokens/contexts.ts`), never by hand.

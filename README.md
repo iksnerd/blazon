@@ -136,13 +136,18 @@ The same compile feeds the dev server, so a change to a token, a page or the con
 
 ## Plugins
 
-A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships ten, so there is nothing to install: name one in `blazon.json` and run `blazon build`.
+A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships ten, so there is nothing to install: name one in `blazon.json` and run `blazon build`. A plugin starts with an empty environment and gets only the variables its manifest lists and you approve in its entry's `env`. The ones that draw in Chrome list `BLAZON_CHROME`, `HOME` and `TMPDIR`:
 
 ```json
 {
-  "plugins": [ { "name": "blazon.brand-deck" }, { "name": "blazon.print-book" } ]
+  "plugins": [
+    { "name": "blazon.brand-deck", "env": ["BLAZON_CHROME", "BLAZON_DECK_FONTS", "HOME", "TMPDIR"] },
+    { "name": "blazon.print-book", "env": ["BLAZON_CHROME", "HOME", "TMPDIR"] }
+  ]
 }
 ```
+
+A plugin whose manifest lists a variable that is set, and that the entry does not approve, is not started, and the error names the variable and the key to add.
 
 | Plugin | Writes |
 |---|---|

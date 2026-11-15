@@ -82,6 +82,8 @@ Your machine checks every commit and every push with the hooks below, and they a
 
 `npm run hooks` installs the hooks (it runs `git config core.hooksPath .githooks`). It is not a `prepare` script on purpose: a `prepare` in the manifest travels in the package, and npm 12 warns every installer that it was blocked. A test run prints a one-line warning when it runs in a checkout where the hooks are not installed, and never fails because of it. Both test the files git is about to record or send, not your working tree, so an unstaged edit or an untracked file cannot make a broken change pass.
 
+A commit made by `git merge` skips the pre-commit hook; run `npm run check` and the related tests after a merge, before the next commit.
+
 **`pre-commit`** is quick, so you commit often. On every commit it runs:
 
 - `npm run typecheck` and `npm run lint`, and a Prettier check of the staged code files (`.ts`, `.tsx`, `.js`, `.mjs`, `.cjs`, `.css`, `.yml`).
