@@ -119,6 +119,13 @@ describe('tokens-not-shown', () => {
     expect(pageTokenFindings([page(`\`\`\`\n${five}\n\`\`\``)], items)).toEqual([]);
   });
 
+  it.each(['cards color.a', 'strokes color.a', 'spots color.a', 'logo-on color.a', 'formats social', 'patterns pattern'])(
+    'is silent for a page with a %s directive, which places tokens too',
+    (directive) => {
+      expect(pageTokenFindings([page(`${five}\n\n<!-- blazon:${directive} -->`)], items)).toEqual([]);
+    },
+  );
+
   it('ignores a span that is not a token path', () => {
     expect(pageTokenFindings([page('`a.b` `c.d` `e.f` `g.h` `i.j`')], items)).toEqual([]);
   });

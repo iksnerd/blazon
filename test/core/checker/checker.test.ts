@@ -100,23 +100,46 @@ describe('checkTokens (RFC 0001 §4)', () => {
     );
 
     // OKLab L 0.2 is luminance 0.2^3 = 0.008, about 18:1 on white; CIELAB L* 70 is luminance ((70+16)/116)^3 = 0.4075,
-    // so (1 + 0.05) / (0.4075 + 0.05) = 2.30:1, under AA
+    // so (1 + 0.05) / (0.4075 + 0.05) = 2.2977:1, printed floored as 2.29, under AA
     expect(result.all.filter((f) => f.code.startsWith('contrast'))).toEqual([
-      { code: 'contrast', severity: 'error', path: 'color.paper', message: '{color.grey} on {color.paper} is 2.30:1; AA needs 4.5:1' },
+      { code: 'contrast', severity: 'error', path: 'color.paper', message: '{color.grey} on {color.paper} is 2.29:1; AA needs 4.5:1' },
     ]);
   });
 
-  it("ignores a color's alpha, as WCAG measures the color as given", async () => {
-    const result = checkTokens(
-      await compileTokens({
-        'a.json': {
-          color: { $type: 'color', half: { $value: '#3885FF80' }, paper: { $value: '#ffffff' } },
-          rules: { $extensions: { 'dev.blazon': { pairs: [{ fg: '{color.half}', bg: '{color.paper}', min: 'AA' }] } } },
-        },
-      }),
-    );
-    // the same 3.52:1 as opaque #3885FF on white
-    expect(result.all.filter((f) => f.code.startsWith('contrast')).map((f) => f.message)).toEqual(['{color.half} on {color.paper} is 3.52:1; AA needs 4.5:1']);
+  // WCAG measures what is seen: a translucent foreground is blended over its background first, so alpha cannot be ignored
+  const pairOf = (fg: string, bg: string, min = 'AA') => ({
+    'a.json': {
+      color: { $type: 'color', fg: { $value: fg }, bg: { $value: bg } },
+      rules: { $extensions: { 'dev.blazon': { pairs: [{ fg: '{color.fg}', bg: '{color.bg}', min }] } } },
+    },
+  });
+  const contrastOf = async (fg: string, bg: string, min?: string) => checkTokens(await compileTokens(pairOf(fg, bg, min))).all.filter((f) => f.code.startsWith('contrast'));
+
+  it('blends a translucent foreground over its background before measuring', async () => {
+    // #3885FF at 50% over white is about #9CC2FF (alpha 0x80 is 50.2%), 1.82:1; opaque #3885FF would be 3.52:1
+    expect((await contrastOf('#3885FF80', '#ffffff')).map((f) => f.message)).toEqual(['{color.fg} on {color.bg} is 1.82:1; AA needs 4.5:1']);
+  });
+
+  it('fails a fully transparent foreground, which is the background itself', async () => {
+    expect((await contrastOf('transparent', '#ffffff', 'AAA')).map((f) => f.message)).toEqual(['{color.fg} on {color.bg} is 1.00:1; AAA needs 7:1']);
+    expect((await contrastOf('rgba(0,0,0,.05)', '#ffffff')).map((f) => f.code)).toEqual(['contrast']);
+  });
+
+  it('measures an opaque pair as before', async () => {
+    expect(await contrastOf('#000000', '#ffffff', 'AAA')).toEqual([]);
+  });
+
+  it('does not guess a ratio on a translucent background, whose backdrop is not known', async () => {
+    expect((await contrastOf('#000000', '#ffffff80')).map((f) => f.code)).toEqual(['contrast-unknown']);
+  });
+
+  it('never rounds a failing ratio up to the minimum it misses', async () => {
+    // 4.496 and 4.4999 both fail AA: the message floors them to 4.49 so it never reads "4.50:1; AA needs 4.5:1"
+    for (const found of [4.496, 4.4999]) {
+      const { ratioMessage } = await import('../../../src/core/checker/contrast.js');
+      expect(ratioMessage(found)).toBe('4.49');
+    }
+    expect((await import('../../../src/core/checker/contrast.js')).ratioMessage(4.5)).toBe('4.50');
   });
 
   it('still warns on a pair it cannot read as a color', async () => {
@@ -168,6 +191,16 @@ describe('checkTokens (RFC 0001 §4)', () => {
     expect(codesOf(result.warnings)).toEqual(['hue.yellow.400:duplicate-value', 'product.pink.light:needs-review', 'text.primary:semantic-literal']);
     expect(result.passed).toBe(true);
     expect(checkTokens(await compileTokens({ 'a.json': { hue: { $type: 'color', a: { $value: '#fff' }, b: { $value: '#fff' } } } }), { strict: true }).passed).toBe(false);
+  });
+
+  it('treats root-level tokens as siblings, whatever their names', async () => {
+    const dups = async (tokens: object) =>
+      checkTokens(await compileTokens({ 'a.json': tokens }))
+        .warnings.filter((f) => f.code === 'duplicate-value')
+        .map((f) => f.path);
+    expect(await dups({ ab: { $type: 'color', $value: '#112233' }, cd: { $type: 'color', $value: '#112233' } })).toEqual(['cd']);
+    expect(await dups({ ab: { $type: 'color', $value: '#112233' }, ac: { $type: 'color', $value: '#112233' } })).toEqual(['ac']);
+    expect(await dups({ g: { $type: 'color', ab: { $value: '#112233' }, ac: { $value: '#112233' } } })).toEqual(['g.ac']);
   });
 
   it('counts a composite whose parts alias primitives as an alias, not a literal', async () => {

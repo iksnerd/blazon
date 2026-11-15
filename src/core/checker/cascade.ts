@@ -3,13 +3,16 @@ import type { Finding } from '../../types/index.js';
 /** A token written as an alias, `"{color.blue}"`, is what `invalid-value` quotes when the alias could not be followed. */
 const QUOTED_ALIAS = /^"\{[^}]+\}"/;
 
+/** What `directiveProblems` and `formatsAt`/`patternsAt` say of a path that names nothing: "no token at", "no border token at", "no format at". */
+const NO_TOKEN_AT = /: no (?:[a-z, ]+ )?(?:token|format|pattern) at /;
+
 /** Findings that say only that a token is missing. With a token file unread they cannot be told from a token that is in it. */
 const saysTokenMissing = (finding: Finding): boolean =>
   finding.code === 'unresolved-alias' ||
   finding.code === 'theme-unresolved' ||
   (finding.code === 'invalid-value' && QUOTED_ALIAS.test(finding.message)) ||
   // A page that places a token of the unread file, and a context file whose $type comes from a group in it (a resolver's dark theme)
-  (finding.code === 'directive-invalid' && /: no token at /.test(finding.message)) ||
+  (finding.code === 'directive-invalid' && NO_TOKEN_AT.test(finding.message)) ||
   finding.code === 'missing-type';
 
 /**

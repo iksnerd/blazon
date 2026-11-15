@@ -137,7 +137,8 @@ describe("blazon's own package", () => {
     const scripts = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf-8')).scripts;
     expect(scripts['shipped-lock']).toMatch(/shipped-lock\.mjs/);
     expect(scripts['build:plugins']).toMatch(/build-plugins\.mjs.*&&.*shipped-lock\.mjs/);
-    expect(scripts.prepack).toMatch(/build:plugins/);
+    // prepack runs the whole build, which ends with build:plugins, so a pack never ships a stale dist or stale programs
+    expect(scripts.prepack).toMatch(/npm run build\b(?!:)/);
     expect(scripts.build).toMatch(/build:plugins/);
   });
 

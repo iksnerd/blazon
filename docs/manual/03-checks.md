@@ -98,12 +98,13 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `asset-rule-violation` | Error | An asset breaks the rules of its category. |
 | `asset-sidecar-invalid` | Error | An asset sidecar is not valid JSON or holds a field blazon does not know. |
 | `asset-sidecar-orphan` | Warning | A sidecar has no image of the same name beside it. |
+| `asset-unreadable` | Error | An asset file cannot be read, so it is left out of the book. |
 | `blazon-pin-invalid` | Error | blazon.lock is not a valid pin. |
 | `blazon-pin-mismatch` | Error | The blazon build in use is not the commit blazon.lock names. |
 | `circular-alias` | Error | Aliases lead back to the token that started them. |
 | `config-invalid` | Error | A key or value in blazon.config.ts is not valid. |
 | `contrast` | Error | A color pair has less contrast than its level asks for. |
-| `contrast-unknown` | Warning | Blazon cannot read a color of a pair, so it cannot measure the contrast. |
+| `contrast-unknown` | Warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-collision` | Error | Two tokens write the same CSS custom property. |
 | `deprecated-alias` | Warning | A token aliases a token marked deprecated. |
 | `directive-invalid` | Error | A page directive has wrong arguments or names something that does not exist. |
@@ -132,6 +133,8 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `needs-review` | Warning | A token or asset is marked needs-review. |
 | `needs-review-in-use` | Warning | A page shows assets that are still marked needs-review. |
 | `output-dirs-overlap` | Error | An output folder is or holds an input, or is inside one. |
+| `page-duplicate-slug` | Error | Two pages have the same slug, so the book opens only the first. |
+| `page-unreadable` | Error | A page file cannot be read, so it is left out of the book. |
 | `plugin-failed` | Error | A check plugin could not run or broke the plugin protocol. |
 | `plugin-lock-invalid` | Error | The plugin lock file is not valid. |
 | `print-cmyk-invalid` | Error | The print cmyk value is not four numbers from 0 to 100. |

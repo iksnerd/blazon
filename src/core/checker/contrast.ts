@@ -6,7 +6,7 @@ import { finding } from './catalogue.js';
 /** WCAG 2.2 SC 1.4.3 / 1.4.6 minimum ratios. */
 export const CONTRAST_MINIMUM: Record<ContrastLevel, number> = { AA: 4.5, 'AA-large': 3, AAA: 7 };
 
-/** Any CSS color (hex, rgb(), hsl(), lab(), oklch(), color(), a name), or undefined for anything else. Alpha is ignored. */
+/** Any CSS color (hex, rgb(), hsl(), lab(), oklch(), color(), a name), or undefined for anything else. The color keeps its alpha; `contrastBetween` blends it. */
 export function parseColor(css: string): Color | undefined {
   try {
     return new Color(css.trim());
@@ -19,6 +19,29 @@ export function parseColor(css: string): Color | undefined {
 export function contrastRatio(a: Color, b: Color): number {
   return Color.contrast(a, b, 'WCAG21');
 }
+
+/** A color's opacity, 0 to 1; a color with no alpha is opaque. */
+const alphaOf = (color: Color): number => {
+  const alpha = color.alpha;
+  return typeof alpha === 'number' && !Number.isNaN(alpha) ? alpha : 1;
+};
+
+/**
+ * The ratio of a foreground over a background, or undefined when the backdrop is not known. WCAG measures what is seen, so a
+ * translucent foreground is blended over the background first. A translucent background shows whatever is behind it, which a
+ * pair does not name, so it has no ratio.
+ */
+export function contrastBetween(fg: Color, bg: Color): number | undefined {
+  if (alphaOf(bg) < 1) return undefined;
+  const a = alphaOf(fg);
+  if (a >= 1) return contrastRatio(fg, bg);
+  const [f, b] = [fg.to('srgb').coords, bg.to('srgb').coords];
+  const mixed = f.map((c, i) => (c === null || Number.isNaN(c) ? b[i]! : c * a + b[i]! * (1 - a)));
+  return contrastRatio(new Color('srgb', mixed as [number, number, number]), bg);
+}
+
+/** A ratio as the message prints it: floored to two decimals, so a failing 4.496 never reads as the 4.50 it misses. */
+export const ratioMessage = (ratio: number): string => (Math.floor(ratio * 100 + 1e-9) / 100).toFixed(2);
 
 /** Expands "{a.b}" to that token and "{a.*}" to every color token under a. */
 export function expand(ref: string, items: TokenItem[]): TokenItem[] {
@@ -65,9 +88,13 @@ export function contrastFindings(pair: ContrastPair, rulePath: string, items: To
         findings.push(finding('contrast-unknown', { path: bg.path, message: `Cannot measure ${fg.value} on ${bg.value}: not a color blazon can read` }));
         continue;
       }
-      const ratio = contrastRatio(fgColor, bgColor);
-      if (ratio < minimum) {
-        findings.push(finding('contrast', { path: bg.path, message: `{${fg.path}} on {${bg.path}} is ${ratio.toFixed(2)}:1; ${pair.min} needs ${minimum}:1` }));
+      const ratio = contrastBetween(fgColor, bgColor);
+      if (ratio === undefined) {
+        findings.push(
+          finding('contrast-unknown', { path: bg.path, message: `Cannot measure ${fg.value} on ${bg.value}: the background is translucent, so what is behind it is not known` }),
+        );
+      } else if (ratio < minimum) {
+        findings.push(finding('contrast', { path: bg.path, message: `{${fg.path}} on {${bg.path}} is ${ratioMessage(ratio)}:1; ${pair.min} needs ${minimum}:1` }));
       }
     }
   }
