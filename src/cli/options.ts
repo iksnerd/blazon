@@ -1,8 +1,12 @@
 import type { CAC } from 'cac';
 import { refuse } from './errors.js';
 
-/** The flag as it is written: `-o` for a one-letter name, `--outDir` for the rest. */
-const flagOf = (name: string): string => (name.length === 1 ? `-${name}` : `--${name}`);
+/** Every way the parser accepts a flag: `-o` for a one-letter name, `--outDir` and `--out-dir` for the rest. */
+const flagsOf = (name: string): string[] => {
+  if (name.length === 1) return [`-${name}`];
+  const kebab = name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  return kebab === name ? [`--${name}`] : [`--${name}`, `--${kebab}`];
+};
 
 /**
  * Gives every text option the text that was typed. The parser turns a value that looks like a number into a number, and an empty one
@@ -15,7 +19,7 @@ export function restoreOptionText(cli: CAC, argv: string[]): void {
   const options = [...command.options, ...cli.globalCommand.options].filter((option) => option.required);
   for (const option of options) {
     if (typeof cli.options[option.name] === 'object') continue;
-    const flags = option.names.map(flagOf);
+    const flags = option.names.flatMap(flagsOf);
     for (let i = 2; i < argv.length; i++) {
       const token = argv[i]!;
       const flag = flags.find((f) => token === f || token.startsWith(`${f}=`));

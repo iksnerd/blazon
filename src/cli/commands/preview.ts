@@ -7,7 +7,7 @@ import { busyPort, UsageError } from '../errors.js';
 import { requireFolder } from '../project.js';
 import { blazonCommand, shownDir } from '../where.js';
 
-export async function runPreview(cwd: string = process.cwd(), portOverride?: number, options: { strictPort?: boolean } = {}) {
+export async function runPreview(cwd: string = process.cwd(), portOverride?: number, options: { strictPort?: boolean; host?: string | boolean } = {}) {
   requireFolder(cwd);
   const config = await loadConfig(cwd, portOverride ? { port: portOverride } : undefined);
   const outDir = path.resolve(cwd, config.outDir);
@@ -25,7 +25,7 @@ export async function runPreview(cwd: string = process.cwd(), portOverride?: num
       preview: {
         port: config.port,
         strictPort: options.strictPort ?? false,
-        host: true,
+        host: options.host ?? 'localhost',
         open: false,
       },
     });
@@ -39,5 +39,7 @@ export async function runPreview(cwd: string = process.cwd(), portOverride?: num
 
   console.log(`\n  ${pc.bold(pc.blue('blazon preview'))}`);
   console.log(`  ${pc.dim('➜')}  ${pc.bold('Local:')}   ${pc.cyan(localUrl)}`);
+  for (const url of info?.network ?? []) console.log(`  ${pc.dim('➜')}  ${pc.bold('Network:')} ${pc.cyan(url)}`);
   console.log(`  ${pc.dim('➜')}  ${pc.bold('Dist:')}    ${pc.dim(outDir)}\n`);
+  return previewServer;
 }

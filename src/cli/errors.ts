@@ -19,6 +19,7 @@ export const ERROR_CODES = [
   'not-a-token',
   'plugin-failed',
   'port-in-use',
+  'site-unreadable',
   'unknown-command',
   'unknown-finding-code',
   'unknown-key',

@@ -38,6 +38,7 @@
       "--entry <path>",
       "--font <family>",
       "--from <url>",
+      "--host [address]",
       "--json",
       "--key <path>",
       "--logo <file>",

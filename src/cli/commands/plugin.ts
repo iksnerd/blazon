@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import pc from '../../core/colors.js';
+import { UsageError } from '../errors.js';
 import { shippedLayoutProblem } from '../../core/plugin-name.js';
 import { check, type CheckResult } from '../../plugins/host/check.js';
 import { LOCK_FILE, recordPin } from '../../plugins/pins/lock.js';
@@ -36,13 +37,10 @@ function line(result: CheckResult): string {
  * Start the plugin the way blazon does and run the core cases of section 9, then blazon's cases for each role the manifest
  * declares (6 to 9). With `core`, only the core cases run: no role cases and no layout line, so a plugin that does not follow blazon's own
  * rules (the code prefix, the layout of a shipped plugin) can still be checked against the protocol. Prints the host and what it adopts first, so the output says which members of the family it covers.
- * Returns the exit status: 0 when every case passed (a warning is a pass), 1 when one failed, 2 for bad arguments.
+ * Returns the exit status: 0 when every case passed (a warning is a pass), 1 when one failed; bad arguments throw a UsageError (exit 2).
  */
 export async function runPluginCheck(program?: string, options: { json?: boolean; core?: boolean } = {}): Promise<number> {
-  if (!program) {
-    console.error(USAGE.check);
-    return 2;
-  }
+  if (!program) throw new UsageError(USAGE.check, undefined, 'missing-argument');
   const core = options.core === true;
   if (!options.json) {
     console.log(`${BLAZON_PROFILE.host} plugin check: host ${BLAZON_PROFILE.host}, adopts: ${BLAZON_PROFILE.adopts.length > 0 ? BLAZON_PROFILE.adopts.join(', ') : 'none'}`);
@@ -83,17 +81,12 @@ export async function runPluginCheck(program?: string, options: { json?: boolean
 /**
  * Print the digest of a file (`sha256:`) or a directory (`t1:`) that a pin names. With `--name`, record it in
  * blazon.plugins.lock as computed, or as vouched when `--digest` says what the bytes must be. Returns the exit status:
- * 0, 1 for a path a host must refuse or a digest that does not match, 2 for bad arguments.
+ * 0, 1 for a path a host must refuse or a digest that does not match; bad arguments throw a UsageError (exit 2).
  */
 export function runPluginPin(target?: string, options: PinOptions = {}, cwd: string = process.cwd()): number {
-  if (!target) {
-    console.error(USAGE.pin);
-    return 2;
-  }
-  if (!options.name && (options.digest || options.entry)) {
-    console.error(`--digest and --entry say what to record, so they need --name\n${USAGE.pin}`);
-    return 2;
-  }
+  if (!target) throw new UsageError(USAGE.pin, undefined, 'missing-argument');
+  if (!options.name && (options.digest || options.entry))
+    throw new UsageError(`--digest and --entry say what to record, so they need --name; ${USAGE.pin}`, undefined, 'conflicting-options');
   if (!fs.existsSync(target)) {
     console.error(`blazon plugin pin: there is nothing at ${target}.`);
     return 2;
@@ -124,6 +117,5 @@ export async function runPlugin(action?: string, target?: string, options: PinOp
   if (action === 'check') return runPluginCheck(target, { json: options.json, core: options.core });
   if (action === 'pin') return runPluginPin(target, options);
   if (action === 'profile') return runPluginProfile();
-  console.error(USAGE.plugin);
-  return 2;
+  throw new UsageError(USAGE.plugin, undefined, 'missing-argument');
 }

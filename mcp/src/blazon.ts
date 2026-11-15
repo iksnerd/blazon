@@ -35,13 +35,15 @@ export const TOKEN_PATH = /^[A-Za-z0-9_][A-Za-z0-9_-]*(\.[A-Za-z0-9_][A-Za-z0-9_
 
 /** The longest a blazon command may run by default. A compile of a large brand is seconds; this only stops a hang. */
 export const TIMEOUT_MS = 30_000;
+/** The most answers the cache keeps; the oldest is dropped first. */
+export const CACHE_MAX = 64;
 /** The default time an answer is reused. */
 export const CACHE_MS = 2000;
 /** The most blazon output the server reads. Beyond this the command is stopped and reported. */
 const MAX_BUFFER = 16 * 1024 * 1024;
 
-/** The environment names a blazon child inherits. Everything else (tokens, keys, cloud credentials) stays out of the brand's config code. */
-const ENV_ALLOWED = /^(PATH|HOME|USERPROFILE|TMPDIR|TEMP|TMP|LANG|LC_[A-Z_]+|NODE_[A-Z_]+|BLAZON_[A-Z_]+|NO_COLOR|SystemRoot|SYSTEMROOT|windir|COMSPEC|PATHEXT)$/;
+/** The environment names a blazon child inherits. No `NODE_*`: blazon reads none, and `NODE_AUTH_TOKEN` is an npm publish token. Everything else (tokens, keys, cloud credentials) stays out of the brand's config code. */
+const ENV_ALLOWED = /^(PATH|HOME|USERPROFILE|TMPDIR|TEMP|TMP|LANG|LC_[A-Z_]+|BLAZON_[A-Z_]+|NO_COLOR|SystemRoot|SYSTEMROOT|windir|COMSPEC|PATHEXT)$/;
 
 /** The environment for a blazon child: the allowlist from `env`, plus `NO_COLOR`. */
 export function childEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
@@ -118,7 +120,9 @@ export class BlazonRunner {
     if (ttl > 0 && hit && Date.now() - hit.at < ttl) return hit.answer;
     const answer = this.schedule(() => this.exec(args, options));
     if (ttl > 0) {
+      this.cache.delete(key);
       this.cache.set(key, { at: Date.now(), answer });
+      while (this.cache.size > CACHE_MAX) this.cache.delete(this.cache.keys().next().value as string);
       answer.catch(() => this.cache.delete(key));
     }
     return answer;

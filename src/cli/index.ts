@@ -32,6 +32,9 @@ function portOf(command: string, value: unknown): number | undefined {
   return port;
 }
 
+/** What `--host` asked for: nothing (localhost only), every interface (no address) or one address. The parser reads a number-like address as a number. */
+const hostOf = (value: string | boolean | number | undefined): string | boolean | undefined => (typeof value === 'number' ? String(value) : value);
+
 /** `--no-plugins` runs none, so it cannot also name one to run: exit 2, nothing started. */
 function pluginFlags(command: string, options?: { plugin?: unknown; plugins?: boolean }): void {
   if (options?.plugins === false && options.plugin !== undefined)
@@ -77,9 +80,10 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     .command('dev [dir]', 'Start interactive Brand Book dev server with HMR')
     .option('-p, --port <port>', 'Port number to listen on (default: the port in blazon.config.ts, else 3000)')
     .option('--strict-port', 'Exit 2 when the port is in use, instead of taking the next free one')
-    .action(async (dir?: string, options?: { port?: number; strictPort?: boolean }) => {
+    .option('--host [address]', 'Listen on this address, or on every network interface with no address (default: localhost only)')
+    .action(async (dir?: string, options?: { port?: number; strictPort?: boolean; host?: string | boolean }) => {
       try {
-        await runDev(dir ? dir : process.cwd(), portOf('dev', options?.port), { strictPort: options?.strictPort });
+        await runDev(dir ? dir : process.cwd(), portOf('dev', options?.port), { strictPort: options?.strictPort, host: hostOf(options?.host) });
       } catch (err) {
         failed('dev', err, debug);
       }
@@ -205,6 +209,14 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
           refuse('blazon plugin: --core is for `blazon plugin check`; `pin` and `profile` run no cases.', 'conflicting-options', {
             fix: 'Leave out --core, or use it with `blazon plugin check`.',
           });
+        if (action !== 'pin')
+          for (const flag of ['name', 'digest', 'entry'] as const)
+            if (options?.[flag] !== undefined)
+              refuse(`blazon plugin: --${flag} is for \`blazon plugin pin\`; \`${action ?? 'check'}\` does not take it.`, 'conflicting-options', {
+                fix: `Leave out --${flag}, or use it with \`blazon plugin pin\`.`,
+              });
+        if (action === 'profile' && target !== undefined)
+          refuse('blazon plugin: `profile` takes no target.', 'conflicting-options', { fix: 'Run `blazon plugin profile` on its own.' });
         process.exitCode = await runPlugin(action, target, options);
       } catch (err) {
         failed('plugin', err, debug);
@@ -268,9 +280,10 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     .command('preview [dir]', 'Preview the static production brand book build')
     .option('-p, --port <port>', 'Port number to listen on (default: the port in blazon.config.ts, else 3000)')
     .option('--strict-port', 'Exit 2 when the port is in use, instead of taking the next free one')
-    .action(async (dir?: string, options?: { port?: number; strictPort?: boolean }) => {
+    .option('--host [address]', 'Listen on this address, or on every network interface with no address (default: localhost only)')
+    .action(async (dir?: string, options?: { port?: number; strictPort?: boolean; host?: string | boolean }) => {
       try {
-        await runPreview(dir ? dir : process.cwd(), portOf('preview', options?.port), { strictPort: options?.strictPort });
+        await runPreview(dir ? dir : process.cwd(), portOf('preview', options?.port), { strictPort: options?.strictPort, host: hostOf(options?.host) });
       } catch (err) {
         failed('preview', err, debug);
       }

@@ -80,6 +80,7 @@ export const OPERATIONS: readonly Operation[] = [
           description: 'A token type, for example color, dimension or fontFamily. Leave out for every type. An unknown type is refused with the list of types',
           type: 'string',
           maxLength: 40,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
         },
         dir: { type: 'string', description: 'The brand folder. Default: the current folder' },
       },
@@ -262,7 +263,12 @@ export const OPERATIONS: readonly Operation[] = [
           description:
             'What the first color is: text (default), judged by the usage, pairs and WCAG text rules, or ui for a focus ring, border or icon stroke, judged by the usage rules and the 3:1 non-text contrast',
         },
-        theme: { type: 'string', description: "Judge the pair in this context of the resolver's theme modifier, such as dark. Default: the default tokens" },
+        theme: {
+          type: 'string',
+          maxLength: 200,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
+          description: "Judge the pair in this context of the resolver's theme modifier, such as dark. Default: the default tokens",
+        },
         dir: { type: 'string', description: 'The brand folder. Default: the current folder' },
       },
       required: ['fg', 'bg'],

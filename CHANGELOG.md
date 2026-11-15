@@ -99,6 +99,14 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- The MCP server passes each option as one argument (`--theme=dark`), so a value that starts with a dash, such as `--cwd=/other/dir`, can no longer be read as an option and change the brand folder; `can_use` `theme` and `list_tokens` `type` refuse such a value.
+- The MCP server no longer passes `NODE_*` environment variables (such as `NODE_AUTH_TOKEN`) to blazon.
+- The MCP server keeps at most 64 cached answers.
+- `blazon plugin check` and `blazon plugin pin` with no program or path exit 2 with a `missing-argument` error, as JSON under `--json`; `blazon init --json` errors carry a `code`, and a site that cannot be read is `site-unreadable`.
+- `blazon plugin` refuses `--name`, `--digest` and `--entry` unless the action is `pin`, and a target for `profile`, instead of ignoring them.
+- `blazon build --out-dir 2024` (the kebab spelling) takes the number as a folder name instead of failing with a TypeError.
+- `blazon dev` and `blazon preview` listen on this machine only; `--host [address]` opens them to the network. They listened on every interface before.
+- The exit status help no longer says every exit 2 did nothing: `blazon init --from` copies the starter first.
 - MCP truncation keeps the most findings that fit, not a power-of-two fraction of them (120 that fit used to come back as 62), counts the `warnings` it adds in that fit, and keeps `counts` and `passed` when it falls back to cutting the text. The fallback cuts on code points, not inside a surrogate pair.
 - A plugin's finding message stays within 1000 characters with its ` (instance X)` suffix counted.
 - Every error and warning finding code, and every note but `asset-local-absent`, has a fix line, and a test fails when an error or warning code has none.

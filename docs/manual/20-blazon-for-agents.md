@@ -51,7 +51,7 @@ VS Code's `.vscode/mcp.json` uses `servers` in place of `mcpServers`. Leave out 
 
 The server talks over standard input and output. `--brand <folder>` or `--brand=<folder>` (or the environment variable `BLAZON_BRAND`) names the brand folder; it defaults to the folder the client starts the server in. `BLAZON_BIN` names the blazon program when it is not on `PATH`.
 
-**Use a brand folder you trust.** Reading a brand loads its `blazon.config.ts` as code, so a brand folder can run any code as your user. The server hands the blazon program only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `NODE_*`, `BLAZON_*`, `NO_COLOR` and a few Windows names), so secrets in the client's environment do not reach that code. That limits the harm; it does not make an untrusted brand safe.
+**Use a brand folder you trust.** Reading a brand loads its `blazon.config.ts` as code, so a brand folder can run any code as your user. The server hands the blazon program only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `BLAZON_*`, `NO_COLOR` and a few Windows names), so secrets in the client's environment do not reach that code. That limits the harm; it does not make an untrusted brand safe.
 
 ## Check that it works
 

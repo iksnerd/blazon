@@ -2,6 +2,7 @@ import { summarizeFindings } from '../core/checker/index.js';
 import { fixOf } from '../core/checker/fixes.js';
 import type { Finding } from '../types/index.js';
 import { CheckFailed } from './commands/check.js';
+import { jsonError, type ErrorCode } from './errors.js';
 import { runInit, type InitOptions, type InitReport } from './commands/init.js';
 
 /**
@@ -49,8 +50,9 @@ export async function initAsJson(dir: string, options: InitOptions): Promise<num
   console.log = (...args: unknown[]) => console.error(...args);
   let made: InitReport | undefined;
   let code: number;
+  let failure: { code: ErrorCode; message: string } | undefined;
   try {
-    code = await runInit(dir, { ...options, input: false, report: (report) => (made = report) });
+    code = await runInit(dir, { ...options, input: false, report: (report) => (made = report), failure: (why) => (failure = why) });
   } finally {
     console.log = log;
   }
@@ -58,7 +60,9 @@ export async function initAsJson(dir: string, options: InitOptions): Promise<num
     command: 'init',
     passed: code === 0,
     ...(made ?? {}),
-    ...(code !== 0 && { error: { message: `init did not finish (exit status ${code}); the reason is on standard error` } }),
+    ...(code !== 0 && {
+      error: failure ? jsonError(failure.code, failure.message) : jsonError('error', `init did not finish (exit status ${code}); the reason is on standard error`),
+    }),
   };
   process.stdout.write(`${JSON.stringify(result)}\n`);
   return code;
