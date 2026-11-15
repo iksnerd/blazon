@@ -59,11 +59,14 @@
     "gen:mcp": "tsx scripts/gen-mcp-operations.ts",
     "shipped-lock": "tsx scripts/shipped-lock.mjs",
     "build-starter": "tsx scripts/build-starter.ts",
-    "prepack": "npm run build-starter && npm run build:plugins",
+    "check-pack": "node scripts/check-pack.mjs",
+    "prepack": "npm run build && npm run build-starter",
+    "prepublishOnly": "npm run prepack && npm run check-pack",
+    "release": "node scripts/release.mjs",
     "blazon:src": "tsx scripts/blazon-src.ts",
     "build:viewer": "vite build -c vite.viewer.config.ts",
     "dev:blazon": "tsx scripts/blazon-src.ts dev examples/blazon",
-    "prepare": "node scripts/install-hooks.mjs"
+    "hooks": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^1.9.0",

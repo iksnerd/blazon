@@ -134,6 +134,7 @@ Pre-release. Not yet published to npm.
 
 ### Changed
 
+- Releases are one command, `npm run release -- <version>`, and CI on the tag builds the package fresh, installs the tarball and runs blazon from it, then attaches it with `SHA256SUMS` and a build provenance attestation; a `publish` job is in `ci.yml` but stays off until `NPM_PUBLISH` is set. `npm pack` now builds first, the package no longer carries a `prepare` script (npm 12 warned every installer about it; contributors run `npm run hooks`), and `scripts/check-pack.mjs` fails a tarball that lacks `dist/`, the starter, a plugin program or the lock.
 - The starter's `AGENTS.md`, its web page and `blazon init` no longer link a manual on a website, which does not exist yet. `AGENTS.md` names the `docs/manual/` folder of the blazon source repository and each chapter by title, and `init` no longer prints a `The manual:` line.
 - The viewer build writes Geist's OFL license as `assets/geist-OFL.txt` beside the font files, so it is in `dist/ui` and in every built site. `THIRD-PARTY-NOTICES.md` names both starter IBM Plex Mono files, `jszip`, `lightningcss` and `pako`.
 - A plugin that exits `2` ("cannot answer") three times in a row in one run is now stopped for the rest of that run, as a break is. In `blazon dev` exit `2` does not start the 30-second cooldown, since its message asks for a change the next save may make.
