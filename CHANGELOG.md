@@ -102,6 +102,8 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- `blazon dev` and `blazon build` read and served the SVGs of any folder through an icon set whose `package` was a path (`../../Downloads`). `package` must now be a package name (`name` or `@scope/name`); a path fails with `icon-set-invalid`. `blazon preview` followed a link in the built site (`dist/site/leak.txt -> ~/secret`) and served what it pointed at; it now answers 403 for a link that leaves the site.
+
 - A resolver with an inline modifier or set that reuses the name of a declared set or modifier is a `resolver-invalid` error, not an uncaught TypeError.
 - Modifier, context and inline item names in a resolver must be letters, digits, `_` and `-`, so a name can no longer become a path outside `tokensOutDir`, break a selector or close a CSS comment. `blazon tokens` also refuses to write a file outside `tokensOutDir`.
 - Token and resolver JSON files that start with a UTF-8 byte order mark parse instead of reporting `token-file-invalid`.
