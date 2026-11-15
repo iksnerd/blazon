@@ -37,7 +37,7 @@ export function fontWeight(value: unknown): number {
   if (typeof value === 'string') {
     const named = FONT_WEIGHT_NAMES[value.toLowerCase()];
     if (named) return named;
-    if (/^\d+$/.test(value)) return Number(value);
+    if (/^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 1000) return Number(value);
   }
   return fail(`fontWeight must be 1-1000 or a DTCG weight name, got ${JSON.stringify(value)}`);
 }
