@@ -213,6 +213,8 @@ Versions belong to messages, not to the protocol as a whole. Every request recor
 
 Case 4 is a test, not a proof: a plugin that encodes the value passes it. The check can show a leak and cannot show there is none.
 
+`blazon plugin check <program> --core` runs only the core cases above, with no case 6 to 9 and no layout line (section 3.6); the exit status is the same, and `--json` adds `core: true`.
+
 After the core cases, `blazon plugin check` runs blazon's own cases, 6 to 9, for each role the manifest declares: the exit code, the output limit, the shape of the answer, and for `build` a warning when the plugin writes in `tokens_dir` outside `out_dir`. They are blazon's, not the protocol's: the shared corpus holds only the core cases of section 9 of the family's protocol specification. Each is derived when the check runs from blazon's profile (`BLAZON_PROFILE` in `src/plugins/wire/profile.ts`, which `blazon plugin profile` prints) and from the answer blazon's roles accept, so this RFC does not restate them. [Writing a plugin](../manual/13-writing-a-plugin.md#write-and-check-a-plugin) describes each one.
 
 Blazon's own tests include a broken plugin for each core case, so that the check is known able to fail. For a pinned plugin they also show that bytes changed after pinning are refused, that a changed file in a pinned tree is refused, and that a pinned path replaced by a symbolic link is refused. The core's cases are also kept as a corpus of files that need no code to read (`test/spec/`), and blazon's host agrees with every one.
@@ -274,7 +276,7 @@ Implemented, in `src/plugins/`:
 - One call: a clean environment, a private request file, a process group, limits and exit codes, never a pass; scrubbing; admission; the check command (`host/`).
 - Pins: tree and file digests, `blazon.plugins.lock`, a verified copy, the interpreter of a pinned script, and the lock shipped with blazon's own plugins (`pins/`, `scripts/shipped-lock.mjs`), and the shipped plugins' programs, each one bundled file inside its pinned folder (`scripts/build-plugins.mjs`).
 - The breaker, the roles and the dev server's gate (`roles/`).
-- The commands `blazon plugin pin`, `check` and `profile` (`src/cli/commands/plugin.ts`). As of 2026-11-08, `check` also reports a program in the shipped layout whose file name is not `blazon-<name>.🔌` (`shippedLayoutProblem` in `src/core/plugin-name.ts`).
+- The commands `blazon plugin pin`, `check` and `profile` (`src/cli/commands/plugin.ts`). As of 2026-11-08, `check` also reports a program in the shipped layout whose file name is not `blazon-<name>.🔌` (`shippedLayoutProblem` in `src/core/plugin-name.ts`). As of 2026-11-15, `check --core` runs only the core cases of section 9 and leaves out cases 6 to 9 and the layout line.
 
 Not built: long-lived plugins, a role with a validation call, the owner check of the lock and of `.blazon/plugins/` (blazon refuses one that group or others can write and does not check the owner), checking the interpreter of a plugin that is not pinned, and any platform but POSIX.
 

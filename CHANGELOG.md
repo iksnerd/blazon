@@ -20,6 +20,7 @@ Pre-release. Not yet published to npm.
 
 ### Added
 
+- `blazon plugin check <program> --core` runs only the core cases of the plugin protocol (1 to 5): no role cases (6 to 9) and no `layout` line. The exit status is unchanged, and `--json` adds `core: true`. Without the flag nothing changes.
 - `blazon explain <code>` says what a finding code means, how to clear it, and where to read more; with no code it lists every code, and an unknown code names the closest ones. `--json` gives the same as data.
 - `blazon doctor` checks the environment (Node against `engines`, the brand folder, the plugin folder's safety, Google Chrome for the plugins that need it, and `blazon.lock`) and prints ok, warn or fail with a fix for each. It runs no plugin and writes nothing; it exits 1 only when a check fails.
 - `--cwd <dir>` sets the folder every command works from. A folder argument is then relative to it.

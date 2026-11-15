@@ -128,6 +128,8 @@ If the program sits in the layout blazon's own plugins use, `<name>/bin/blazon-<
 
 A program anywhere else, such as a script beside its README or a pinned copy under `.blazon/plugins/`, is not checked for its name.
 
+Add `--core` to run only the core cases of the protocol (1 to 5). It skips blazon's own cases (6 to 9, including the rule that a finding's code starts with the plugin's name) and the `layout` line, and prints `core cases only (1 to 5): no role cases, no layout line` under the first line. Use it to check a plugin against the protocol alone, for example one that was not written for blazon's roles. The exit status is the same: `0` when the core cases pass, `1` when one fails, `2` for bad arguments. A plugin that passes `--core` can still fail without it. With `--json`, the document has `"core": true` after `adopts`, only cases 1 to 5, and no `layout` key.
+
 | Exit status | Means |
 |---|---|
 | `0` | Every case passed (a skipped case is neither a pass nor a failure, and a warning is a pass) |

@@ -28,6 +28,7 @@
       "--check",
       "--client <client>",
       "--color <hex>",
+      "--core",
       "--css",
       "--cwd <dir>",
       "--debug",

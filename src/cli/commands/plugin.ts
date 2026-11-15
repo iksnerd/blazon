@@ -11,8 +11,8 @@ import { BLAZON_CORE_PROFILE, BLAZON_PROFILE, blazonRequests } from '../../plugi
 // The two commands of blazon as a host of the plugin protocol (RFC 0005) (RFC 0002 section 2).
 
 const USAGE = {
-  plugin: 'usage: blazon plugin check <program> | blazon plugin pin <path> [--name <plugin name>] | blazon plugin profile',
-  check: 'usage: blazon plugin check <program>',
+  plugin: 'usage: blazon plugin check <program> [--core] | blazon plugin pin <path> [--name <plugin name>] | blazon plugin profile',
+  check: 'usage: blazon plugin check <program> [--core]',
   pin: 'usage: blazon plugin pin <path> [--name <plugin name> [--digest <digest>] [--entry <path>]]',
 };
 
@@ -34,33 +34,37 @@ function line(result: CheckResult): string {
 
 /**
  * Start the plugin the way blazon does and run the core cases of section 9, then blazon's cases for each role the manifest
- * declares (6 to 9). Prints the host and what it adopts first, so the output says which members of the family it covers.
+ * declares (6 to 9). With `core`, only the core cases run: no role cases and no layout line, so a plugin that does not follow blazon's own
+ * rules (the code prefix, the layout of a shipped plugin) can still be checked against the protocol. Prints the host and what it adopts first, so the output says which members of the family it covers.
  * Returns the exit status: 0 when every case passed (a warning is a pass), 1 when one failed, 2 for bad arguments.
  */
-export async function runPluginCheck(program?: string, options: { json?: boolean } = {}): Promise<number> {
+export async function runPluginCheck(program?: string, options: { json?: boolean; core?: boolean } = {}): Promise<number> {
   if (!program) {
     console.error(USAGE.check);
     return 2;
   }
-  if (!options.json)
+  const core = options.core === true;
+  if (!options.json) {
     console.log(`${BLAZON_PROFILE.host} plugin check: host ${BLAZON_PROFILE.host}, adopts: ${BLAZON_PROFILE.adopts.length > 0 ? BLAZON_PROFILE.adopts.join(', ') : 'none'}`);
+    if (core) console.log('core cases only (1 to 5): no role cases, no layout line');
+  }
   const results = await check({
     host: BLAZON_PROFILE.host,
     profile: BLAZON_CORE_PROFILE,
     program,
     validate: false,
     requests: blazonRequests(),
-    roleCases: blazonRoleCases(program),
+    ...(core ? {} : { roleCases: blazonRoleCases(program) }),
   });
   const warnings = results.filter((result) => result.warning).length;
   const failed = results.filter((result) => !result.passed && !result.skipped);
   // Not a protocol case: a program in the layout of a shipped plugin (RFC 0005 section 3.6) must have the file name that layout gives it.
-  const layout = shippedLayoutProblem(path.resolve(program));
+  const layout = core ? undefined : shippedLayoutProblem(path.resolve(program));
   if (options.json) {
     const status = (result: CheckResult): 'ok' | 'warn' | 'skip' | 'fail' => (result.warning ? 'warn' : result.passed ? 'ok' : result.skipped ? 'skip' : 'fail');
     const cases = results.map((result) => ({ case: result.case, name: result.name, role: result.role, status: status(result), detail: result.detail }));
     process.stdout.write(
-      `${JSON.stringify({ command: 'plugin check', passed: failed.length === 0 && !layout, host: BLAZON_PROFILE.host, adopts: BLAZON_PROFILE.adopts, cases, ...(layout ? { layout } : {}) })}\n`,
+      `${JSON.stringify({ command: 'plugin check', passed: failed.length === 0 && !layout, host: BLAZON_PROFILE.host, adopts: BLAZON_PROFILE.adopts, ...(core ? { core: true } : {}), cases, ...(layout ? { layout } : {}) })}\n`,
     );
     return failed.length === 0 && !layout ? 0 : 1;
   }
@@ -116,8 +120,8 @@ export function runPluginProfile(): number {
 }
 
 /** `blazon plugin <action> [target]`. Returns the exit status; an action that does not exist is a bad argument. */
-export async function runPlugin(action?: string, target?: string, options: PinOptions & { json?: boolean } = {}): Promise<number> {
-  if (action === 'check') return runPluginCheck(target, { json: options.json });
+export async function runPlugin(action?: string, target?: string, options: PinOptions & { json?: boolean; core?: boolean } = {}): Promise<number> {
+  if (action === 'check') return runPluginCheck(target, { json: options.json, core: options.core });
   if (action === 'pin') return runPluginPin(target, options);
   if (action === 'profile') return runPluginProfile();
   console.error(USAGE.plugin);

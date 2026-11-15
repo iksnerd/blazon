@@ -33,6 +33,7 @@ describe('blazon --help', () => {
 
 describe('blazon plugin <action> --help', () => {
   it.each([
+    ['check', 'blazon plugin check <program> [--core]', /--core, only the core cases \(1 to 5\)/],
     ['check', 'blazon plugin check <program>', /1 {2}a case failed/],
     ['pin', 'blazon plugin pin <path>', /t1: for a directory/],
     ['profile', 'blazon plugin profile', /0 {2}printed/],

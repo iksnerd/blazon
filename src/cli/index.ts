@@ -194,11 +194,16 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     .option('--digest <digest>', 'With `pin --name`: the digest you vouch for; the bytes must be those')
     .option('--entry <path>', 'With `pin --name` on a directory: the program inside it, when it is not blazon-<name>')
     .option('--json', 'With `check`: print the cases as JSON on standard output')
-    .action(async (action?: string, target?: string, options?: { name?: string; digest?: string; entry?: string; json?: boolean }) => {
+    .option('--core', "With `check`: run only the core cases of the protocol (1 to 5), not blazon's role cases or the layout of a shipped plugin")
+    .action(async (action?: string, target?: string, options?: { name?: string; digest?: string; entry?: string; json?: boolean; core?: boolean }) => {
       try {
         if (options?.json && action !== 'check')
           refuse('blazon plugin: --json is for `blazon plugin check`; `pin` prints a digest and `profile` prints JSON already.', 'conflicting-options', {
             fix: 'Leave out --json, or use it with `blazon plugin check`.',
+          });
+        if (options?.core && action !== 'check')
+          refuse('blazon plugin: --core is for `blazon plugin check`; `pin` and `profile` run no cases.', 'conflicting-options', {
+            fix: 'Leave out --core, or use it with `blazon plugin check`.',
           });
         process.exitCode = await runPlugin(action, target, options);
       } catch (err) {
