@@ -55,10 +55,10 @@ describe('doctorChecks', () => {
     expect(none.status).toBe('fail');
     expect(none.fix).toContain('blazon init');
     const root = await starterProject();
-    fs.writeFileSync(path.join(root, 'blazon.json'), 'throw new Error("broken config");\n');
+    fs.writeFileSync(path.join(root, 'blazon.json'), '{ broken config\n');
     const broken = byId(await doctorChecks(root, calm()), 'brand');
     expect(broken.status).toBe('fail');
-    expect(broken.message).toContain('broken config');
+    expect(broken.message).toContain('Could not load blazon.json');
   });
 
   it('plugin-host: the repo helper decides; a problem warns with no plugin configured and fails with one', async () => {

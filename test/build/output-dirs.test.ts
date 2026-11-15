@@ -74,8 +74,8 @@ describe('output-dirs-overlap', () => {
       path.join(project, 'blazon.json'),
       fs
         .readFileSync(path.join(project, 'blazon.json'), 'utf-8')
-        .replace("outDir: './dist/site'", "outDir: './same'")
-        .replace("tokensOutDir: './dist/tokens'", "tokensOutDir: './same'"),
+        .replace('"outDir": "./dist/site"', '"outDir": "./same"')
+        .replace('"tokensOutDir": "./dist/tokens"', '"tokensOutDir": "./same"'),
     );
     await expect(runBuild(project)).rejects.toThrow();
     expect(fs.existsSync(path.join(project, 'same'))).toBe(false);

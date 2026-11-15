@@ -41,7 +41,7 @@ describe('an option value that looks like a number', () => {
     const dir = path.join(tempDir('blazon-number-value-'), 'x');
     const ran = blazon('init', dir, '--name', '007', '--yes');
     expect(ran.status, ran.stdout + ran.stderr).toBe(0);
-    expect(fs.readFileSync(path.join(dir, 'blazon.json'), 'utf-8')).toContain('title: "007"');
+    expect(fs.readFileSync(path.join(dir, 'blazon.json'), 'utf-8')).toContain('"title": "007"');
   });
 });
 

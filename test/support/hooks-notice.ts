@@ -27,7 +27,16 @@ export function hooksState(root: string): { inCheckout: boolean; hooksPath: stri
   const top = git(root, ['rev-parse', '--show-toplevel']);
   if (!top || fs.realpathSync(top) !== fs.realpathSync(root)) return { inCheckout: false, hooksPath: null };
   const configured = git(root, ['config', 'core.hooksPath']);
-  // An absolute path to this checkout's .githooks is as good as the relative one.
-  const hooksPath = configured && path.isAbsolute(configured) && path.resolve(configured) === path.join(root, '.githooks') ? '.githooks' : configured;
-  return { inCheckout: true, hooksPath };
+  return { inCheckout: true, hooksPath: configured && pointsAtHooksOfThisRepo(root, configured) ? '.githooks' : configured };
+}
+
+/** A hooks path (absolute, or relative to `root`) that is the `.githooks` of any checkout of this repository: the main one or a worktree. */
+function pointsAtHooksOfThisRepo(root: string, configured: string): boolean {
+  const target = path.resolve(root, configured);
+  if (path.basename(target) !== '.githooks') return false;
+  const common = (dir: string) => git(dir, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
+  const mine = common(root);
+  if (!mine || !fs.existsSync(target)) return false;
+  const theirs = common(path.dirname(target));
+  return !!theirs && fs.realpathSync(theirs) === fs.realpathSync(mine);
 }

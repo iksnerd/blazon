@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import type { Ctx } from '../context.js';
 import { manifestName, metaContent, pageTitle } from '../html.js';

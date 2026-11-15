@@ -77,7 +77,7 @@ describe('theme.shadcn in brand.json', () => {
     const file = path.join(root, 'blazon.json');
     // the starter supplies destructive and the five chart colors itself; this run swaps two of them for colors of its own
     const source = fs.readFileSync(file, 'utf-8');
-    const edited = source.replace("destructive: 'text.primary'", "destructive: 'color.signal.hazard'").replace("'chart-1': 'text.primary'", "'chart-1': 'color.signal.orange'");
+    const edited = source.replace('"destructive": "text.primary"', '"destructive": "color.signal.hazard"').replace('"chart-1": "text.primary"', '"chart-1": "color.signal.orange"');
     expect(edited).not.toBe(source);
     fs.writeFileSync(file, edited);
     const config = await loadConfig(root);
@@ -142,7 +142,7 @@ describe('theme.shadcn in brand.json', () => {
     const root = await starterProject();
     const file = path.join(root, 'blazon.json');
     const source = fs.readFileSync(file, 'utf-8');
-    const edited = source.replace("destructive: 'text.primary'", "destructive: 'color.missing'");
+    const edited = source.replace('"destructive": "text.primary"', '"destructive": "color.missing"');
     expect(edited).not.toBe(source);
     fs.writeFileSync(file, edited);
     const config = await loadConfig(root);

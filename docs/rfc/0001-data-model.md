@@ -615,7 +615,7 @@ Not in it, on purpose: a section id is not a page address (the slug is), and a s
 
 ### 14. Configuration
 
-`blazon.json` is optional. It is plain JSON, so a person can read it and a tool can write it: data that blazon reads and never runs, with no comments. Blazon checks it: every key below is allowed, and no other. It is the only form. A folder with `blazon.json`, `blazon.config.js`, `blazon.config.mjs`, `brandbook.config.ts` or `brandbook.config.js` is refused with a `config-invalid` error on that file, which names it and says to move its values into `blazon.json` and delete it; the refusal holds even when a `blazon.json` is there too.
+`blazon.json` is optional. It is plain JSON, so a person can read it and a tool can write it: data that blazon reads and never runs, with no comments. Blazon checks it: every key below is allowed, and no other. It is the only form. A folder with `blazon.config.ts`, `blazon.config.js`, `blazon.config.mjs`, `brandbook.config.ts` or `brandbook.config.js` is refused with a `config-invalid` error on that file, which names it and says to move its values into `blazon.json` and delete it; the refusal holds even when a `blazon.json` is there too.
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|

@@ -104,7 +104,7 @@ describe('errors in text: what happened on the first line, the fix on its own li
     const ran = blazonIn(root, 'check');
     expect(ran.status).toBe(1);
     expect(ran.stderr).not.toContain('[blazon check error]');
-    expect(ran.stderr).toMatch(/^blazon check: blazon\.config\.ts is invalid:/m);
+    expect(ran.stderr).toMatch(/^blazon check: blazon\.json is invalid:/m);
     expect(ran.stderr).toMatch(/\n {2}Run again with --debug for the stack\.\n$/);
   }, 60_000);
 

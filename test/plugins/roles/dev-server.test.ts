@@ -216,7 +216,8 @@ describe('blazon dev with check plugins', () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     // The project stops allowing the plugin while its check is still running
     const config = path.join(d.root, 'blazon.json');
-    fs.writeFileSync(config, fs.readFileSync(config, 'utf-8').replace(/\n {2}plugins: \[[^\n]*\],/, ''));
+    const { plugins: _switchedOff, ...without } = JSON.parse(fs.readFileSync(config, 'utf-8'));
+    fs.writeFileSync(config, `${JSON.stringify(without, null, 2)}\n`);
     await until(() => d.updates.length >= 2, 'the updates for the change and for the new config');
     await quiet(d.updates, 2000);
     // The running check ended after the new config's update, and its answer, which has the old findings, must not follow it

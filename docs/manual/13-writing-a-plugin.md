@@ -40,10 +40,10 @@ Limits: 64 KB of standard output (1 MiB for a `check` plugin, so that 500 findin
 
 **What the plugin sees.** An empty environment plus a `PATH`, and the variables the manifest lists in `env` that you approved (below). A plugin that needs `HOME` or `TMPDIR` lists them like any other name. For a pinned script that `PATH` is the trusted directories above; otherwise it is yours. Your other variables never reach it. It runs in a process group of its own, which blazon ends when the call ends, so a program the plugin started does not outlive it. When a call runs out of time or prints too much, blazon sends the group SIGTERM first and kills what is left after 2 seconds, so a plugin can stop what it started (a browser it opened, say) in a handler.
 
-**Variables a plugin asks for.** The manifest's `env` is a request, not a grant. Blazon gives a plugin a variable only when its manifest lists the name and you approve the name in the `env` list of the plugin's entry in `blazon.config.ts`:
+**Variables a plugin asks for.** The manifest's `env` is a request, not a grant. Blazon gives a plugin a variable only when its manifest lists the name and you approve the name in the `env` list of the plugin's entry in `blazon.json`:
 
-```ts
-plugins: [{ name: 'acme.deck', env: ['ACME_FONT_DIR', 'BLAZON_SECRET_ACME_TOKEN'] }],
+```json
+"plugins": [{ "name": "acme.deck", "env": ["ACME_FONT_DIR", "BLAZON_SECRET_ACME_TOKEN"] }]
 ```
 
 If the manifest lists a name that is set where you run blazon and the entry does not approve it, blazon does not start the plugin. It reports `plugin-failed` and says which variable and which key: `its manifest lists ACME_FONT_DIR, which is set here and not approved, so it is not started`, with the fix `Add "ACME_FONT_DIR" to plugins[0].env in the config, or unset it`. A variable that is not set is not an error. A name in `env` that the manifest does not list reaches nothing. The plugins that ship with blazon follow the same rule, with no list of their own: the ones that draw in a browser list `BLAZON_CHROME`, `HOME` and `TMPDIR`, so their entries approve those three (and `BLAZON_DECK_FONTS` for `blazon.brand-deck`).
