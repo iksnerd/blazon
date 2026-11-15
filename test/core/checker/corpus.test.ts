@@ -19,6 +19,7 @@ const codes = Object.keys(CHECKS) as CheckCode[];
 /** What `blazon check` would collect for a project: the compile, then the pin, the plugin lock and the check plugins. */
 async function findingsOf(setup: Setup): Promise<Finding[]> {
   const root = tempProject(setup.files ?? {});
+  for (const file of setup.unreadable ?? []) fs.chmodSync(path.join(root, file), 0o000);
   for (const [name, files] of Object.entries(setup.packages ?? {})) {
     for (const [file, text] of Object.entries(files)) {
       const full = path.join(root, 'node_modules', name, file);

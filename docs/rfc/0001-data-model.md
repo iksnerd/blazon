@@ -212,6 +212,7 @@ A new command, which also runs at the start of `blazon build`:
 | `asset-rule-violation` | error | An asset breaks the rules of its category. |
 | `asset-sidecar-invalid` | error | An asset sidecar is not valid JSON or holds a field blazon does not know. |
 | `asset-sidecar-orphan` | warning | A sidecar has no image of the same name beside it. |
+| `asset-unreadable` | error | An asset file cannot be read, so it is left out of the book. |
 | `blazon-pin-invalid` | error | blazon.lock is not a valid pin. |
 | `blazon-pin-mismatch` | error | The blazon build in use is not the commit blazon.lock names. |
 | `circular-alias` | error | Aliases lead back to the token that started them. |
@@ -246,6 +247,8 @@ A new command, which also runs at the start of `blazon build`:
 | `needs-review` | warning | A token or asset is marked needs-review. |
 | `needs-review-in-use` | warning | A page shows assets that are still marked needs-review. |
 | `output-dirs-overlap` | error | An output folder is or holds an input, or is inside one. |
+| `page-duplicate-slug` | error | Two pages have the same slug, so the book opens only the first. |
+| `page-unreadable` | error | A page file cannot be read, so it is left out of the book. |
 | `plugin-failed` | error | A check plugin could not run or broke the plugin protocol. |
 | `plugin-lock-invalid` | error | The plugin lock file is not valid. |
 | `print-cmyk-invalid` | error | The print cmyk value is not four numbers from 0 to 100. |

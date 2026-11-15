@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import type { Finding } from '../../../src/types/index.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { scanAssets } from '../../../src/core/assets/scanner.js';
@@ -49,6 +50,28 @@ describe('Assets Scanner', () => {
     expect(icon.name).toBe('check');
     expect(icon.viewBox).toBe('0 0 24 24');
     expect(icon.svg!.includes('<path')).toBe(true);
+  });
+});
+
+describe('a file that cannot be read', () => {
+  it('is a finding, not a line on the console, and the other assets still load', () => {
+    const dir = tempDir('blazon-unreadable-');
+    fs.mkdirSync(path.join(dir, 'logos'));
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1z"/></svg>';
+    fs.writeFileSync(path.join(dir, 'logos/a.svg'), svg);
+    fs.writeFileSync(path.join(dir, 'logos/b.svg'), svg);
+    fs.chmodSync(path.join(dir, 'logos/b.svg'), 0o000);
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const problems: Finding[] = [];
+    try {
+      const catalog = scanAssets(dir, { problems });
+      expect(spy).not.toHaveBeenCalled();
+      expect(catalog.all.map((a) => a.id)).toEqual(['logos/a']);
+      expect(problems).toMatchObject([{ code: 'asset-unreadable', severity: 'error', path: 'logos/b.svg' }]);
+    } finally {
+      spy.mockRestore();
+      fs.chmodSync(path.join(dir, 'logos/b.svg'), 0o644);
+    }
   });
 });
 

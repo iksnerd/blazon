@@ -12,6 +12,8 @@ import { getTemplateDir } from '../../../src/core/starter.js';
 export interface Setup {
   /** Files at project-relative paths: objects are written as JSON, text as it is. */
   files?: Record<string, unknown>;
+  /** Files (project-relative) made unreadable after they are written. */
+  unreadable?: string[];
   /** Config keys over the defaults. */
   config?: Record<string, unknown>;
   /** The blazon that is running, for the pin; a clean build of commit `a` x 40 when absent. */
@@ -86,6 +88,10 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
   'asset-sidecar-invalid': {
     fail: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { bogus: 1 } } },
     near: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { order: 1 } } },
+  },
+  'asset-unreadable': {
+    fail: { files: { ...tokens(), ...logoAsset }, unreadable: ['assets/logos/mark.svg'] },
+    near: { files: { ...tokens(), ...logoAsset } },
   },
   'asset-sidecar-orphan': {
     fail: { files: { ...tokens(), 'assets/logos/ghost.json': { order: 1 } } },
@@ -267,6 +273,15 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
   'resolver-invalid': {
     fail: { files: tokens(), config: { resolver: 'missing.resolver.json' } },
     near: { files: resolver, config: { resolver: 'blazon.resolver.json' } },
+  },
+  'page-duplicate-slug': {
+    fail: { files: { ...tokens(), 'docs/01-colors.md': doc('One'), 'docs/colors.md': doc('Two') } },
+    near: { files: { ...tokens(), 'docs/01-colors.md': doc('One'), 'docs/02-type.md': doc('Two') } },
+  },
+  'page-unreadable': {
+    // a folder named like a page cannot be read as one
+    fail: { files: { ...tokens(), 'docs/a.md/inside.txt': 'x' } },
+    near: { files: { ...tokens(), 'docs/a.md': doc('Text') } },
   },
   'section-invalid': {
     fail: { files: { ...tokens(), 'docs/a.md': doc('Text', 'section: nope\n') } },

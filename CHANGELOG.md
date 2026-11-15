@@ -99,6 +99,9 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- Two pages with one slug (`01-colors.md` and `colors.md`) are a `page-duplicate-slug` error naming both files; the book opened only the first, silently.
+- A page or an asset that cannot be read is a `page-unreadable` or `asset-unreadable` error; it used to be written to the console, dropped, and `blazon check` passed (and `--json` output was polluted).
+- A page's title is no longer taken from a `# comment` inside a code fence, and a bare `#` no longer reaches across a line break to the next line.
 - `approval-stale` no longer fires for a token whose alias does not resolve or loops, and so no longer tells you to record the fingerprint of the broken `{...}` text; one unreadable token file used to bring one for every approved alias into it.
 - `duplicate-value` compares tokens that sit at the root of a file as siblings; it cut the last letter off their names, so `ab` and `ac` were compared and `ab` and `cd` were not.
 - `tokens-not-shown` no longer notes a page that places tokens with `cards`, `strokes`, `spots`, `logo-on`, `formats` or `patterns`; the exempt directives now come from the directive table.

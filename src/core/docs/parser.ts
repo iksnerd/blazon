@@ -3,6 +3,7 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import { marked } from 'marked';
 import { STANDARD_SECTION_IDS, type DocItem, type DocFrontmatter, type Finding, type SectionId } from '../../types/index.js';
+import { withoutFences } from './directives.js';
 import { pageSections } from './sections.js';
 import { finding } from '../checker/catalogue.js';
 import { compareText } from '../order.js';
@@ -58,7 +59,7 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
       }
       let title = meta.title;
       if (!title) {
-        const h1Match = parsed.content.match(/^#\s+(.+)$/m);
+        const h1Match = withoutFences(parsed.content).match(/^#[ \t]+(.+)$/m);
         if (h1Match && h1Match[1]) {
           title = h1Match[1].trim();
         } else {
@@ -83,8 +84,24 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
         html,
       });
     } catch (err) {
-      console.error(`[blazon] Failed to parse markdown doc: ${file}`, err);
+      // The reason is the error's code (EISDIR, EACCES) when it has one: its message holds the absolute path, which differs by machine
+      const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
+      const reason = code ?? (err instanceof Error ? err.message.split('\n')[0]! : String(err));
+      problems.push(finding('page-unreadable', { path: file, message: `Cannot read this page (${reason}); it is left out of the book` }));
     }
+  }
+
+  const first = new Map<string, string>();
+  for (const doc of docs) {
+    const earlier = first.get(doc.slug);
+    if (earlier === undefined) first.set(doc.slug, doc.filePath);
+    else
+      problems.push(
+        finding('page-duplicate-slug', {
+          path: doc.filePath,
+          message: `${earlier} and ${doc.filePath} both have the slug "${doc.slug}"; the book opens only ${earlier}. Rename one of them`,
+        }),
+      );
   }
 
   // Sort by order asc, then title asc

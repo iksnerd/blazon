@@ -141,7 +141,11 @@ export function scanAssets(assetsDir: string, options: ScanOptions = {}): AssetC
           const asset = readAsset(root, fullPath, category ?? key ?? TOP_LEVEL_CATEGORY, key, options);
           if (asset) add(asset, fullPath, key ? `${sourcePrefix}${path.relative(root, fullPath).split(path.sep).join('/')}` : asset.filePath);
         } catch (err) {
-          console.error(`[blazon] Failed to read asset: ${fullPath}`, err);
+          // The code (EACCES) rather than the message, which holds an absolute path that differs by machine
+          const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
+          const reason = code ?? (err instanceof Error ? err.message.split('\n')[0]! : String(err));
+          const shown = key ? `${sourcePrefix}${path.relative(root, fullPath).split(path.sep).join('/')}` : virtualPath(root, fullPath, key);
+          options.problems?.push(finding('asset-unreadable', { path: shown, message: `Cannot read this file (${reason}); it is left out of the book` }));
         }
       }
     }

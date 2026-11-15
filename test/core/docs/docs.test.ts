@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseDocs } from '../../../src/core/docs/parser.js';
@@ -75,6 +75,52 @@ describe('parseDocs: a front matter title that is not a string', () => {
 
     expect(docs.map((d) => d.title)).toEqual(['Fine']);
     expect(problems.map((p) => `${p.path}:${p.code}:${p.severity}`)).toEqual(['01-a.md:invalid-frontmatter:error']);
+  });
+});
+
+describe('parseDocs: slugs, titles and unreadable pages', () => {
+  const write = (files: Record<string, string>) => {
+    const dir = tempDir();
+    for (const [name, text] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
+      fs.writeFileSync(path.join(dir, name), text);
+    }
+    return dir;
+  };
+
+  it('reports two pages with one slug, naming both files', () => {
+    const problems: Finding[] = [];
+    const docs = parseDocs(write({ '01-colors.md': '# One\n', 'colors.md': '# Two\n' }), problems);
+    expect(docs).toHaveLength(2);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatchObject({ code: 'page-duplicate-slug', severity: 'error', path: 'colors.md' });
+    expect(problems[0]!.message).toContain('01-colors.md');
+    expect(problems[0]!.message).toContain('colors.md');
+  });
+
+  it('does not take a heading inside a code fence for the title', () => {
+    const [doc] = parseDocs(write({ 'install.md': 'Intro\n\n```bash\n# install\nnpm i\n```\n\n~~~\n# also code\n~~~\n\n# Real title\n' }));
+    expect(doc!.title).toBe('Real title');
+    const [bare] = parseDocs(write({ 'setup-guide.md': '```sh\n# install\n```\n' }));
+    expect(bare!.title).toBe('Setup Guide');
+  });
+
+  it('does not let a lone # reach over a line break to the next line for the title', () => {
+    const [doc] = parseDocs(write({ 'plain-name.md': '#\nNot a title\n' }));
+    expect(doc!.title).toBe('Plain Name');
+  });
+
+  it('reports a page that cannot be read as a finding, and writes nothing to the console', () => {
+    const dir = write({ 'ok.md': '# Fine\n' });
+    fs.mkdirSync(path.join(dir, 'folder.md'));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const problems: Finding[] = [];
+    const docs = parseDocs(dir, problems);
+    const calls = spy.mock.calls.length;
+    spy.mockRestore();
+    expect(calls).toBe(0);
+    expect(docs.map((d) => d.slug)).toEqual(['ok']);
+    expect(problems).toMatchObject([{ code: 'page-unreadable', severity: 'error', path: 'folder.md' }]);
   });
 });
 
