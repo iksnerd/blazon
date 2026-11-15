@@ -25,12 +25,16 @@ A shipped plugin's options and findings follow the same rule, but the test below
 
 A test in the repository (`test/surface/`) records the stable surfaces as one list: the commands and flags, the config keys and the keys inside them, the fields of the token, sidecar and page formats, the finding codes and the severity of each, the keys and constants of `brand.json`, the plugin protocol's profile, the output file names and the shipped plugins. It fails when any of them changes, until the record is updated on purpose.
 
+## Planned before 1.0
+
+One change is planned that touches stable surfaces, and it is made before 1.0 so that it needs no alias. The Tailwind files (`tailwind.css`, `tailwind-reset.css`) and the shadcn mapping (`theme.shadcn` in `brand.json`, the `shadcn` config key and the `blazon brand --key theme.shadcn` command) are built into the core today. They are to become two shipped `build` plugins, and the core will then know no framework by name. That would move these files into the plugins' output folders, raise the `build` request to version 2 and `brand.json` to version 2, and remove the old key and command. It is proposed, not built, and blazon stays 0.x until it is decided and made.
+
 ## How a breaking change is made
 
 - While blazon is 0.x, a change that breaks a stable surface raises the minor version, and the CHANGELOG lists it under "Breaking" with what to do about it.
 - A config key, a command or a finding code is not removed outright. It stays for one minor as an alias, and using it gives a warning that names its replacement.
 - That alias mechanism is not built. Nothing in `src/` reads an old name and warns, and no key, command or code has been renamed since there was something to keep. It is built with the first rename after a release.
-- The one exception is the rename from folio to blazon (the command, the package, the config and lock files, the `.blazon` folder, the `BLAZON_` environment variables and the `dev.blazon` extension key). It was made before the first release, with no alias, because nothing had been published under the old name and nobody depended on it. The CHANGELOG lists it under "Breaking".
+- The exceptions are changes made before the first release, with no alias, because nothing had been published and nobody depended on the old form: the rename from folio to blazon (the command, the package, the config and lock files, the `.blazon` folder, the `BLAZON_` environment variables and the `dev.blazon` extension key), the move of the config to plain JSON in `blazon.json`, and the one naming rule for finding codes, which renamed 42 of them. The CHANGELOG lists each.
 - Adding a key, a command, a field or a finding code is not a breaking change. A tool that reads `--json` treats a code it does not know as a finding, not as an error.
 
 These names are kept: the package `@iksnerd/blazon` and the `blazon` command, the `dev.blazon` extension key, and the files `blazon.json`, `blazon.lock`, `blazon.plugins.lock` and `blazon.resolver.json`.
