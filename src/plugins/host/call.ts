@@ -12,7 +12,11 @@ import { shippedLaunch, shippedTrouble, type Shipped } from '../pins/shipped.js'
 // plugin: a program that cannot start, a timeout, an undefined exit code or too much output is a Result with
 // `breakReason` set, which the host reports as an outcome (section 5).
 
-/** How long to wait for the output pipes after the process group has been killed. */
+/**
+ * How long to wait after the process group has been killed for the output pipes, and how long a plugin that ran out of
+ * time has to stop on SIGTERM before it is killed: a plugin that started a browser, say, runs its exit handler (which
+ * closes the browser, in a group of its own) only when it is asked to stop, and never when it is killed.
+ */
 const KILL_GRACE_MS = 2000;
 
 /** One start of a plugin's program: for a manifest, a validation or a request. */
@@ -90,10 +94,10 @@ export function requestFile(data: Uint8Array): { path: string; cleanup: () => vo
   return { path: file, cleanup };
 }
 
-/** SIGKILL every process in the group. A group with no members left is the normal case on the second kill. */
-function killGroup(pgid: number): void {
+/** Signal every process in the group. A group with no members left is the normal case on the second kill. */
+function killGroup(pgid: number, signal: NodeJS.Signals = 'SIGKILL'): void {
   try {
-    process.kill(-pgid, 'SIGKILL');
+    process.kill(-pgid, signal);
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code !== 'ESRCH' && code !== 'EPERM') throw err;
@@ -191,9 +195,8 @@ function start(call: Call, program: string, directory: string | undefined, reque
     fs.closeSync(stdin);
 
     const out: Buffer[] = [];
-    const err: Buffer[] = [];
+    let err = Buffer.alloc(0);
     let keptOut = 0;
-    let keptErr = 0;
     let timedOut = false;
     let over = false;
     let pipesHeld = false;
@@ -202,10 +205,20 @@ function start(call: Call, program: string, directory: string | undefined, reque
     // eslint-disable-next-line prefer-const -- finish() below reads it, so it is declared first and set where the child starts
     let timer: NodeJS.Timeout | undefined;
     let grace: NodeJS.Timeout | undefined;
+    let hardKill: NodeJS.Timeout | undefined;
+    let asked = false;
 
     // A child that failed to start has no pid, and no group to kill
     const kill = () => {
       if (child.pid !== undefined) killGroup(child.pid);
+    };
+
+    // A call that ran out of time or wrote too much is asked to stop (SIGTERM to the group), and killed when the grace is over
+    const stop = () => {
+      if (child.pid === undefined || asked) return;
+      asked = true;
+      killGroup(child.pid, 'SIGTERM');
+      hardKill = setTimeout(kill, KILL_GRACE_MS);
     };
 
     const finish = (result?: Result) => {
@@ -213,9 +226,13 @@ function start(call: Call, program: string, directory: string | undefined, reque
       done = true;
       clearTimeout(timer);
       clearTimeout(grace);
+      if (hardKill) {
+        clearTimeout(hardKill);
+        kill(); // whatever the plugin left running after it was asked to stop
+      }
       if (result) return resolve(result);
       const stdout = Buffer.concat(out);
-      const stderr = Buffer.concat(err);
+      const stderr = err;
       if (timedOut) return resolve(broke(`timed out after ${timeout}s`, 'timeout', stdout, stderr));
       if (over) return resolve(broke(`output over the limit of ${limit} bytes`, 'output', stdout, stderr));
       if (pipesHeld) return resolve(broke('the call did not finish cleanly: an output pipe stayed open', 'pipe', stdout, stderr));
@@ -231,28 +248,27 @@ function start(call: Call, program: string, directory: string | undefined, reque
       if (chunk.length > room) {
         out.push(chunk.subarray(0, room));
         over = true;
-        kill(); // stop a plugin that writes forever; do not buffer it
+        stop(); // stop a plugin that writes forever; do not buffer it
         return;
       }
       out.push(chunk);
       keptOut += chunk.length;
     });
     child.stderr!.on('data', (chunk: Buffer) => {
-      if (keptErr >= keep) return;
-      const part = chunk.subarray(0, keep - keptErr);
-      err.push(part);
-      keptErr += part.length;
+      // The last `keep` bytes: the end of a trace is what says why a plugin broke
+      err = Buffer.concat([err, chunk]);
+      if (err.length > keep) err = Buffer.from(err.subarray(err.length - keep));
     });
 
     timer = setTimeout(() => {
       timedOut = true;
-      kill();
+      stop();
     }, timeout * 1000);
 
     child.on('exit', (code, signal) => {
       exited = { code, signal };
       clearTimeout(timer);
-      kill(); // again, for anything the plugin left running
+      if (!asked) kill(); // again, for anything the plugin left running; after SIGTERM, the grace decides
       grace = setTimeout(() => {
         pipesHeld = true;
         child.stdout!.destroy();

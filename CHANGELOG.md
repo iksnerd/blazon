@@ -99,6 +99,10 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- A plugin's standard error is kept from its end (the last 8 KB), not its start, so the "last lines of standard error" a failed plugin shows are the last lines it wrote, and a secret that crossed byte 8192 is no longer cut before it is scrubbed.
+- Scrubbing also removes a secret in lowercase percent-encoding, inside the base64 of a longer string (such as Basic auth, at any of the three alignments) and as a JSON string escape (`\uXXXX`, `\"`, Go's `<`).
+- A plugin that runs out of time, or prints too much, is sent SIGTERM and killed 2 seconds later instead of at once, so one that started Chrome can close it.
+- The manual no longer says `blazon plugin check --core` checks a plugin written for another host: the manifest is still read against blazon's roles, so a plugin that declares neither `check` nor `build` fails case 1.
 - Plugin output is scrubbed of secrets after its control and format characters are removed, not before, so a secret split by a zero-width character or an escape byte no longer reaches a finding, an exit 2 message or the stderr tail; a finding whose code the scrubber would change is refused as a malformed answer.
 - MCP truncation keeps the most findings that fit, not a power-of-two fraction of them (120 that fit used to come back as 62), counts the `warnings` it adds in that fit, and keeps `counts` and `passed` when it falls back to cutting the text. The fallback cuts on code points, not inside a surrogate pair.
 - A plugin's finding message stays within 1000 characters with its ` (instance X)` suffix counted.
