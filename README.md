@@ -10,9 +10,11 @@ Design tokens, guidelines and brand assets in one repo, compiled into CSS, TypeS
 
 Brand guidelines usually live in a PDF or a slide deck, and the values developers need are copied out of it by hand. Blazon keeps them in the repo as [DTCG](https://www.designtokens.org/TR/2025.10/format/) (Design Tokens Community Group) token files and Markdown. One build writes the CSS variables, a typed TypeScript module and a static brand book, and `blazon check` fails the build when a token breaks the brand's own rules. It reads the same DTCG files as Style Dictionary and Tokens Studio, and adds the rules, the checks and the book.
 
-> **Status: pre-release (0.1.0).** Not published to npm. The package is named `@iksnerd/blazon`, because the npm package named `blazon` is an unrelated project, so `npx blazon` will not run this tool. The name can still change before the first publish.
+> **Status: pre-release (0.1.0).** Not published to npm yet. The package is named `@iksnerd/blazon`. The npm package named `blazon` is an unrelated project (a type checker), so `npx blazon` does not run this tool and must not be used to try it.
+>
+> Once published, run it with `npx @iksnerd/blazon`, or install it in a project and run `npx --no-install blazon` or `./node_modules/.bin/blazon`. The name can still change before the first publish.
 
-Jump to: [Quick start](#quick-start), [Set up with your agent](#set-up-with-your-agent), [Use blazon from your agent (MCP)](#use-blazon-from-your-agent-mcp), [When not to use blazon](#when-not-to-use-blazon), [How it works](#how-it-works), [Plugins](#plugins), [Commands](#commands), [Configuration](#configuration), [Documentation](#documentation), [Contributing](#contributing).
+Jump to: [Quick start](#quick-start), [Set up with your agent](#set-up-with-your-agent), [Use blazon from your agent (MCP)](#use-blazon-from-your-agent-mcp), [When not to use blazon](#when-not-to-use-blazon), [How it works](#how-it-works), [Plugins](#plugins), [Commands](#commands), [Configuration](#configuration), [Versioning and stability](#versioning-and-stability), [Security](#security), [Documentation](#documentation), [Contributing](#contributing).
 
 ## Quick start
 
@@ -214,6 +216,14 @@ Every option and the theme roles are in [Theme and configuration](docs/manual/07
 - [`examples/conformance/`](examples/conformance/): a small fictional brand for the parts of the data model the starter does not reach: review approvals, font metadata, a logo initiative and an experimental asset category. It is the conformance fixture for the tests.
 
 Brand books made from other companies' guidelines are not shipped in this repository, because their art and text belong to those companies. A maintainer can keep them locally; see [CONTRIBUTING](CONTRIBUTING.md#reference-material-maintainers-only).
+
+## Versioning and stability
+
+While blazon is 0.x, a breaking change to a stable surface raises the minor version and is listed under "Breaking" in the [CHANGELOG](CHANGELOG.md). [Chapter 18](docs/manual/18-stability.md) says which surfaces are stable, what each kind of release may contain, and what 1.0 will require (a plan, not yet met).
+
+## Security
+
+To report a vulnerability, read [SECURITY.md](SECURITY.md). Do not open a public issue.
 
 ## Documentation
 

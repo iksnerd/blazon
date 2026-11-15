@@ -2,7 +2,7 @@
 
 ← [Manual index](index.md)
 
-Blazon is pre-release (0.x) and not published. A brand pins the blazon commit it builds with (`blazon pin` writes `blazon.lock`, and `check`, `tokens` and `build` refuse any other blazon), so a change in blazon reaches a brand only when its owner moves the pin. This chapter says what a brand can rely on when it does, how changes are made, and how to move a pin.
+Blazon is pre-release (0.x). Not published yet: no version is on npm, and the version numbers below describe how releases will be numbered. A brand pins the blazon commit it builds with (`blazon pin` writes `blazon.lock`, and `check`, `tokens` and `build` refuse any other blazon), so a change in blazon reaches a brand only when its owner moves the pin. This chapter says what a brand can rely on when it does, how changes are made, and how to move a pin.
 
 ## What is stable
 
@@ -29,10 +29,55 @@ A test in the repository (`test/surface/`) records the stable surfaces as one li
 ## How a breaking change is made
 
 - While blazon is 0.x, a change that breaks a stable surface raises the minor version, and the CHANGELOG lists it under "Breaking" with what to do about it.
-- A config key, a command or a finding code is not removed outright. It stays for one minor as an alias, and using it gives a warning that names its replacement. No key has been renamed yet, so this warning does not exist; it is built with the first rename.
+- A config key, a command or a finding code is not removed outright. It stays for one minor as an alias, and using it gives a warning that names its replacement.
+- That alias mechanism is not built. Nothing in `src/` reads an old name and warns, and no key, command or code has been renamed since there was something to keep. It is built with the first rename after a release.
+- The one exception is the rename from folio to blazon (the command, the package, the config and lock files, the `.blazon` folder, the `BLAZON_` environment variables and the `dev.blazon` extension key). It was made before the first release, with no alias, because nothing had been published under the old name and nobody depended on it. The CHANGELOG lists it under "Breaking".
 - Adding a key, a command, a field or a finding code is not a breaking change. A tool that reads `--json` treats a code it does not know as a finding, not as an error.
 
 These names are kept: the package `@iksnerd/blazon` and the `blazon` command, the `dev.blazon` extension key, and the files `blazon.config.ts`, `blazon.lock`, `blazon.plugins.lock` and `blazon.resolver.json`.
+
+## The deprecation window
+
+A name that is to go stays as an alias for one minor release. The release that renames it is minor N, the alias works in N and warns, and minor N+1 may remove it. No length in months is promised: blazon has no release schedule, and a pin means a brand decides when to move. This is the plan; the alias and its warning are not built (see above).
+
+## What a release may contain
+
+While blazon is 0.x, the middle number carries the weight that the first number carries after 1.0.
+
+| Release | May contain | May not contain |
+|---|---|---|
+| Patch (0.x.Y) | Fixes to wrong output or a wrong finding, and corrections to the manual | A new command, key or finding code, and any change to a stable surface |
+| Minor (0.X.0) | Everything a patch may, plus new commands, flags, config keys and finding codes, and a breaking change to a stable surface, listed under "Breaking" | A removal with no alias, once the alias mechanism exists |
+| Major (1.0.0 and later) | The same as a minor, and the removal of an alias that has had its minor | Not decided yet: see the plan below |
+
+A fix can still change a brand's output: a check that was wrong now reports, or stops reporting, a finding. Such a fix is listed under "Fixed", and moving a pin with `scripts/pin-compare.ts` shows it.
+
+Unstable surfaces (the brand book, the programmatic API, the TypeScript config types) can change in any release, and a change to one is not listed as "Breaking".
+
+## Reading the CHANGELOG
+
+Each release in `CHANGELOG.md` at the repository root has up to four lists. Until the first release, one heading, "Unreleased", holds everything since the project began.
+
+| Heading | What is in it | What to do |
+|---|---|---|
+| Breaking | A change to a stable surface that can make a brand that built before fail, or build differently. Each entry says what to do | Read it first when moving a pin |
+| Added | A new command, flag, key, field or finding code. A brand does not need to change | Read it to see what is new |
+| Changed | A change that is not breaking: wording, defaults for new projects, the unstable surfaces | Skim |
+| Fixed | A bug fix, including a check that was wrong | Skim; it can change a finding |
+
+## What 1.0 will mean
+
+This is the plan. None of it is a promise yet, and the table says what is met today.
+
+| Criterion | How a reader checks it | Met today |
+|---|---|---|
+| Each stable surface above is recorded by a test | `test/surface/public-surface.json` and its test list every stable surface | Partly: shipped plugin options and findings are not recorded |
+| No open "Breaking" items | The newest CHANGELOG release has no entry under "Breaking" that is a known mistake still to fix | No: the CHANGELOG still has a pre-release "Breaking" list |
+| The alias mechanism is built | An old config key, command or finding code works and warns with the new name | No |
+| The deprecation window is stated | This chapter gives the length | In minors, yes; in months, no |
+| Published | A version of `@iksnerd/blazon` is on npm and `npx @iksnerd/blazon` runs it | No |
+
+At 1.0 a breaking change to a stable surface would need a major version, and the one-minor alias would apply to every rename. Until all five rows are met, blazon stays 0.x.
 
 ## Moving a pin
 
@@ -53,4 +98,4 @@ Blazon runs on macOS and Linux. The plugin host starts programs the POSIX way, s
 
 ## What is not promised
 
-Only the latest commit on `main` gets fixes ([SECURITY.md](../../SECURITY.md)). Nothing is published to a registry, so there is no version to install, and no other company is asked to depend on blazon yet.
+Only the latest commit on `main` gets fixes until there is a release, and the latest minor after ([SECURITY.md](../../SECURITY.md)). No other company is asked to depend on blazon yet. Windows, an older Node than `engines` asks for, and the unstable surfaces above are not promised.
