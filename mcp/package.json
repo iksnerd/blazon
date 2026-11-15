@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "@types/node": "24.19.2",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "description": "MCP server that answers a coding agent's questions about a blazon brand by running the blazon CLI",
   "license": "MIT",
