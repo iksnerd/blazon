@@ -102,7 +102,7 @@ describe('check on a family that nothing loads', () => {
       [INTER],
     );
 
-    expect(data.findings.filter((f) => f.code === 'font-not-loaded')).toEqual([
+    expect(data.findings.filter((f) => f.code === 'font-family-missing')).toEqual([
       expect.objectContaining({ severity: 'warning', path: 'font.brand', message: expect.stringContaining('{"family": "Mulish", "file": path}') }),
     ]);
   });
@@ -116,7 +116,7 @@ describe('check on a family that nothing loads', () => {
     expect(codes(google.findings)).toEqual([]);
 
     const other = await compile({}, [INTER]);
-    expect(codes(other.findings)).toEqual(['font-not-loaded']);
+    expect(codes(other.findings)).toEqual(['font-family-missing']);
 
     const selfHosted = await compile({}, ['https://brand.example/fonts.css']);
     expect(codes(selfHosted.findings)).toEqual([]);

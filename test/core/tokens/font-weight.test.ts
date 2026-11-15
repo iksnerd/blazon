@@ -3,7 +3,7 @@ import { compileTokens } from '../../support/helpers.js';
 
 const problems = async (value: unknown) => {
   const data = await compileTokens({ 'a.json': { w: { $type: 'fontWeight', x: { $value: value } } } });
-  return data.tokens.problems.filter((p) => p.code === 'invalid-value');
+  return data.tokens.problems.filter((p) => p.code === 'token-value-invalid');
 };
 
 describe('a font weight', () => {

@@ -5,9 +5,9 @@ import { checkTokens } from '../../../src/core/checker/index.js';
 import { EXAMPLES, exampleProject, hasExample } from '../../support/examples.js';
 import { compileTokens, writeProject } from '../../support/helpers.js';
 
-const collisions = (findings: { code: string; path: string; message: string; context?: string }[]) => findings.filter((f) => f.code === 'css-variable-collision');
+const collisions = (findings: { code: string; path: string; message: string; context?: string }[]) => findings.filter((f) => f.code === 'css-variable-duplicate');
 
-describe('css-variable-collision', () => {
+describe('css-variable-duplicate', () => {
   it('reports the later token when foo-bar and foo.bar write one variable', async () => {
     const data = await compileTokens({
       'a.json': { size: { $type: 'dimension', 'foo-bar': { $value: '4px' }, foo: { bar: { $value: '8px' } } } },
@@ -16,7 +16,7 @@ describe('css-variable-collision', () => {
 
     expect(collisions(result.errors)).toEqual([
       {
-        code: 'css-variable-collision',
+        code: 'css-variable-duplicate',
         severity: 'error',
         path: 'size.foo.bar',
         message: 'size.foo.bar and size.foo-bar both write the CSS variable --size-foo-bar; rename one',

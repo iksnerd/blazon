@@ -138,15 +138,15 @@ describe('custom usage roles', () => {
       }),
     });
   const codes = async (root: string, config: Record<string, unknown> = {}) =>
-    (await compile(root, config)).findings.filter((f) => f.code === 'unknown-role' || f.code === 'usage-violation').map((f) => f.code);
+    (await compile(root, config)).findings.filter((f) => f.code === 'usage-role-unknown' || f.code === 'usage-violated').map((f) => f.code);
 
   it('are accepted where a standard one is, and are compared like one', async () => {
-    expect(await codes(tokens('chart'), { vocabulary: { usageRoles: ['chart'] } })).toEqual(['usage-violation']);
+    expect(await codes(tokens('chart'), { vocabulary: { usageRoles: ['chart'] } })).toEqual(['usage-violated']);
     expect(await codes(tokens('text'), { vocabulary: { usageRoles: ['chart'] } })).toEqual([]);
   });
 
   it('are an error when not declared, and the message lists what is valid', async () => {
-    const found = (await compile(tokens('chart'))).findings.filter((f) => f.code === 'unknown-role');
+    const found = (await compile(tokens('chart'))).findings.filter((f) => f.code === 'usage-role-unknown');
     expect(found.length).toBeGreaterThan(0);
     expect(found[0]!.message).toBe('"chart" is not a usage role (text, background, border, icon, illustration, accent, interactive)');
   });
@@ -159,7 +159,7 @@ describe('custom usage roles', () => {
           series: { line: { $type: 'color', $value: '{color.ink}', $extensions: { 'dev.blazon': { role: 'text' } } } },
         }),
       });
-      const found = (await compile(root)).findings.filter((f) => f.code === 'unknown-role');
+      const found = (await compile(root)).findings.filter((f) => f.code === 'usage-role-unknown');
       expect(found.map((f) => f.message)).toEqual([`usage.${key} must be a list of usage roles`]);
     }
   });

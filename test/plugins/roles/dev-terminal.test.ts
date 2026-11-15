@@ -40,8 +40,8 @@ describe('blazon dev, in its terminal', () => {
     const colors = path.join(root, 'tokens/colors.json');
     const good = fs.readFileSync(colors, 'utf-8');
     fs.writeFileSync(colors, '{ bad json');
-    await until(() => said.some((line) => line.includes('[invalid-json]')), 'the broken file to be said');
-    const line = said.find((l) => l.includes('[invalid-json]'))!;
+    await until(() => said.some((line) => line.includes('[token-file-invalid]')), 'the broken file to be said');
+    const line = said.find((l) => l.includes('[token-file-invalid]'))!;
     expect(line).toContain('tokens/colors.json');
     expect(line).toContain('Fix the JSON syntax');
 

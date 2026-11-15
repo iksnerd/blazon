@@ -43,7 +43,7 @@ describe('blazon check --json', () => {
     expect(ran.stdout.trimStart()[0]).toBe('{');
     const report = JSON.parse(ran.stdout);
     expect(report).toMatchObject({ command: 'check', passed: true, strict: false, counts: { errors: 0 } });
-    expect(report.counts.warnings).toBe(2); // the starter's two logos are still blazon's own (starter-logo)
+    expect(report.counts.warnings).toBe(2); // the starter's two logos are still blazon's own (starter-logo-unchanged)
     expect(report.counts.info).toBeGreaterThan(0);
     expect(report.findings.length).toBe(report.counts.errors + report.counts.warnings + report.counts.info);
     expect(report.findings[0]).toEqual(
@@ -59,21 +59,23 @@ describe('blazon check --json', () => {
     const report = JSON.parse(ran.stdout);
     expect(report.passed).toBe(false);
     expect(report.counts.errors).toBeGreaterThan(0);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'invalid-value', severity: 'error', message: expect.stringContaining('"notacolor" is not a color') }));
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({ code: 'token-value-invalid', severity: 'error', message: expect.stringContaining('"notacolor" is not a color') }),
+    );
   });
 
   it('gives each finding the fix of its code, an error and a note alike', async () => {
     const report = JSON.parse(blazon('check', await brokenProject(), '--json').stdout);
-    const invalid = report.findings.find((f: { code: string }) => f.code === 'invalid-value');
+    const invalid = report.findings.find((f: { code: string }) => f.code === 'token-value-invalid');
     expect(invalid.fix).toBe("Change the value so it fits the token's $type; the message says how.");
-    expect(report.findings.find((f: { code: string }) => f.code === 'starter-file').fix).toBe("Replace the file's text with the brand's own, or delete it.");
+    expect(report.findings.find((f: { code: string }) => f.code === 'starter-file-unchanged').fix).toBe("Replace the file's text with the brand's own, or delete it.");
   });
 
   it('names the token file, with its folder, when its JSON is broken', async () => {
     const root = await starterProject();
     fs.writeFileSync(path.join(root, 'tokens/colors.json'), '{ "color": ');
     const report = JSON.parse(blazon('check', root, '--json').stdout);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'invalid-json', path: 'tokens/colors.json', fix: expect.stringContaining('JSON syntax') }));
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'token-file-invalid', path: 'tokens/colors.json', fix: expect.stringContaining('JSON syntax') }));
   });
 
   it('fails on warnings with --strict, and says it did', async () => {
@@ -137,7 +139,7 @@ describe('blazon check --json', () => {
 
   it('names the file a token finding is about', async () => {
     const report = JSON.parse(blazon('check', await brokenProject(), '--json').stdout);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'invalid-value', file: 'tokens/colors.json' }));
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'token-value-invalid', file: 'tokens/colors.json' }));
   });
 });
 
@@ -145,7 +147,7 @@ describe('blazon check, when it fails', () => {
   it('ends with the next step for each kind of error, then to run the check again', async () => {
     const ran = blazon('check', await brokenProject());
     expect(ran.status).toBe(1);
-    expect(ran.stdout).toMatch(/Next:\n\s+1\. invalid-value: Change the value so it fits the token's \$type; the message says how\.\n\s+2\. Run blazon check \S+ again/);
+    expect(ran.stdout).toMatch(/Next:\n\s+1\. token-value-invalid: Change the value so it fits the token's \$type; the message says how\.\n\s+2\. Run blazon check \S+ again/);
   });
 
   it('prints one Next block, the one for the errors, and not the starter one', async () => {
@@ -159,7 +161,7 @@ describe('blazon check, when it fails', () => {
     const file = path.join(root, 'tokens/colors.json');
     fs.writeFileSync(file, fs.readFileSync(file, 'utf-8').slice(0, 120));
     const report = JSON.parse(blazon('check', root, '--json').stdout);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'invalid-json', message: expect.stringContaining('the file ends early') }));
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'token-file-invalid', message: expect.stringContaining('the file ends early') }));
   });
 
   it('prints no next step when it passes with warnings only', async () => {
@@ -185,7 +187,7 @@ describe('blazon build --json', () => {
     expect(ran.status, ran.stdout + ran.stderr).toBe(1);
     const report = JSON.parse(ran.stdout);
     expect(report).toMatchObject({ command: 'build', passed: false });
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'invalid-value', severity: 'error' }));
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'token-value-invalid', severity: 'error' }));
     expect(fs.existsSync(path.join(root, 'dist/site'))).toBe(false);
   }, 120_000);
 });
@@ -196,19 +198,19 @@ describe('blazon check --json, the line of a finding', () => {
     const lines = ['{', '  "color": {', '    "brand": { "$type": "color", "$value": "notacolor" }', '  }', '}'];
     fs.writeFileSync(path.join(root, 'tokens/colors.json'), lines.join('\r\n'));
     const report = JSON.parse(blazon('check', root, '--json').stdout);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'invalid-value', path: 'color.brand', file: 'tokens/colors.json', line: 3 }));
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'token-value-invalid', path: 'color.brand', file: 'tokens/colors.json', line: 3 }));
   });
 
-  it('gives an invalid-json finding the line the parser stopped on', async () => {
+  it('gives a token-file-invalid finding the line the parser stopped on', async () => {
     const root = await starterProject();
     fs.writeFileSync(path.join(root, 'tokens/colors.json'), '{\n  "a": 1\n  "b": 2\n}');
     const report = JSON.parse(blazon('check', root, '--json').stdout);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'invalid-json', path: 'tokens/colors.json', line: 3 }));
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'token-file-invalid', path: 'tokens/colors.json', line: 3 }));
   });
 
   it('leaves line out when the finding is not about a token', async () => {
     const report = JSON.parse(blazon('check', await starterProject(), '--json').stdout);
-    const starter = report.findings.find((f: { code: string }) => f.code === 'starter-file');
+    const starter = report.findings.find((f: { code: string }) => f.code === 'starter-file-unchanged');
     expect(starter).not.toHaveProperty('line');
   });
 });

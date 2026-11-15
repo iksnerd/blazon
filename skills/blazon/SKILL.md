@@ -37,8 +37,8 @@ A denied `can_use` is a normal answer (`allowed: false`), not an error. When a r
 ## Where things live
 
 - Tokens are every `.json` file in `tokens/`; they merge into one tree, and the file name is not part of the path. A token is an object with `$value`. A bare value is an error.
-- `$type` comes from the token or the nearest group above it. Blazon never infers it. A token with none is `missing-type`; a value that does not fit its type is `invalid-value`. The types are in `docs/manual/02-tokens.md`.
-- An alias is the whole value, written `{color.ink.graphite}`. Text around an alias is `embedded-alias`.
+- `$type` comes from the token or the nearest group above it. Blazon never infers it. A token with none is `token-type-missing`; a value that does not fit its type is `token-value-invalid`. The types are in `docs/manual/02-tokens.md`.
+- An alias is the whole value, written `{color.ink.graphite}`. Text around an alias is `alias-embedded`.
 - Brand rules sit under `$extensions["dev.blazon"]` next to the value: `usage`, `pairs`, `role`, `tier`, `review`. They are not DTCG fields. Do not remove one to clear a finding.
 - `blazon.resolver.json` lists the token files that load and the themes. A new token file must be added to `sets` there or it is not read.
 - An asset in `assets/` has a sidecar with the same name (`mark.svg` and `mark.json`). See `docs/manual/06-assets-and-icons.md`.
@@ -53,7 +53,7 @@ A denied `can_use` is a normal answer (`allowed: false`), not an error. When a r
 
 `code` names the rule, `path` the token or asset, `file` and `line` where to edit, `fix` one sentence on what to do. A finding with no `fix` is a question for the person. An error stops `blazon tokens` and `blazon build`; a warning is printed and fails only with `--strict`; a note never fails. `docs/manual/03-checks.md` lists every code, and `docs/manual/10-troubleshooting.md` covers common failures. Do not guess a code's meaning.
 
-A `starter-file` note and a `starter-logo` warning mean the file is still blazon's own text. `needs-review` means a person has not approved the value. Flag a value you are unsure of by setting `review.status` to `needs-review`, with your question in `note`.
+A `starter-file-unchanged` note and a `starter-logo-unchanged` warning mean the file is still blazon's own text. `review-pending` means a person has not approved the value. Flag a value you are unsure of by setting `review.status` to `needs-review`, with your question in `note`.
 
 ## Add a token
 

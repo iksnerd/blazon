@@ -39,7 +39,7 @@ export function pageTokenFindings(docs: readonly DocItem[], items: readonly Toke
     if (named.size < NAMED_LIMIT) continue;
     const unshown = [...named.keys()];
     findings.push(
-      finding('tokens-not-shown', {
+      finding('page-tokens-unplaced', {
         path: doc.filePath,
         message: `${doc.filePath} names ${unshown.length} tokens in its text (${unshown.slice(0, 4).join(', ')}${unshown.length > 4 ? ', ...' : ''}) and places no token with <!-- blazon:tokens <path> -->, so a reader sees their values only as words`,
       }),

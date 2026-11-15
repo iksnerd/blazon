@@ -41,12 +41,12 @@ export class Resolver {
     const target = aliasTarget(value);
     if (target === undefined) {
       if (typeof value === 'string' && EMBEDDED_ALIAS.test(value)) {
-        this.report(owner, 'embedded-alias', `"${value}" mixes an alias with other text; DTCG aliases must be the whole value`);
+        this.report(owner, 'alias-embedded', `"${value}" mixes an alias with other text; DTCG aliases must be the whole value`);
       }
       return value;
     }
     if (!this.declared.has(target)) {
-      this.report(owner, 'unresolved-alias', `Alias {${target}} does not match any token`);
+      this.report(owner, 'alias-unresolved', `Alias {${target}} does not match any token`);
       return value;
     }
     if (this.resolving.has(target)) {
@@ -54,7 +54,7 @@ export class Resolver {
       const stack = [...this.resolving];
       const loop = stack.slice(stack.indexOf(target));
       const first = loop.reduce((a, b) => (compareText(b, a) < 0 ? b : a));
-      this.report(first, 'circular-alias', `Alias {${loop[(loop.indexOf(first) + 1) % loop.length]}} leads back to ${first}`);
+      this.report(first, 'alias-circular', `Alias {${loop[(loop.indexOf(first) + 1) % loop.length]}} leads back to ${first}`);
       return value;
     }
     return this.token(target);

@@ -184,8 +184,7 @@ export function scanIconSets(configs: IconSetConfig[] | undefined, cwd: string):
       for (const [category, names] of Object.entries(brand.map)) {
         for (const name of names) {
           if (have.has(name)) assigned.set(name, category);
-          else
-            result.problems.push(finding('icon-set-unknown-icon', { path: set.name, message: `categories lists "${name}" under ${category}, which ${set.package} does not have` }));
+          else result.problems.push(finding('icon-unknown', { path: set.name, message: `categories lists "${name}" under ${category}, which ${set.package} does not have` }));
         }
       }
     } else {

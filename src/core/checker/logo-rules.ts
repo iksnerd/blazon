@@ -37,10 +37,10 @@ export function logoRuleFindings(items: readonly TokenItem[], groups: readonly G
   return rules.flatMap(({ path, rule }): Finding[] => {
     const { deny, reason } = (typeof rule === 'object' && rule !== null ? rule : {}) as { deny?: unknown; reason?: unknown };
     if (!Array.isArray(deny) || deny.some((v) => typeof v !== 'string') || (reason !== undefined && typeof reason !== 'string')) {
-      return [finding('invalid-logo-rule', { path, message: 'logo must be {"deny": ["onDark", ...], "reason"?: string}' })];
+      return [finding('logo-rule-invalid', { path, message: 'logo must be {"deny": ["onDark", ...], "reason"?: string}' })];
     }
     return deny
       .filter((v) => !variants.includes(v))
-      .map((v): Finding => finding('unknown-logo-variant', { path, message: `logo.deny names "${v}", which is not a logo variant (${variants.join(', ') || 'none'})` }));
+      .map((v): Finding => finding('logo-variant-unknown', { path, message: `logo.deny names "${v}", which is not a logo variant (${variants.join(', ') || 'none'})` }));
   });
 }

@@ -81,7 +81,7 @@ describe('where a typeface comes from and its license', () => {
       },
     });
     data = await compileBlazonData({ ...TEST_CONFIG }, root);
-    expect(data.findings.filter((f) => f.code === 'invalid-font-meta')).toEqual([]);
+    expect(data.findings.filter((f) => f.code === 'font-meta-invalid')).toEqual([]);
     open();
     expect(within(card('font.headline')).getByText('Source: Kinto Type Foundry')).toBeTruthy();
     expect(within(card('font.headline')).getByText('License: OFL-1.1, https://openfontlicense.org/')).toBeTruthy();

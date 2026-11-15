@@ -15,7 +15,7 @@ const blazon = (...args: string[]) =>
   spawnSync(process.execPath, ['--import', 'tsx', path.join(REPO, 'scripts/blazon-src.ts'), ...args], { encoding: 'utf-8', cwd: REPO, env: { ...process.env, NO_COLOR: '1' } });
 
 describe('blazon check on the starter', () => {
-  it('prints the starter-file notes once for each folder, and warns only about the starter logos', async () => {
+  it('prints the starter-file-unchanged notes once for each folder, and warns only about the starter logos', async () => {
     const root = await starterProject();
     const result = blazon('check', root);
     const out = result.stdout;
@@ -34,7 +34,7 @@ describe('blazon check on the starter', () => {
     // The starter is blazon's own brand book: nothing in it is marked for review, and the only warnings are its two logos
     const warned = out.split('\n').filter((line) => /WARN/.test(line));
     expect(warned).toHaveLength(2);
-    expect(warned.every((line) => line.includes('[starter-logo]'))).toBe(true);
+    expect(warned.every((line) => line.includes('[starter-logo-unchanged]'))).toBe(true);
 
     // The summary counts findings, not the lines
     expect(out).toContain(`2 warning(s) and ${starterFacts().notes} note(s)`);

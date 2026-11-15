@@ -36,7 +36,7 @@ describe('fontMetaFindings', () => {
     ['a license address that is not an address', { licenseUrl: 'ofl.txt' }],
     ['a source that looks like an address and is not http(s)', { source: 'file:///etc/passwd' }],
   ])('refuses %s', async (_what, meta) => {
-    expect(await findings(brand(meta))).toEqual(['font.brand:invalid-font-meta']);
+    expect(await findings(brand(meta))).toEqual(['font.brand:font-meta-invalid']);
   });
 
   it('notes, but does not refuse, a license that looks like an SPDX id and is not one', async () => {
@@ -48,14 +48,14 @@ describe('fontMetaFindings', () => {
 
   it('says nothing about a license that is a name, and judges an invalid font before its license', async () => {
     expect(await findings(brand({ license: 'Proprietary' }))).toEqual([]);
-    expect(await findings(brand({ license: 'OFL-1.2', licenseUrl: 'nope' }))).toEqual(['font.brand:invalid-font-meta']);
+    expect(await findings(brand({ license: 'OFL-1.2', licenseUrl: 'nope' }))).toEqual(['font.brand:font-meta-invalid']);
   });
 
   it('refuses it on a token that is not a typeface, and reports a group once', async () => {
     const color = await compileTokens({ 'a.json': { color: { $type: 'color', ink: { $value: '#000000', $extensions: { 'dev.blazon': { font: { license: 'OFL-1.1' } } } } } } });
     expect(fontMetaFindings(color.tokens.items, color.tokens.groupMeta).map((f) => f.path)).toEqual(['color.ink']);
     const group = await findings({ $extensions: { 'dev.blazon': { font: { license: 3 } } }, a: { $value: ['A', 'serif'] }, b: { $value: ['B', 'serif'] } });
-    expect(group).toEqual(['font:invalid-font-meta']);
+    expect(group).toEqual(['font:font-meta-invalid']);
   });
 });
 
@@ -70,7 +70,7 @@ describe('in a compiled project', () => {
         },
       },
     });
-    const found = data.findings.filter((f) => f.code === 'invalid-font-meta');
+    const found = data.findings.filter((f) => f.code === 'font-meta-invalid');
     expect(found).toHaveLength(1);
     expect(found[0]).toMatchObject({ path: 'font.bad', severity: 'error', file: 'tokens/type.json' });
     expect(found[0]!.line).toBeGreaterThan(0);

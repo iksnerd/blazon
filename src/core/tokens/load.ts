@@ -14,7 +14,7 @@ export function readTokenFile(fullPath: string, name: string, problems: Finding[
     const content: unknown = JSON.parse(text);
     // A file whose top level is not an object holds no tokens: say so here, with the folder in the path as for a file that does not parse
     if (typeof content !== 'object' || content === null || Array.isArray(content)) {
-      problems.push(finding('invalid-json', { path: shown, file: shown, message: 'Top level must be an object' }));
+      problems.push(finding('token-file-invalid', { path: shown, file: shown, message: 'Top level must be an object' }));
       return undefined;
     }
     return { name, content };
@@ -22,7 +22,7 @@ export function readTokenFile(fullPath: string, name: string, problems: Finding[
     // A file that stops before its last brace or bracket is usually cut short: say so, as the parser's own message may not
     const early = text.length > 0 && !/[}\]]\s*$/.test(text) ? `; the file ends early, after ${text.trimEnd().length} characters, so it may be truncated` : '';
     const line = jsonErrorLine(String(err), text);
-    problems.push(finding('invalid-json', { path: shown, file: shown, message: `${String(err)}${early}`, ...(line !== undefined && { line }) }));
+    problems.push(finding('token-file-invalid', { path: shown, file: shown, message: `${String(err)}${early}`, ...(line !== undefined && { line }) }));
     return undefined;
   }
 }

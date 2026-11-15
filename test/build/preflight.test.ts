@@ -43,7 +43,7 @@ describe('what stops a write', () => {
   it('is an error in the brand: buildSite and emitTokenOutputs write nothing and say what is wrong', async () => {
     const { data } = await broken();
     const config = await loadConfig(project);
-    await expect(buildSite(config, project, { data })).rejects.toThrow(/the brand has \d+ errors?, so nothing is written: invalid-value/);
+    await expect(buildSite(config, project, { data })).rejects.toThrow(/the brand has \d+ errors?, so nothing is written: token-value-invalid/);
     await expect(emitTokenOutputs(data, config, project)).rejects.toThrow(/so nothing is written/);
     expect(fs.existsSync(dist())).toBe(false);
   });
@@ -62,9 +62,9 @@ describe('what stops a write', () => {
     const data = await compileBlazonData(config, project);
     fs.writeFileSync(path.join(project, 'blazon.lock'), `{\n  "v": 1,\n  "commit": "${'a'.repeat(40)}"\n}\n`);
     try {
-      await expect(buildSite(config, project, { data })).rejects.toThrow(/blazon-pin-mismatch/);
-      await expect(buildSite(config, project, { data, allowErrors: true })).rejects.toThrow(/blazon-pin-mismatch/);
-      await expect(emitTokenOutputs(data, config, project, { allowErrors: true })).rejects.toThrow(/blazon-pin-mismatch/);
+      await expect(buildSite(config, project, { data })).rejects.toThrow(/pin-mismatch/);
+      await expect(buildSite(config, project, { data, allowErrors: true })).rejects.toThrow(/pin-mismatch/);
+      await expect(emitTokenOutputs(data, config, project, { allowErrors: true })).rejects.toThrow(/pin-mismatch/);
       expect(fs.existsSync(dist())).toBe(false);
     } finally {
       fs.rmSync(path.join(project, 'blazon.lock'), { force: true });

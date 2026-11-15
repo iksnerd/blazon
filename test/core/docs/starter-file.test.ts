@@ -9,12 +9,12 @@ import { starterProject } from '../../support/project';
 import { REPO } from '../../support/paths';
 import { hasReference, referencePath } from '../../support/reference';
 
-// `starter-file` (RFC 0001 §4): a note for each file still byte for byte what `blazon init` wrote.
+// `starter-file-unchanged` (RFC 0001 §4): a note for each file still byte for byte what `blazon init` wrote.
 
 async function notes(root: string): Promise<string[]> {
   const data = await compileBlazonData(await loadConfig(root), root);
   return data.findings
-    .filter((f) => f.code === 'starter-file')
+    .filter((f) => f.code === 'starter-file-unchanged')
     .map((f) => f.path)
     .sort();
 }
@@ -23,10 +23,10 @@ async function notes(root: string): Promise<string[]> {
 const NOT_SCANNED = new Set(['blazon.config.ts', 'blazon.resolver.json', 'AGENTS.md', 'CLAUDE.md']);
 const starterFiles = (): string[] => allStarterFiles().filter((f) => !NOT_SCANNED.has(f));
 
-describe('starter-logo', () => {
+describe('starter-logo-unchanged', () => {
   it("warns for each configured logo that is blazon's own mark, and not once the file is replaced", async () => {
     const root = await starterProject();
-    const logos = async () => (await compileBlazonData(await loadConfig(root), root)).findings.filter((f) => f.code === 'starter-logo');
+    const logos = async () => (await compileBlazonData(await loadConfig(root), root)).findings.filter((f) => f.code === 'starter-logo-unchanged');
     const before = await logos();
     expect(before.map((f) => f.severity)).toEqual(['warning', 'warning']);
     expect(before.map((f) => f.path).sort()).toEqual(['./assets/logos/blazon-bone.svg', './assets/logos/blazon-graphite.svg']);
@@ -35,7 +35,7 @@ describe('starter-logo', () => {
   });
 });
 
-describe('starter-file', () => {
+describe('starter-file-unchanged', () => {
   it('notes each file of a fresh project once, the config left out', async () => {
     const root = await starterProject();
     const found = await notes(root);
@@ -87,7 +87,7 @@ describe('starter-file', () => {
   it('says what to do, as a note', async () => {
     const root = await starterProject();
     const data = await compileBlazonData(await loadConfig(root), root);
-    const note = data.findings.find((f) => f.code === 'starter-file' && f.path === 'docs/01-principles.md');
+    const note = data.findings.find((f) => f.code === 'starter-file-unchanged' && f.path === 'docs/01-principles.md');
     expect(note).toMatchObject({ severity: 'info', message: "docs/01-principles.md is still the starter's text: replace it with the brand's own." });
   });
 
@@ -98,18 +98,18 @@ describe('starter-file', () => {
   it('never fails a check, strict or not', async () => {
     const root = await starterProject();
     const data = await compileBlazonData(await loadConfig(root), root);
-    expect(data.findings.some((f) => f.code === 'starter-file')).toBe(true);
-    expect(summarizeFindings(data.findings, { strict: true }).errors.filter((f) => f.code === 'starter-file')).toEqual([]);
+    expect(data.findings.some((f) => f.code === 'starter-file-unchanged')).toBe(true);
+    expect(summarizeFindings(data.findings, { strict: true }).errors.filter((f) => f.code === 'starter-file-unchanged')).toEqual([]);
     expect(
       summarizeFindings(
-        data.findings.filter((f) => f.code === 'starter-file'),
+        data.findings.filter((f) => f.code === 'starter-file-unchanged'),
         { strict: true },
       ).passed,
     ).toBe(true);
   });
 });
 
-describe('starter-file in the repo examples', () => {
+describe('starter-file-unchanged in the repo examples', () => {
   it.skipIf(!hasReference('examples/auth0'))('reports none for the reference brand', async () => {
     expect(await notes(referencePath('examples/auth0'))).toEqual([]);
   });

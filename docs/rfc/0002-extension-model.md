@@ -24,7 +24,7 @@ A company that adopts blazon will hit the same walls, and none of them is about 
 |---|---|---|
 | The 14 standard sections | `SECTION_IDS`, `src/types/docs.ts` | Declare "Voice and tone", "Sound" or "Packaging". `section: voice` is an error (`section-invalid`) |
 | Logo lockups | `LOGO_LOCKUPS`, read by the sidecar check (`src/core/assets/sidecar.ts`) and by the viewer's lockup groups (`src/viewer/components/blazon/logo-rules.tsx`) | Use a lockup other than `horizontal`, `stacked`, `mark` or `wordmark` |
-| Usage roles | `USAGE_ROLES`, read by `blazon check` (`unknown-role`) | Say a color may not be used for `chart` or `shadow` |
+| Usage roles | `USAGE_ROLES`, read by `blazon check` (`usage-role-unknown`) | Say a color may not be used for `chart` or `shadow` |
 | The checks | the list in `checkTokens`, `src/core/checker/index.ts` | Add a rule such as "headlines use the display font" |
 | The outputs | `emitTokenOutputs`, `src/core/index.ts`: CSS, TypeScript and JSON files | Write Swift, Android or a design-tool format |
 | The page directives | `DIRECTIVES`, `src/core/docs/directives.ts`, with one React component each in the viewer | Add a `blazon:quote` directive |
@@ -63,7 +63,7 @@ export default defineConfig({
 
 **Lockups.** `lockup` in a sidecar (§10) accepts a standard or an added name. `blazon:logo-lockups` and the viewer group logos by the resolved list instead of by a list in the viewer.
 
-**Usage roles.** `role` and `usage.allow`/`usage.deny` (§2) accept a standard or an added name. `usage-violation` compares names as before.
+**Usage roles.** `role` and `usage.allow`/`usage.deny` (§2) accept a standard or an added name. `usage-violated` compares names as before.
 
 **What the data carries.** `BlazonData.vocabulary` is `{ lockups: string[], usageRoles: string[] }`, each with the standard names first. `BlazonData.sections` is the list of valid sections, `{ id, title, standard }`. `brand.json` carries both under the same keys, and its schema lets `pages[].sections` be any section id the file itself lists, no longer a fixed enumeration. A consumer learns custom titles from `sections` and does not need blazon.
 
@@ -159,7 +159,7 @@ A `name` follows the core's name rule. `options` is a JSON object. A plugin MAY 
 | Pattern kinds (`dots`, `lines`, `diagonal`, `grid`, `checks`) | Blazon draws each one. A new name needs a drawing, which is code in the viewer |
 | Theme roles (§6) | The viewer reads each role. A new role has nothing to read it |
 | Logo corners (§10) | Four corners are geometry, not a brand's choice |
-| Token tiers (`primitive`, `semantic`, `component`) | `semantic-literal` depends on what each tier means |
+| Token tiers (`primitive`, `semantic`, `component`) | `alias-missing` depends on what each tier means |
 | Token `$type`s | They are DTCG's |
 | Page directives | Each is a React component in a viewer that is compiled when blazon is published and served from `dist/ui`. A directive from a project would need that project to build its own viewer, which adds a toolchain to every brand |
 

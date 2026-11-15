@@ -24,7 +24,7 @@ npm ci && npm run build
 blazon pin                        # writes blazon.lock: { "v": 1, "commit": "<40 hex digits>" }
 ```
 
-Commit `blazon.lock` with the book. From then on `blazon check`, `blazon tokens` and `blazon build` compare the blazon that runs with it, and stop with a `blazon-pin-mismatch` error (the file and line in `--json`, a `Next:` step in the text) when they differ. A book with no `blazon.lock` is not checked. `blazon dev` shows the same findings on the Review page and reads `blazon.lock` again when it changes, so pinning, editing or removing it needs no restart.
+Commit `blazon.lock` with the book. From then on `blazon check`, `blazon tokens` and `blazon build` compare the blazon that runs with it, and stop with a `pin-mismatch` error (the file and line in `--json`, a `Next:` step in the text) when they differ. A book with no `blazon.lock` is not checked. `blazon dev` shows the same findings on the Review page and reads `blazon.lock` again when it changes, so pinning, editing or removing it needs no restart.
 
 **What the check knows.** `npm run build` compiles the commit it was run at, and whether the tree had uncommitted changes, into `dist`. That is what the check reads, so it compares the blazon that runs, not whichever commit the clone has since moved to. Run from source (`npm run blazon:src`) there is no build, so blazon asks git for the clone's commit when it starts. It does not guess: a blazon with no git checkout and no stamp (a copy of the folder without `.git`, or a build made outside git) cannot say which commit it is, and a pinned book refuses it.
 
@@ -46,7 +46,7 @@ The order that cannot go wrong:
 2. Move the pin to that commit, as a change of its own (Moving the pin, above).
 3. Only then use the option in the book.
 
-Run your build, or at least `blazon check`, with the pinned blazon before you push. If the book is pinned with `blazon pin`, blazon itself refuses a blazon with uncommitted changes (`blazon-pin-mismatch`), so a local, unpushed change fails on your own computer before it reaches anyone else.
+Run your build, or at least `blazon check`, with the pinned blazon before you push. If the book is pinned with `blazon pin`, blazon itself refuses a blazon with uncommitted changes (`pin-mismatch`), so a local, unpushed change fails on your own computer before it reaches anyone else.
 
 ## One command to build
 
@@ -58,7 +58,7 @@ blazon build                      # writes dist/tokens/ and dist/site/
 # ...then your own steps: copy generated files into assets/, make a package or a PDF
 ```
 
-In a pipeline use `blazon check --strict`, and read the findings as JSON with `--json` if a tool needs them ([Checks](03-checks.md)). A build that passes still prints warnings: the `needs-review` ones are the book's open list and not a failure, until you ask for `--strict`.
+In a pipeline use `blazon check --strict`, and read the findings as JSON with `--json` if a tool needs them ([Checks](03-checks.md)). A build that passes still prints warnings: the `review-pending` ones are the book's open list and not a failure, until you ask for `--strict`.
 
 ## Make a change
 
@@ -112,7 +112,7 @@ A plugin adds findings and writes its own files under `dist/tokens/<name>/` (the
 
 | You see | It means |
 |---|---|
-| `Front matter is not valid YAML` (`invalid-frontmatter`) | A `title` or `description` has a colon and a space. Put it in double quotes. The page is left out until it parses |
+| `Front matter is not valid YAML` (`page-frontmatter-invalid`) | A `title` or `description` has a colon and a space. Put it in double quotes. The page is left out until it parses |
 | `customSections[n].id "..." is a standard section` (`config-invalid`) | A standard section needs no entry in `customSections`; keep its name in `sections` |
 | `icon-set-invalid ... is not installed` | The icon package is not in this checkout's `node_modules`. Run `npm ci` if it is in `package.json`, or `npm install <package>` if it is not |
 | `... is not pinned, and a check plugin must be` (`plugin-failed`) | A `check` plugin must be pinned: [Plugins](12-plugins.md#pin-a-plugin) |

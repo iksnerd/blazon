@@ -26,7 +26,7 @@ description: Our logo is the foundation of our brand identity.
 | `description` | The line under the title | None |
 | `section` | The [section](#sections) the page holds: one id, or a list such as `[patterns, 3d]` | None |
 
-Quote a value that contains `: `. Front matter that is not valid YAML is an error (`invalid-frontmatter`), and the page is left out of the book until you fix it.
+Quote a value that contains `: `. Front matter that is not valid YAML is an error (`page-frontmatter-invalid`), and the page is left out of the book until you fix it.
 
 A number at the start of a file name sets the order, and may have a decimal part: `07.1-photography.md` is order 7.1, so it sorts after `07-illustration.md` and before `08-motion.md`. It gets the slug `photography`. The slug, which is the file name without its number, is the page's address: `#doc/photography`. Keep slugs unique: two pages with one slug share an address.
 

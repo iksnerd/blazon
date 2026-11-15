@@ -10,7 +10,7 @@ interface Check {
   summary: string;
   /** What to do about it, when a person or an agent can fix it by editing a file. */
   fix?: string;
-  /** What the finding can point at. Most codes have one; `needs-review` is emitted for tokens and for assets. */
+  /** What the finding can point at. Most codes have one; `review-pending` is emitted for tokens and for assets. */
   appliesTo: readonly AppliesTo[];
   /** RFC number and section that name the code, such as '1#4'. */
   rfc: string;
@@ -19,10 +19,93 @@ interface Check {
 }
 
 /**
+ * The naming rule for a finding code. Codes are public surface (CI filters, suppressions, approvals) and freeze at 1.0.
+ *
+ * A code is kebab-case, `<area>-<problem>`: the area comes first and names what the check looks at (`alias`, `asset`,
+ * `asset-sidecar`, `token-value`, `theme`), and the problem comes last and is one word from PROBLEMS below. The same
+ * trouble gets the same word in every area: a file or value that cannot be parsed or fails its shape is `invalid`, a name
+ * that is not in a known list is `unknown`, a reference that points at nothing is `unresolved`, something required that is
+ * absent is `missing`, two things that claim the same slot are `duplicate`, a file that cannot be read is `unreadable`,
+ * and a setting that matches nothing is `unused`. A new code uses a word from the list; a new word is added to PROBLEMS in
+ * this file on purpose, with the rule above kept in step with the manual's checks page.
+ */
+export const PROBLEMS = [
+  'circular',
+  'deprecated',
+  'duplicate',
+  'embedded',
+  'failed',
+  'inferred',
+  'insufficient',
+  'invalid',
+  'mismatch',
+  'missing',
+  'orphaned',
+  'overlap',
+  'pending',
+  'stale',
+  'unchanged',
+  'unknown',
+  'unplaced',
+  'unreadable',
+  'unresolved',
+  'unused',
+  'violated',
+] as const;
+
+/**
  * Every finding code blazon's core emits. A finding is built with `finding()`, so its severity comes from
  * here and cannot disagree. Plugin codes (`name/code`) are not in this list.
  */
 export const CHECKS = {
+  'alias-circular': {
+    severity: 'error',
+    summary: 'Aliases lead back to the token that started them.',
+    fix: 'Break the loop: one token in the chain must hold a value, not an alias.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'alias-deprecated': {
+    severity: 'warning',
+    summary: 'A token aliases a token marked deprecated.',
+    fix: 'Point the alias at the token that replaces the deprecated one.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'alias-embedded': {
+    severity: 'error',
+    summary: 'An alias is mixed with other text in one value.',
+    fix: 'Make the alias the whole value, and build the combined value in another token.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'alias-missing': {
+    severity: 'warning',
+    summary: 'A semantic or component token holds a literal value instead of an alias.',
+    fix: 'Replace the literal $value with an alias to a primitive token, such as {color.blue.600}.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'alias-type-mismatch': {
+    severity: 'error',
+    summary: 'A token has a different $type from the token it aliases.',
+    fix: 'Give the token the $type of the token it aliases, or alias a token of the same type.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'alias-unresolved': {
+    severity: 'error',
+    summary: 'An alias names no token.',
+    fix: 'Point the alias at a token that exists, or add the token: an alias is the token path in braces, such as {color.blue.600}.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
   'approval-stale': {
     severity: 'warning',
     summary: 'A token or asset was approved, and its value changed after.',
@@ -47,7 +130,7 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'asset-duplicate-id': {
+  'asset-id-duplicate': {
     severity: 'error',
     summary: 'Two files in different folders have the same asset id.',
     fix: 'Rename one of the two files so every asset id (category/name) is unique.',
@@ -55,14 +138,22 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'asset-local-absent': {
+  'asset-local-missing': {
     severity: 'info',
     summary: 'A category kept out of git has no images on this machine.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
   },
-  'asset-rule-violation': {
+  'asset-review-missing': {
+    severity: 'warning',
+    summary: 'A generated asset has no review yet.',
+    fix: 'Check the asset, then set review.status to ok in its sidecar.',
+    appliesTo: ['asset'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'asset-rule-violated': {
     severity: 'error',
     summary: 'An asset breaks the rules of its category.',
     fix: "Replace the file so it meets its category's rules, or change the rules in blazon.config.ts.",
@@ -78,7 +169,7 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'asset-sidecar-orphan': {
+  'asset-sidecar-orphaned': {
     severity: 'warning',
     summary: 'A sidecar has no image of the same name beside it.',
     fix: 'Rename the sidecar to match its image, or delete it if the image is gone.',
@@ -94,30 +185,6 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'blazon-pin-invalid': {
-    severity: 'error',
-    summary: 'blazon.lock is not a valid pin.',
-    fix: 'Fix blazon.lock, or write it again with blazon pin: it holds { "v": 1, "commit": "<40 hex digits>" }.',
-    appliesTo: ['project'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'blazon-pin-mismatch': {
-    severity: 'error',
-    summary: 'The blazon build in use is not the commit blazon.lock names.',
-    fix: 'Build the book with the blazon commit blazon.lock names: check it out in your blazon clone and run npm ci && npm run build there. To move the pin on purpose, run blazon pin.',
-    appliesTo: ['project'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'circular-alias': {
-    severity: 'error',
-    summary: 'Aliases lead back to the token that started them.',
-    fix: 'Break the loop: one token in the chain must hold a value, not an alias.',
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
   'config-invalid': {
     severity: 'error',
     summary: 'A key or value in blazon.config.ts is not valid.',
@@ -126,11 +193,19 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  contrast: {
+  'contrast-insufficient': {
     severity: 'error',
     summary: 'A color pair has less contrast than its level asks for.',
     fix: "Change one of the two colors, or lower the pair's level on purpose.",
     appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'contrast-pair-invalid': {
+    severity: 'error',
+    summary: 'A contrast pair names no color tokens or has an unknown level.',
+    fix: "Name color tokens that exist in the pair's fg and bg, and use the level AA, AA-large or AAA.",
+    appliesTo: ['group'],
     rfc: '1#4',
     manual: '03-checks',
   },
@@ -142,18 +217,10 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'css-variable-collision': {
+  'css-variable-duplicate': {
     severity: 'error',
     summary: 'Two tokens write the same CSS custom property.',
     fix: 'Rename one of the two tokens so they write different CSS custom properties.',
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'deprecated-alias': {
-    severity: 'warning',
-    summary: 'A token aliases a token marked deprecated.',
-    fix: 'Point the alias at the token that replaces the deprecated one.',
     appliesTo: ['token'],
     rfc: '1#4',
     manual: '03-checks',
@@ -174,26 +241,10 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'duplicate-definition': {
+  'font-family-missing': {
     severity: 'warning',
-    summary: 'Two token files define the same path.',
-    fix: 'Define the path in one token file only: delete it from the file you do not want to win.',
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'duplicate-value': {
-    severity: 'warning',
-    summary: 'Two primitive tokens in one group have the same value.',
-    fix: 'Remove one of the two tokens, or make the second an alias of the first.',
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'embedded-alias': {
-    severity: 'error',
-    summary: 'An alias is mixed with other text in one value.',
-    fix: 'Make the alias the whole value, and build the combined value in another token.',
+    summary: 'A font family a token uses is not loaded by any fonts entry.',
+    fix: 'Add a fonts entry in blazon.config.ts that loads the family, with its file or its stylesheet URL, or put a loaded family first in the token.',
     appliesTo: ['token'],
     rfc: '1#4',
     manual: '03-checks',
@@ -214,19 +265,11 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'font-not-loaded': {
-    severity: 'warning',
-    summary: 'A font family a token uses is not loaded by any fonts entry.',
-    fix: 'Add a fonts entry in blazon.config.ts that loads the family, with its file or its stylesheet URL, or put a loaded family first in the token.',
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'generated-unreviewed': {
-    severity: 'warning',
-    summary: 'A generated asset has no review yet.',
-    fix: 'Check the asset, then set review.status to ok in its sidecar.',
-    appliesTo: ['asset'],
+  'font-meta-invalid': {
+    severity: 'error',
+    summary: 'The font fields on a token are not valid.',
+    fix: 'Fix the font extension on the token or group: only source, license and licenseUrl, as text, with http or https addresses, on a fontFamily token.',
+    appliesTo: ['token', 'group'],
     rfc: '1#4',
     manual: '03-checks',
   },
@@ -238,7 +281,7 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'icon-set-unknown-icon': {
+  'icon-unknown': {
     severity: 'warning',
     summary: 'An icon set category lists an icon the package does not have.',
     fix: 'Correct the icon name under categories in the icon set in blazon.config.ts so it is one the package has, or remove it.',
@@ -246,79 +289,7 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'invalid-font-meta': {
-    severity: 'error',
-    summary: 'The font fields on a token are not valid.',
-    fix: 'Fix the font extension on the token or group: only source, license and licenseUrl, as text, with http or https addresses, on a fontFamily token.',
-    appliesTo: ['token', 'group'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-frontmatter': {
-    severity: 'error',
-    summary: 'A page front matter is not valid YAML or has a field of the wrong type.',
-    fix: "Fix the page's front matter YAML, and quote any value that contains a colon and a space.",
-    appliesTo: ['page'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-json': {
-    severity: 'error',
-    summary: 'A token file is not valid JSON or its top level is not an object.',
-    fix: 'Fix the JSON syntax in that file (a missing comma, quote or brace); its top level must be an object.',
-    appliesTo: ['project'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-logo-rule': {
-    severity: 'error',
-    summary: 'A logo rule on a token is not in the shape blazon reads.',
-    fix: 'Write the logo extension as { "deny": ["onDark"], "reason": "..." }, with deny a list of logo variant names.',
-    appliesTo: ['token', 'group'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-pair': {
-    severity: 'error',
-    summary: 'A contrast pair names no color tokens or has an unknown level.',
-    fix: "Name color tokens that exist in the pair's fg and bg, and use the level AA, AA-large or AAA.",
-    appliesTo: ['group'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-proportion': {
-    severity: 'error',
-    summary: 'A proportion share is out of range or names a token that does not exist.',
-    fix: 'Give each share in the proportion a number from 0 to 1, and list only tokens that exist.',
-    appliesTo: ['group'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-review': {
-    severity: 'error',
-    summary: 'A review field has a bad status, date or fingerprint.',
-    fix: 'Give review a status of ok or needs-review, and write at as a real date, YYYY-MM-DD; review.value is the 12 hex digits blazon approvals prints.',
-    appliesTo: ['token', 'group'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-token': {
-    severity: 'error',
-    summary: 'A token is a bare value instead of an object with $value, or a name contains ".", "{" or "}".',
-    fix: 'Write the token as an object with $value, and rename any key that contains ".", "{" or "}".',
-    appliesTo: ['token', 'group'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'invalid-value': {
-    severity: 'error',
-    summary: 'A token value does not fit its $type.',
-    fix: "Change the value so it fits the token's $type; the message says how.",
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'logo-invisible': {
+  'logo-contrast-insufficient': {
     severity: 'warning',
     summary: 'A logo variant draws the color of the surface it is shown on.',
     fix: 'Add `logo: { deny: ["onDark"], reason }` to the surface token in dev.blazon, so the book does not show the logo there, or give the logo a variant made for it.',
@@ -334,27 +305,19 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'missing-type': {
+  'logo-rule-invalid': {
     severity: 'error',
-    summary: 'A token has no $type, and neither its groups nor its alias target give one.',
-    fix: 'Add a $type to the token, or to a group above it, or alias a token that has one.',
-    appliesTo: ['token'],
+    summary: 'A logo rule on a token is not in the shape blazon reads.',
+    fix: 'Write the logo extension as { "deny": ["onDark"], "reason": "..." }, with deny a list of logo variant names.',
+    appliesTo: ['token', 'group'],
     rfc: '1#4',
     manual: '03-checks',
   },
-  'needs-review': {
-    severity: 'warning',
-    summary: 'A token or asset is marked needs-review.',
-    fix: "Check the value, then set review.status to ok on the token or in the asset's sidecar.",
-    appliesTo: ['token', 'asset', 'group'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'needs-review-in-use': {
-    severity: 'warning',
-    summary: 'A page shows assets that are still marked needs-review.',
-    fix: 'Check each asset the page shows, then set its review.status to ok in its sidecar, or take it off the page.',
-    appliesTo: ['page'],
+  'logo-variant-unknown': {
+    severity: 'error',
+    summary: 'A logo rule denies a variant the logo does not have.',
+    fix: 'Name only the logo variants the message lists in logo.deny, or add the variant to the logo.',
+    appliesTo: ['token', 'group'],
     rfc: '1#4',
     manual: '03-checks',
   },
@@ -366,10 +329,34 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'page-duplicate-slug': {
+  'page-frontmatter-invalid': {
+    severity: 'error',
+    summary: 'A page front matter is not valid YAML or has a field of the wrong type.',
+    fix: "Fix the page's front matter YAML, and quote any value that contains a colon and a space.",
+    appliesTo: ['page'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'page-review-pending': {
+    severity: 'warning',
+    summary: 'A page shows assets that are still marked needs-review.',
+    fix: 'Check each asset the page shows, then set its review.status to ok in its sidecar, or take it off the page.',
+    appliesTo: ['page'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'page-slug-duplicate': {
     severity: 'error',
     summary: 'Two pages have the same slug, so the book opens only the first.',
     fix: 'Rename one of the two files: the slug is the file name without its number prefix, so 01-colors.md and colors.md are both "colors".',
+    appliesTo: ['page'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'page-tokens-unplaced': {
+    severity: 'info',
+    summary: 'A page names many tokens but places none of them.',
+    fix: 'Place the tokens the page names with <!-- blazon:tokens color.base ... -->, one directive for the groups it talks about.',
     appliesTo: ['page'],
     rfc: '1#4',
     manual: '03-checks',
@@ -379,6 +366,22 @@ export const CHECKS = {
     summary: 'A page file cannot be read, so it is left out of the book.',
     fix: 'Make the file readable (check its permissions and that it is a file), or remove it.',
     appliesTo: ['page'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'pin-invalid': {
+    severity: 'error',
+    summary: 'blazon.lock is not a valid pin.',
+    fix: 'Fix blazon.lock, or write it again with blazon pin: it holds { "v": 1, "commit": "<40 hex digits>" }.',
+    appliesTo: ['project'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'pin-mismatch': {
+    severity: 'error',
+    summary: 'The blazon build in use is not the commit blazon.lock names.',
+    fix: 'Build the book with the blazon commit blazon.lock names: check it out in your blazon clone and run npm ci && npm run build there. To move the pin on purpose, run blazon pin.',
+    appliesTo: ['project'],
     rfc: '1#4',
     manual: '03-checks',
   },
@@ -422,7 +425,15 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'proportion-total': {
+  'proportion-invalid': {
+    severity: 'error',
+    summary: 'A proportion share is out of range or names a token that does not exist.',
+    fix: 'Give each share in the proportion a number from 0 to 1, and list only tokens that exist.',
+    appliesTo: ['group'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'proportion-total-mismatch': {
     severity: 'warning',
     summary: 'Proportion shares do not add up to 100%.',
     fix: 'Change the shares of the proportion so they add up to 1.',
@@ -435,6 +446,22 @@ export const CHECKS = {
     summary: 'The resolver file is missing or breaks the DTCG resolver rules.',
     fix: 'Fix the resolver file that `resolver` in blazon.config.ts names, or point `resolver` at a file that exists.',
     appliesTo: ['config'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'review-invalid': {
+    severity: 'error',
+    summary: 'A review field has a bad status, date or fingerprint.',
+    fix: 'Give review a status of ok or needs-review, and write at as a real date, YYYY-MM-DD; review.value is the 12 hex digits blazon approvals prints.',
+    appliesTo: ['token', 'group'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'review-pending': {
+    severity: 'warning',
+    summary: 'A token or asset is marked needs-review.',
+    fix: "Check the value, then set review.status to ok on the token or in the asset's sidecar.",
+    appliesTo: ['token', 'asset', 'group'],
     rfc: '1#4',
     manual: '03-checks',
   },
@@ -454,14 +481,6 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'semantic-literal': {
-    severity: 'warning',
-    summary: 'A semantic or component token holds a literal value instead of an alias.',
-    fix: 'Replace the literal $value with an alias to a primitive token, such as {color.blue.600}.',
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
   'source-css-var-invalid': {
     severity: 'error',
     summary: 'source.cssVar is not a custom property name.',
@@ -470,7 +489,7 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'starter-file': {
+  'starter-file-unchanged': {
     severity: 'info',
     summary: 'A file in the docs, tokens, assets or fonts folder is still the starter text.',
     fix: "Replace the file's text with the brand's own, or delete it.",
@@ -478,7 +497,7 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'starter-logo': {
+  'starter-logo-unchanged': {
     severity: 'warning',
     summary: "A configured logo is still blazon's own mark, byte for byte.",
     fix: "Replace the logo file with the brand's own and point `logo` in `blazon.config.ts` at it.",
@@ -510,47 +529,39 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'tokens-empty': {
-    severity: 'warning',
-    summary: 'The tokens folder holds no tokens.',
-    fix: 'Add token files to the tokens folder, or run blazon init to start from the starter.',
+  'token-file-invalid': {
+    severity: 'error',
+    summary: 'A token file is not valid JSON or its top level is not an object.',
+    fix: 'Fix the JSON syntax in that file (a missing comma, quote or brace); its top level must be an object.',
     appliesTo: ['project'],
     rfc: '1#4',
     manual: '03-checks',
   },
-  'tokens-not-shown': {
-    severity: 'info',
-    summary: 'A page names many tokens but places none of them.',
-    fix: 'Place the tokens the page names with <!-- blazon:tokens color.base ... -->, one directive for the groups it talks about.',
-    appliesTo: ['page'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'type-mismatch': {
+  'token-invalid': {
     severity: 'error',
-    summary: 'A token has a different $type from the token it aliases.',
-    fix: 'Give the token the $type of the token it aliases, or alias a token of the same type.',
-    appliesTo: ['token'],
-    rfc: '1#4',
-    manual: '03-checks',
-  },
-  'unknown-logo-variant': {
-    severity: 'error',
-    summary: 'A logo rule denies a variant the logo does not have.',
-    fix: 'Name only the logo variants the message lists in logo.deny, or add the variant to the logo.',
+    summary: 'A token is a bare value instead of an object with $value, or a name contains ".", "{" or "}".',
+    fix: 'Write the token as an object with $value, and rename any key that contains ".", "{" or "}".',
     appliesTo: ['token', 'group'],
     rfc: '1#4',
     manual: '03-checks',
   },
-  'unknown-role': {
-    severity: 'error',
-    summary: 'A usage role is not one blazon knows.',
-    fix: 'Use only the usage roles the message lists, or add the role in vocabulary.usageRoles; usage.allow and usage.deny must be lists.',
+  'token-path-duplicate': {
+    severity: 'warning',
+    summary: 'Two token files define the same path.',
+    fix: 'Define the path in one token file only: delete it from the file you do not want to win.',
     appliesTo: ['token'],
     rfc: '1#4',
     manual: '03-checks',
   },
-  'unknown-type': {
+  'token-type-missing': {
+    severity: 'error',
+    summary: 'A token has no $type, and neither its groups nor its alias target give one.',
+    fix: 'Add a $type to the token, or to a group above it, or alias a token that has one.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'token-type-unknown': {
     severity: 'error',
     summary: 'A $type is not a DTCG type.',
     fix: 'Set $type to a DTCG type, such as color, dimension or fontFamily.',
@@ -558,15 +569,39 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
-  'unresolved-alias': {
-    severity: 'error',
-    summary: 'An alias names no token.',
-    fix: 'Point the alias at a token that exists, or add the token: an alias is the token path in braces, such as {color.blue.600}.',
+  'token-value-duplicate': {
+    severity: 'warning',
+    summary: 'Two primitive tokens in one group have the same value.',
+    fix: 'Remove one of the two tokens, or make the second an alias of the first.',
     appliesTo: ['token'],
     rfc: '1#4',
     manual: '03-checks',
   },
-  'usage-violation': {
+  'token-value-invalid': {
+    severity: 'error',
+    summary: 'A token value does not fit its $type.',
+    fix: "Change the value so it fits the token's $type; the message says how.",
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'tokens-missing': {
+    severity: 'warning',
+    summary: 'The tokens folder holds no tokens.',
+    fix: 'Add token files to the tokens folder, or run blazon init to start from the starter.',
+    appliesTo: ['project'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'usage-role-unknown': {
+    severity: 'error',
+    summary: 'A usage role is not one blazon knows.',
+    fix: 'Use only the usage roles the message lists, or add the role in vocabulary.usageRoles; usage.allow and usage.deny must be lists.',
+    appliesTo: ['token'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'usage-violated': {
     severity: 'error',
     summary: 'A token is used as a role that the token it aliases does not allow.',
     fix: "Change the token's role, or alias a token whose usage allows that role.",

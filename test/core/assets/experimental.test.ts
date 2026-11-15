@@ -10,7 +10,7 @@ import type { AssetCategoryConfig } from '../../../src/types/index.js';
 import { tempDir } from '../../support/project';
 
 // An asset category may declare `experimental: true` (RFC 0001 §11): its files are explorations, so their `review` is data and
-// does not gate the book. The findings an ordinary asset gets for it (`needs-review`, `generated-unreviewed`, `needs-review-in-use`) are not raised.
+// does not gate the book. The findings an ordinary asset gets for it (`review-pending`, `asset-review-missing`, `page-review-pending`) are not raised.
 
 const SVG = '<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>';
 const FLAGGED = JSON.stringify({ review: { status: 'needs-review', note: 'An experiment' } });
@@ -33,7 +33,7 @@ const compile = (root: string, assets: Record<string, unknown>) =>
   compileBlazonData({ ...DEFAULT_CONFIG, docsDir: path.join(root, 'docs'), assets: assets as Record<string, AssetCategoryConfig> }, root);
 const codes = (data: Awaited<ReturnType<typeof compile>>) =>
   data.findings
-    .filter((f) => ['needs-review', 'generated-unreviewed'].includes(f.code))
+    .filter((f) => ['review-pending', 'asset-review-missing'].includes(f.code))
     .map((f) => `${f.code} ${f.path}`)
     .sort();
 
@@ -50,16 +50,16 @@ const LIBRARY = {
 const EXPERIMENTAL = { experiments: { experimental: true } };
 
 describe('experimental asset categories', () => {
-  it('raise no needs-review or generated-unreviewed, while an ordinary category still does', async () => {
+  it('raise no review-pending or asset-review-missing, while an ordinary category still does', async () => {
     const root = project(LIBRARY);
-    expect(codes(await compile(root, EXPERIMENTAL))).toEqual(['generated-unreviewed logos/gen', 'needs-review logos/mark']);
+    expect(codes(await compile(root, EXPERIMENTAL))).toEqual(['asset-review-missing logos/gen', 'review-pending logos/mark']);
     expect(codes(await compile(root, {}))).toEqual([
-      'generated-unreviewed experiments/b',
-      'generated-unreviewed logos/gen',
-      'needs-review experiments/a',
-      'needs-review logos/mark',
+      'asset-review-missing experiments/b',
+      'asset-review-missing logos/gen',
+      'review-pending experiments/a',
+      'review-pending logos/mark',
     ]);
-    expect(codes(await compile(root, { experiments: { experimental: false } }))).toContain('needs-review experiments/a');
+    expect(codes(await compile(root, { experiments: { experimental: false } }))).toContain('review-pending experiments/a');
   });
 
   it('keep the asset review as data', async () => {
@@ -67,15 +67,15 @@ describe('experimental asset categories', () => {
     expect(data.assets.custom.experiments!.find((a) => a.name === 'a')!.meta!.review).toEqual({ status: 'needs-review', note: 'An experiment' });
   });
 
-  it('are not needs-review-in-use on a page, which still reports the ordinary assets it draws', async () => {
+  it('are not page-review-pending on a page, which still reports the ordinary assets it draws', async () => {
     const page = '---\ntitle: P\n---\n\n<!-- blazon:assets experiments -->\n\n<!-- blazon:assets logos mark -->\n';
     const data = await compile(project(LIBRARY, { '01-p.md': page }), EXPERIMENTAL);
-    expect(data.findings.filter((f) => f.code === 'needs-review-in-use').map((f) => f.message)).toEqual(['Shows 1 asset still marked needs-review: logos/mark']);
+    expect(data.findings.filter((f) => f.code === 'page-review-pending').map((f) => f.message)).toEqual(['Shows 1 asset still marked needs-review: logos/mark']);
 
     const only = await compile(project(LIBRARY, { '01-p.md': '---\ntitle: P\n---\n\n<!-- blazon:assets experiments -->\n' }), EXPERIMENTAL);
-    expect(only.findings.filter((f) => f.code === 'needs-review-in-use')).toEqual([]);
+    expect(only.findings.filter((f) => f.code === 'page-review-pending')).toEqual([]);
     const ordinary = await compile(project(LIBRARY, { '01-p.md': '---\ntitle: P\n---\n\n<!-- blazon:assets experiments -->\n' }), {});
-    expect(ordinary.findings.filter((f) => f.code === 'needs-review-in-use')).toHaveLength(1);
+    expect(ordinary.findings.filter((f) => f.code === 'page-review-pending')).toHaveLength(1);
   });
 
   it('are marked in the categories the viewer and brand.json carry, and brand.json stays valid', async () => {
@@ -92,7 +92,7 @@ describe('experimental asset categories', () => {
     for (const bad of ['yes', 1, null, {}]) {
       const data = await compile(project(LIBRARY), { experiments: { experimental: bad } });
       expect(data.findings.filter((f) => f.code === 'asset-config-invalid').map((f) => [f.path, f.message])).toEqual([['experiments', 'experimental must be true or false']]);
-      expect(codes(data)).toContain('needs-review experiments/a');
+      expect(codes(data)).toContain('review-pending experiments/a');
     }
   });
 });

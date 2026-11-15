@@ -272,16 +272,16 @@ describe('blazon dev with check plugins', () => {
   it('picks up blazon.lock without a restart: a pin that is not this blazon, a pin that is broken, no pin', async () => {
     const d = await dev({});
     const pin = path.join(d.root, 'blazon.lock');
-    expect(has(await d.page(), 'blazon-pin-mismatch')).toBe(false);
+    expect(has(await d.page(), 'pin-mismatch')).toBe(false);
     fs.writeFileSync(pin, JSON.stringify({ v: 1, commit: 'a'.repeat(40) }));
-    await until(() => d.updates.find((u) => has(u.findings, 'blazon-pin-mismatch', 'pinned to blazon aaaaaaaaaaaa')), 'an update that says the pin is another blazon');
-    expect(has(await d.page(), 'blazon-pin-mismatch')).toBe(true);
+    await until(() => d.updates.find((u) => has(u.findings, 'pin-mismatch', 'pinned to blazon aaaaaaaaaaaa')), 'an update that says the pin is another blazon');
+    expect(has(await d.page(), 'pin-mismatch')).toBe(true);
     fs.writeFileSync(pin, '{ "v": 1, "commit": "nope" }');
-    await until(() => d.updates.find((u) => has(u.findings, 'blazon-pin-invalid', 'commit must be')), 'an update that says the pin is invalid');
+    await until(() => d.updates.find((u) => has(u.findings, 'pin-invalid', 'commit must be')), 'an update that says the pin is invalid');
     d.updates.length = 0;
     fs.rmSync(pin);
-    await until(() => d.updates.find((u) => !has(u.findings, 'blazon-pin-mismatch') && !has(u.findings, 'blazon-pin-invalid')), 'an update with the pin gone');
-    expect(has(await d.page(), 'blazon-pin-invalid')).toBe(false);
+    await until(() => d.updates.find((u) => !has(u.findings, 'pin-mismatch') && !has(u.findings, 'pin-invalid')), 'an update with the pin gone');
+    expect(has(await d.page(), 'pin-invalid')).toBe(false);
   }, 60_000);
 
   it('says on the terminal what the plugins found, once per change of result, and why one failed', async () => {

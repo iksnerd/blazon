@@ -44,7 +44,7 @@ export const OPERATIONS: readonly Operation[] = [
           items: {
             type: 'object',
             properties: {
-              code: { type: 'string', description: 'The finding code, such as starter-logo' },
+              code: { type: 'string', description: 'The finding code, such as starter-logo-unchanged' },
               severity: { type: 'string', description: 'error, warning or info' },
               message: { type: 'string', description: 'What is wrong and where' },
             },

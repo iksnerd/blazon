@@ -31,20 +31,20 @@ describe('blazon.lock', () => {
   it('mismatches: names both commits, the file and the line of the commit', () => {
     const [finding, ...rest] = blazonPinFindings(lock({ v: 1, commit: A }), built(B));
     expect(rest).toEqual([]);
-    expect(finding).toMatchObject({ code: 'blazon-pin-mismatch', severity: 'error', path: BLAZON_LOCK, file: BLAZON_LOCK, line: 3 });
+    expect(finding).toMatchObject({ code: 'pin-mismatch', severity: 'error', path: BLAZON_LOCK, file: BLAZON_LOCK, line: 3 });
     expect(finding!.message).toContain('pinned to blazon aaaaaaaaaaaa');
     expect(finding!.message).toContain('was built from bbbbbbbbbbbb');
   });
 
   it('mismatches when the tree had uncommitted changes, even at the pinned commit', () => {
     const [finding] = blazonPinFindings(lock({ v: 1, commit: A }), built(A, true));
-    expect(finding).toMatchObject({ code: 'blazon-pin-mismatch' });
+    expect(finding).toMatchObject({ code: 'pin-mismatch' });
     expect(finding!.message).toContain('uncommitted changes');
   });
 
   it('mismatches when blazon cannot say which commit it is: a pin it cannot check is not met', () => {
     const [finding] = blazonPinFindings(lock({ v: 1, commit: A }), null);
-    expect(finding).toMatchObject({ code: 'blazon-pin-mismatch' });
+    expect(finding).toMatchObject({ code: 'pin-mismatch' });
     expect(finding!.message).toContain('cannot say which commit it is');
   });
 
@@ -71,7 +71,7 @@ describe('blazon.lock', () => {
   ])('is an error, never a pin, when malformed: %s', (_, content, message) => {
     const found = blazonPinFindings(lock(content), built(A));
     expect(found.length).toBeGreaterThan(0);
-    expect(found.every((f) => f.code === 'blazon-pin-invalid' && f.severity === 'error' && f.file === BLAZON_LOCK)).toBe(true);
+    expect(found.every((f) => f.code === 'pin-invalid' && f.severity === 'error' && f.file === BLAZON_LOCK)).toBe(true);
     expect(found.map((f) => f.message).join('\n')).toContain(message);
   });
 

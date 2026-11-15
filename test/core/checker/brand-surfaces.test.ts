@@ -31,7 +31,7 @@ describe('the colors a logo paints', () => {
   });
 });
 
-describe('logo-invisible', () => {
+describe('logo-contrast-insufficient', () => {
   const orange = '#FF5A1F';
   const logo = { onLight: uri(svg(['#1E1F21', orange])), onDark: uri(svg(['#F2F0EB', orange])) };
   const theme = { background: '#F2F0EB', inverse: '#1E1F21', accent: orange, accentText: '#1E1F21' };
@@ -40,14 +40,14 @@ describe('logo-invisible', () => {
     const found = logoSurfaceFindings(logo, theme, {}, []);
     expect(found).toHaveLength(1);
     // Graphite text on the accent means the light-surface logo is the one shown there
-    expect(found[0]).toMatchObject({ code: 'logo-invisible', severity: 'warning', path: 'logo.onLight' });
+    expect(found[0]).toMatchObject({ code: 'logo-contrast-insufficient', severity: 'warning', path: 'logo.onLight' });
     expect(found[0]!.message).toMatch(/light-surface logo draws #FF5A1F[^]*accent color \(#FF5A1F\)[^]*1\.0:1/);
   });
 
   it.each([['white'], ['#ffffff'], ['#fff'], ['WHITE'], ['rgb(255, 255, 255)']])('names white artwork on a white background however the white is written: %s', (fill) => {
     const found = logoSurfaceFindings({ onLight: uri(svg([fill])), onDark: uri(svg(['#F2F0EB'])) }, { background: '#ffffff' }, {}, []);
     expect(found).toHaveLength(1);
-    expect(found[0]).toMatchObject({ code: 'logo-invisible', path: 'logo.onLight' });
+    expect(found[0]).toMatchObject({ code: 'logo-contrast-insufficient', path: 'logo.onLight' });
   });
 
   it('is silent for artwork that paints nothing, or paints from a gradient', () => {
@@ -88,7 +88,7 @@ describe('logo-invisible', () => {
   });
 });
 
-describe('tokens-not-shown', () => {
+describe('page-tokens-unplaced', () => {
   const token = (path: string, value: string) => ({ path, type: 'color', value }) as unknown as TokenItem;
   const items = [
     token('color.a', '#111111'),
@@ -103,7 +103,7 @@ describe('tokens-not-shown', () => {
 
   it('notes a page that names five tokens and places none, and names the first four', () => {
     const [found] = pageTokenFindings([page(`Use ${five}.`)], items);
-    expect(found).toMatchObject({ code: 'tokens-not-shown', severity: 'info', path: '03-color.md' });
+    expect(found).toMatchObject({ code: 'page-tokens-unplaced', severity: 'info', path: '03-color.md' });
     expect(found!.message).toContain('names 5 tokens in its text (color.a, color.b, color.c, color.d, ...)');
   });
 
@@ -152,17 +152,17 @@ describe('both, through a compile', () => {
   const codes = async (root: string) =>
     (await compileBlazonData(config, root)).findings
       .map((f) => f.code)
-      .filter((c) => ['logo-invisible', 'tokens-not-shown'].includes(c))
+      .filter((c) => ['logo-contrast-insufficient', 'page-tokens-unplaced'].includes(c))
       .sort();
 
   it('reports both, and a forbidden surface silences the logo one', async () => {
-    expect(await codes(files())).toEqual(['logo-invisible', 'tokens-not-shown']);
+    expect(await codes(files())).toEqual(['logo-contrast-insufficient', 'page-tokens-unplaced']);
     const rule = { $extensions: { 'dev.blazon': { logo: { deny: ['onLight'], reason: 'the mark is orange' } } } };
-    expect(await codes(files(rule))).toEqual(['tokens-not-shown']);
+    expect(await codes(files(rule))).toEqual(['page-tokens-unplaced']);
   });
 });
 
-describe('logo-invisible in a context', () => {
+describe('logo-contrast-insufficient in a context', () => {
   // The default theme is light, and the dark context makes the page dark and the inverse Bone
   const project = ({ onDark, lightInverse = '#1E1F21', darkBackground = '#1E1F21' }: { onDark: string; lightInverse?: string; darkBackground?: string }) =>
     writeProject({
@@ -191,7 +191,7 @@ describe('logo-invisible in a context', () => {
     theme: { background: 'surface.background', text: 'text.primary', inverse: 'surface.inverse', inverseText: 'text.inverse' },
   } as typeof DEFAULT_CONFIG;
   const invisible = async (root: string) =>
-    (await compileBlazonData(config, root)).findings.filter((f) => f.code === 'logo-invisible').map((f) => [f.path, f.context ?? 'default']);
+    (await compileBlazonData(config, root)).findings.filter((f) => f.code === 'logo-contrast-insufficient').map((f) => [f.path, f.context ?? 'default']);
 
   it('judges the light-surface logo on the Bone inverse and the dark-surface logo on the dark page, so a Bone logo passes in both', async () => {
     expect(await invisible(project({ onDark: '#F2F0EB' }))).toEqual([]);

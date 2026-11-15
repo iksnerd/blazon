@@ -28,7 +28,7 @@ describe('compileBlazonData: token model (RFC 0001 §1)', () => {
     });
 
     const codes = (path: string) => data.tokens.problems.filter((p) => p.path === path).map((p) => p.code);
-    expect(codes('size.base')).toEqual(['missing-type']);
+    expect(codes('size.base')).toEqual(['token-type-missing']);
     expect(data.tokens.byPath.get('font.ui')?.type).toBe('fontFamily');
     expect(data.tokens.byPath.get('heading')?.type).toBe('fontFamily');
   });
@@ -45,9 +45,9 @@ describe('compileBlazonData: token model (RFC 0001 §1)', () => {
     });
 
     const codes = data.tokens.problems.map((p) => `${p.path}:${p.code}`);
-    expect(codes).toContain('missing:unresolved-alias');
-    expect(codes.some((c) => c.endsWith(':circular-alias'))).toBe(true);
-    expect(codes).toContain('mixed:embedded-alias');
+    expect(codes).toContain('missing:alias-unresolved');
+    expect(codes.some((c) => c.endsWith(':alias-circular'))).toBe(true);
+    expect(codes).toContain('mixed:alias-embedded');
   });
 
   it('rejects bare values and unknown types, which DTCG does not allow', async () => {
@@ -56,8 +56,8 @@ describe('compileBlazonData: token model (RFC 0001 §1)', () => {
     });
 
     const codes = data.tokens.problems.map((p) => `${p.path}:${p.code}`);
-    expect(codes).toContain('color.primary:invalid-token');
-    expect(codes).toContain('color.odd:unknown-type');
+    expect(codes).toContain('color.primary:token-invalid');
+    expect(codes).toContain('color.odd:token-type-unknown');
   });
 
   it('keeps $extensions and merges dev.blazon fields down from groups', async () => {
@@ -89,7 +89,7 @@ describe('compileBlazonData: token model (RFC 0001 §1)', () => {
     });
 
     expect(data.tokens.byPath.get('color.x')?.value).toBe('#ffffff');
-    expect(data.tokens.problems).toContainEqual(expect.objectContaining({ code: 'duplicate-definition', severity: 'warning', path: 'color.x' }));
+    expect(data.tokens.problems).toContainEqual(expect.objectContaining({ code: 'token-path-duplicate', severity: 'warning', path: 'color.x' }));
   });
 });
 
@@ -150,7 +150,7 @@ describe('compileBlazonData: what the brand book needs', () => {
   it('carries check findings so the brand book can show them', async () => {
     const data = await compileTokens({ 'a.json': { color: { $type: 'color', x: { $value: '{nope}' } } } });
 
-    expect(data.findings).toContainEqual(expect.objectContaining({ path: 'color.x', code: 'unresolved-alias' }));
+    expect(data.findings).toContainEqual(expect.objectContaining({ path: 'color.x', code: 'alias-unresolved' }));
   });
 });
 
@@ -217,14 +217,14 @@ describe('compileBlazonData: CSS-ready values (RFC 0001 §5)', () => {
   it('reports a value that does not fit its $type', async () => {
     const data = await compileTokens({ 'a.json': { d: { $type: 'dimension', $value: 16 } } });
 
-    expect(data.tokens.problems).toContainEqual(expect.objectContaining({ path: 'd', code: 'invalid-value' }));
+    expect(data.tokens.problems).toContainEqual(expect.objectContaining({ path: 'd', code: 'token-value-invalid' }));
   });
 
   it.each(['notacolor', '#12', '#12345', '#gggggg', 'rgb(banana)', 'hsl(1 2)', '12'])('refuses the color value %s, and says what a color can be', async (value) => {
     const data = await compileTokens({ 'a.json': { c: { $type: 'color', $value: value } } });
 
     expect(data.tokens.problems).toContainEqual(
-      expect.objectContaining({ path: 'c', code: 'invalid-value', message: `"${value}" is not a color: write hex (#2563eb), rgb(), hsl(), oklch() or a CSS color name` }),
+      expect.objectContaining({ path: 'c', code: 'token-value-invalid', message: `"${value}" is not a color: write hex (#2563eb), rgb(), hsl(), oklch() or a CSS color name` }),
     );
   });
 
@@ -247,7 +247,7 @@ describe('compileBlazonData: CSS-ready values (RFC 0001 §5)', () => {
   ])('accepts the color value %s', async (value) => {
     const data = await compileTokens({ 'a.json': { c: { $type: 'color', $value: value } } });
 
-    expect(data.tokens.problems.filter((p) => p.code === 'invalid-value')).toEqual([]);
+    expect(data.tokens.problems.filter((p) => p.code === 'token-value-invalid')).toEqual([]);
   });
 
   it('refuses a print unit in a dimension and names the px it stands for', async () => {
@@ -258,7 +258,7 @@ describe('compileBlazonData: CSS-ready values (RFC 0001 §5)', () => {
       },
     });
 
-    expect(data.tokens.problems.filter((p) => p.code === 'invalid-value').map((p) => [p.path, p.message])).toEqual([
+    expect(data.tokens.problems.filter((p) => p.code === 'token-value-invalid').map((p) => [p.path, p.message])).toEqual([
       ['d.pt', '7pt is a print unit; write 9.333px (1pt = 1.333px). A DTCG dimension is px or rem'],
       ['d.mm', '10mm is a print unit; write 37.795px (1mm = 3.78px). A DTCG dimension is px or rem'],
       ['type.p', '36pt is a print unit; write 48px (1pt = 1.333px). A DTCG dimension is px or rem'],

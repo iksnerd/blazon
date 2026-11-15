@@ -11,22 +11,22 @@ import { starterProject } from '../../support/project';
 // one broken file used to produce a screenful of them. The broken file is the finding; what follows from it is left out until it is fixed.
 
 const f = (code: string, over: Partial<Finding> = {}): Finding => ({ code, severity: 'error', path: 'x', message: 'm', ...over });
-const broken = f('invalid-json', { path: 'tokens/colors.json' });
+const broken = f('token-file-invalid', { path: 'tokens/colors.json' });
 
 describe('withoutCascade', () => {
   it('leaves everything alone when every token file reads', () => {
-    const all = [f('unresolved-alias'), f('theme-unresolved'), f('invalid-value', { message: '"{a.b}" is not a color' })];
+    const all = [f('alias-unresolved'), f('theme-unresolved'), f('token-value-invalid', { message: '"{a.b}" is not a color' })];
     expect(withoutCascade(all)).toEqual(all);
   });
 
   it('drops what only says a token is missing once a token file is unreadable', () => {
-    const kept = f('invalid-value', { message: '"nope" is not a color: write hex' });
-    const other = f('starter-file', { severity: 'warning' });
+    const kept = f('token-value-invalid', { message: '"nope" is not a color: write hex' });
+    const other = f('starter-file-unchanged', { severity: 'warning' });
     const result = withoutCascade([
       broken,
-      f('unresolved-alias'),
+      f('alias-unresolved'),
       f('theme-unresolved'),
-      f('invalid-value', { message: '"{rule.default}" is not a color: write hex' }),
+      f('token-value-invalid', { message: '"{rule.default}" is not a color: write hex' }),
       kept,
       other,
     ]);
@@ -38,7 +38,7 @@ describe('withoutCascade', () => {
     const result = withoutCascade([
       broken,
       f('directive-invalid', { message: '<!-- blazon:tokens surface -->: no token at surface' }),
-      f('missing-type', { context: 'theme=dark' }),
+      f('token-type-missing', { context: 'theme=dark' }),
       wrongArgs,
     ]);
     expect(result).toEqual([broken, wrongArgs]);
@@ -73,7 +73,7 @@ describe('compileBlazonData with a resolver and a broken token file', () => {
     fs.writeFileSync(path.join(root, 'tokens/colors.json'), '{ bad json');
     const data = await compileBlazonData(await loadConfig(root), root);
     const errors = data.findings.filter((x) => x.severity === 'error');
-    expect(errors.map((x) => [x.code, x.path])).toEqual([['invalid-json', 'tokens/colors.json']]);
+    expect(errors.map((x) => [x.code, x.path])).toEqual([['token-file-invalid', 'tokens/colors.json']]);
     expect(data.tokens.byPath.has('space.4')).toBe(true);
   }, 60_000);
 });
@@ -83,8 +83,8 @@ describe('compileBlazonData with a broken token file', () => {
     const root = await starterProject();
     fs.writeFileSync(path.join(root, 'tokens/colors.json'), '{ bad json');
     const codes = (await compileBlazonData(await loadConfig(root), root)).findings.map((x) => x.code);
-    expect(codes).toContain('invalid-json');
-    expect(codes).not.toContain('unresolved-alias');
+    expect(codes).toContain('token-file-invalid');
+    expect(codes).not.toContain('alias-unresolved');
     expect(codes).not.toContain('theme-unresolved');
   }, 60_000);
 });

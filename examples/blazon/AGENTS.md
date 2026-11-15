@@ -19,16 +19,16 @@ Run commands from the folder that holds this file, or pass the folder as the las
 
 Codes you meet first:
 
-- `starter-file` (note): a file is still blazon's own text. The notes are the list of what is left to replace; they never fail a check.
-- `starter-logo` (warning): a configured logo is still blazon's mark. Only the person's own logo clears it.
-- `needs-review` (warning): a value is marked `review.status: needs-review`. Only a person clears it.
+- `starter-file-unchanged` (note): a file is still blazon's own text. The notes are the list of what is left to replace; they never fail a check.
+- `starter-logo-unchanged` (warning): a configured logo is still blazon's mark. Only the person's own logo clears it.
+- `review-pending` (warning): a value is marked `review.status: needs-review`. Only a person clears it.
 
 ## Rules that cost time
 
 - Put a value in `tokens/` once. In a page, use a directive such as `<!-- blazon:tokens color.signal -->`, not the hex (the `pages` chapter lists them). A directive inside a code fence is not run.
 - Rules live next to the values under `$extensions["dev.blazon"]` (`usage`, `pairs`, `review`). Never remove a rule or the `logo` to clear a finding; fix the value or ask. The `usage` rule on `color.signal` and the `pairs` rule on `text` are blazon's own: replace them with the new brand's.
 - Replace starter files in groups and check after each: tokens, then pages, then assets, then `blazon.config.ts`. Most errors of a rebrand are a page or token still pointing at something removed.
-- A passing check does not mean the rebrand is done: the starter passes too. You are done when no `starter-file` note remains except files you chose to keep, and you list those.
+- A passing check does not mean the rebrand is done: the starter passes too. You are done when no `starter-file-unchanged` note remains except files you chose to keep, and you list those.
 
 ## The MCP server
 

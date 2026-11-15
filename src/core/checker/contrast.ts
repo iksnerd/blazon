@@ -77,7 +77,7 @@ export function contrastFindings(pair: ContrastPair, rulePath: string, items: To
   const fgs = expand(pair.fg, items);
   const bgs = expand(pair.bg, items);
   if (minimum === undefined || fgs.length === 0 || bgs.length === 0) {
-    return [finding('invalid-pair', { path: rulePath, message: `Pair ${pair.fg} on ${pair.bg} (${pair.min}) matches no color tokens or has an unknown level` })];
+    return [finding('contrast-pair-invalid', { path: rulePath, message: `Pair ${pair.fg} on ${pair.bg} (${pair.min}) matches no color tokens or has an unknown level` })];
   }
 
   const findings: Finding[] = [];
@@ -94,7 +94,7 @@ export function contrastFindings(pair: ContrastPair, rulePath: string, items: To
           finding('contrast-unknown', { path: bg.path, message: `Cannot measure ${fg.value} on ${bg.value}: the background is translucent, so what is behind it is not known` }),
         );
       } else if (ratio < minimum) {
-        findings.push(finding('contrast', { path: bg.path, message: `{${fg.path}} on {${bg.path}} is ${ratioMessage(ratio)}:1; ${pair.min} needs ${minimum}:1` }));
+        findings.push(finding('contrast-insufficient', { path: bg.path, message: `{${fg.path}} on {${bg.path}} is ${ratioMessage(ratio)}:1; ${pair.min} needs ${minimum}:1` }));
       }
     }
   }

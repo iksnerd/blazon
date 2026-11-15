@@ -61,18 +61,18 @@ describe('review.by and review.at', () => {
     ['a note that is not a string', { status: 'ok', note: 3 }, /note is not a string/],
     ['a status blazon does not know', { status: 'approved' }, /review must be/],
     ['a review that is not an object', 'ok', /review must be/],
-  ])('make a token with %s an invalid-review error', async (_name, review, message) => {
+  ])('make a token with %s a review-invalid error', async (_name, review, message) => {
     const data = await compile(tempProject({ 'tokens/a.json': tokens(review) }));
-    const found = data.findings.filter((f) => f.code === 'invalid-review');
+    const found = data.findings.filter((f) => f.code === 'review-invalid');
 
     expect(found).toEqual([
       expect.objectContaining({ severity: 'error', path: 'color.ink', file: 'tokens/a.json', line: expect.any(Number), message: expect.stringMatching(message) }),
     ]);
   });
 
-  it('make a group with a bad date an invalid-review error at the group', async () => {
+  it('make a group with a bad date a review-invalid error at the group', async () => {
     const data = await compile(tempProject({ 'tokens/a.json': { color: { $type: 'color', ...blazon({ status: 'ok', at: 'yesterday' }), ink: { $value: '#112233' } } } }));
-    expect(codes(data)).toContain('color:invalid-review');
+    expect(codes(data)).toContain('color:review-invalid');
   });
 
   it('make a sidecar with a bad by or at an asset-sidecar-invalid error with the file named', async () => {
@@ -140,16 +140,16 @@ describe('approval-stale (review.value)', () => {
 
   it('does not warn about a token marked needs-review, which already warns', async () => {
     const root = tempProject({ 'tokens/a.json': tokens({ status: 'needs-review', value: '000000000000' }) });
-    expect(codes(await compile(root)).filter((c) => c.startsWith('color.'))).toEqual(['color.ink:needs-review']);
+    expect(codes(await compile(root)).filter((c) => c.startsWith('color.'))).toEqual(['color.ink:review-pending']);
   });
 
-  it('is an invalid-review error when the fingerprint is not 12 hex digits, or sits on a group', async () => {
+  it('is a review-invalid error when the fingerprint is not 12 hex digits, or sits on a group', async () => {
     const bad = await compile(tempProject({ 'tokens/a.json': tokens({ status: 'ok', value: 'abc' }) }));
-    expect(codes(bad)).toContain('color.ink:invalid-review');
+    expect(codes(bad)).toContain('color.ink:review-invalid');
     expect(bad.findings.some((f) => f.code === 'approval-stale')).toBe(false);
 
     const group = await compile(tempProject({ 'tokens/a.json': { color: { $type: 'color', ...blazon({ status: 'ok', value: '0123456789ab' }), ink: { $value: '#112233' } } } }));
-    expect(codes(group)).toContain('color:invalid-review');
+    expect(codes(group)).toContain('color:review-invalid');
   });
 
   it('says nothing about an alias that does not resolve, or loops: there is no value to compare', async () => {

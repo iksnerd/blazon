@@ -43,7 +43,7 @@ Every word blazon uses for a thing, in alphabetical order, with the chapter that
 | Pin | A digest recorded in a lock file, so that a plugin, or blazon itself, that changed on disk does not run. `blazon plugin pin` prints a plugin's digest and `blazon pin` records blazon's commit | [12](12-plugins.md) |
 | Plugin | A program, in any language, that blazon runs for a check or a build step. It reads one JSON request on standard input and answers in JSON | [12](12-plugins.md) |
 | Plugin role | The part a plugin plays: `check` or `build`. A plugin is called only for a role its manifest lists | [13](13-writing-a-plugin.md) |
-| Primitive, semantic, component | The three values of a token's `tier`: `primitive` (a raw value), `semantic` (a role, aliasing a primitive) and `component`. A semantic or component token with no alias gets the warning `semantic-literal` | [2](02-tokens.md) |
+| Primitive, semantic, component | The three values of a token's `tier`: `primitive` (a raw value), `semantic` (a role, aliasing a primitive) and `component`. A semantic or component token with no alias gets the warning `alias-missing` | [2](02-tokens.md) |
 | Profile | A document that states what a host does: the roles it defines, exit codes, limits and secrets. `blazon plugin profile` prints blazon's | [12](12-plugins.md) |
 | Proportion | A group-level field: the documented share of a composition each color or group takes. The brand book draws it as a bar | [2](02-tokens.md) |
 | Reference category | An asset category of material that follows the guidelines but is kept for comparison, or was supplied by someone else, such as card faces extracted from the guidelines or a favicon set from another team. Its assets do not gate the book, the book labels them "Reference", and the deck leaves them out | [6](06-assets-and-icons.md#reference-categories) |
@@ -56,7 +56,7 @@ Every word blazon uses for a thing, in alphabetical order, with the chapter that
 | Shipped plugin | A plugin in blazon's own package. It is named in the config and needs no install and no pin from the operator | [14](14-shipped-plugins.md) |
 | Sidecar | A JSON file beside an asset, with the same name, that states its title, rules, review and provenance | [6](06-assets-and-icons.md) |
 | Source | Two things. On a token or an asset, `source` says where the guidelines state the value (a document and a place in it), and a token's `source.cssVar` names the live site's variable it was read from | [2](02-tokens.md) |
-| Starter | Blazon's own brand book, `examples/blazon/`, which `blazon init` copies into a new project: tokens, pages and artwork that are blazon's until you replace them. `blazon check` notes each file that is still the starter's as `starter-file` | [1](01-getting-started.md) |
+| Starter | Blazon's own brand book, `examples/blazon/`, which `blazon init` copies into a new project: tokens, pages and artwork that are blazon's until you replace them. `blazon check` notes each file that is still the starter's as `starter-file-unchanged` | [1](01-getting-started.md) |
 | Theme role | A part of the brand book's own look (background, accent, display font) that takes its value from one of your tokens | [7](07-theme-and-config.md) |
 | Tier | Where a token sits: `primitive`, `semantic` or `component`. See *Primitive, semantic, component* | [2](02-tokens.md) |
 | Token | One named value in a token file, such as a color or a size. It is an object with a `$value` | [2](02-tokens.md) |

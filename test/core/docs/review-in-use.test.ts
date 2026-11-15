@@ -29,12 +29,12 @@ function catalog(...assets: Asset[]): AssetCatalog {
 
 const doc = (markdown: string) => ({ slug: 'p', filePath: 'p.md', title: 'P', order: 1, meta: {}, markdown, html: '' }) as DocItem;
 const warnings = (markdown: string, ...assets: Asset[]) =>
-  directiveFindings([doc(markdown)], { tokens: { items: [], groupMeta: [] }, assets: catalog(...assets), hasLogo: true }).filter((f) => f.code === 'needs-review-in-use');
+  directiveFindings([doc(markdown)], { tokens: { items: [], groupMeta: [] }, assets: catalog(...assets), hasLogo: true }).filter((f) => f.code === 'page-review-pending');
 
-describe('needs-review-in-use', () => {
+describe('page-review-pending', () => {
   it('is one warning for a page, with the count and the ids, for a folder, a name or an asset id', () => {
     expect(warnings('<!-- blazon:assets logos -->', flagged('a'), flagged('b'), plain)).toEqual([
-      { code: 'needs-review-in-use', severity: 'warning', path: 'p.md', message: 'Shows 2 assets still marked needs-review: logos/a, logos/b' },
+      { code: 'page-review-pending', severity: 'warning', path: 'p.md', message: 'Shows 2 assets still marked needs-review: logos/a, logos/b' },
     ]);
     expect(warnings('<!-- blazon:assets logos a -->', flagged('a'), flagged('b'))[0]!.message).toBe('Shows 1 asset still marked needs-review: logos/a');
     expect(warnings('<!-- blazon:logo-partner logos/a partners/acme -->', flagged('a'), partner)).toHaveLength(1);
@@ -50,7 +50,7 @@ describe('needs-review-in-use', () => {
     for (const name of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
       const findings = directiveFindings([doc(`<!-- blazon:assets ${name} -->`)], { tokens: { items: [], groupMeta: [] }, assets: catalog(flagged('a')), hasLogo: true });
       expect(findings.map((f) => f.code)).toContain('directive-invalid');
-      expect(findings.some((f) => f.code === 'needs-review-in-use')).toBe(false);
+      expect(findings.some((f) => f.code === 'page-review-pending')).toBe(false);
     }
   });
 

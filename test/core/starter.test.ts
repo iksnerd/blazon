@@ -211,7 +211,7 @@ describe("the starter's dark theme", () => {
       fs.writeFileSync(file, JSON.stringify(tokens, null, 2));
     });
     const errors = data.findings.filter((f) => f.severity === 'error');
-    expect(errors.map((f) => [f.code, f.path, f.context])).toEqual([['usage-violation', 'text.muted', 'theme=dark']]);
+    expect(errors.map((f) => [f.code, f.path, f.context])).toEqual([['usage-violated', 'text.muted', 'theme=dark']]);
   });
 });
 

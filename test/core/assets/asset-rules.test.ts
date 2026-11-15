@@ -59,7 +59,7 @@ const PHOTOS = {
 
 const compile = (root: string, assets: Record<string, unknown>) => compileBlazonData({ ...DEFAULT_CONFIG, assets: assets as Record<string, AssetCategoryConfig> }, root);
 const violations = async (rules: unknown, files: Record<string, Buffer | string> = PHOTOS) =>
-  (await compile(project(files), { photography: { rules } })).findings.filter((f) => f.code === 'asset-rule-violation');
+  (await compile(project(files), { photography: { rules } })).findings.filter((f) => f.code === 'asset-rule-violated');
 const ids = (found: { path: string }[]) => found.map((f) => f.path).sort();
 
 describe('category rules: formats', () => {
@@ -123,11 +123,11 @@ describe('category rules in general', () => {
     const extra = tempDir();
     fs.writeFileSync(path.join(extra, 'b.png'), png(10, 10));
     const data = await compile(root, { photography: { dir: extra, rules: { minPixels: { width: 1600 } } } });
-    expect(data.findings.filter((f) => f.code === 'asset-rule-violation').map((f) => f.path)).toEqual(['photography/b']);
+    expect(data.findings.filter((f) => f.code === 'asset-rule-violated').map((f) => f.path)).toEqual(['photography/b']);
   });
   it('leave a category without rules alone, and ignore a category that has none of the asked-for assets', async () => {
     const data = await compile(project(PHOTOS), { photography: { label: 'Imagery' } });
-    expect(data.findings.filter((f) => f.code === 'asset-rule-violation')).toEqual([]);
+    expect(data.findings.filter((f) => f.code === 'asset-rule-violated')).toEqual([]);
   });
 });
 
@@ -152,6 +152,6 @@ describe('category rules that are malformed', () => {
     expect(found[0]).toMatchObject({ severity: 'error', path: 'photography' });
     expect(found[0]!.message).toMatch(message);
     expect(data.assetCategories!.find((c) => c.category === 'photography')!.label).toBe('Photography');
-    expect(data.findings.filter((f) => f.code === 'asset-rule-violation')).toEqual([]);
+    expect(data.findings.filter((f) => f.code === 'asset-rule-violated')).toEqual([]);
   });
 });

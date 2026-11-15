@@ -34,7 +34,7 @@ Test files sit in `test/` in a folder for their subject:
 
 | Folder | Tests |
 |---|---|
-| `core/` | Tokens, the checker, assets and icon sets, config, pages and the starter-file note |
+| `core/` | Tokens, the checker, assets and icon sets, config, pages and the starter-file-unchanged note |
 | `brand/` | `brand.json`, its schema and the Python readers |
 | `build/` | The CLI, `blazon build`, the token outputs and the dev server |
 | `viewer/` | The brand book's React components |

@@ -57,7 +57,7 @@ export class SourceReader {
     // RFC 0001 security: references resolve inside the project root only
     if (!real.startsWith(realRoot + path.sep)) fail(`a source points at ${ref}, which is outside the project`);
     const name = path.relative(realRoot, real).split(path.sep).join('/');
-    // A file that does not parse is an invalid-json finding with its line, as without a resolver, and holds no tokens: the other files still load
+    // A file that does not parse is a token-file-invalid finding with its line, as without a resolver, and holds no tokens: the other files still load
     const doc = readTokenFile(real, name, this.problems) ?? { name, content: {} };
     this.cache.set(ref, doc);
     return doc;

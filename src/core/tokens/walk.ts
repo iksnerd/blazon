@@ -76,7 +76,7 @@ function inheritableBlazon(blazon: BlazonExtension): BlazonExtension {
 function readType(node: Record<string, unknown>, at: string, file: string, problems: Finding[]): TokenType | undefined {
   if (node.$type === undefined) return undefined;
   if (TOKEN_TYPES.includes(node.$type as TokenType)) return node.$type as TokenType;
-  problems.push(finding('unknown-type', { path: at || file, message: `$type "${String(node.$type)}" is not a DTCG 2025.10 type` }));
+  problems.push(finding('token-type-unknown', { path: at || file, message: `$type "${String(node.$type)}" is not a DTCG 2025.10 type` }));
   return undefined;
 }
 
@@ -121,7 +121,7 @@ export function walk(node: Record<string, unknown>, parts: string[], inherited: 
     // DTCG forbids "." "{" "}" in a name. A key "a.b" and a group a holding b would both be the path a.b, and the later one would silently replace the earlier
     if (/[.{}]/.test(key)) {
       tree.problems.push(
-        finding('invalid-token', {
+        finding('token-invalid', {
           path: childPath.join('.'),
           message: `"${key}" is not a valid name: DTCG names cannot contain ".", "{" or "}", because a path joins names with "."`,
         }),
@@ -129,7 +129,7 @@ export function walk(node: Record<string, unknown>, parts: string[], inherited: 
     } else if (isObject(child)) {
       walk(child, childPath, childInherited, sources, tree);
     } else {
-      tree.problems.push(finding('invalid-token', { path: childPath.join('.'), message: `"${childPath.join('.')}" is a bare value; DTCG tokens are objects with "$value"` }));
+      tree.problems.push(finding('token-invalid', { path: childPath.join('.'), message: `"${childPath.join('.')}" is a bare value; DTCG tokens are objects with "$value"` }));
     }
   }
 }

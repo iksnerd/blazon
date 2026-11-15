@@ -44,17 +44,17 @@ describe('logoRuleFindings', () => {
   });
 
   it('is an error to name a variant no logo has: the rule would forbid nothing and say nothing', async () => {
-    expect(await findings(magenta({ deny: ['onDrak'] }))).toEqual(['color.magenta:unknown-logo-variant']);
+    expect(await findings(magenta({ deny: ['onDrak'] }))).toEqual(['color.magenta:logo-variant-unknown']);
   });
 
   it('is an error when it is not { deny: strings, reason?: string }', async () => {
-    expect(await findings(magenta({ deny: 'onDark' }))).toEqual(['color.magenta:invalid-logo-rule']);
-    expect(await findings(magenta({ deny: ['onDark'], reason: 3 }))).toEqual(['color.magenta:invalid-logo-rule']);
-    expect(await findings(magenta('onDark'))).toEqual(['color.magenta:invalid-logo-rule']);
+    expect(await findings(magenta({ deny: 'onDark' }))).toEqual(['color.magenta:logo-rule-invalid']);
+    expect(await findings(magenta({ deny: ['onDark'], reason: 3 }))).toEqual(['color.magenta:logo-rule-invalid']);
+    expect(await findings(magenta('onDark'))).toEqual(['color.magenta:logo-rule-invalid']);
   });
 
   it('reports a group once, not each token under it', async () => {
     const group = { $extensions: { 'dev.blazon': { logo: { deny: ['nope'] } } }, a: { $value: '#111111' }, b: { $value: '#222222' } };
-    expect(await findings({ loud: group })).toEqual(['color.loud:unknown-logo-variant']);
+    expect(await findings({ loud: group })).toEqual(['color.loud:logo-variant-unknown']);
   });
 });

@@ -10,7 +10,7 @@ const report = (tokens: DeclaredToken[]) => {
   return resolver.problems.map((p) => `${p.path}: ${p.message}`);
 };
 
-describe('circular-alias', () => {
+describe('alias-circular', () => {
   it('is reported on the same token whichever token the walk starts from', () => {
     const a = token('a', '{b}');
     const b = token('b', '{a}');

@@ -11,7 +11,7 @@ export interface Finding {
   context?: string;
   /** The file the finding is about, relative to the project, when `path` names a token or an asset: "tokens/colors.json" */
   file?: string;
-  /** The line (1-based) in `file` where the key of the token `path` names is written, or, for invalid-json, where the parser stopped. Left out when it is not known */
+  /** The line (1-based) in `file` where the key of the token `path` names is written, or, for token-file-invalid, where the parser stopped. Left out when it is not known */
   line?: number;
   /** What to do about this finding, when it is not the fix the catalogue gives its code: a plugin-failed finding carries the fix for its own cause */
   fix?: string;

@@ -20,11 +20,11 @@ describe('the starter AGENTS.md', () => {
     expect(read('examples/blazon/CLAUDE.md').trim()).toBe('@AGENTS.md');
   });
 
-  it('is copied by init and is not a starter-file finding', async () => {
+  it('is copied by init and is not a starter-file-unchanged finding', async () => {
     const root = await starterProject();
     expect(fs.existsSync(path.join(root, 'AGENTS.md'))).toBe(true);
     const data = await compileBlazonData(await loadConfig(root), root);
-    const noted = data.findings.filter((f) => f.code === 'starter-file').map((f) => f.path);
+    const noted = data.findings.filter((f) => f.code === 'starter-file-unchanged').map((f) => f.path);
     expect(noted).not.toContain('AGENTS.md');
     expect(noted).not.toContain('CLAUDE.md');
     expect(noted.length).toBeGreaterThan(0); // the check still notes the brand's own starter files

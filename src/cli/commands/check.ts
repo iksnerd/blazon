@@ -50,8 +50,8 @@ function listNames(names: string[]): string {
 const folderOf = (f: Finding): string => f.path.split('/')[0]!;
 
 /**
- * The text of one severity's findings, a line each, except two kinds that would repeat: `starter-file` notes (one line
- * for each folder), `needs-review` warnings with one message (one line) and `needs-review-in-use` warnings (one line
+ * The text of one severity's findings, a line each, except two kinds that would repeat: `starter-file-unchanged` notes (one line
+ * for each folder), `review-pending` warnings with one message (one line) and `page-review-pending` warnings (one line
  * with the page count, each page's own message stays in the findings). The findings themselves stay one for each file.
  * A finding that names a file starts with `file:line` from where blazon was run (`dir`), as compilers print it, so a terminal
  * or an editor opens it at the line.
@@ -61,29 +61,29 @@ function lines(findings: Finding[], dir: string): string[] {
   const folded = new Set<Finding>();
   const starters = new Map<string, Finding[]>();
   const reviews = new Map<string, Finding[]>();
-  const inUse = findings.filter((f) => f.code === 'needs-review-in-use');
+  const inUse = findings.filter((f) => f.code === 'page-review-pending');
   for (const f of findings) {
-    if (f.code === 'starter-file') starters.set(folderOf(f), [...(starters.get(folderOf(f)) ?? []), f]);
-    if (f.code === 'needs-review') reviews.set(f.message, [...(reviews.get(f.message) ?? []), f]);
+    if (f.code === 'starter-file-unchanged') starters.set(folderOf(f), [...(starters.get(folderOf(f)) ?? []), f]);
+    if (f.code === 'review-pending') reviews.set(f.message, [...(reviews.get(f.message) ?? []), f]);
   }
 
   for (const f of findings) {
     if (folded.has(f)) continue;
-    const star = f.code === 'starter-file' ? starters.get(folderOf(f))! : undefined;
-    const review = f.code === 'needs-review' ? reviews.get(f.message)! : undefined;
-    if (f.code === 'needs-review-in-use' && inUse.length > 1) {
+    const star = f.code === 'starter-file-unchanged' ? starters.get(folderOf(f))! : undefined;
+    const review = f.code === 'review-pending' ? reviews.get(f.message)! : undefined;
+    if (f.code === 'page-review-pending' && inUse.length > 1) {
       inUse.forEach((x) => folded.add(x));
       out.push(
-        `${pc.bold(`needs-review-in-use (${inUse.length} pages)`)}: ${listNames(inUse.map(where))}: show assets still marked needs-review ${pc.dim('[needs-review-in-use]')}`,
+        `${pc.bold(`page-review-pending (${inUse.length} pages)`)}: ${listNames(inUse.map(where))}: show assets still marked needs-review ${pc.dim('[page-review-pending]')}`,
       );
     } else if (star && star.length > 1) {
       star.forEach((x) => folded.add(x));
       const folder = folderOf(f);
       const names = star.map((x) => x.path.slice(folder.length + 1));
-      out.push(`${pc.bold(`${folder}/`)}: ${star.length} files are still the starter's text (${listNames(names)}) ${pc.dim('[starter-file]')}`);
+      out.push(`${pc.bold(`${folder}/`)}: ${star.length} files are still the starter's text (${listNames(names)}) ${pc.dim('[starter-file-unchanged]')}`);
     } else if (review && review.length > 1) {
       review.forEach((x) => folded.add(x));
-      out.push(`${pc.bold(`needs-review (${review.length})`)}: ${listNames(review.map(where))}: ${f.message} ${pc.dim('[needs-review]')}`);
+      out.push(`${pc.bold(`review-pending (${review.length})`)}: ${listNames(review.map(where))}: ${f.message} ${pc.dim('[review-pending]')}`);
     } else {
       const at = findingLocation(f, dir);
       const subject = at === undefined ? pc.bold(where(f)) : f.path === f.file ? pc.bold(at) : `${pc.bold(at)}  ${where(f)}`;
@@ -104,7 +104,7 @@ export function printFindings(result: CheckResult, dir: string = ''): void {
 const STARTER_NOTES_FOR_NEXT = 5;
 
 export function printNext(result: CheckResult, dir: string = ''): void {
-  if (result.infos.filter((f) => f.code === 'starter-file').length < STARTER_NOTES_FOR_NEXT) return;
+  if (result.infos.filter((f) => f.code === 'starter-file-unchanged').length < STARTER_NOTES_FOR_NEXT) return;
   console.log(pc.bold('Next:'));
   console.log(`  1. Edit ${pc.cyan(inDir(dir, 'tokens/colors.json'))} with your colors`);
   console.log(`  2. Run ${pc.cyan(blazonCommand('dev', dir))} to see the book`);

@@ -13,7 +13,7 @@ function referencesToken(value: unknown): boolean {
 export function tierFindings(item: TokenItem): Finding[] {
   const tier = item.blazon.tier;
   if ((tier === 'semantic' || tier === 'component') && !referencesToken(item.rawValue)) {
-    return [finding('semantic-literal', { path: item.path, message: `A ${tier} token should alias a primitive, not hold ${item.value}` })];
+    return [finding('alias-missing', { path: item.path, message: `A ${tier} token should alias a primitive, not hold ${item.value}` })];
   }
   return [];
 }

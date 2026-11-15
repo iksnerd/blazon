@@ -19,17 +19,17 @@ export function resolveTokenTree(tree: TokenTree, cssPrefix = '--'): ParsedToken
     const segments = token.path.split('.');
 
     if (!type) {
-      resolver.report(token.path, 'missing-type', 'No $type on the token, its groups, or the token it aliases');
+      resolver.report(token.path, 'token-type-missing', 'No $type on the token, its groups, or the token it aliases');
     } else if (aliasOf && token.type) {
       const targetType = resolver.typeOf(tree.tokens.find((t) => t.path === aliasOf) ?? token);
       if (targetType && targetType !== token.type) {
-        resolver.report(token.path, 'type-mismatch', `$type ${token.type} aliases {${aliasOf}}, which is ${targetType}`);
+        resolver.report(token.path, 'alias-type-mismatch', `$type ${token.type} aliases {${aliasOf}}, which is ${targetType}`);
       }
     }
 
     const value = toCssValue(type, resolvedValue, token.blazon);
     const parts = compositeParts(type, resolvedValue);
-    if (value.problem) resolver.report(token.path, 'invalid-value', value.problem);
+    if (value.problem) resolver.report(token.path, 'token-value-invalid', value.problem);
 
     items.push({
       path: token.path,
