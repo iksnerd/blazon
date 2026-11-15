@@ -5,7 +5,7 @@
 # It tests the commit you are about to make, not the working tree: the staged files are exported to a temporary folder and
 # every check runs there, so an unstaged edit or an untracked file cannot make a broken commit pass.
 #
-# Install:   npm install   (its prepare script runs `git config core.hooksPath .githooks`)
+# Install:   npm run hooks   (runs `git config core.hooksPath .githooks`; not a prepare script, so the published package carries none)
 # Bypass:    git commit --no-verify
 #
 # What runs, by what is staged (a deletion counts as staged):

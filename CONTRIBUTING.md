@@ -8,6 +8,7 @@ Blazon needs Node 24 or later (`engines` in `package.json`), the current LTS, wh
 git clone https://github.com/iksnerd/blazon.git
 cd blazon
 npm install
+npm run hooks
 npm test
 ```
 
@@ -77,9 +78,9 @@ An operation that has a command and no tool, or a tool and no command, is named 
 
 ## The hooks
 
-Your machine checks every commit and every push with the hooks below, and they are the gate: CI does not run on pull requests or on pushes to `main`. The hooks run the tests related to what changed, not the whole suite, so a change can break a test in a file it does not touch and still pass both; `npm test` is the whole suite, and CI runs it only on version tags and by hand. It runs (`.github/workflows/ci.yml`) on version tags (`v*`) and by hand, on Node 24, to prove a release builds and tests from a clean clone; it also scans for secrets. It builds and tests the `mcp/` workspace too, and fails if the MCP SDK is missing. On a tag, once both have passed, the same run attaches the packed tarball to a GitHub release (`release` job); a failing test or scan stops the release. Install the hooks before you contribute (`npm install` does it).
+Your machine checks every commit and every push with the hooks below, and they are the gate: CI does not run on pull requests or on pushes to `main`. The hooks run the tests related to what changed, not the whole suite, so a change can break a test in a file it does not touch and still pass both; `npm test` is the whole suite, and CI runs it only on version tags and by hand. It runs (`.github/workflows/ci.yml`) on version tags (`v*`) and by hand, on Node 24, to prove a release builds and tests from a clean clone; it also scans for secrets. It builds and tests the `mcp/` workspace too, and fails if the MCP SDK is missing. On a tag, once both have passed, the same run builds the package, installs the tarball into an empty folder and runs blazon from it, then attaches the tarball and `SHA256SUMS` to a GitHub release (`release` job; see "Cutting a release"); a failing test, scan or smoke test stops the release. Install the hooks before you contribute (`npm run hooks`).
 
-`npm install` installs the hooks (its `prepare` script runs `git config core.hooksPath .githooks`). Both test the files git is about to record or send, not your working tree, so an unstaged edit or an untracked file cannot make a broken change pass.
+`npm run hooks` installs the hooks (it runs `git config core.hooksPath .githooks`). It is not a `prepare` script on purpose: a `prepare` in the manifest travels in the package, and npm 12 warns every installer that it was blocked. Both test the files git is about to record or send, not your working tree, so an unstaged edit or an untracked file cannot make a broken change pass.
 
 **`pre-commit`** is quick, so you commit often. On every commit it runs:
 
@@ -120,6 +121,20 @@ Some tests check blazon against brand books made from other companies' guideline
 `test/support/reference.ts` finds them: `referencePath(...)` gives a path in the folder and `hasReference(...)` says whether it exists. A test that needs a reference project uses `describe.skipIf(!hasReference('examples/<name>'))`. On a fresh clone and in CI the folder is empty, those tests skip, and the run prints one line saying so. With the files in place they run with the rest of `npm test`. To look at one in the browser: `npm run blazon:src -- dev docs/personal/reference/examples/<name>`.
 
 Do not commit anything from this folder, and do not add another company's material to a tracked path. A test that needs only a fictional or blazon-made brand uses `examples/blazon` or `examples/conformance`.
+
+## Cutting a release
+
+One command, on a clean `main`:
+
+```bash
+npm run release -- 0.2.0
+```
+
+`scripts/release.mjs` refuses a dirty tree, a branch other than `main`, a version that is not greater than the current one, and a tag that exists. It runs `npm run check`, sets the version in `package.json` and `package-lock.json`, turns the CHANGELOG's `Unreleased` heading into `0.2.0 (date)` under a new empty `Unreleased`, commits `release v0.2.0` and creates the annotated tag `v0.2.0`. It never pushes; it prints `git push origin main v0.2.0`. Review the commit, then push. Only the tag starts CI. `mcp/` is private and keeps its own version.
+
+On the tag, CI (`.github/workflows/ci.yml`) runs the tests and the secret scan, then the `release` job: `npm run build`, `npm pack`, `scripts/check-pack.mjs` (the tarball holds `dist/`, the starter, the ten plugin programs and `plugins/shipped.lock`), `scripts/smoke-tarball.mjs` (install the tarball in an empty folder; run `blazon --help`, `init`, `check`, `build`, `plugin check --core` and `doctor`), then `SHA256SUMS`, a build provenance attestation, and a GitHub release with both files. `npm pack` and `npm publish` run `npm run build` first (`prepack`), so a local tarball is never made from a stale `dist/`. Run the same two scripts by hand on any tarball: `node scripts/check-pack.mjs --tarball <file>`.
+
+The `publish` job puts that same tarball on npm with provenance. It is skipped until the owner does two things, once: add a trusted publisher on npmjs.com for the package (GitHub Actions, repository `iksnerd/blazon`, workflow `ci.yml`), and set the repository variable `NPM_PUBLISH` to `true`. The first publish of a new package needs the package to exist on npm before a trusted publisher can be added to it. No npm token is stored.
 
 ## Making changes
 

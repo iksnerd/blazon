@@ -1,8 +1,10 @@
 name: CI
 # Runs on version tags and by hand, and nothing else: every commit and push is checked locally by .githooks/pre-commit and
-# .githooks/pre-push (see CONTRIBUTING.md). This run proves a release builds and tests from a clean clone. On a version
-# tag, and only when the tests and the secret scan have passed, the last job attaches the package to a GitHub release.
-# It does not publish to npm; the first publish is a decision still to be made (see CHANGELOG).
+# .githooks/pre-push (see CONTRIBUTING.md). `npm run release -- <version>` makes the commit and the tag; pushing the tag starts this.
+# The run proves a release builds and tests from a clean clone. On a version tag, and only when the tests and the secret scan have
+# passed, the `release` job builds the package fresh, installs the tarball into an empty folder and runs blazon from it, then
+# attaches the tarball and its SHA256SUMS to a GitHub release with a build provenance attestation. The `publish` job puts that same
+# tarball on npm, and it stays off until the owner sets the repository variable NPM_PUBLISH to true (CONTRIBUTING, "Cutting a release").
 on:
   push:
     tags: ['v*']
@@ -10,7 +12,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         node-version: [24]
@@ -31,7 +33,7 @@ jobs:
       - run: npm test
 
   secret-scan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -43,9 +45,12 @@ jobs:
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [test, secret-scan]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # Only this job may write a release, mint an OIDC token and attest. The other jobs keep the read-only default.
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -59,8 +64,62 @@ jobs:
           npm audit --omit=dev --workspace mcp
       - name: Check the tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
-      - run: npm pack
+      # Built here, from this clone, not taken from any earlier job: the tarball is made of what this step writes.
+      - run: npm run build
+      - name: Pack
+        id: pack
+        run: |
+          npm pack > /dev/null
+          set -- ./*.tgz
+          test "$#" -eq 1
+          echo "tarball=${1#./}" >> "$GITHUB_OUTPUT"
+      - name: Check the tarball holds dist/, the starter, the plugin programs and the lock
+        run: node scripts/check-pack.mjs --tarball "${{ steps.pack.outputs.tarball }}"
+      - name: Install the tarball in an empty folder and run it
+        run: node scripts/smoke-tarball.mjs "${{ steps.pack.outputs.tarball }}"
+      - name: Checksums
+        run: |
+          shasum -a 256 "${{ steps.pack.outputs.tarball }}" > SHA256SUMS
+          shasum -a 256 -c SHA256SUMS
+      - uses: actions/attest-build-provenance@v4.2.2
+        with:
+          subject-path: ${{ steps.pack.outputs.tarball }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: ${{ steps.pack.outputs.tarball }}
+          if-no-files-found: error
       - uses: softprops/action-gh-release@v3
         with:
-          files: '*.tgz'
+          files: |
+            ${{ steps.pack.outputs.tarball }}
+            SHA256SUMS
           generate_release_notes: true
+
+  # Off until the owner turns it on. Nothing publishes by accident: this job is skipped unless the repository variable NPM_PUBLISH
+  # is the string true. To turn it on, once: (1) on npmjs.com, open the package's Settings, Trusted Publisher, and add GitHub
+  # Actions with this repository (iksnerd/blazon), the workflow file ci.yml and no environment; for the first publish the package
+  # does not exist yet, so publish 0.x once by hand or create the package with a granular token first, as npm requires.
+  # (2) In the repository settings, Actions, Variables, set NPM_PUBLISH to true. No npm token is stored: the job authenticates with
+  # its OIDC token, which is what `--provenance` signs with. It publishes the tarball the release job attested, not a new build.
+  # mcp/ is private and never published.
+  publish:
+    if: vars.NPM_PUBLISH == 'true' && startsWith(github.ref, 'refs/tags/v')
+    needs: release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v8
+        with:
+          name: package
+      - name: Publish the attested tarball
+        run: |
+          set -- ./*.tgz
+          test "$#" -eq 1
+          npm publish "$1" --access public --provenance

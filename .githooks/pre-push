@@ -11,7 +11,7 @@
 #                       names), for a new tag, for a ref the remote does not hold an ancestor of, or when BLAZON_PUSH_FULL=1
 #   otherwise           only the suites those files ask for, on the pushed tree
 #
-# Install:   npm install   (its prepare script runs `git config core.hooksPath .githooks`)
+# Install:   npm run hooks   (runs `git config core.hooksPath .githooks`; not a prepare script, so the published package carries none)
 # Bypass:    git push --no-verify
 set -uo pipefail
 

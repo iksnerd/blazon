@@ -676,7 +676,7 @@ describe('the pre-commit hook', () => {
     }, 120_000);
   });
 
-  describe('the install script, run by `npm install` as its prepare script', () => {
+  describe('the install script, run by `npm run hooks`', () => {
     const INSTALL = path.join(REPO, 'scripts/install-hooks.mjs');
     const run = (cwd: string) => spawnSync(process.execPath, [INSTALL], { cwd, encoding: 'utf-8' });
 
@@ -695,9 +695,10 @@ describe('the pre-commit hook', () => {
       expect(fs.readdirSync(dir)).toEqual([]);
     });
 
-    it('is the prepare script, and the suites the hook names are scripts of the package', () => {
+    it('is the hooks script, not a prepare script (the published manifest must carry none), and the suites the hook names are scripts of the package', () => {
       const scripts = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf-8')).scripts;
-      expect(scripts.prepare).toBe('node scripts/install-hooks.mjs');
+      expect(scripts.hooks).toBe('node scripts/install-hooks.mjs');
+      expect(scripts.prepare).toBeUndefined();
       for (const name of ['typecheck', 'test', 'test:deck', 'test:docs']) expect(scripts[name], name).toBeTruthy();
       // The suites it runs for a docs-only commit and a scripts-only commit are real test files
       for (const file of scripts['test:docs'].replace('vitest run ', '').split(' ').concat(scripts['test:deck'].replace('vitest run ', '').split(' '))) {
