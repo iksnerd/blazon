@@ -55,6 +55,8 @@ Problems are `resolver-invalid` errors, not crashes. The message names the probl
 | `modifier "x" needs a "default" context` | A modifier has no `default`. Blazon compiles the defaults as its main tokens |
 | `modifier "x" default "y" is not one of its contexts` | The `default` names a context that is not declared |
 | `modifier "x" has no contexts` | An empty modifier |
+| `modifier name "x" is not allowed`, `context of modifier ... name "x" is not allowed` | A modifier, context or inline item name with a character other than letters, digits, `_` and `-`. The names go into file names, selectors and comments |
+| `inline resolutionOrder name "x" is already a declared set or modifier` | An inline item reuses the name of a set or modifier |
 | `resolutionOrder points at ..., which does not exist` | A `$ref` that matches no set or modifier |
 | `a source points at ..., which does not exist` | A token file that is not there |
 | `a source points at ...; sources cannot reference modifiers` | A source refers to `#/modifiers/...` |

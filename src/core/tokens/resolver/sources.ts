@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { Finding } from '../../../types/index.js';
 import { readTokenFile } from '../load.js';
 import type { TokenDocument } from '../merge.js';
-import { fail, type Resolver, type Source } from './parse.js';
+import { fail, type ModifierDef, type Resolver, type Source } from './parse.js';
 
 /** Context choice per modifier; every modifier in the resolver has an entry. */
 export type Selection = Record<string, string>;
@@ -18,9 +18,13 @@ export class SourceReader {
   ) {}
 
   documents(selection: Selection): TokenDocument[] {
-    return this.resolver.order.flatMap((item) =>
-      item.kind === 'set' ? this.expand(item.sources, [item.name]) : this.expand(item.modifier.contexts[selection[item.modifier.name]!]!, []),
-    );
+    return this.resolver.order.flatMap((item) => (item.kind === 'set' ? this.expand(item.sources, [item.name]) : this.expand(this.context(item.modifier, selection), [])));
+  }
+
+  private context(modifier: ModifierDef, selection: Selection): Source[] {
+    const name = selection[modifier.name];
+    const sources = name === undefined || !Object.hasOwn(modifier.contexts, name) ? undefined : modifier.contexts[name];
+    return sources ?? fail(`modifier "${modifier.name}" has no context ${JSON.stringify(name)}`);
   }
 
   private expand(sources: Source[], stack: string[]): TokenDocument[] {

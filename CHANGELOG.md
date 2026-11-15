@@ -99,6 +99,11 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- A resolver with an inline modifier or set that reuses the name of a declared set or modifier is a `resolver-invalid` error, not an uncaught TypeError.
+- Modifier, context and inline item names in a resolver must be letters, digits, `_` and `-`, so a name can no longer become a path outside `tokensOutDir`, break a selector or close a CSS comment. `blazon tokens` also refuses to write a file outside `tokensOutDir`.
+- Token and resolver JSON files that start with a UTF-8 byte order mark parse instead of reporting `invalid-json`.
+- `theme.css` no longer lets `*/` in a deprecation message, group name or context name end a generated comment.
+- A string `fontWeight` outside 1 to 1000 (`"0"`, `"1200"`) is an `invalid-value` finding, as a number already was.
 - The MCP server passes each option as one argument (`--theme=dark`), so a value that starts with a dash, such as `--cwd=/other/dir`, can no longer be read as an option and change the brand folder; `can_use` `theme` and `list_tokens` `type` refuse such a value.
 - The MCP server no longer passes `NODE_*` environment variables (such as `NODE_AUTH_TOKEN`) to blazon.
 - The MCP server keeps at most 64 cached answers.

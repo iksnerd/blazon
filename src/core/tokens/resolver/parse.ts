@@ -37,11 +37,23 @@ function readSources(value: unknown, where: string): Source[] {
   return value as Source[];
 }
 
+/**
+ * Names of modifiers, contexts and sets end up in output file names (`tokens.<modifier>.<context>.json`), CSS selectors and CSS comments.
+ * The DTCG resolver module does not restrict them; blazon does, so that none can name another folder or close a comment.
+ */
+export const RESOLVER_NAME = /^[A-Za-z0-9_-]+$/;
+
+function checkName(kind: string, name: string): void {
+  if (!RESOLVER_NAME.test(name)) fail(`${kind} name ${JSON.stringify(name)} is not allowed: use letters, digits, "_" and "-" only`);
+}
+
 function readModifier(name: string, value: unknown): ModifierDef {
+  checkName('modifier', name);
   if (!isObject(value) || !isObject(value.contexts)) fail(`modifier "${name}" must declare "contexts"`);
   const names = Object.keys(value.contexts);
   // §4.1.5.1: a modifier with no contexts MUST be an error
   if (names.length === 0) fail(`modifier "${name}" has no contexts`);
+  names.forEach((c) => checkName(`context of modifier "${name}"`, c));
   const contexts = Object.fromEntries(names.map((c) => [c, readSources((value.contexts as Record<string, unknown>)[c], `context "${name}.${c}"`)]));
   // §4.1.5.3: default MUST name a context. Blazon also requires one: the default context is its main output.
   if (value.default === undefined) fail(`modifier "${name}" needs a "default" context; blazon compiles the defaults as its main tokens`);
@@ -60,6 +72,7 @@ export function parseResolver(file: string, content: unknown): Resolver {
   const modifiers = Object.entries(isObject(content.modifiers) ? content.modifiers : {}).map(([name, m]) => readModifier(name, m));
 
   const seenInline = new Set<string>();
+  const declared = new Set([...Object.keys(sets), ...modifiers.map((m) => m.name)]);
   const order = content.resolutionOrder.map((item): OrderItem => {
     if (!isObject(item)) fail('resolutionOrder items must be objects');
     if (typeof item.$ref === 'string') {
@@ -78,6 +91,8 @@ export function parseResolver(file: string, content: unknown): Resolver {
       fail('an inline resolutionOrder item needs "name" and "type" ("set" or "modifier")');
     }
     if (seenInline.has(item.name)) fail(`inline resolutionOrder name "${item.name}" is used twice`);
+    if (declared.has(item.name)) fail(`inline resolutionOrder name "${item.name}" is already a declared set or modifier`);
+    checkName(item.type, item.name);
     seenInline.add(item.name);
     if (item.type === 'set') return { kind: 'set', name: item.name, sources: readSources(item.sources, `inline set "${item.name}".sources`) };
     const inline = readModifier(item.name, item);

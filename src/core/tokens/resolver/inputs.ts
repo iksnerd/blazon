@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { stripBom } from '../key-lines.js';
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -23,7 +24,7 @@ function refsInEntry(entry: unknown): string[] {
 export function resolverInputs(file: string): string[] {
   let content: unknown;
   try {
-    content = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    content = JSON.parse(stripBom(fs.readFileSync(file, 'utf-8')));
   } catch {
     return [file];
   }

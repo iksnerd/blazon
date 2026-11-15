@@ -1,5 +1,10 @@
 /** Where each key of a JSON text sits, found without a parser that would drop the positions. */
 
+/** The text without one leading byte order mark, which an editor on Windows may write and `JSON.parse` refuses. */
+export function stripBom(text: string): string {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+}
+
 /** The line (1-based) of each key, by dotted path: `color.brand.$value`, `list.1.k` for an array's second item. Only the first of a repeated key is kept. Text that is not JSON gives an empty map. */
 export function keyLines(text: string): Map<string, number> {
   const found = new Map<string, number>();

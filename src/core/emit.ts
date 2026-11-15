@@ -36,6 +36,8 @@ export function planTokenOutputs(data: BlazonData, config: BlazonConfig, cwd: st
 
   // A file of the project's own that has the name of one of these is not ours to overwrite: refuse before writing any of them
   for (const name of files.keys()) {
+    // Defence in depth: names come from a resolver, which parseResolver restricts, but a file must never land outside tokensOutDir
+    if (path.dirname(path.resolve(outDir, name)) !== outDir) throw new Error(`[blazon] ${JSON.stringify(name)} would be written outside tokensOutDir ("${config.tokensOutDir}")`);
     const input = isInput(config, cwd, path.join(outDir, name));
     if (input)
       throw new Error(`[blazon] ${name} in tokensOutDir ("${config.tokensOutDir}") would be written over ${input.name} ("${input.as}"), which the brand reads. Move one of them`);
