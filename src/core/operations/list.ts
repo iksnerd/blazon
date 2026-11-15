@@ -147,6 +147,7 @@ export const OPERATIONS: readonly Operation[] = [
           description: 'A token type, for example color, dimension or fontFamily. Leave out for every type. An unknown type is refused with the list of types',
           type: 'string',
           maxLength: 40,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
         },
         dir: {
           type: 'string',
@@ -361,6 +362,8 @@ export const OPERATIONS: readonly Operation[] = [
         },
         theme: {
           type: 'string',
+          maxLength: 200,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
           description: "Judge the pair in this context of the resolver's theme modifier, such as dark. Default: the default tokens",
         },
         dir: {

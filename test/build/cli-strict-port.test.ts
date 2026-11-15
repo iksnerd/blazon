@@ -21,7 +21,8 @@ afterEach(async () => {
 async function busyPort(): Promise<number> {
   const server = net.createServer();
   listeners.push(server);
-  await new Promise<void>((ready) => server.listen(0, ready));
+  // On the address the dev server binds by default: a wildcard listener does not block a bind to localhost on macOS
+  await new Promise<void>((ready) => server.listen(0, 'localhost', ready));
   return (server.address() as net.AddressInfo).port;
 }
 

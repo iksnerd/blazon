@@ -91,6 +91,40 @@ describe('blazon plugin check --json', () => {
   }, 60_000);
 });
 
+describe('blazon plugin: a missing or ignored argument', () => {
+  it.each([
+    [['check', '--json'], 'plugin check'],
+    [['pin', '--json'], 'plugin'],
+  ])('says %j as JSON on standard output when --json is allowed, with exit 2 and code missing-argument', (args, command) => {
+    const result = blazon('plugin', ...args);
+    expect(result.status).toBe(2);
+    if (command === 'plugin check') expect(JSON.parse(result.stdout)).toMatchObject({ command: 'plugin check', passed: false, error: { code: 'missing-argument' } });
+    else expect(result.stderr).toContain('--json is for `blazon plugin check`');
+  }, 60_000);
+
+  it.each([['check'], ['pin']])('exits 2 for `plugin %s` with no target, and says the usage on standard error', (action) => {
+    const result = blazon('plugin', action);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain(`usage: blazon plugin ${action}`);
+  }, 60_000);
+
+  it.each([
+    [['check', '--name', 'x', '--digest', 'y', '--entry', 'z'], '--name'],
+    [['check', '--entry', 'z'], '--entry'],
+    [['profile', '--digest', 'y'], '--digest'],
+  ])('refuses %j: an option of `pin` is not silently ignored', (args, flag) => {
+    const result = blazon('plugin', args[0]!, ...(args[0] === 'check' ? [program(CONFORMING)] : []), ...args.slice(1));
+    expect(result.status, result.stdout + result.stderr).toBe(2);
+    expect(result.stderr).toContain(`${flag} is for \`blazon plugin pin\``);
+  }, 60_000);
+
+  it('refuses a target for profile', () => {
+    const result = blazon('plugin', 'profile', 'foo');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('`profile` takes no target');
+  }, 60_000);
+});
+
 describe('blazon plugin check', () => {
   it('names the host and what it adopts before its first case, and exits 0 for a plugin that conforms', () => {
     const result = blazon('plugin', 'check', program(CONFORMING));

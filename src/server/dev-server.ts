@@ -35,7 +35,7 @@ export function resolvePrebuiltViewerDir(): string {
   return dir;
 }
 
-export async function startDevServer(config: BlazonConfig, cwd: string = process.cwd(), options: { strictPort?: boolean } = {}): Promise<ViteDevServer> {
+export async function startDevServer(config: BlazonConfig, cwd: string = process.cwd(), options: { strictPort?: boolean; host?: string | boolean } = {}): Promise<ViteDevServer> {
   const viewer = resolveViewer();
 
   const server = await createServer({
@@ -43,7 +43,7 @@ export async function startDevServer(config: BlazonConfig, cwd: string = process
     server: {
       port: config.port,
       strictPort: options.strictPort ?? false,
-      host: true,
+      host: options.host ?? 'localhost',
       open: false,
     },
     plugins: [createBlazonVitePlugin(config, cwd)],
@@ -59,6 +59,7 @@ export async function startDevServer(config: BlazonConfig, cwd: string = process
 
   console.log(`\n  ${pc.bold(pc.blue('blazon'))} ${pc.green(`v${BLAZON_VERSION}`)}`);
   console.log(`  ${pc.dim('➜')}  ${pc.bold('Local:')}   ${pc.cyan(localUrl)}`);
+  for (const url of info?.network ?? []) console.log(`  ${pc.dim('➜')}  ${pc.bold('Network:')} ${pc.cyan(url)}`);
   console.log(`  ${pc.dim('➜')}  ${pc.bold('Tokens:')}  ${pc.dim(config.tokensDir)}`);
   console.log(`  ${pc.dim('➜')}  ${pc.bold('Docs:')}    ${pc.dim(config.docsDir)}`);
   console.log(`  ${pc.dim('➜')}  ${pc.bold('Assets:')}  ${pc.dim(config.assetsDir)}\n`);

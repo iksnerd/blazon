@@ -60,16 +60,35 @@ describe('the blazon command a tool runs', () => {
   const op = (name: string) => OPERATIONS.find((o) => o.name === name)!;
   it.each([
     ['get_token', { path: 'a.b' }, ['get', 'a.b'], {}],
-    ['list_tokens', { group: 'color', type: 'color' }, ['list', 'color', '--type', 'color'], {}],
+    ['list_tokens', { group: 'color', type: 'color' }, ['list', 'color', '--type=color'], {}],
     ['list_tokens', {}, ['list'], {}],
     ['get_rules', {}, ['rules'], {}],
     ['can_use', { fg: 'a', bg: 'b' }, ['can', 'a', 'b'], { answers: [1] }],
-    ['can_use', { fg: 'a', bg: 'b', role: 'ui' }, ['can', 'a', 'b', '--role', 'ui'], { answers: [1] }],
+    ['can_use', { fg: 'a', bg: 'b', role: 'ui' }, ['can', 'a', 'b', '--role=ui'], { answers: [1] }],
     ['get_fonts', {}, ['fonts'], {}],
     ['get_logo', {}, ['logo'], {}],
     ['get_shadcn', {}, ['brand', '--key', 'theme.shadcn'], { json: false }],
-    ['check_brand', { severity: 'error', limit: 5 }, ['check', '--no-plugins', '--severity', 'error'], { answers: [1], stderr: 'ignore' }],
+    ['check_brand', { severity: 'error', limit: 5 }, ['check', '--no-plugins', '--severity=error'], { answers: [1], stderr: 'ignore' }],
   ])('%s %j runs blazon %j', (name, args, argv, options) => {
     expect(commandFor(op(name), args)).toEqual({ argv, options });
+  });
+
+  it('writes an option and its value as one argument, so a value that starts with a dash is never an option', () => {
+    const { argv } = commandFor(op('can_use'), { fg: 'a', bg: 'b', theme: '--cwd=/other/dir' });
+    expect(argv).toEqual(['can', 'a', 'b', '--theme=--cwd=/other/dir']);
+    expect(commandFor(op('list_tokens'), { type: '-x' }).argv).toEqual(['list', '--type=-x']);
+  });
+
+  it('closes the schema of the free-text options to a value that starts with a dash', () => {
+    const pattern = (tool: string, prop: string) => new RegExp(String((op(tool).inputSchema.properties[prop] as { pattern?: string }).pattern));
+    for (const [tool, prop] of [
+      ['can_use', 'theme'],
+      ['list_tokens', 'type'],
+    ] as const) {
+      expect(pattern(tool, prop).test('--cwd=/other/dir'), `${tool}.${prop}`).toBe(false);
+      expect(pattern(tool, prop).test('-x'), `${tool}.${prop}`).toBe(false);
+      expect(pattern(tool, prop).test('dark'), `${tool}.${prop}`).toBe(true);
+      expect(pattern(tool, prop).test('fontFamily'), `${tool}.${prop}`).toBe(true);
+    }
   });
 });

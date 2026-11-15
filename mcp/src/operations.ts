@@ -18,7 +18,8 @@ export function withDefaults(op: Operation, args: Record<string, unknown>): Reco
 
 /**
  * The blazon command line for a call, from the list: the command words, the arguments it always gets, the positionals the tool takes, then
- * the options. The command line's own `dir` never appears: the tool does not take it, and the brand folder is the working directory.
+ * the options. An option is one argument, `--name=value`, so a value that starts with a dash is that option's text and never an option of its own
+ * (positionals are token paths, which the schema never lets start with a dash). The command line's own `dir` never appears: the tool does not take it, and the brand folder is the working directory.
  */
 export function commandFor(op: Operation, args: Record<string, unknown>): { argv: string[]; options: RunOptions } {
   const cli = op.cli === false ? undefined : op.cli;
@@ -30,7 +31,7 @@ export function commandFor(op: Operation, args: Record<string, unknown>): { argv
   const flags = mcp.flags ?? (cli?.options ?? []).map((option) => option.property).filter((name) => name !== 'json' && !positional.includes(name) && !only.has(name));
   const argv = [...words, ...(mcp.fixed ?? [])];
   for (const name of positional) if (args[name] !== undefined) argv.push(String(args[name]));
-  for (const name of flags) if (args[name] !== undefined) argv.push(`--${kebab(name)}`, String(args[name]));
+  for (const name of flags) if (args[name] !== undefined) argv.push(`--${kebab(name)}=${String(args[name])}`);
   const options: RunOptions = { ...(mcp.answers && { answers: mcp.answers }), ...(mcp.json === false && { json: false }), ...(mcp.ignoreStderr && { stderr: 'ignore' as const }) };
   return { argv, options };
 }

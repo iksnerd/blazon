@@ -63,6 +63,19 @@ describe('build --outDir', () => {
     expect(fs.existsSync(path.join(project, 'site-out'))).toBe(false);
   }, 90_000);
 
+  it.each([['-o'], ['--outDir'], ['--out-dir'], ['--outDir=%'], ['--out-dir=%']])(
+    'takes a number as the folder name with %s',
+    async (flag) => {
+      const project = await starterProject();
+      const here = tempDir('blazon-here-');
+      const args = flag.endsWith('=%') ? [flag.replace('%', '2024')] : [flag, '2024'];
+      const result = blazon(here, 'build', project, ...args, '--no-plugins');
+      expect(result.status, result.stdout + result.stderr).toBe(0);
+      expect(fs.existsSync(path.join(here, '2024', 'index.html'))).toBe(true);
+    },
+    120_000,
+  );
+
   it('still refuses an outDir that would take the project with it', async () => {
     const project = await starterProject();
     const result = blazon(project, 'build', '.', '-o', '.', '--no-plugins');

@@ -7,7 +7,7 @@ interface Section {
 export const EXIT_STATUS = [
   '  0  it did what it was asked (for check, no errors)',
   '  1  the check found errors (or warnings, with --strict), `blazon can` denied the combination, `blazon doctor` found a failing check, or the command failed',
-  '  2  it was used wrongly and did nothing: an unknown command or option, an unknown token, a bad port, no brand book in the folder',
+  '  2  it was used wrongly: an unknown command or option, an unknown token, a bad port, no brand book in the folder. It did nothing, except `blazon init --from`, which copies the starter and then exits 2 when the site cannot be read',
 ].join('\n');
 
 /** Where the help of the whole tool says how to look up a finding code. */

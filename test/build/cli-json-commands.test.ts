@@ -93,6 +93,22 @@ describe('blazon init --json', () => {
   }, 60_000);
 });
 
+describe('blazon init --json errors', () => {
+  it.each([
+    [['--from', 'ftp://x'], 'invalid-option-value'],
+    [['--color', 'not-a-color'], 'invalid-option-value'],
+    [['--from', 'http://127.0.0.1:1/'], 'site-unreadable'],
+  ])(
+    '%j carries the code %s',
+    (args, code) => {
+      const result = blazon('init', path.join(tempDir('blazon-init-json-'), 'book'), '--json', ...args);
+      expect(result.status, result.stdout + result.stderr).toBe(2);
+      expect(JSON.parse(result.stdout)).toMatchObject({ command: 'init', passed: false, error: { code, message: expect.any(String) } });
+    },
+    60_000,
+  );
+});
+
 describe('blazon pin --json', () => {
   it('says a folder that is not there as JSON, exit 2', () => {
     const result = blazon('pin', path.join(tempDir('blazon-pin-json-'), 'missing'), '--json');

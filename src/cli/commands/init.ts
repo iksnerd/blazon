@@ -7,6 +7,7 @@ import { applyAnswers, parseColor, parseDescription, parseFont, parseLogo, parse
 import { clackPrompter, PromptCancelled, type Prompter } from '../../core/init/prompts.js';
 import { runGuided, type Plan } from '../init-flow.js';
 import { lookFor, type Look } from '../init-ui.js';
+import type { ErrorCode } from '../errors.js';
 import { blazonCommand, inDir, shownDir } from '../where.js';
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
@@ -67,6 +68,8 @@ export interface InitOptions {
   startDev?: (dir: string) => Promise<void>;
   /** Told what was made, once the starter is in place: the folder, the files written and those that were already there (relative paths) */
   report?: (made: InitReport) => void;
+  /** Told why init ended with a status other than 0, as the code and the sentence `--json` carries */
+  failure?: (failure: { code: ErrorCode; message: string }) => void;
 }
 
 export interface InitReport {
@@ -86,7 +89,9 @@ const FLAGS = [
 /** Returns the exit status: 0; 2 when a flag is not valid or the site cannot be read; 130 when the questions are cancelled. */
 export async function runInit(targetDir: string = '.', options: InitOptions = {}): Promise<number> {
   if (options.from !== undefined && !/^https?:\/\/[^\s/]/i.test(options.from)) {
-    console.error(pc.red(`blazon init: --from needs an http(s) address, got ${JSON.stringify(options.from)}`));
+    const message = `--from needs an http(s) address, got ${JSON.stringify(options.from)}`;
+    console.error(pc.red(`blazon init: ${message}`));
+    options.failure?.({ code: 'invalid-option-value', message });
     return 2;
   }
   const answers: Answers = {};
@@ -96,6 +101,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     const parsed = parse(String(given));
     if ('hint' in parsed) {
       console.error(pc.red(`blazon init: ${flag}: ${parsed.hint}`));
+      options.failure?.({ code: 'invalid-option-value', message: `${flag}: ${parsed.hint}` });
       return 2;
     }
     answers[key] = parsed.value;
@@ -179,6 +185,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
       }
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
+      options.failure?.({ code: 'site-unreadable', message: reason });
       if (prompter)
         prompter.log.error(
           `Could not read ${from}: ${reason}\nThe starter was copied as it is. To start from the site, run blazon init again with --from in a new folder (a folder that already has the starter is kept as it is), or carry on with the starter.`,

@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { REPO } from '../../test/support/paths.js';
 import { starterProject, tempDir } from '../../test/support/project.js';
-import { childEnv, targetFrom, TOKEN_PATH } from '../src/blazon.js';
+import { BlazonRunner, CACHE_MAX, childEnv, targetFrom, TOKEN_PATH } from '../src/blazon.js';
 import { buildPageText } from '../src/prompts.js';
 import { MAX_TEXT } from '../src/result.js';
 
@@ -495,7 +495,48 @@ describe('blazon-mcp settings', () => {
   });
 
   it('passes an allowlist of the environment', () => {
-    const env = childEnv({ PATH: '/bin', HOME: '/h', LC_ALL: 'C', NODE_OPTIONS: '--x', BLAZON_BIN: 'f', SECRET: 's', GITHUB_TOKEN: 't', AWS_ACCESS_KEY_ID: 'a' });
-    expect(Object.keys(env).sort()).toEqual(['BLAZON_BIN', 'HOME', 'LC_ALL', 'NODE_OPTIONS', 'NO_COLOR', 'PATH']);
+    const env = childEnv({
+      PATH: '/bin',
+      HOME: '/h',
+      LC_ALL: 'C',
+      NODE_OPTIONS: '--x',
+      NODE_AUTH_TOKEN: 'n',
+      BLAZON_BIN: 'f',
+      SECRET: 's',
+      GITHUB_TOKEN: 't',
+      AWS_ACCESS_KEY_ID: 'a',
+    });
+    expect(Object.keys(env).sort()).toEqual(['BLAZON_BIN', 'HOME', 'LC_ALL', 'NO_COLOR', 'PATH']);
+    expect(env.NODE_AUTH_TOKEN).toBeUndefined();
   });
+
+  it('keeps at most CACHE_MAX answers, the oldest out first', async () => {
+    const log = path.join(tempDir('blazon-mcp-cache-'), 'runs');
+    const runner = new BlazonRunner({ bin: fakeBlazon(`echo run >> "${log}"\necho '{"kind":"brand","path":""}'`), brand: process.cwd(), cacheMs: 600_000, maxParallel: 4 });
+    const runs = () => fs.readFileSync(log, 'utf8').split('\n').filter(Boolean).length;
+    for (let i = 0; i <= CACHE_MAX; i++) await runner.run([`get`, `a${i}`]);
+    expect(runs()).toBe(CACHE_MAX + 1);
+    await runner.run(['get', `a${CACHE_MAX}`]);
+    expect(runs()).toBe(CACHE_MAX + 1);
+    await runner.run(['get', 'a0']);
+    expect(runs()).toBe(CACHE_MAX + 2);
+  });
+
+  it('cannot be made to change folder by a value that starts with a dash', async () => {
+    const dump = path.join(tempDir('blazon-mcp-argv-'), 'argv');
+    const other = await connect({ bin: fakeBlazon(`printf '%s\\n' "$@" > "${dump}"\necho '{"allowed":true,"reason":"x"}'`), brand: process.cwd() });
+    const result = await other.callTool({ name: 'can_use', arguments: { fg: 'a', bg: 'b', theme: '--cwd=/other/dir' } }).catch(() => ({ isError: true }));
+    expect((result as { isError?: boolean }).isError).toBe(true);
+    expect(fs.existsSync(dump)).toBe(false);
+    await other.close();
+  });
+
+  it('runs the real CLI on the brand folder when a value that starts with a dash gets past the schema', async () => {
+    const { commandFor, operationNamed } = await import('../src/operations.js');
+    const runner = new BlazonRunner({ bin: blazonFromSource(), brand: await starterProject() });
+    const { argv, options } = commandFor(operationNamed('can_use')!, { fg: 'text.primary', bg: 'surface.canvas', theme: '--cwd=/does/not/exist' });
+    const error = await runner.run(argv, options).catch((e: Error) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toMatch(/^no theme /);
+  }, 60_000);
 });
