@@ -4,7 +4,7 @@
 
 ## Assets
 
-Assets are image files in `assets/`: SVG, PNG, JPEG, GIF, WebP and AVIF. Other files are ignored. An asset's **category** is the first folder it sits in: `logos`, `icons`, or any name you choose, including `constructor` or `__proto__`. A file directly in `assets/` has the category `assets`. Its id is `category/name`, such as `logos/logotype-black`, with no extension. `mark.svg` and `mark.png` in one folder have the same id, `logos/mark`, and share one sidecar. Two files with one id in different folders are an error (`asset-duplicate-id`), because the id would name both.
+Assets are image files in `assets/`: SVG, PNG, JPEG, GIF, WebP and AVIF. Other files are ignored. An asset's **category** is the first folder it sits in: `logos`, `icons`, or any name you choose, including `constructor` or `__proto__`. A file directly in `assets/` has the category `assets`. Its id is `category/name`, such as `logos/logotype-black`, with no extension. `mark.svg` and `mark.png` in one folder have the same id, `logos/mark`, and share one sidecar. Two files with one id in different folders are an error (`asset-id-duplicate`), because the id would name both.
 
 The brand book has an assets page for each category. For SVG it offers Copy SVG, Copy JSX and Download. For raster images it offers Download and Copy URL. The files are served from `brand-assets/` in the dev server and copied there by `blazon build`.
 
@@ -53,7 +53,7 @@ assets: {
 },
 ```
 
-In a checkout without the images, `blazon check` gives one note per category (`asset-local-absent`) instead of an error for every sidecar, logo and directive that needs them, and the brand book leaves them out. When one image of the category is there, everything is checked as usual, so images made only in part still show. `brand.json` keeps `local` on the category, so a tool that reads it knows not to pass those images on.
+In a checkout without the images, `blazon check` gives one note per category (`asset-local-missing`) instead of an error for every sidecar, logo and directive that needs them, and the brand book leaves them out. When one image of the category is there, everything is checked as usual, so images made only in part still show. `brand.json` keeps `local` on the category, so a tool that reads it knows not to pass those images on.
 
 ### Experimental categories
 
@@ -65,7 +65,7 @@ assets: {
 },
 ```
 
-An asset in it can say `review: needs-review` for as long as it likes: `blazon check` reports no `needs-review`, no `generated-unreviewed`, and no `needs-review-in-use` for a page that draws it, so `--strict` can pass. A page that draws experimental and ordinary assets together still reports the ordinary ones that are flagged. The `review` stays in the sidecar and in `brand.json`, and every other check applies as usual.
+An asset in it can say `review: needs-review` for as long as it likes: `blazon check` reports no `review-pending`, no `asset-review-missing`, and no `page-review-pending` for a page that draws it, so `--strict` can pass. A page that draws experimental and ordinary assets together still reports the ordinary ones that are flagged. The `review` stays in the sidecar and in `brand.json`, and every other check applies as usual.
 
 The brand book labels the category "Experiment" on its page and on every asset a page draws from it: with `blazon:assets`, `blazon:section`, `blazon:logo-space`, `blazon:logo-lockups`, `blazon:logo-partner`, `blazon:logo-initiative` and `blazon:logo-placement`, each asset or pair carries the label, and `blazon:icons` carries it once above the icons. A partner pair or a logo with its mark is labelled when either file is in an experimental category. The Review page lists it under Experiments with the number of files, apart from the findings. `brand.json` keeps `experimental: true` on the category. The press kit and the logo kit draw only the `logos` and `partners` categories, so they never include one, and the brand deck leaves every experimental category out with no option.
 
@@ -79,7 +79,7 @@ assets: {
 },
 ```
 
-A reference category does not gate the book, as an experimental one does not: `blazon check` reports no `needs-review`, no `generated-unreviewed`, and no `needs-review-in-use` for a page that draws one of its assets. A page that draws both reference and ordinary assets still reports the ordinary ones that are flagged. Every other check applies as usual. A category cannot be both `experimental` and `reference`: setting both to `true` is an `asset-config-invalid` error.
+A reference category does not gate the book, as an experimental one does not: `blazon check` reports no `review-pending`, no `asset-review-missing`, and no `page-review-pending` for a page that draws one of its assets. A page that draws both reference and ordinary assets still reports the ordinary ones that are flagged. Every other check applies as usual. A category cannot be both `experimental` and `reference`: setting both to `true` is an `asset-config-invalid` error.
 
 The difference is what the book says. The brand book labels the category "Reference" on its page and on every asset a page draws from it, in the same places that carry the "Experiment" label, and the Review page lists it under Reference with the number of files, apart from the findings. `brand.json` keeps `reference: true` on the category. The brand deck leaves every reference category out with no option. The press kit and the logo kit draw only the `logos` and `partners` categories, so they never include one.
 
@@ -91,7 +91,7 @@ The dev server serves only image files from the folder, and never a link that po
 
 ### Rules
 
-`rules` tests every file in the category, whether it sits in `assets/` or in a `dir`. A file that breaks a rule is an error (`asset-rule-violation`), as a contrast pair that fails is.
+`rules` tests every file in the category, whether it sits in `assets/` or in a `dir`. A file that breaks a rule is an error (`asset-rule-violated`), as a contrast pair that fails is.
 
 | Rule | Means |
 |---|---|
@@ -145,7 +145,7 @@ A sidecar is a JSON file beside an asset, with the same name: `logos/mark.json` 
 | `order` | A number: where the asset sits among the others of its category, lowest first. Assets without one follow, by file name, and ties keep file-name order. Any number works, including negative and fractional ones |
 | `extensions` | What a tool or team records of its own, such as contrast results or safe zones: an object whose keys are reverse domain names, `{ "com.acme.contrast": { "onDark": 7.2 } }`. Blazon keeps it as written in `brand.json` under `meta.extensions` and never reads it. The key `dev.blazon` is not allowed here: a sidecar's own fields are blazon's. It is `extensions` and not DTCG's `$extensions` because a sidecar is not a DTCG file, and its other fields have no `$` either; `brand.json` spells a token's the same way |
 | `source`, `review` | As on a token: [`dev.blazon` fields](02-tokens.md#the-devblazon-extension). `review` takes `by` and `at` too (`{ "status": "ok", "by": "Dana Whitfield", "at": "2026-10-29" }`). Its `value` is the fingerprint of the image file's bytes, from `blazon approvals`: replace the artwork and `blazon check` warns `approval-stale`; editing the sidecar does not. A malformed `review` is an `asset-sidecar-invalid` error |
-| `generated` | Where an AI-generated image came from: `{ "by": "Midjourney v7", "prompt": "a lighthouse at dusk", "licence": "Midjourney commercial plan" }`. `by` is the model or tool and is required; `prompt` and `licence` are optional strings. Unknown keys inside it are errors. An asset with `generated` and no `review` is a warning (`generated-unreviewed`) until a person checks it and sets `review.status` to `ok`. `brand.json` carries it under the asset's `meta` |
+| `generated` | Where an AI-generated image came from: `{ "by": "Midjourney v7", "prompt": "a lighthouse at dusk", "licence": "Midjourney commercial plan" }`. `by` is the model or tool and is required; `prompt` and `licence` are optional strings. Unknown keys inside it are errors. An asset with `generated` and no `review` is a warning (`asset-review-missing`) until a person checks it and sets `review.status` to `ok`. `brand.json` carries it under the asset's `meta` |
 
 `traits`, `do` and `dont` are each a list of at least one non-empty string, with no formatting: the same file is read by the brand book and by other tools (see [chapter 11](11-brand-json.md)). [`blazon:section`](05-pages.md#sections) draws them with the asset.
 
@@ -155,7 +155,7 @@ The `unit` is measured in the artwork's own pixels. For an SVG that is its own c
 
 [`blazon:logo-space`](05-pages.md#directives) draws the clear space and minimum size from a sidecar, `blazon:logo-lockups` groups logos by `lockup`, `blazon:logo-partner` draws a partnership, `blazon:logo-initiative` draws a program lockup and `blazon:logo-placement` draws the corners. The rules also show on the asset's card.
 
-A sidecar that is not valid JSON, has an unknown or malformed field, or is a symbolic link that points outside the assets folder is an error (`asset-sidecar-invalid`). A sidecar with no image of its name is a warning (`asset-sidecar-orphan`). Sidecars are not copied by `blazon build`.
+A sidecar that is not valid JSON, has an unknown or malformed field, or is a symbolic link that points outside the assets folder is an error (`asset-sidecar-invalid`). A sidecar with no image of its name is a warning (`asset-sidecar-orphaned`). Sidecars are not copied by `blazon build`.
 
 ## Icon sets
 
@@ -192,7 +192,7 @@ An icon is a file name without `.svg`.
 - Your `categories` map wins. It maps a category name to icon names, inline or as the path of a JSON file inside the project. The categories appear in the order you list them. A directive names a category exactly as the map spells it, capitals included.
 - Without a map, Tabler and MDI use their own data, in alphabetical order.
 - An icon in no category goes under "Other", which is last. Lucide and Material ship no category data, so give them a map.
-- A name in your map that the package lacks is a warning (`icon-set-unknown-icon`).
+- A name in your map that the package lacks is a warning (`icon-unknown`).
 
 ### Showing the set
 

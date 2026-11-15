@@ -48,7 +48,7 @@ The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT" and "MAY" are to be int
 2. `$type` MUST come from the token or an ancestor group. Blazon MUST NOT infer it from the file name or the value. A token with no resolvable `$type` is an error in `blazon check`.
 3. All files in `tokensDir` merge into one tree. **The file name is not part of the token path.** Aliases are full paths from the root (`{color.brand.indigo}`).
 4. Blazon MUST keep `$extensions` it doesn't understand and pass them through to `tokens.json`.
-5. A `dimension` in a print unit (`pt`, `pc`, `in`, `cm`, `mm` or `Q`) is an `invalid-value` error whose message gives the px value at CSS's 96px to the inch (1pt = 4/3 px). DTCG allows `px` and `rem`; a screen token in a print unit was copied from print, and other DTCG tools cannot read it. A relative unit such as `em` or `%` is kept and written to CSS as it is.
+5. A `dimension` in a print unit (`pt`, `pc`, `in`, `cm`, `mm` or `Q`) is a `token-value-invalid` error whose message gives the px value at CSS's 96px to the inch (1pt = 4/3 px). DTCG allows `px` and `rem`; a screen token in a print unit was copied from print, and other DTCG tools cannot read it. A relative unit such as `em` or `%` is kept and written to CSS as it is.
 
 Decision 3 is the load-bearing one. It makes blazon files portable to Style Dictionary, Tokens Studio and any DTCG tool, and it removes the file-dependent alias lookup above. Its cost is in [Compatibility](#compatibility).
 
@@ -86,18 +86,18 @@ Brand facts that DTCG has no slot for live under `$extensions["dev.blazon"]`, th
 | `usage.allow`, `usage.deny` | arrays of roles from a standard vocabulary: `text`, `background`, `border`, `icon`, `illustration`, `accent`, `interactive`, plus any name the brand adds in `vocabulary.usageRoles` (section 14) | Where the value may appear | Secondary palette denies `text`; hues allow only `illustration` |
 | `print` | `{ cmyk?: [c,m,y,k], pms?: string, ral?: string }` | Print equivalents. RGB is derived from `$value` and not stored. `cmyk` MUST be an array of exactly four numbers, each from 0 to 100 inclusive, the percent of cyan, magenta, yellow and black (`print-cmyk-invalid` otherwise). `pms` MUST be a non-empty single-line string such as `2945 C` (`print-pms-invalid` otherwise). `ral` is a RAL number such as `5012`, written without the `RAL` that a renderer puts before it; it MUST be a non-empty single-line string that does not start with `RAL` followed by anything but a letter, so `RAL 5012`, `RAL-5012` and `RAL5012` are refused and `5012` and the RAL Design value `050 40 30` are not (`print-ral-invalid` otherwise). | Every brand color; a signage brand adds `ral` |
 | `source` | `{ doc: string, locator: string, cssVar?: string }` | Where the value came from. `cssVar` names the custom property of the live site it was read from, and starts with `--` (`source-css-var-invalid` otherwise); `blazon drift` compares the two | `slide 35` |
-| `review` | `{ status: "ok" \| "needs-review", note?: string, by?: string, at?: string, value?: string }` | Whether a person has confirmed the value. `needs-review` marks a value that is known or suspected to be wrong, or that nobody has confirmed yet. `ok` records that someone confirmed it: `by` says who (free text) and `at` when (a real date, `YYYY-MM-DD`); `note` stays free text and blazon does not check it. `value` is the fingerprint of the value that was confirmed, that `blazon approvals` prints: 12 hex digits, the sha-256 of the token's `$type` and resolved value (aliases replaced) in the default context, truncated, specified exactly in "The review fingerprint" below. When `status` is `ok` and `value` is a fingerprint that no longer matches, `blazon check` warns `approval-stale`; an `ok` with no `value` is never stale, and a resolver context is not checked. A `review` of the wrong shape, or a `value` on a group (a group has no value of its own), is an `invalid-review` error On a group it flags the group once (`needs-review` at the group's path) and is not inherited: its tokens report nothing unless they set their own `review`; `ok` on a token or nearer group clears it | `hue.yellow.400` duplicates `hue.yellow.300` |
+| `review` | `{ status: "ok" \| "needs-review", note?: string, by?: string, at?: string, value?: string }` | Whether a person has confirmed the value. `needs-review` marks a value that is known or suspected to be wrong, or that nobody has confirmed yet. `ok` records that someone confirmed it: `by` says who (free text) and `at` when (a real date, `YYYY-MM-DD`); `note` stays free text and blazon does not check it. `value` is the fingerprint of the value that was confirmed, that `blazon approvals` prints: 12 hex digits, the sha-256 of the token's `$type` and resolved value (aliases replaced) in the default context, truncated, specified exactly in "The review fingerprint" below. When `status` is `ok` and `value` is a fingerprint that no longer matches, `blazon check` warns `approval-stale`; an `ok` with no `value` is never stale, and a resolver context is not checked. A `review` of the wrong shape, or a `value` on a group (a group has no value of its own), is a `review-invalid` error On a group it flags the group once (`needs-review` at the group's path) and is not inherited: its tokens report nothing unless they set their own `review`; `ok` on a token or nearer group clears it | `hue.yellow.400` duplicates `hue.yellow.300` |
 | `logo` | `{ deny: string[], reason?: string }` | Logo variants (`onLight`, `onDark`, or a logo asset id) the brand forbids on this background whatever their contrast; `blazon:logo-contrast` marks them forbidden with the reason | Magenta forbids the white logo |
 | `angle` | number of degrees | Gradient direction, which DTCG gradients don't carry | Not in the deck; set as a decision |
 | `preview` | `radius`, `square`, `stroke`, `tracking`, `fontSize`, `frame`, `opacity`, `border` or `bar` | How the brand book previews a token, when its `$type` and name do not say it | Not set; the viewer infers every Auth0 preview from type and name |
 | `webFont` | `false`, or a sentence | On a `fontFamily` token: the brand book cannot load this typeface, as a commercial font with no web stylesheet, and the sentence says why or what to use. The Typography page then says the brand book does not load it, and that a specimen uses the first font of its stack the reader's computer has | Not set; Auth0's fonts load from Google Fonts. Slack sets `false` on its three commercial typefaces |
-| `font` | `{ source?: string, license?: string, licenseUrl?: string }` | On a `fontFamily` token or a group of them: where the typeface comes from (a name or an http(s) address), its license (an SPDX identifier or a name) and the address of the license text. At least one field; no other field. A malformed value, or `font` on a token that is not a `fontFamily`, is `invalid-font-meta`. The Typography page shows what is stated, and `blazon.press-kit` prints it in `fonts.txt` in place of `not stated`. The facts are the brand's word: blazon does not infer a license from a family name. A `license` that looks like an SPDX identifier but is not one on the list (`OFL-1.2`, `Apache2`, `mit`) is a `font-license-unknown` note, never an error; a name in words is left alone | Not set |
+| `font` | `{ source?: string, license?: string, licenseUrl?: string }` | On a `fontFamily` token or a group of them: where the typeface comes from (a name or an http(s) address), its license (an SPDX identifier or a name) and the address of the license text. At least one field; no other field. A malformed value, or `font` on a token that is not a `fontFamily`, is `font-meta-invalid`. The Typography page shows what is stated, and `blazon.press-kit` prints it in `fonts.txt` in place of `not stated`. The facts are the brand's word: blazon does not infer a license from a family name. A `license` that looks like an SPDX identifier but is not one on the list (`OFL-1.2`, `Apache2`, `mit`) is a `font-license-unknown` note, never an error; a name in words is left alone | Not set |
 
 #### The review fingerprint
 
 A `review.value` records which value a person confirmed. This subsection is normative: a second implementation MUST compute the same digits, or its `approval-stale` answers are wrong about every approval.
 
-**One algorithm.** A `review.value` is exactly 12 lowercase hex digits, computed as below. Anything else is `invalid-review`. There is no algorithm id: a change to anything below that could change a digest changes every recorded fingerprint, and a project then runs `blazon approvals` and records the new ones, as it would to approve the values again.
+**One algorithm.** A `review.value` is exactly 12 lowercase hex digits, computed as below. Anything else is `review-invalid`. There is no algorithm id: a change to anything below that could change a digest changes every recorded fingerprint, and a project then runs `blazon approvals` and records the new ones, as it would to approve the values again.
 
 **A token.** The input is a UTF-8 text, the JSON serialization of the two-element array `[T, V]`, where `T` is the token's `$type` string, or `null` when it has none, and `V` is its resolved value: the DTCG value with every alias replaced, in the default context. The text has no whitespace outside strings, no byte order mark and no trailing newline, and is written like this:
 
@@ -199,80 +199,82 @@ A new command, which also runs at the start of `blazon build`:
 | No `theme` in `blazon.config.ts` | info | none in the fixture: blazon infers roles from conventional token names (`src/core/tokens/theme.ts`) and says which (`theme-inferred`), or that none matched (`theme-missing`) |
 | A path defined in two files (the later file wins), an alias to a `$deprecated` token | warning | none in the fixture |
 
+**Code names.** A code MUST be kebab-case and have the form `<area>-<problem>`: the area first, naming what the check looks at, and the problem last, one word from the list `PROBLEMS` in the catalogue (`invalid`, `unknown`, `unresolved`, `missing`, `duplicate`, `unreadable`, `unused`, `stale`, `mismatch`, `violated`, `pending` and a few single-case words). The same trouble takes the same word in every area. Codes are public surface and freeze at 1.0; a reader MUST treat a code it does not know as unknown, and blazon keeps no alias for a name it dropped. A test fails for a code that breaks the rule ([manual, Checks](../manual/03-checks.md#how-codes-are-named)).
+
 **Finding codes.** Each finding has a `code`, a `severity` and a `path`. The check catalogue, `src/core/checker/catalogue.ts`, is the machine-readable form of the list below: for each code it holds the severity, a one-sentence summary, the RFC section that names the code and the manual page that explains it. The table is written from the catalogue by `npm run checks-docs` and a test fails when it differs. The text after the table says what each code means, and it is normative: where the two differ, this text decides. Codes that plugins report (`name/code`) are not in the catalogue. The manual's chapter on checks says what to do about each code.
 
 <!-- checks:begin -->
 | Code | Severity | Summary |
 |---|---|---|
+| `alias-circular` | error | Aliases lead back to the token that started them. |
+| `alias-deprecated` | warning | A token aliases a token marked deprecated. |
+| `alias-embedded` | error | An alias is mixed with other text in one value. |
+| `alias-missing` | warning | A semantic or component token holds a literal value instead of an alias. |
+| `alias-type-mismatch` | error | A token has a different $type from the token it aliases. |
+| `alias-unresolved` | error | An alias names no token. |
 | `approval-stale` | warning | A token or asset was approved, and its value changed after. |
 | `asset-config-invalid` | error | An asset category in the config is not a valid object or has a bad rule. |
 | `asset-config-unused` | warning | An asset category in the config matches no asset. |
-| `asset-duplicate-id` | error | Two files in different folders have the same asset id. |
-| `asset-local-absent` | info | A category kept out of git has no images on this machine. |
-| `asset-rule-violation` | error | An asset breaks the rules of its category. |
+| `asset-id-duplicate` | error | Two files in different folders have the same asset id. |
+| `asset-local-missing` | info | A category kept out of git has no images on this machine. |
+| `asset-review-missing` | warning | A generated asset has no review yet. |
+| `asset-rule-violated` | error | An asset breaks the rules of its category. |
 | `asset-sidecar-invalid` | error | An asset sidecar is not valid JSON or holds a field blazon does not know. |
-| `asset-sidecar-orphan` | warning | A sidecar has no image of the same name beside it. |
+| `asset-sidecar-orphaned` | warning | A sidecar has no image of the same name beside it. |
 | `asset-unreadable` | error | An asset file cannot be read, so it is left out of the book. |
-| `blazon-pin-invalid` | error | blazon.lock is not a valid pin. |
-| `blazon-pin-mismatch` | error | The blazon build in use is not the commit blazon.lock names. |
-| `circular-alias` | error | Aliases lead back to the token that started them. |
 | `config-invalid` | error | A key or value in blazon.config.ts is not valid. |
-| `contrast` | error | A color pair has less contrast than its level asks for. |
+| `contrast-insufficient` | error | A color pair has less contrast than its level asks for. |
+| `contrast-pair-invalid` | error | A contrast pair names no color tokens or has an unknown level. |
 | `contrast-unknown` | warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
-| `css-variable-collision` | error | Two tokens write the same CSS custom property. |
-| `deprecated-alias` | warning | A token aliases a token marked deprecated. |
+| `css-variable-duplicate` | error | Two tokens write the same CSS custom property. |
 | `directive-invalid` | error | A page directive has wrong arguments or names something that does not exist. |
 | `directive-unknown` | error | A page uses a directive name blazon does not have. |
-| `duplicate-definition` | warning | Two token files define the same path. |
-| `duplicate-value` | warning | Two primitive tokens in one group have the same value. |
-| `embedded-alias` | error | An alias is mixed with other text in one value. |
+| `font-family-missing` | warning | A font family a token uses is not loaded by any fonts entry. |
 | `font-file-invalid` | error | A font entry names a file that is missing or not a font. |
 | `font-license-unknown` | info | A font license is not a known SPDX id. |
-| `font-not-loaded` | warning | A font family a token uses is not loaded by any fonts entry. |
-| `generated-unreviewed` | warning | A generated asset has no review yet. |
+| `font-meta-invalid` | error | The font fields on a token are not valid. |
 | `icon-set-invalid` | error | An icon set in the config cannot be loaded. |
-| `icon-set-unknown-icon` | warning | An icon set category lists an icon the package does not have. |
-| `invalid-font-meta` | error | The font fields on a token are not valid. |
-| `invalid-frontmatter` | error | A page front matter is not valid YAML or has a field of the wrong type. |
-| `invalid-json` | error | A token file is not valid JSON or its top level is not an object. |
-| `invalid-logo-rule` | error | A logo rule on a token is not in the shape blazon reads. |
-| `invalid-pair` | error | A contrast pair names no color tokens or has an unknown level. |
-| `invalid-proportion` | error | A proportion share is out of range or names a token that does not exist. |
-| `invalid-review` | error | A review field has a bad status, date or fingerprint. |
-| `invalid-token` | error | A token is a bare value instead of an object with $value, or a name contains ".", "{" or "}". |
-| `invalid-value` | error | A token value does not fit its $type. |
-| `logo-invisible` | warning | A logo variant draws the color of the surface it is shown on. |
+| `icon-unknown` | warning | An icon set category lists an icon the package does not have. |
+| `logo-contrast-insufficient` | warning | A logo variant draws the color of the surface it is shown on. |
 | `logo-missing` | error | No logo is configured, or the configured logo is not an image file in the project. |
-| `missing-type` | error | A token has no $type, and neither its groups nor its alias target give one. |
-| `needs-review` | warning | A token or asset is marked needs-review. |
-| `needs-review-in-use` | warning | A page shows assets that are still marked needs-review. |
+| `logo-rule-invalid` | error | A logo rule on a token is not in the shape blazon reads. |
+| `logo-variant-unknown` | error | A logo rule denies a variant the logo does not have. |
 | `output-dirs-overlap` | error | An output folder is or holds an input, or is inside one. |
-| `page-duplicate-slug` | error | Two pages have the same slug, so the book opens only the first. |
+| `page-frontmatter-invalid` | error | A page front matter is not valid YAML or has a field of the wrong type. |
+| `page-review-pending` | warning | A page shows assets that are still marked needs-review. |
+| `page-slug-duplicate` | error | Two pages have the same slug, so the book opens only the first. |
+| `page-tokens-unplaced` | info | A page names many tokens but places none of them. |
 | `page-unreadable` | error | A page file cannot be read, so it is left out of the book. |
+| `pin-invalid` | error | blazon.lock is not a valid pin. |
+| `pin-mismatch` | error | The blazon build in use is not the commit blazon.lock names. |
 | `plugin-failed` | error | A check plugin could not run or broke the plugin protocol. |
 | `plugin-lock-invalid` | error | The plugin lock file is not valid. |
 | `print-cmyk-invalid` | error | The print cmyk value is not four numbers from 0 to 100. |
 | `print-pms-invalid` | error | The print pms value is not a non-empty single-line string. |
 | `print-ral-invalid` | error | The print ral value is not a valid RAL code. |
-| `proportion-total` | warning | Proportion shares do not add up to 100%. |
+| `proportion-invalid` | error | A proportion share is out of range or names a token that does not exist. |
+| `proportion-total-mismatch` | warning | Proportion shares do not add up to 100%. |
 | `resolver-invalid` | error | The resolver file is missing or breaks the DTCG resolver rules. |
+| `review-invalid` | error | A review field has a bad status, date or fingerprint. |
+| `review-pending` | warning | A token or asset is marked needs-review. |
 | `section-invalid` | error | The sections setting names a section blazon does not have or has the wrong shape. |
 | `section-missing` | info | No page holds a section the book lists. |
-| `semantic-literal` | warning | A semantic or component token holds a literal value instead of an alias. |
 | `source-css-var-invalid` | error | source.cssVar is not a custom property name. |
-| `starter-file` | info | A file in the docs, tokens, assets or fonts folder is still the starter text. |
-| `starter-logo` | warning | A configured logo is still blazon's own mark, byte for byte. |
+| `starter-file-unchanged` | info | A file in the docs, tokens, assets or fonts folder is still the starter text. |
+| `starter-logo-unchanged` | warning | A configured logo is still blazon's own mark, byte for byte. |
 | `theme-inferred` | info | No theme is set, so blazon took the theme roles from token names. |
 | `theme-missing` | info | No theme is set and no token has a conventional name, so blazon uses neutral colors. |
 | `theme-unresolved` | error | A theme role or a shadcn variable points at a token that does not exist. |
-| `tokens-empty` | warning | The tokens folder holds no tokens. |
-| `tokens-not-shown` | info | A page names many tokens but places none of them. |
-| `type-mismatch` | error | A token has a different $type from the token it aliases. |
-| `unknown-logo-variant` | error | A logo rule denies a variant the logo does not have. |
-| `unknown-role` | error | A usage role is not one blazon knows. |
-| `unknown-type` | error | A $type is not a DTCG type. |
-| `unresolved-alias` | error | An alias names no token. |
-| `usage-violation` | error | A token is used as a role that the token it aliases does not allow. |
+| `token-file-invalid` | error | A token file is not valid JSON or its top level is not an object. |
+| `token-invalid` | error | A token is a bare value instead of an object with $value, or a name contains ".", "{" or "}". |
+| `token-path-duplicate` | warning | Two token files define the same path. |
+| `token-type-missing` | error | A token has no $type, and neither its groups nor its alias target give one. |
+| `token-type-unknown` | error | A $type is not a DTCG type. |
+| `token-value-duplicate` | warning | Two primitive tokens in one group have the same value. |
+| `token-value-invalid` | error | A token value does not fit its $type. |
+| `tokens-missing` | warning | The tokens folder holds no tokens. |
+| `usage-role-unknown` | error | A usage role is not one blazon knows. |
+| `usage-violated` | error | A token is used as a role that the token it aliases does not allow. |
 <!-- checks:end -->
 
 **Order.** An implementation MUST report findings in one total order: by severity (`error`, then `warning`, then `info`), then `path`, `code`, `context`, `file`, `line` and `message`, each in turn when the ones before it are equal. Strings compare by UTF-16 code unit, never by locale, so the order is the same on every host. A finding without `context`, `file` or `line` sorts before one that has it. Two runs over the same input report the same findings in the same order.
@@ -282,68 +284,68 @@ What each code means:
 - `approval-stale`: A token or asset has `review.status: ok` and a `review.value` fingerprint, and its value no longer matches it; the message gives the fingerprint to set once a person has confirmed the new value (section 2)
 - `asset-config-invalid`: An entry of the `assets` config block has an unknown field or a value of the wrong type (section 11); the entry is left out whole
 - `asset-config-unused`: An `assets` key names a category with no assets, usually a typo of the folder name
-- `asset-duplicate-id`: Two files from different folders have one asset id
-- `asset-local-absent`: A local category (section 11) has no image in this checkout; the findings that follow from it are not reported
-- `asset-rule-violation`: A file breaks the `rules` of its category: format, pixel size or aspect ratio
+- `asset-id-duplicate`: Two files from different folders have one asset id
+- `asset-local-missing`: A local category (section 11) has no image in this checkout; the findings that follow from it are not reported
+- `asset-rule-violated`: A file breaks the `rules` of its category: format, pixel size or aspect ratio
 - `asset-sidecar-invalid`: A sidecar is not valid JSON, has an unknown or malformed field, or leaves the assets folder (section 7)
-- `asset-sidecar-orphan`: A sidecar has no image of its name beside it
-- `circular-alias`: An alias leads back to itself
+- `asset-sidecar-orphaned`: A sidecar has no image of its name beside it
+- `alias-circular`: An alias leads back to itself
 - `config-invalid`: `blazon.config.ts` has an unknown key or a value of the wrong type (section 14)
-- `contrast`: A `pairs` contrast pair is below its WCAG level
+- `contrast-insufficient`: A `pairs` contrast pair is below its WCAG level
 - `contrast-unknown`: A pair has a value that is not a CSS color (a gradient, a `var()`), so it cannot be measured
-- `css-variable-collision`: Two tokens write one CSS custom property in the same output block (`theme.css`, a resolver context's block, or `tailwind.css`); reported at the later token, the first keeps the variable
-- `deprecated-alias`: A token aliases one marked `$deprecated`
+- `css-variable-duplicate`: Two tokens write one CSS custom property in the same output block (`theme.css`, a resolver context's block, or `tailwind.css`); reported at the later token, the first keeps the variable
+- `alias-deprecated`: A token aliases one marked `$deprecated`
 - `directive-invalid`: A page directive has the wrong arguments, or names a token, asset, category or icon set that does not exist
 - `directive-unknown`: A page uses `blazon:` with a name that is not in the directive table
-- `duplicate-definition`: A token path is defined in two files; the later file wins
-- `duplicate-value`: Two color primitives in one group have the same value
-- `embedded-alias`: An alias is mixed into other text instead of being the whole value
-- `blazon-pin-invalid`: `blazon.lock`, the file that pins the blazon a book builds with, is not valid JSON, has a key other than `v` and `commit`, or its `commit` is not a full 40-digit lowercase git hash. The lock is never read as a pin in that case; reported with the file and, where it can be placed, the line
-- `blazon-pin-mismatch`: `blazon.lock` pins a blazon commit and the blazon running is not it: it was built from, or is at, another commit; the tree it was built from had uncommitted changes; or it cannot say which commit it is (no git checkout, no build stamp). A pin that cannot be checked is not met. A book with no `blazon.lock` is not checked
+- `token-path-duplicate`: A token path is defined in two files; the later file wins
+- `token-value-duplicate`: Two color primitives in one group have the same value
+- `alias-embedded`: An alias is mixed into other text instead of being the whole value
+- `pin-invalid`: `blazon.lock`, the file that pins the blazon a book builds with, is not valid JSON, has a key other than `v` and `commit`, or its `commit` is not a full 40-digit lowercase git hash. The lock is never read as a pin in that case; reported with the file and, where it can be placed, the line
+- `pin-mismatch`: `blazon.lock` pins a blazon commit and the blazon running is not it: it was built from, or is at, another commit; the tree it was built from had uncommitted changes; or it cannot say which commit it is (no git checkout, no build stamp). A pin that cannot be checked is not met. A book with no `blazon.lock` is not checked
 - `font-file-invalid`: A font file in `fonts` is missing or is not a format blazon embeds
 - `font-license-unknown`: A font's `license` is shaped like an SPDX identifier or expression (one word with a digit, a hyphen or a plus, a known id in the wrong case, or ids joined by `AND`, `OR` or `WITH`) and an id in it is not on the SPDX license list. The note names the closest listed ids. `blazon` carries a dated snapshot of the list (`src/core/checker/spdx-ids.json`, rewritten by `scripts/update-spdx-ids.mjs`) and never goes to the network
-- `font-not-loaded`: A project that lists `fonts` has a token whose first family none of them loads
-- `generated-unreviewed`: An asset has `generated` in its sidecar and no `review` (section 7); not reported for an asset in an experimental or reference category (section 11)
+- `font-family-missing`: A project that lists `fonts` has a token whose first family none of them loads
+- `asset-review-missing`: An asset has `generated` in its sidecar and no `review` (section 7); not reported for an asset in an experimental or reference category (section 11)
 - `icon-set-invalid`: An icon set cannot be read: its name, package, folder or categories file is wrong (section 9)
-- `icon-set-unknown-icon`: A categories map names an icon the package does not have
-- `invalid-font-meta`: A `font` on a token or group is not `{ source?, license?, licenseUrl? }` of non-empty single-line strings (at least one), has an address that is not http(s), or sits on a token that is not a `fontFamily`
-- `invalid-frontmatter`: A page's front matter is not valid YAML; the page is left out
-- `invalid-json`: A token file is not valid JSON, or its top level is not an object
-- `invalid-logo-rule`: A `logo` rule on a token or group is not `{ deny: string[], reason?: string }`
-- `invalid-pair`: A contrast pair matches no color tokens, or has an unknown level
-- `invalid-proportion`: A proportion share is outside 0 to 1, or names a token that does not exist
-- `invalid-review`: A token's or group's `review` is not `{ status, note?, by?, at?, value? }`: an unknown status, a `by` or `note` that is not a string, an `at` that is not a real `YYYY-MM-DD` date, a `value` that is not 12 lowercase hex digits, or a `value` on a group (section 2)
-- `invalid-token`: A bare value where a token object with `$value` is needed
-- `invalid-value`: A token's value does not fit its `$type`, or a dimension is in a print unit (section 1)
-- `logo-invisible`: A color an SVG logo paints is within 1.5:1 contrast of a theme surface the brand book shows that logo on, in any context, and no `logo` rule forbids the logo there. The light-surface logo is shown on a light surface and the dark-surface logo on a dark one, judged by the text color the theme pairs with the surface
+- `icon-unknown`: A categories map names an icon the package does not have
+- `font-meta-invalid`: A `font` on a token or group is not `{ source?, license?, licenseUrl? }` of non-empty single-line strings (at least one), has an address that is not http(s), or sits on a token that is not a `fontFamily`
+- `page-frontmatter-invalid`: A page's front matter is not valid YAML; the page is left out
+- `token-file-invalid`: A token file is not valid JSON, or its top level is not an object
+- `logo-rule-invalid`: A `logo` rule on a token or group is not `{ deny: string[], reason?: string }`
+- `contrast-pair-invalid`: A contrast pair matches no color tokens, or has an unknown level
+- `proportion-invalid`: A proportion share is outside 0 to 1, or names a token that does not exist
+- `review-invalid`: A token's or group's `review` is not `{ status, note?, by?, at?, value? }`: an unknown status, a `by` or `note` that is not a string, an `at` that is not a real `YYYY-MM-DD` date, a `value` that is not 12 lowercase hex digits, or a `value` on a group (section 2)
+- `token-invalid`: A bare value where a token object with `$value` is needed
+- `token-value-invalid`: A token's value does not fit its `$type`, or a dimension is in a print unit (section 1)
+- `logo-contrast-insufficient`: A color an SVG logo paints is within 1.5:1 contrast of a theme surface the brand book shows that logo on, in any context, and no `logo` rule forbids the logo there. The light-surface logo is shown on a light surface and the dark-surface logo on a dark one, judged by the text color the theme pairs with the surface
 - `logo-missing`: The configured `logo` is not an image file in the project
-- `missing-type`: A token has no `$type`, and neither do its groups or the token it aliases
+- `token-type-missing`: A token has no `$type`, and neither do its groups or the token it aliases
 - `needs-review`: A token, group or asset is marked `review.status: needs-review`; not reported for an asset in an experimental or reference category (section 11)
-- `needs-review-in-use`: A page draws an asset whose sidecar is `review.status: needs-review`; an asset in an experimental or reference category (section 11) is not counted
+- `page-review-pending`: A page draws an asset whose sidecar is `review.status: needs-review`; an asset in an experimental or reference category (section 11) is not counted
 - `output-dirs-overlap`: `outDir` and `tokensOutDir` are the same folder, or `tokensOutDir` holds `outDir`; `outDir` is or holds an input the build reads; `outDir` or `tokensOutDir` is inside an input folder (sections 12 and 14)
 - `plugin-failed`: A plugin could not do its role: it is not pinned when it must be, its pin no longer matches, it could not be found, its manifest is not one blazon loads, a call broke (a timeout, an exit that is not an answer, too much output), it could not answer, or its answer breaks the rules for findings (RFC 0002 of blazon, section 2)
 - `plugin-lock-invalid`: `blazon.plugins.lock` is not valid, or can be written by group or others; no plugin is pinned until it is fixed
 - `print-cmyk-invalid`: A token's `print.cmyk` is not an array of exactly four numbers, each from 0 to 100
 - `print-pms-invalid`: A token's `print.pms` is not a non-empty single-line string
 - `print-ral-invalid`: A token's `print.ral` is not a non-empty single-line string, or starts with `RAL`
-- `proportion-total`: Proportion shares do not add up to 100%
+- `proportion-total-mismatch`: Proportion shares do not add up to 100%
 - `resolver-invalid`: The resolver document is missing or wrong (section 3)
 - `section-invalid`: A page's `section` or the `sections` config names something that is not a section of this brand book (section 13)
 - `section-missing`: No page holds a standard section the brand expects (section 13)
-- `semantic-literal`: A semantic or component token holds a value instead of aliasing a primitive
+- `alias-missing`: A semantic or component token holds a value instead of aliasing a primitive
 - `source-css-var-invalid`: A token's `source.cssVar` is not a custom property name
-- `starter-file`: A file in the docs, tokens, assets or `fonts/` folder is byte for byte the file `blazon init` copied there
+- `starter-file-unchanged`: A file in the docs, tokens, assets or `fonts/` folder is byte for byte the file `blazon init` copied there
 - `theme-inferred`: No `theme` in the config, so roles were taken from conventional token names
 - `theme-missing`: No `theme`, and no token has a conventional name
 - `theme-unresolved`: A `theme` role points at a token that does not exist
-- `tokens-empty`: The tokens folder holds no tokens, so the book has nothing to show
-- `tokens-not-shown`: A page names five or more tokens in its text and places no token (`blazon:tokens`) and shows no picture (`blazon:assets`, `blazon:section`, `blazon:icons`)
-- `type-mismatch`: A token's `$type` differs from the type of the token it aliases
-- `unknown-logo-variant`: A `logo.deny` entry is neither `onLight`, `onDark` nor a logo asset id
-- `unknown-role`: A `role` or usage entry is not a usage role: a standard one, or one added in `vocabulary.usageRoles` (section 14)
-- `unknown-type`: A `$type` is not a DTCG 2025.10 type
-- `unresolved-alias`: An alias matches no token
-- `usage-violation`: A token's `role` is not allowed by the usage of a token it aliases
+- `tokens-missing`: The tokens folder holds no tokens, so the book has nothing to show
+- `page-tokens-unplaced`: A page names five or more tokens in its text and places no token (`blazon:tokens`) and shows no picture (`blazon:assets`, `blazon:section`, `blazon:icons`)
+- `alias-type-mismatch`: A token's `$type` differs from the type of the token it aliases
+- `logo-variant-unknown`: A `logo.deny` entry is neither `onLight`, `onDark` nor a logo asset id
+- `usage-role-unknown`: A `role` or usage entry is not a usage role: a standard one, or one added in `vocabulary.usageRoles` (section 14)
+- `token-type-unknown`: A `$type` is not a DTCG 2025.10 type
+- `alias-unresolved`: An alias matches no token
+- `usage-violated`: A token's `role` is not allowed by the usage of a token it aliases
 
 `--strict` turns warnings into errors for CI. An `info` finding is a note for the author: it never fails a check, even with `--strict`, and the brand book does not show it.
 
@@ -401,7 +403,7 @@ A sidecar `<name>.json` beside an image (`logos/mark.json` for `logos/mark.svg` 
 
 `clearSpace`, `minSize`, `maxSize` and `replacedBelow` sizes are a DTCG dimension (`{"value": 20, "unit": "px"}`, units `px` and `rem`) or an alias to a dimension token, which is how a brand says its clear space is a spacing step. Unknown fields are errors, so a typo shows. A `replacedBelow.by` that names no asset is an `asset-sidecar-invalid` error, unless it is in a local category whose images are not in the checkout (section 11). The files are plain JSON with no `$extensions` wrapper: a sidecar describes one asset and has nothing to inherit.
 
-`blazon check` reports a sidecar that is not valid JSON, has an unknown or malformed field, aliases something that is not a dimension token (or an `ink` that is not a color or a color token), or is a symlink out of the assets folder (`asset-sidecar-invalid`, error; the asset keeps no metadata). A sidecar with no image of its name is `asset-sidecar-orphan` (warning). `review` takes the same fields as on a token (section 2); a malformed one (a `by` that is not a string, an `at` that is not a real date, a `value` that is not 12 lowercase hex digits) is an `asset-sidecar-invalid` error. An asset's fingerprint is the sha-256 of its image file's bytes, truncated (section 2), so editing the sidecar does not void an approval and replacing the artwork does (`approval-stale`, warning). `review.status: needs-review` is a `needs-review` warning on the asset. An asset with `generated` and no `review` is a `generated-unreviewed` warning on the asset; `review.status: ok` clears it, and `needs-review` is reported only as `needs-review`. Sidecars are not copied by `blazon build`, and the dev server does not serve them: their content reaches the brand book as `Asset.meta`.
+`blazon check` reports a sidecar that is not valid JSON, has an unknown or malformed field, aliases something that is not a dimension token (or an `ink` that is not a color or a color token), or is a symlink out of the assets folder (`asset-sidecar-invalid`, error; the asset keeps no metadata). A sidecar with no image of its name is `asset-sidecar-orphaned` (warning). `review` takes the same fields as on a token (section 2); a malformed one (a `by` that is not a string, an `at` that is not a real date, a `value` that is not 12 lowercase hex digits) is an `asset-sidecar-invalid` error. An asset's fingerprint is the sha-256 of its image file's bytes, truncated (section 2), so editing the sidecar does not void an approval and replacing the artwork does (`approval-stale`, warning). `review.status: needs-review` is a `review-pending` warning on the asset. An asset with `generated` and no `review` is an `asset-review-missing` warning on the asset; `review.status: ok` clears it, and `needs-review` is reported only as `review-pending`. Sidecars are not copied by `blazon build`, and the dev server does not serve them: their content reaches the brand book as `Asset.meta`.
 
 ### 8. Layout groups: social formats and patterns
 
@@ -440,7 +442,7 @@ iconSets: [
 
 `name` is lowercase letters, digits and hyphens (it is a URL segment). Blazon reads `node_modules/<package>/<dir>/*.svg`; `dir` defaults for `lucide-static` (`icons`), `@tabler/icons` (`icons/outline`), `@mdi/svg` (`svg`) and `@material-symbols/svg-*` (`outlined`), and is required for any other package. An icon is a file name without `.svg`. A link that leaves the package is not an icon of the set, and `dir` MUST stay inside the package.
 
-Categories come from `categories` (a map of category to icon names, inline or the path of a JSON file inside the project), which replaces any package metadata. Without one, `@tabler/icons` supplies `icons.json`'s `category` and `@mdi/svg` the first tag of `meta.json`; every other package has none, and uncategorized icons form "Other". Lucide's `tags.json` and the Material packages carry no categories (as of lucide-static 1.61.0, @material-symbols/svg-400 0.48.1), so those need a map. A name in `categories` the package lacks is a warning (`icon-set-unknown-icon`): an upgrade may remove icons.
+Categories come from `categories` (a map of category to icon names, inline or the path of a JSON file inside the project), which replaces any package metadata. Without one, `@tabler/icons` supplies `icons.json`'s `category` and `@mdi/svg` the first tag of `meta.json`; every other package has none, and uncategorized icons form "Other". Lucide's `tags.json` and the Material packages carry no categories (as of lucide-static 1.61.0, @material-symbols/svg-400 0.48.1), so those need a map. A name in `categories` the package lacks is a warning (`icon-unknown`): an upgrade may remove icons.
 
 `BlazonData.iconSets` holds each set's name, package, version, license, count and categories (icon names only; no local path). `blazon:icon-set <name> [category ...]` draws it, each category collapsed and its icons rendered only while open. The dev server serves `/brand-assets/icon-sets/<name>/<icon>.svg` from the package with the same sandbox headers as asset SVGs, only for a `.svg` directly in the set's folder; `blazon build` copies every icon of a set to the same path.
 
@@ -495,19 +497,19 @@ assets?: Record<string, {
 
 **Keys.** A key with a `dir` becomes a URL segment, so it MUST be lowercase letters, digits and hyphens. A key that only labels a folder MUST equal the folder's name. A key with no assets is a warning (`asset-config-unused`). An entry with any error is left out whole (`asset-config-invalid`), so nothing is half applied.
 
-**Local images.** A brand may keep a category's images out of git, because their licence forbids sharing them or because they are made from a source that is not committed. `local` says so, as a sentence saying how to make the files. When a local category has no image at all, `blazon check` reports one `asset-local-absent` note on the key and none of the findings its absence causes: `asset-sidecar-orphan` in the folder, `asset-config-unused` for the key, `logo-missing` for a config logo in the folder, and `directive-invalid` for a directive whose folder or asset id is in the category, or that needs a logo kept there. Once one image is there, every finding is reported as usual, so images made only in part still show. A directive naming a category that does not exist is still an error. `local` is carried into `brand.json` (`categories[].local`), so a tool that reads it knows not to pass those images on.
+**Local images.** A brand may keep a category's images out of git, because their licence forbids sharing them or because they are made from a source that is not committed. `local` says so, as a sentence saying how to make the files. When a local category has no image at all, `blazon check` reports one `asset-local-missing` note on the key and none of the findings its absence causes: `asset-sidecar-orphaned` in the folder, `asset-config-unused` for the key, `logo-missing` for a config logo in the folder, and `directive-invalid` for a directive whose folder or asset id is in the category, or that needs a logo kept there. Once one image is there, every finding is reported as usual, so images made only in part still show. A directive naming a category that does not exist is still an error. `local` is carried into `brand.json` (`categories[].local`), so a tool that reads it knows not to pass those images on.
 
-**Experimental categories.** `experimental: true` says a category holds explorations, such as logo directions nobody has chosen, which are not the brand's identity and which the brand's owner will never approve. `experimental` MUST be a boolean; anything else is an `asset-config-invalid` error. For an asset in such a category blazon does not report `needs-review`, `generated-unreviewed` or `needs-review-in-use` (section 4): its `review` stays valid data on the asset and in `brand.json`, and it simply does not gate the book. A page that draws both experimental and ordinary assets still reports `needs-review-in-use` for the ordinary ones. Nothing else about the category changes: its rules, `approval-stale` for an asset marked `ok`, and every other finding apply as to any category. `experimental` is carried into `BlazonData.assetCategories` and `brand.json` (`categories[].experimental`, present only when `true`). The brand book labels the category "Experiment" on its page and on every asset a directive draws from it (`blazon:assets`, `blazon:section`, `blazon:logo-space`, `blazon:logo-lockups`, `blazon:logo-partner`, `blazon:logo-initiative`, `blazon:logo-placement`; `blazon:icons` once for the folder; a pair of logos, or a logo and its mark, when either is in the category), and lists it, with its file count and apart from the findings, in an Experiments section of the Review page. A reader of `brand.json` that produces a deliverable MUST leave an experimental category out of it by default; the shipped plugins do (the press kit and the logo kit draw only the `logos` and `partners` categories, and the brand deck skips every experimental category).
+**Experimental categories.** `experimental: true` says a category holds explorations, such as logo directions nobody has chosen, which are not the brand's identity and which the brand's owner will never approve. `experimental` MUST be a boolean; anything else is an `asset-config-invalid` error. For an asset in such a category blazon does not report `review-pending`, `asset-review-missing` or `page-review-pending` (section 4): its `review` stays valid data on the asset and in `brand.json`, and it simply does not gate the book. A page that draws both experimental and ordinary assets still reports `page-review-pending` for the ordinary ones. Nothing else about the category changes: its rules, `approval-stale` for an asset marked `ok`, and every other finding apply as to any category. `experimental` is carried into `BlazonData.assetCategories` and `brand.json` (`categories[].experimental`, present only when `true`). The brand book labels the category "Experiment" on its page and on every asset a directive draws from it (`blazon:assets`, `blazon:section`, `blazon:logo-space`, `blazon:logo-lockups`, `blazon:logo-partner`, `blazon:logo-initiative`, `blazon:logo-placement`; `blazon:icons` once for the folder; a pair of logos, or a logo and its mark, when either is in the category), and lists it, with its file count and apart from the findings, in an Experiments section of the Review page. A reader of `brand.json` that produces a deliverable MUST leave an experimental category out of it by default; the shipped plugins do (the press kit and the logo kit draw only the `logos` and `partners` categories, and the brand deck skips every experimental category).
 
-**Reference categories.** `reference: true` says a category holds material that follows the guidelines but is kept for comparison, or was supplied by someone else: card faces extracted unedited from the guidelines, or a favicon set that a third party supplied. It is neither a live asset nor an exploration. `reference` MUST be a boolean, and a category MUST NOT set `experimental` and `reference` to `true` together; either mistake is an `asset-config-invalid` error. For an asset in such a category blazon does not report `needs-review`, `generated-unreviewed` or `needs-review-in-use` (section 4), exactly as for an experimental one, and nothing else about the category changes. `reference` is carried into `BlazonData.assetCategories` and `brand.json` (`categories[].reference`, present only when `true`). The brand book labels the category "Reference" on its page and on every asset a directive draws from it, in every place it labels an experimental one, and lists it, with its file count and apart from the findings, in a Reference section of the Review page. The brand deck skips every reference category. Another deliverable decides for itself; the press kit and the logo kit draw only the `logos` and `partners` categories.
+**Reference categories.** `reference: true` says a category holds material that follows the guidelines but is kept for comparison, or was supplied by someone else: card faces extracted unedited from the guidelines, or a favicon set that a third party supplied. It is neither a live asset nor an exploration. `reference` MUST be a boolean, and a category MUST NOT set `experimental` and `reference` to `true` together; either mistake is an `asset-config-invalid` error. For an asset in such a category blazon does not report `review-pending`, `asset-review-missing` or `page-review-pending` (section 4), exactly as for an experimental one, and nothing else about the category changes. `reference` is carried into `BlazonData.assetCategories` and `brand.json` (`categories[].reference`, present only when `true`). The brand book labels the category "Reference" on its page and on every asset a directive draws from it, in every place it labels an experimental one, and lists it, with its file count and apart from the findings, in a Reference section of the Review page. The brand deck skips every reference category. Another deliverable decides for itself; the press kit and the logo kit draw only the `logos` and `partners` categories.
 
 **Extra folders.** `dir` is relative to the project or absolute, and MAY point outside the project: the config is trusted code. Every image under it joins the category, with sidecars beside them, and gets the id `key/name` and the address `brand-assets/<key>/<path inside dir>`, as a file in `assets/<key>/` does. Both are scanned when both exist. The dev server serves, and `blazon build` copies, only image files inside the folder, never through a link that leaves it. The roots are resolved from the config where they are used and are not part of `BlazonData`, so no local path reaches the page.
 
-**Ids.** Two files with one id from different directories are an error (`asset-duplicate-id`): the id would name both. This also catches the case where a file in a subfolder takes its first folder's category and loses the subfolder from its id. One name in two formats in one directory is one asset with one sidecar, and is allowed. Sub-groups for subfolders are left for later; they will need ids to stay stable, which this rule protects.
+**Ids.** Two files with one id from different directories are an error (`asset-id-duplicate`): the id would name both. This also catches the case where a file in a subfolder takes its first folder's category and loses the subfolder from its id. One name in two formats in one directory is one asset with one sidecar, and is allowed. Sub-groups for subfolders are left for later; they will need ids to stay stable, which this rule protects.
 
 **Order.** Files are read in name order, so a scan is the same on every machine. `BlazonData.assetCategories` lists every category that has assets, as `{ category, label, order?, description?, rules?, notSpecified?, source?, local?, experimental? }`: categories with an `order` first (ascending, ties by name), then `logos`, then `icons`, then the rest by name.
 
-**Rules.** `rules` states what every file in the category must follow, and `blazon check` tests each file (`asset-rule-violation`, error, on the file's id):
+**Rules.** `rules` states what every file in the category must follow, and `blazon check` tests each file (`asset-rule-violated`, error, on the file's id):
 
 - `formats`: a non-empty list from `svg`, `png`, `jpg`, `gif`, `webp`, `avif`.
 - `minPixels`: `width`, `height` or both, numbers above 0. A raster image smaller than either is a violation. A vector file is not measured, and neither is a raster file whose header gives no size.
@@ -647,9 +649,9 @@ The rest of a key's rules (a theme role, an `assets` entry, an icon set) are che
 { "v": 1, "commit": "0123456789abcdef0123456789abcdef01234567" }
 ```
 
-`blazon-pin-invalid` is raised, and the file is not read as a pin, when the file is not valid JSON, is not an object, has a key other than `v` and `commit`, has a `v` other than the number `1`, or has a `commit` that is not 40 lowercase hexadecimal digits (an abbreviated hash, a branch name and an uppercase hash are each refused). `blazon pin` replaces such a file, which is how a broken pin is mended. A book with no `blazon.lock` is not checked, and nothing else in the book depends on the file.
+`pin-invalid` is raised, and the file is not read as a pin, when the file is not valid JSON, is not an object, has a key other than `v` and `commit`, has a `v` other than the number `1`, or has a `commit` that is not 40 lowercase hexadecimal digits (an abbreviated hash, a branch name and an uppercase hash are each refused). `blazon pin` replaces such a file, which is how a broken pin is mended. A book with no `blazon.lock` is not checked, and nothing else in the book depends on the file.
 
-When the file is valid, `blazon check`, `blazon tokens` and `blazon build` (and the dev server, which reads the file again when it changes) compare the commit with the blazon that is running. That commit is the one the running blazon was built from, read from the stamp `npm run build` compiles into `dist` along with whether the tree had uncommitted changes; run from source, where there is no build, it is the `HEAD` of the blazon clone, read when blazon starts. The comparison is exact, and any failure is `blazon-pin-mismatch`: the commit differs, the tree had uncommitted changes (a dirty tree never matches, even at the pinned commit, because it is not that commit), or the blazon cannot say its commit (no checkout and no stamp), which fails closed because a pin that cannot be checked is not met. `blazon pin` itself refuses to write the pin of a dirty or unknown blazon.
+When the file is valid, `blazon check`, `blazon tokens` and `blazon build` (and the dev server, which reads the file again when it changes) compare the commit with the blazon that is running. That commit is the one the running blazon was built from, read from the stamp `npm run build` compiles into `dist` along with whether the tree had uncommitted changes; run from source, where there is no build, it is the `HEAD` of the blazon clone, read when blazon starts. The comparison is exact, and any failure is `pin-mismatch`: the commit differs, the tree had uncommitted changes (a dirty tree never matches, even at the pinned commit, because it is not that commit), or the blazon cannot say its commit (no checkout and no stamp), which fails closed because a pin that cannot be checked is not met. `blazon pin` itself refuses to write the pin of a dirty or unknown blazon.
 
 A match shows that the running blazon was built from the pinned commit. It does not show that `dist/` was left alone after the build, that `node_modules` matches the lockfile, or that nobody edited the stamp. The pin catches the mistake that happens, building a book with another checkout; it is not a defence against someone who means to get round it, and it is not a supply-chain control.
 
@@ -657,14 +659,14 @@ A match shows that the running blazon was built from the pinned commit. It does 
 
 `examples/conformance/` is the fictional conformance fixture in the repository. The encoding of the third-party deck this model was derived from is a second fixture, which the maintainers keep locally and which is not shipped in the repository; items 1, 2 and 4 describe it, and the tests for them skip when it is absent. An implementation conforms when:
 
-1. `blazon check` on the third-party fixture reports exactly the 15 findings in its recorded `check.json`, all warnings and no errors: one `duplicate-value` (`color.hue.yellow.400`), eleven `needs-review` in the default context, one `font-not-loaded` (`font.family.japanese`, the Kinto family that no listed stylesheet loads), one `needs-review` in `locale=ja` (the deck gives no Japanese sizes), and one `needs-review-in-use` for `02-logo.md`, which shows the flagged logotype. Seven of the eleven are swatches whose label names a different color than the one drawn (`scripts/extract-deck.py` finds them); two are `illustration.color.lightGray` and `type.h5`; the last two are the logotype sidecars, whose `unit` (the star) and divider height are measured from the PNG because the deck states the rules in units, not pixels.
+1. `blazon check` on the third-party fixture reports exactly the 15 findings in its recorded `check.json`, all warnings and no errors: one `token-value-duplicate` (`color.hue.yellow.400`), eleven `review-pending` in the default context, one `font-family-missing` (`font.family.japanese`, the Kinto family that no listed stylesheet loads), one `review-pending` in `locale=ja` (the deck gives no Japanese sizes), and one `page-review-pending` for `02-logo.md`, which shows the flagged logotype. Seven of the eleven are swatches whose label names a different color than the one drawn (`scripts/extract-deck.py` finds them); two are `illustration.color.lightGray` and `type.h5`; the last two are the logotype sidecars, whose `unit` (the star) and divider height are measured from the PNG because the deck states the rules in units, not pixels.
 2. `blazon tokens` on the third-party fixture matches its recorded outputs (`theme.css` with its `:lang(ja)`, `:lang(de)` and `:lang(fr)` blocks, `typography.css`, `tokens.ts`, `tokens.json`, `tokens.locale.ja.json`).
 3. Each check in section 4 has a case in the check corpus (`test/corpus/checks/cases.ts`, run by `test/core/checker/corpus.test.ts`): a small project that yields the code at the catalogue's severity, and a near-miss that differs in the one thing that matters and does not yield it. Findings are compared by code and severity, not by order. A code added to the catalogue without a case fails that test.
 
 4. `brand.json` for the third-party fixture is its recorded `brand.json`, and validates against `brand.schema.json` (section 12). The comparison removes the top-level `generator` key first, because it names the blazon build that wrote the file (its commit and whether the tree was dirty) and so differs between builds; everything else is compared, so a change to the shape of `brand.json` shows as a golden diff. It also masks the date of the SPDX license list in a finding's message, which moves when the list is refreshed.
 5. `blazon check examples/conformance` reports exactly the findings in `test/examples/golden/conformance/check.json`: one `approval-stale` warning (`color.accent`, whose `review.value` is not the fingerprint of its value) and one `font-license-unknown` note (`font.family.body`, whose license `OFL-1.2` looks like an SPDX id and is not one). It reports nothing for the approvals that hold: `color.ink` (`by`, `at` and a `value` that matches) and `color.surface` (`status: ok` with no `value`, which is never stale), nor for `font.family.display` (a listed SPDX id with `source` and `licenseUrl`), nor for the logo sidecar `logos/example-ink`, whose `initiative` names the mark `logos/example-lab-mark`, an asset that exists. Its token outputs and `brand.json` match the goldens in `test/examples/golden/conformance/`, and `brand.json` carries the `review`, `font` and `initiative` fields. The approver is the invented "Example Approver": the fixture records no approval anyone gave. It is a separate example because `examples/blazon` is blazon's own brand book, and approving its tokens in a fixture would claim approvals nobody made.
-6. `blazon.lock` (section 14) is tested without a golden, because it holds a commit of blazon itself, which no golden can name: `test/core/tokens/conformance.test.ts` writes a lock into a temporary copy of `examples/conformance` for a blazon identity it supplies, and checks that the pin is met by that commit alone, that another commit, a dirty tree and a blazon that cannot say its commit each give `blazon-pin-mismatch`, and that a lock with an uppercase hash or an unknown key gives `blazon-pin-invalid`. The example has no `blazon.lock` of its own, so a book with no lock is not checked.
-7. `examples/conformance` has an experimental asset category (`experiments`, section 11) holding `experiments/example-sketch`, whose sidecar says `review.status: needs-review`, and a page that draws it with `blazon:assets experiments`. `blazon check` reports no `needs-review`, `needs-review-in-use` or `generated-unreviewed` for them, so the findings of item 5 are the whole of `check.json`. Its `brand.json` golden carries the asset with its `review` unchanged and the category with `experimental: true`.
+6. `blazon.lock` (section 14) is tested without a golden, because it holds a commit of blazon itself, which no golden can name: `test/core/tokens/conformance.test.ts` writes a lock into a temporary copy of `examples/conformance` for a blazon identity it supplies, and checks that the pin is met by that commit alone, that another commit, a dirty tree and a blazon that cannot say its commit each give `pin-mismatch`, and that a lock with an uppercase hash or an unknown key gives `pin-invalid`. The example has no `blazon.lock` of its own, so a book with no lock is not checked.
+7. `examples/conformance` has an experimental asset category (`experiments`, section 11) holding `experiments/example-sketch`, whose sidecar says `review.status: needs-review`, and a page that draws it with `blazon:assets experiments`. `blazon check` reports no `review-pending`, `page-review-pending` or `asset-review-missing` for them, so the findings of item 5 are the whole of `check.json`. Its `brand.json` golden carries the asset with its `review` unchanged and the category with `experimental: true`.
 
 `test/core/tokens/conformance.test.ts` runs 1, 2 and 4 to 7; 3 is run by the tests it names. The golden files were generated by the implementation and reviewed by hand, so they pin behaviour; they do not prove it independently. The goldens of `examples/conformance` pin the fingerprint, the font license note and the stale check as they behave today, and the `brand.json` goldens pin the shape and content of the export, not that it is the right export.
 

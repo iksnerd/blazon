@@ -69,7 +69,7 @@ export function logoSurfaceFindings(
       const ratio = painted ? contrastRatio(painted, surface) : undefined;
       if (ratio === undefined || ratio >= INVISIBLE_BELOW) continue;
       findings.push(
-        finding('logo-invisible', {
+        finding('logo-contrast-insufficient', {
           path: `logo.${variant}`,
           message: `The ${variant === 'onDark' ? 'dark-surface' : 'light-surface'} logo draws ${color}, which is the color of ${label} (${paint}) where the brand book shows it (contrast ${ratio.toFixed(1)}:1): that part of the logo is not visible. Forbid the logo on that surface, or give the brand a logo made for it`,
         }),

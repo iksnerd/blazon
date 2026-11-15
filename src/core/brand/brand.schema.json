@@ -1088,7 +1088,7 @@
         "line": {
           "type": "integer",
           "minimum": 1,
-          "description": "The line (1-based) in file where the key of the token that path names is written; for invalid-json, the line where the parser stopped. Absent when it is not known."
+          "description": "The line (1-based) in file where the key of the token that path names is written; for token-file-invalid, the line where the parser stopped. Absent when it is not known."
         },
         "fix": {
           "type": "string",

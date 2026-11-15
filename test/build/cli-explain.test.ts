@@ -17,11 +17,11 @@ const blazon = (...args: string[]) =>
 
 describe('blazon explain <code>', () => {
   it('prints the severity, the summary and the place to read for a code', () => {
-    const ran = blazon('explain', 'contrast');
+    const ran = blazon('explain', 'contrast-insufficient');
     expect(ran.status).toBe(0);
     expect(ran.stdout).toContain('contrast');
-    expect(ran.stdout).toContain(CHECKS.contrast.severity);
-    expect(ran.stdout).toContain(CHECKS.contrast.summary);
+    expect(ran.stdout).toContain(CHECKS['contrast-insufficient'].severity);
+    expect(ran.stdout).toContain(CHECKS['contrast-insufficient'].summary);
     expect(ran.stdout).toContain('docs/manual/03-checks.md');
     expect(ran.stdout).toMatch(/RFC 0001/);
   });
@@ -34,35 +34,43 @@ describe('blazon explain <code>', () => {
   });
 
   it('prints the same as an object under --json', () => {
-    const ran = blazon('explain', 'contrast', '--json');
+    const ran = blazon('explain', 'contrast-insufficient', '--json');
     expect(ran.status).toBe(0);
     expect(JSON.parse(ran.stdout)).toMatchObject({
       command: 'explain',
       passed: true,
-      code: 'contrast',
-      severity: CHECKS.contrast.severity,
-      summary: CHECKS.contrast.summary,
-      rfc: CHECKS.contrast.rfc,
-      manual: CHECKS.contrast.manual,
+      code: 'contrast-insufficient',
+      severity: CHECKS['contrast-insufficient'].severity,
+      summary: CHECKS['contrast-insufficient'].summary,
+      rfc: CHECKS['contrast-insufficient'].rfc,
+      manual: CHECKS['contrast-insufficient'].manual,
     });
   });
 
   it('names the closest codes for an unknown one, and exits 2', () => {
-    const ran = blazon('explain', 'contrats');
+    const ran = blazon('explain', 'contrast-insuficient');
     expect(ran.status).toBe(2);
     expect(ran.stdout).toBe('');
-    expect(ran.stderr).toContain('blazon explain: unknown code "contrats"');
+    expect(ran.stderr).toContain('blazon explain: unknown code "contrast-insuficient"');
     expect(ran.stderr).toContain('contrast');
   });
 
   it('prints a JSON error with a code and a fix for an unknown code', () => {
-    const ran = blazon('explain', 'contrats', '--json');
+    const ran = blazon('explain', 'contrast-insuficient', '--json');
     expect(ran.status).toBe(2);
     expect(JSON.parse(ran.stdout)).toEqual({
       command: 'explain',
       passed: false,
-      error: { code: 'unknown-finding-code', message: expect.stringContaining('unknown code "contrats"'), fix: expect.stringContaining('contrast') },
+      error: { code: 'unknown-finding-code', message: expect.stringContaining('unknown code "contrast-insuficient"'), fix: expect.stringContaining('contrast') },
     });
+  });
+
+  it('treats a code from before the naming rule as any other unknown code, with no alias', () => {
+    for (const old of ['contrast', 'needs-review', 'unresolved-alias', 'invalid-json']) {
+      const ran = blazon('explain', old, '--json');
+      expect(ran.status).toBe(2);
+      expect(JSON.parse(ran.stdout).error.code).toBe('unknown-finding-code');
+    }
   });
 
   it('lists every code with no argument', () => {

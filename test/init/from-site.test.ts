@@ -335,7 +335,7 @@ describe('blazon init --from', () => {
         expect(fs.existsSync(path.join(dir, `assets/logos/${name}.json`))).toBe(false);
       }
       // the site's #635dff is under AA with both of blazon's inks: init said so, and blazon check reports exactly that
-      expect((await errors(dir)).map((f) => f.code)).toEqual(['contrast']);
+      expect((await errors(dir)).map((f) => f.code)).toEqual(['contrast-insufficient']);
 
       const bare = path.join(tempDir(), 'b');
       expect(await runInit(bare, { from: `${base}/named` })).toBe(0);

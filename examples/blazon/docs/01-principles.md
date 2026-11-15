@@ -23,7 +23,7 @@ The brand and the build come from the same files. A build that breaks the brand'
 
 | Attribute | Proof |
 |---|---|
-| Checked | A rule sits beside the value it governs. A text token that aliases Signal Orange fails `blazon check` with `usage-violation`. |
+| Checked | A rule sits beside the value it governs. A text token that aliases Signal Orange fails `blazon check` with `usage-violated`. |
 | One source | One build writes the CSS variables, a typed `tokens.ts` and the static book from `tokens/`, `docs/` and `assets/`. |
 | Readable from any language | `blazon build` also writes `brand.json`: the tokens with their rules, the pages, the assets and the findings, with a JSON Schema. |
 | Open to plugins | A plugin is a program in any language. blazon ships ten, and a config names one to turn it on. |

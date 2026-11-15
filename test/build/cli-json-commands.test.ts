@@ -56,7 +56,7 @@ describe('blazon tokens --json', () => {
     expect(result.status).toBe(1);
     const out = JSON.parse(result.stdout);
     expect(out.passed).toBe(false);
-    expect(out.findings.some((f: { code: string }) => f.code === 'invalid-json')).toBe(true);
+    expect(out.findings.some((f: { code: string }) => f.code === 'token-file-invalid')).toBe(true);
   }, 60_000);
 
   it('says a failure that is not a finding as JSON too', () => {

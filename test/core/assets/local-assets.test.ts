@@ -26,17 +26,17 @@ const LOCAL = { logos: { local: MAKE }, usage: { local: MAKE } };
 describe('local asset categories', () => {
   it('turns a local category with no image into one note, and drops what its absence causes', async () => {
     const { findings } = await compile(CLONE, LOCAL);
-    // These projects have no tokens, which is `tokens-empty`'s business and not this test's
-    expect(findings.filter((f) => f.severity !== 'info' && f.code !== 'tokens-empty')).toEqual([]);
-    expect(findings.filter((f) => f.code === 'asset-local-absent')).toEqual([
+    // These projects have no tokens, which is `tokens-missing`'s business and not this test's
+    expect(findings.filter((f) => f.severity !== 'info' && f.code !== 'tokens-missing')).toEqual([]);
+    expect(findings.filter((f) => f.code === 'asset-local-missing')).toEqual([
       {
-        code: 'asset-local-absent',
+        code: 'asset-local-missing',
         severity: 'info',
         path: 'logos',
         message: `The images are kept out of git and are not here. ${MAKE} Until then the brand book leaves them out.`,
       },
       {
-        code: 'asset-local-absent',
+        code: 'asset-local-missing',
         severity: 'info',
         path: 'usage',
         message: `The images are kept out of git and are not here. ${MAKE} Until then the brand book leaves them out.`,
@@ -46,7 +46,7 @@ describe('local asset categories', () => {
 
   it('reports everything as usual for a category that is not local', async () => {
     const codes = (await compile(CLONE, { logos: { local: MAKE } })).findings.map((f) => f.code);
-    expect(codes).toContain('asset-sidecar-orphan');
+    expect(codes).toContain('asset-sidecar-orphaned');
     expect(codes).toContain('directive-invalid');
     expect(codes).not.toContain('logo-missing');
   });
@@ -60,8 +60,8 @@ describe('local asset categories', () => {
 
   it('reports everything as usual once one image of a local category is there', async () => {
     const { findings } = await compile({ ...CLONE, 'assets/usage/misuse.svg': SVG }, LOCAL);
-    expect(findings.filter((f) => f.path === 'usage' && f.code === 'asset-local-absent')).toEqual([]);
-    expect(findings.filter((f) => f.code === 'asset-sidecar-orphan').map((f) => f.path)).toEqual(['usage/clear-space.json']);
+    expect(findings.filter((f) => f.path === 'usage' && f.code === 'asset-local-missing')).toEqual([]);
+    expect(findings.filter((f) => f.code === 'asset-sidecar-orphaned').map((f) => f.path)).toEqual(['usage/clear-space.json']);
     expect(findings.filter((f) => f.code === 'directive-invalid').map((f) => f.message)).toEqual([
       '<!-- blazon:logo-placement usage/misuse -->: usage/misuse states no placement in its sidecar',
       '<!-- blazon:section usage misuse clear-space -->: no asset at usage/clear-space',

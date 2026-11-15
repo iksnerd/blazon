@@ -176,13 +176,13 @@ export function isDarkBackground(background: string | undefined, ink: string | u
   return white === undefined ? true : white >= 3;
 }
 
-/** The findings on a token, plus a `needs-review` on a group above it: a flagged group is listed once on the Review page, and its tokens still show the flag. */
+/** The findings on a token, plus a `review-pending` on a group above it: a flagged group is listed once on the Review page, and its tokens still show the flag. */
 export function findingsFor(data: BlazonData, path: string): Finding[] {
   const above = new Set<string>();
   // A token with a review of its own (even `ok`) is not covered by the group
   if (data.tokens.items.find((t) => t.path === path)?.blazon.review) return data.findings.filter((f) => f.path === path);
   for (let at = parentOf(path); at; at = parentOf(at)) above.add(at);
-  return data.findings.filter((f) => f.path === path || (f.code === 'needs-review' && above.has(f.path)));
+  return data.findings.filter((f) => f.path === path || (f.code === 'review-pending' && above.has(f.path)));
 }
 
 /** The nearest group, from the token's parent upwards, that has a description. */

@@ -169,7 +169,7 @@ describe('compileBlazonData: resolver contexts (RFC 0001 §3)', () => {
     });
     const data = await compile(root);
 
-    expect(data.findings.filter((f) => f.severity !== 'info').map((f) => `${f.context ?? 'default'}:${f.code}`)).toEqual(['theme=dark:contrast']);
+    expect(data.findings.filter((f) => f.severity !== 'info').map((f) => `${f.context ?? 'default'}:${f.code}`)).toEqual(['theme=dark:contrast-insufficient']);
   });
 });
 
@@ -255,7 +255,7 @@ describe('a finding about a token says which file to open', () => {
   const bad = { $type: 'color', $value: 'notacolor' };
   const fileOf = async (root: string, tokenPath: string) => {
     const data = await compileBlazonData({ ...TEST_CONFIG }, root);
-    return data.findings.find((f) => f.code === 'invalid-value' && f.path === tokenPath);
+    return data.findings.find((f) => f.code === 'token-value-invalid' && f.path === tokenPath);
   };
 
   it('is the file as the project names it, for a source a resolver document points at', async () => {
@@ -286,8 +286,8 @@ describe('a finding about a token says which file to open', () => {
   it('is from the project root for a tokens folder that is not directly in it, and so is a file that does not parse', async () => {
     const root = writeProject({ 'brand/tokens/colors.json': { color: { oops: bad } }, 'brand/tokens/broken.json': '{ "color": ' });
     const data = await compileBlazonData({ ...TEST_CONFIG, tokensDir: './brand/tokens' }, root);
-    expect(data.findings.find((f) => f.code === 'invalid-value')).toMatchObject({ file: 'brand/tokens/colors.json' });
-    expect(data.findings.find((f) => f.code === 'invalid-json')).toMatchObject({ path: 'brand/tokens/broken.json', file: 'brand/tokens/broken.json' });
+    expect(data.findings.find((f) => f.code === 'token-value-invalid')).toMatchObject({ file: 'brand/tokens/colors.json' });
+    expect(data.findings.find((f) => f.code === 'token-file-invalid')).toMatchObject({ path: 'brand/tokens/broken.json', file: 'brand/tokens/broken.json' });
     expect(data.tokens.items.find((t) => t.path === 'color.oops')!.file).toBe('brand/tokens/colors.json');
   });
 
@@ -296,7 +296,7 @@ describe('a finding about a token says which file to open', () => {
       'brand/blazon.resolver.json': { version: '2025.10', sets: { base: { sources: [{ color: { oops: bad } }] } }, resolutionOrder: [{ $ref: '#/sets/base' }] },
     });
     const data = await compileBlazonData({ ...TEST_CONFIG, resolver: 'brand/blazon.resolver.json' }, root);
-    expect(data.findings.find((f) => f.code === 'invalid-value')).toMatchObject({ file: 'brand/blazon.resolver.json' });
+    expect(data.findings.find((f) => f.code === 'token-value-invalid')).toMatchObject({ file: 'brand/blazon.resolver.json' });
   });
 
   it('is the same for a project with no resolver, where the files are read from the tokens folder', async () => {
@@ -311,6 +311,6 @@ describe('checks run in every context', () => {
       'tokens/locale/ja.json': { font: { body: { $value: ['Kinto', 'sans-serif'], $extensions: { 'dev.blazon': { font: { license: 7 } } } } } },
     });
     const data = await compile(root);
-    expect(data.findings.filter((f) => f.code === 'invalid-font-meta').map((f) => `${f.context}:${f.path}`)).toEqual(['locale=ja:font.body']);
+    expect(data.findings.filter((f) => f.code === 'font-meta-invalid').map((f) => `${f.context}:${f.path}`)).toEqual(['locale=ja:font.body']);
   });
 });

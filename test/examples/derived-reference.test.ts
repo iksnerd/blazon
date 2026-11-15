@@ -26,7 +26,7 @@ describe.skipIf(!PRESENT)('the Slack example', () => {
   it('has no findings but a note for each art folder not rendered here', () => {
     const rendered = (dir: string) => fs.readdirSync(path.join(EXAMPLE, 'assets', dir)).some((f) => /\.(png|webp)$/.test(f));
     const absent = ['logos', 'logo-usage', 'type-specimens'].filter((dir) => !rendered(dir));
-    expect(data.findings.map((f) => `${f.code} ${f.path}`)).toEqual(absent.map((dir) => `asset-local-absent ${dir}`).sort());
+    expect(data.findings.map((f) => `${f.code} ${f.path}`)).toEqual(absent.map((dir) => `asset-local-missing ${dir}`).sort());
   });
 
   it('holds the palette from page 17, with its print values', () => {

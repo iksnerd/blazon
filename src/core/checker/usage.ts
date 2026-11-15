@@ -22,11 +22,11 @@ export function usageFindings(item: TokenItem, byPath: Map<string, TokenItem>, r
     const list = usage?.[key];
     if (list === undefined) continue;
     if (Array.isArray(list)) written.push(...list);
-    else findings.push(finding('unknown-role', { path: item.path, message: `usage.${key} must be a list of usage roles` }));
+    else findings.push(finding('usage-role-unknown', { path: item.path, message: `usage.${key} must be a list of usage roles` }));
   }
   for (const role of written) {
     if (role !== undefined && (typeof role !== 'string' || !roles.includes(role))) {
-      findings.push(finding('unknown-role', { path: item.path, message: `"${String(role)}" is not a usage role (${roles.join(', ')})` }));
+      findings.push(finding('usage-role-unknown', { path: item.path, message: `"${String(role)}" is not a usage role (${roles.join(', ')})` }));
     }
   }
 
@@ -36,10 +36,10 @@ export function usageFindings(item: TokenItem, byPath: Map<string, TokenItem>, r
   while (target && !seen.has(target.path)) {
     seen.add(target.path);
     if (target.deprecated) {
-      findings.push(finding('deprecated-alias', { path: item.path, message: `Aliases {${target.path}}, which is deprecated` }));
+      findings.push(finding('alias-deprecated', { path: item.path, message: `Aliases {${target.path}}, which is deprecated` }));
     }
     if (role && !allows(target, role)) {
-      findings.push(finding('usage-violation', { path: item.path, message: `Used as ${role}, but {${target.path}} is not allowed as ${role}` }));
+      findings.push(finding('usage-violated', { path: item.path, message: `Used as ${role}, but {${target.path}} is not allowed as ${role}` }));
       break;
     }
     target = target.aliasOf ? byPath.get(target.aliasOf) : undefined;

@@ -158,7 +158,7 @@ describe('a sidecar states the sizes a logo is for', () => {
     fs.mkdirSync(path.join(root, 'assets/small-use'));
     fs.writeFileSync(path.join(root, 'assets/small-use/icon.json'), '{}');
     const data = await compileBlazonData({ ...logoConfig(root), assets: { 'small-use': { local: 'Render it.' } } }, root);
-    expect(data.findings.filter((f) => f.severity !== 'info' && f.code !== 'tokens-empty')).toEqual([]);
+    expect(data.findings.filter((f) => f.severity !== 'info' && f.code !== 'tokens-missing')).toEqual([]);
   });
 });
 

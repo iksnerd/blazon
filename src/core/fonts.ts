@@ -165,7 +165,7 @@ export function fontFindings(tokens: ParsedTokens, loaded: LoadedFonts): Finding
     if (!family || !key || SYSTEM_FAMILIES.has(key) || loaded.families.has(key) || seen.has(key)) continue;
     seen.add(key);
     found.push(
-      finding('font-not-loaded', {
+      finding('font-family-missing', {
         path: item.path,
         message: `"${family}" is not loaded by any entry of \`fonts\`, so the brand book and its PDF use the next font of the stack. Add its file as {"family": "${family}", "file": path} or its stylesheet URL, or set \`webFont\` on the token`,
       }),

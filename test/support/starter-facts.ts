@@ -24,7 +24,7 @@ export interface StarterFacts {
   assets: string[];
   /** The folders directly under assets/, sorted */
   assetFolders: string[];
-  /** One `starter-file` note for each page, token file and asset: what `blazon check` counts in a project nothing was changed in */
+  /** One `starter-file-unchanged` note for each page, token file and asset: what `blazon check` counts in a project nothing was changed in */
   notes: number;
 }
 

@@ -35,7 +35,7 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
         parsed = matter(rawContent, {});
       } catch (err) {
         const reason = (err instanceof Error ? err.message.split('\n')[0]! : String(err)).replace(/:\s*$/, '');
-        problems.push(finding('invalid-frontmatter', { path: file, message: `Front matter is not valid YAML: ${reason}. Quote values that contain ": "` }));
+        problems.push(finding('page-frontmatter-invalid', { path: file, message: `Front matter is not valid YAML: ${reason}. Quote values that contain ": "` }));
         continue;
       }
       const meta = (parsed.data || {}) as DocFrontmatter;
@@ -53,7 +53,10 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
       // Infer title from frontmatter, or first H1, or clean slug
       if (meta.title !== undefined && meta.title !== null && typeof meta.title !== 'string') {
         problems.push(
-          finding('invalid-frontmatter', { path: file, message: `Front matter \`title\` must be a string, not ${typeof meta.title}. Quote it: title: "${String(meta.title)}"` }),
+          finding('page-frontmatter-invalid', {
+            path: file,
+            message: `Front matter \`title\` must be a string, not ${typeof meta.title}. Quote it: title: "${String(meta.title)}"`,
+          }),
         );
         continue;
       }
@@ -97,7 +100,7 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
     if (earlier === undefined) first.set(doc.slug, doc.filePath);
     else
       problems.push(
-        finding('page-duplicate-slug', {
+        finding('page-slug-duplicate', {
           path: doc.filePath,
           message: `${earlier} and ${doc.filePath} both have the slug "${doc.slug}"; the book opens only ${earlier}. Rename one of them`,
         }),

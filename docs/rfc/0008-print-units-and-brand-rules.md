@@ -21,7 +21,7 @@ The facts about blazon below were read from the code on 2026-11-04.
 
 | What | State |
 |---|---|
-| A dimension in `pt`, `pc`, `in`, `cm`, `mm` or `Q` | An `invalid-value` error that gives the px value at 96px to the inch (`measure` in `src/core/tokens/values/units.ts`; RFC 0001 section 1, item 5). Pinned by `test/core/tokens/model.test.ts` |
+| A dimension in `pt`, `pc`, `in`, `cm`, `mm` or `Q` | An `token-value-invalid` error that gives the px value at 96px to the inch (`measure` in `src/core/tokens/values/units.ts`; RFC 0001 section 1, item 5). Pinned by `test/core/tokens/model.test.ts` |
 | Other CSS lengths (`em`, `%`, `vw`, `ch` and the rest of `LENGTH_UNITS`) | Accepted and written to CSS as they are. The comment in `units.ts` says they are tolerated, which is wider than DTCG's `px` and `rem` |
 | Layout groups (social formats, patterns) | Read in px or rem only, with 1rem as 16px (`dimensionPx` in `src/core/tokens/groups.ts`). A `%` or a print unit gives `undefined` there |
 | `print` on a token | `{ cmyk?, pms?, ral? }` (`src/types/tokens.ts`). It is a color fact; the viewer and the shipped plugins read it only on colors |
@@ -62,7 +62,7 @@ DTCG 2025.10 allows `px` and `rem` for a dimension, as RFC 0001 section 1 says; 
 | A. Keep the error; the brand writes px, and the cm figure goes in `$description` or a page | No change. Tokens stay valid DTCG. | The authored value is not data: no check, no `brand.json` field, no display. A converted px drifts from the manual. This is the situation the manual comparison found |
 | B. Allow print units in a `dimension`, converted to px for CSS | The authored value is the token. `cm` is a valid CSS length, so even no conversion is needed for CSS | A DTCG tool cannot read `tokens.json` with a `cm` in it, which is the reason for the current rule. Every reader of a dimension (`dimensionPx` and the code that calls it) must then handle two kinds. It reverses RFC 0001 section 1, item 5 for a case the item was not about |
 | C. Keep the px `$value` and add `print.size` in `dev.blazon`: the size as authored, in a print unit | DTCG-clean; the unit survives into `brand.json`; it parallels `print.cmyk` beside an RGB `$value`; an old reader ignores it (RFC 0001 section 12: a reader ignores keys it does not know) | Two numbers for one fact. They can disagree, so a check is needed. `print` is typed as a color fact today, so the type widens |
-| D. A new `$type`, such as `print.size` | One value, one unit | DTCG types are a closed list and an unknown `$type` is `unknown-type` (RFC 0001 section 4). The token is no longer portable at all, and it is new syntax for one brand's grid |
+| D. A new `$type`, such as `print.size` | One value, one unit | DTCG types are a closed list and an unknown `$type` is `token-type-unknown` (RFC 0001 section 4). The token is no longer portable at all, and it is new syntax for one brand's grid |
 
 **Recommendation: option C, kept small.**
 
@@ -77,7 +77,7 @@ DTCG 2025.10 allows `px` and `rem` for a dimension, as RFC 0001 section 1 says; 
 ```
 
 - `print.size` is `{ value: number, unit: "pt" | "pc" | "in" | "cm" | "mm" | "Q" }`, on a `dimension` token only. Anything else is an `invalid-print-size` error (proposed).
-- The px `$value` stays required. A `dimension` in a print unit as `$value` stays the `invalid-value` error, so option B is not taken.
+- The px `$value` stays required. A `dimension` in a print unit as `$value` stays the `token-value-invalid` error, so option B is not taken.
 - A check converts `print.size` to px with the constants already in `units.ts` and warns when it differs from `$value` by more than 0.1%: `print-size-mismatch` (proposed, warning). The message gives the px to write, as the current error does.
 - The brand book shows the print size beside the px on the token's card, and `brand.json` carries it in `blazon.print.size` with no schema change beyond a described property. The viewer change is the only part that is not a check.
 
@@ -88,7 +88,7 @@ Option C is cheap because it adds a field and one comparison. It is worth buildi
 1. Each of the six units, in a token, converts to the px that `measure` gives for it today, and a matching `$value` passes.
 2. A `$value` more than 0.1% away from the converted size is `print-size-mismatch`, and the message names the px to write. A `$value` within it is silent.
 3. A `print.size` with an unknown unit (`mm2`, `px`), a non-number, a missing key or an extra key is `invalid-print-size`. A `print.size` on a color is the same error.
-4. A `$value` in `cm` is still `invalid-value`, with the existing message (the existing test in `test/core/tokens/model.test.ts` stays as it is).
+4. A `$value` in `cm` is still `token-value-invalid`, with the existing message (the existing test in `test/core/tokens/model.test.ts` stays as it is).
 5. `brand.json` carries the field and still validates against `brand.schema.json`, including the copy that forbids undescribed keys (RFC 0001 section 12).
 6. `tokens.json` and the CSS outputs are byte-for-byte unchanged by adding `print.size`. This is the DTCG portability claim, and a golden file holds it.
 7. RFC 0001 names the new codes (`test/docs/rfc.test.ts` fails otherwise), and the manual names them (`test/docs/manual.test.ts`).
@@ -133,7 +133,7 @@ What does not work: a brand that wants the numbers in px, because a tool reads t
 | Option | Pros | Cons |
 |---|---|---|
 | A. Leave it to prose, and use a `%` token where CSS can read it | No change; the relation is visible as a sentence and as `7.5%`. | Nothing detects a px value that drifts from the ratio. The reference (the square) is only in prose |
-| B. A derived-value expression, such as `calc({grid.square} * 0.075)` in `$value` | One source of truth: change the square and the radius follows | An alias must be the whole value; mixing an alias with other text is `embedded-alias` (`src/core/tokens/alias.ts`, RFC 0001 section 4). DTCG 2025.10 has no expression syntax, so blazon would invent one in `$value`, and a DTCG tool would read the token as garbage. It also needs an evaluator, an order of resolution and cycle checks. It turns the token files into a language |
+| B. A derived-value expression, such as `calc({grid.square} * 0.075)` in `$value` | One source of truth: change the square and the radius follows | An alias must be the whole value; mixing an alias with other text is `alias-embedded` (`src/core/tokens/alias.ts`, RFC 0001 section 4). DTCG 2025.10 has no expression syntax, so blazon would invent one in `$value`, and a DTCG tool would read the token as garbage. It also needs an evaluator, an order of resolution and cycle checks. It turns the token files into a language |
 | C. A `relations` list on a group, evaluated by a check | Tokens stay literal DTCG. Follows the shape of `pairs` and `proportion`, which are group-level cross-token rules in `dev.blazon`. Catches drift. | A second place where the number lives (the literal and the ratio). Both must be authored. Only px and rem resolve (`dimensionPx`), so a `%` token cannot be one side |
 
 If C is built, its shape follows `pairs`:
@@ -206,7 +206,7 @@ Nothing breaks. Every recommendation is additive: an optional field in `dev.blaz
 
 | Part | State |
 |---|---|
-| Print unit in a dimension is `invalid-value` | Built (`src/core/tokens/values/units.ts`; `test/core/tokens/model.test.ts`) |
+| Print unit in a dimension is `token-value-invalid` | Built (`src/core/tokens/values/units.ts`; `test/core/tokens/model.test.ts`) |
 | `%` and other CSS lengths kept as written | Built (`src/core/tokens/values/units.ts`) |
 | `pairs`, `proportion`, `usage`, asset `rules` | Built (`src/core/checker/`, `src/core/assets/categories.ts`) |
 | `print.ral`, the model for what a print fact in the core looks like | Built (`src/core/checker/print.ts`; RFC 0001 section 2) |

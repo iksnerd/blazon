@@ -82,7 +82,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
   const assets = scanAssets(assetsDirPath, { tokens: resolvedTokens, problems: assetProblems, extraRoots: categories.roots, lockups: vocabulary.lockups });
   // An experimental category holds explorations and a reference category holds material kept for comparison: a sidecar's review is data there, and its warnings do not gate the book
   const ungated = ungatedAssetIds(assets, categories.configs);
-  assetProblems.splice(0, assetProblems.length, ...assetProblems.filter((f) => !((f.code === 'needs-review' || f.code === 'generated-unreviewed') && ungated.has(f.path))));
+  assetProblems.splice(0, assetProblems.length, ...assetProblems.filter((f) => !((f.code === 'review-pending' || f.code === 'asset-review-missing') && ungated.has(f.path))));
   assetProblems.push(...categories.problems, ...unusedFindings(assets, categories.configs), ...ruleFindings(assets, categories.configs), ...unitFindings(assets.all));
   // A local category with no image was not made in this checkout: one note, and none of the findings that follows from it
   const absentLocal = absentLocalCategories(assets, categories.configs);
@@ -91,7 +91,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
     ...absentLocalFindings(absentLocal, categories.configs),
     ...replacementFindings(assets.all, absentLocal),
     ...initiativeFindings(assets.all, absentLocal),
-    ...assetProblems.filter((f) => !(f.code === 'asset-sidecar-orphan' && absentLocal.has(f.path.split('/')[0]!))),
+    ...assetProblems.filter((f) => !(f.code === 'asset-sidecar-orphaned' && absentLocal.has(f.path.split('/')[0]!))),
   ];
 
   const icons = scanIconSets(config.iconSets, cwd);
@@ -142,7 +142,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
 
   const noTokens: Finding[] =
     resolvedTokens.items.length === 0
-      ? [finding('tokens-empty', { path: path.relative(cwd, tokensDirPath) || config.tokensDir, message: 'the tokens folder holds no tokens, so the book has nothing to show' })]
+      ? [finding('tokens-missing', { path: path.relative(cwd, tokensDirPath) || config.tokensDir, message: 'the tokens folder holds no tokens, so the book has nothing to show' })]
       : [];
 
   return {
@@ -187,7 +187,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
 }
 
 /**
- * `logo-invisible` for the default context, plus what another context adds by changing a theme role's token (a dark theme's
+ * `logo-contrast-insufficient` for the default context, plus what another context adds by changing a theme role's token (a dark theme's
  * background), tagged with it. The theme roles are resolved again from that context's tokens, as the book's mode switch does.
  */
 function logoContextFindings(

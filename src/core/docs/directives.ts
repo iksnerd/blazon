@@ -129,7 +129,7 @@ export interface DirectiveContext {
   absentLocal?: ReadonlySet<string>;
   /** The logo files are in such a category */
   logoIsAbsentLocal?: boolean;
-  /** Ids of assets in experimental or reference categories: drawing one is not `needs-review-in-use` */
+  /** Ids of assets in experimental or reference categories: drawing one is not `page-review-pending` */
   ungated?: ReadonlySet<string>;
   /** The config has an `emailSignature` block */
   hasEmailSignature?: boolean;
@@ -265,7 +265,7 @@ function reviewInUseFindings(docs: readonly DocItem[], assets: AssetCatalog, ung
     if (flagged.length === 0) return [];
     const shown = flagged.slice(0, NAMES_SHOWN).join(', ');
     const names = flagged.length > NAMES_SHOWN ? `${shown} and ${flagged.length - NAMES_SHOWN} more` : shown;
-    return [finding('needs-review-in-use', { path: doc.filePath, message: `Shows ${flagged.length} asset${flagged.length === 1 ? '' : 's'} still marked needs-review: ${names}` })];
+    return [finding('page-review-pending', { path: doc.filePath, message: `Shows ${flagged.length} asset${flagged.length === 1 ? '' : 's'} still marked needs-review: ${names}` })];
   });
 }
 

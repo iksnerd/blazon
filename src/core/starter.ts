@@ -5,7 +5,7 @@ import type { Finding } from '../types/index.js';
 import { finding } from './checker/catalogue.js';
 
 // The starter is blazon's own brand book, `examples/blazon/`, copied by `blazon init` (RFC 0003). A file that is still the
-// starter's, byte for byte, is text nobody has written yet (RFC 0001 §4, `starter-file`). There is one copy: from source
+// starter's, byte for byte, is text nobody has written yet (RFC 0001 §4, `starter-file-unchanged`). There is one copy: from source
 // the starter is the example itself, and in blazon's package `template/` is that example, made by `npm run build-starter`
 // when the package is packed and never committed.
 
@@ -99,7 +99,7 @@ function filesUnder(dir: string): string[] {
 
 /**
  * A warning when a configured logo file is byte for byte the starter's: the book would show blazon's mark under another
- * brand's name. The `starter-file` note says the same in passing, and is easy to miss among the others.
+ * brand's name. The `starter-file-unchanged` note says the same in passing, and is easy to miss among the others.
  */
 export function starterLogoFindings(cwd: string, logoFiles: string[], template: string = getTemplateDir()): Finding[] {
   const examples = path.basename(path.dirname(template)) === 'examples' ? path.dirname(template) : path.join(template, '..', 'examples');
@@ -111,7 +111,12 @@ export function starterLogoFindings(cwd: string, logoFiles: string[], template: 
     const bytes = fs.readFileSync(full);
     if (!starters.some((starter) => starter.equals(bytes))) return [];
     const shown = path.relative(cwd, full).split(path.sep).join('/');
-    return [finding('starter-logo', { path: file, message: `The logo ${shown} is still blazon's own mark: replace it, or the book shows blazon's logo under this brand's name.` })];
+    return [
+      finding('starter-logo-unchanged', {
+        path: file,
+        message: `The logo ${shown} is still blazon's own mark: replace it, or the book shows blazon's logo under this brand's name.`,
+      }),
+    ];
   });
 }
 
@@ -129,7 +134,7 @@ export function starterFileFindings(cwd: string, folders: { docs: string; tokens
       const original = path.join(template, name, path.relative(root, file));
       if (!fs.existsSync(original) || !fs.readFileSync(file).equals(fs.readFileSync(original))) continue;
       const shown = path.relative(cwd, file).split(path.sep).join('/');
-      findings.push(finding('starter-file', { path: shown, message: `${shown} is still the starter's text: replace it with the brand's own.` }));
+      findings.push(finding('starter-file-unchanged', { path: shown, message: `${shown} is still the starter's text: replace it with the brand's own.` }));
     }
   }
   return findings;

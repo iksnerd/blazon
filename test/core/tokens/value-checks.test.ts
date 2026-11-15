@@ -6,7 +6,7 @@ import { compileTokens } from '../../support/helpers.js';
 
 const problems = async (token: Record<string, unknown>) => {
   const data = await compileTokens({ 'a.json': { t: token } });
-  return data.tokens.problems.filter((p) => p.code === 'invalid-value').map((p) => [p.path, p.message]);
+  return data.tokens.problems.filter((p) => p.code === 'token-value-invalid').map((p) => [p.path, p.message]);
 };
 
 describe('a dimension', () => {

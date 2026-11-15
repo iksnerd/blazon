@@ -117,7 +117,7 @@ export function scanAssets(assetsDir: string, options: ScanOptions = {}): AssetC
   const add = (asset: Asset, fullPath: string, source: string) => {
     const earlier = seen.get(asset.id);
     if (earlier && earlier.directory !== path.dirname(fullPath)) {
-      options.problems?.push(finding('asset-duplicate-id', { path: asset.id, message: `"${asset.id}" names two files, ${earlier.source} and ${source}; rename one` }));
+      options.problems?.push(finding('asset-id-duplicate', { path: asset.id, message: `"${asset.id}" names two files, ${earlier.source} and ${source}; rename one` }));
     }
     if (!earlier) seen.set(asset.id, { directory: path.dirname(fullPath), source });
     catalog.all.push(asset);
@@ -160,7 +160,7 @@ export function scanAssets(assetsDir: string, options: ScanOptions = {}): AssetC
   const named = new Set(catalog.all.map((a) => a.filePath.slice(0, a.filePath.lastIndexOf('.'))));
   for (const file of sidecars) {
     if (!named.has(file.slice(0, -'.json'.length))) {
-      options.problems?.push(finding('asset-sidecar-orphan', { path: file, message: 'No image of this name sits beside it, so it describes nothing' }));
+      options.problems?.push(finding('asset-sidecar-orphaned', { path: file, message: 'No image of this name sits beside it, so it describes nothing' }));
     }
   }
   // Sidecar `order` first, then the name order the files were read in (the sort is stable)

@@ -16,7 +16,7 @@ function copyVar(token: TokenItem) {
 function ColorTile({ data, token }: { data: BlazonData; token: TokenItem }) {
   const value = String(token.value);
   const print = token.blazon.print;
-  const review = findingsFor(data, token.path).some((f) => f.code === 'needs-review' || f.code === 'duplicate-value');
+  const review = findingsFor(data, token.path).some((f) => f.code === 'review-pending' || f.code === 'token-value-duplicate');
   const specs = [
     `HEX ${value.toUpperCase()}`,
     rgbText(value) ? `RGB ${rgbText(value)}` : '',

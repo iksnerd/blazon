@@ -9,7 +9,7 @@ describe('a UTF-8 byte order mark', () => {
   it('does not break a token file', async () => {
     const root = writeProject({ 'tokens/base.json': BOM + JSON.stringify(BASE) });
     const data = await compileBlazonData({ ...TEST_CONFIG }, root);
-    expect(data.findings.filter((f) => f.code === 'invalid-json')).toEqual([]);
+    expect(data.findings.filter((f) => f.code === 'token-file-invalid')).toEqual([]);
     expect(data.tokens.byPath.get('color.ink')?.value).toBe('#000000');
   });
 
@@ -26,7 +26,7 @@ describe('a UTF-8 byte order mark', () => {
       'tokens/dark.json': BOM + JSON.stringify({ color: { ink: { $value: '#ffffff' } } }),
     });
     const data = await compileBlazonData({ ...TEST_CONFIG }, root);
-    expect(data.findings.filter((f) => f.code === 'invalid-json' || f.code === 'resolver-invalid')).toEqual([]);
+    expect(data.findings.filter((f) => f.code === 'token-file-invalid' || f.code === 'resolver-invalid')).toEqual([]);
     expect(data.tokens.contexts?.map((c) => c.context)).toEqual(['dark']);
   });
 });

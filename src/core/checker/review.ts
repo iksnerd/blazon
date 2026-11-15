@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Finding, GroupMeta, Review, TokenItem } from '../../types/index.js';
 import { finding } from './catalogue.js';
 
-const needsReview = (path: string, note?: string): Finding => finding('needs-review', { path, message: note ?? 'Marked needs-review' });
+const needsReview = (path: string, note?: string): Finding => finding('review-pending', { path, message: note ?? 'Marked needs-review' });
 
 const FIELDS = ['status', 'note', 'by', 'at', 'value'] as const;
 /** What a `review.value` holds: exactly 12 lowercase hex digits, the fingerprint `blazon approvals` prints (RFC 0001 section 2). */
@@ -39,14 +39,14 @@ export function cleanReview(raw: Review): Review {
 const noteOf = (review: { note?: unknown } | undefined): string | undefined => (typeof review?.note === 'string' ? review.note : undefined);
 
 /**
- * `needs-review` on groups and tokens. A flagged group reports once, and its tokens do not repeat it
- * (a group's `review` is not inherited, see walk.ts). A token's own `needs-review` reports on its own;
- * its `ok` reports nothing. A `review` of the wrong shape is an `invalid-review` error.
+ * `review-pending` on groups and tokens. A flagged group reports once, and its tokens do not repeat it
+ * (a group's `review` is not inherited, see walk.ts). A token's own `review-pending` reports on its own;
+ * its `ok` reports nothing. A `review` of the wrong shape is a `review-invalid` error.
  */
 export function reviewFindings(items: readonly TokenItem[], groups: readonly GroupMeta[]): Finding[] {
   const invalid = (path: string, review: unknown, fingerprint: boolean): Finding[] => {
     const problem = review === undefined ? undefined : reviewProblem(review, { fingerprint });
-    return problem ? [finding('invalid-review', { path, message: problem })] : [];
+    return problem ? [finding('review-invalid', { path, message: problem })] : [];
   };
   return [
     ...groups.flatMap((g) => invalid(g.path, g.blazon.review, false)),

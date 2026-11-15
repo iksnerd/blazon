@@ -6,13 +6,13 @@ import { compileTokens } from '../../support/helpers.js';
 describe('token names that would collide in a path', () => {
   it('refuses a name with a dot instead of letting it shadow the nested token', async () => {
     const { tokens } = await compileTokens({ 'a.json': { color: { $type: 'color', 'a.b': { $value: '#111111' }, a: { b: { $value: '#222222' } } } } });
-    expect(tokens.problems.map((f) => `${f.path}:${f.code}`)).toEqual(['color.a.b:invalid-token']);
+    expect(tokens.problems.map((f) => `${f.path}:${f.code}`)).toEqual(['color.a.b:token-invalid']);
     expect(tokens.items.filter((t) => t.path === 'color.a.b').map((t) => t.value)).toHaveLength(1);
   });
 
   it.each(['{x}', 'x{', 'x}'])('refuses the name %s', async (name) => {
     const { tokens } = await compileTokens({ 'a.json': { color: { $type: 'color', [name]: { $value: '#111111' } } } });
-    expect(tokens.problems.map((f) => f.code)).toEqual(['invalid-token']);
+    expect(tokens.problems.map((f) => f.code)).toEqual(['token-invalid']);
     expect(tokens.items).toHaveLength(0);
   });
 });

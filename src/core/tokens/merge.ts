@@ -34,7 +34,7 @@ export function loadTokenDocuments(documents: TokenDocument[], options: LoadOpti
         if (options.warnOnRedefinition && isObject(existing) && '$value' in existing) {
           const path = [...parts, key].join('.');
           const earlier = sources.get(existing) ?? '';
-          tree.problems.push(finding('duplicate-definition', { path, message: `Defined in ${earlier} and again in ${name}; ${name} wins` }));
+          tree.problems.push(finding('token-path-duplicate', { path, message: `Defined in ${earlier} and again in ${name}; ${name} wins` }));
         }
         target[key] = value;
         sources.set(value, name);
@@ -51,7 +51,7 @@ export function loadTokenDocuments(documents: TokenDocument[], options: LoadOpti
 
   for (const doc of documents) {
     if (!isObject(doc.content)) {
-      tree.problems.push(finding('invalid-json', { path: doc.name, message: 'Top level must be an object' }));
+      tree.problems.push(finding('token-file-invalid', { path: doc.name, message: 'Top level must be an object' }));
       continue;
     }
     mergeInto(merged, doc.content, [], doc.name);

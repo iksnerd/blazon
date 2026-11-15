@@ -208,7 +208,7 @@ A finding (`Finding`) is one result of `blazon check`.
 
 | Field | Holds |
 |---|---|
-| `code` | What kind of finding it is: `usage-violation`. A plugin's codes start with its name and a `/` |
+| `code` | What kind of finding it is: `usage-violated`. A plugin's codes start with its name and a `/` |
 | `severity` | `error`, `warning` or `info` |
 | `path` | The token, group or asset it is about, or a file name for a parse error |
 | `message` | The sentence that says what is wrong |

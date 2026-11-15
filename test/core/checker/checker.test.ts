@@ -16,7 +16,7 @@ describe('checkTokens (RFC 0001 §4)', () => {
     const result = checkTokens(await compileTokens({ 'a.json': { color: { $type: 'color', ink: { $value: '{color.nope}' } } } }));
 
     expect(result.passed).toBe(false);
-    expect(codesOf(result.errors)).toContain('color.ink:unresolved-alias');
+    expect(codesOf(result.errors)).toContain('color.ink:alias-unresolved');
   });
 
   it('fails when a token plays a role that the token it aliases denies', async () => {
@@ -49,7 +49,7 @@ describe('checkTokens (RFC 0001 §4)', () => {
       }),
     );
 
-    expect(codesOf(result.errors)).toEqual(['text.accent:usage-violation', 'text.soft:usage-violation']);
+    expect(codesOf(result.errors)).toEqual(['text.accent:usage-violated', 'text.soft:usage-violated']);
   });
 
   it('fails a contrast pair below its level, expanding group wildcards', async () => {
@@ -72,7 +72,7 @@ describe('checkTokens (RFC 0001 §4)', () => {
     );
 
     // white on #EBCA40 is about 1.6:1, white on #3885FF about 3.5:1; both under 4.5
-    expect(codesOf(result.errors)).toEqual(['color.secondary.blue:contrast', 'color.secondary.yellow:contrast']);
+    expect(codesOf(result.errors)).toEqual(['color.secondary.blue:contrast-insufficient', 'color.secondary.yellow:contrast-insufficient']);
   });
 
   it('measures a pair in any CSS color space, not only hex and rgb()', async () => {
@@ -102,7 +102,7 @@ describe('checkTokens (RFC 0001 §4)', () => {
     // OKLab L 0.2 is luminance 0.2^3 = 0.008, about 18:1 on white; CIELAB L* 70 is luminance ((70+16)/116)^3 = 0.4075,
     // so (1 + 0.05) / (0.4075 + 0.05) = 2.2977:1, printed floored as 2.29, under AA
     expect(result.all.filter((f) => f.code.startsWith('contrast'))).toEqual([
-      { code: 'contrast', severity: 'error', path: 'color.paper', message: '{color.grey} on {color.paper} is 2.29:1; AA needs 4.5:1' },
+      { code: 'contrast-insufficient', severity: 'error', path: 'color.paper', message: '{color.grey} on {color.paper} is 2.29:1; AA needs 4.5:1' },
     ]);
   });
 
@@ -122,7 +122,7 @@ describe('checkTokens (RFC 0001 §4)', () => {
 
   it('fails a fully transparent foreground, which is the background itself', async () => {
     expect((await contrastOf('transparent', '#ffffff', 'AAA')).map((f) => f.message)).toEqual(['{color.fg} on {color.bg} is 1.00:1; AAA needs 7:1']);
-    expect((await contrastOf('rgba(0,0,0,.05)', '#ffffff')).map((f) => f.code)).toEqual(['contrast']);
+    expect((await contrastOf('rgba(0,0,0,.05)', '#ffffff')).map((f) => f.code)).toEqual(['contrast-insufficient']);
   });
 
   it('measures an opaque pair as before', async () => {
@@ -188,7 +188,7 @@ describe('checkTokens (RFC 0001 §4)', () => {
 
     expect(result.errors).toEqual([]);
     // Integer-like JSON keys iterate in numeric order, so 300 is seen first and 400 is the duplicate.
-    expect(codesOf(result.warnings)).toEqual(['hue.yellow.400:duplicate-value', 'product.pink.light:needs-review', 'text.primary:semantic-literal']);
+    expect(codesOf(result.warnings)).toEqual(['hue.yellow.400:token-value-duplicate', 'product.pink.light:review-pending', 'text.primary:alias-missing']);
     expect(result.passed).toBe(true);
     expect(checkTokens(await compileTokens({ 'a.json': { hue: { $type: 'color', a: { $value: '#fff' }, b: { $value: '#fff' } } } }), { strict: true }).passed).toBe(false);
   });
@@ -196,7 +196,7 @@ describe('checkTokens (RFC 0001 §4)', () => {
   it('treats root-level tokens as siblings, whatever their names', async () => {
     const dups = async (tokens: object) =>
       checkTokens(await compileTokens({ 'a.json': tokens }))
-        .warnings.filter((f) => f.code === 'duplicate-value')
+        .warnings.filter((f) => f.code === 'token-value-duplicate')
         .map((f) => f.path);
     expect(await dups({ ab: { $type: 'color', $value: '#112233' }, cd: { $type: 'color', $value: '#112233' } })).toEqual(['cd']);
     expect(await dups({ ab: { $type: 'color', $value: '#112233' }, ac: { $type: 'color', $value: '#112233' } })).toEqual(['ac']);
@@ -272,7 +272,7 @@ describe('checkTokens: proportions', () => {
       }),
     );
 
-    expect(result.all.map((f) => `${f.path}:${f.code}:${f.severity}`)).toEqual(['web:invalid-proportion:error', 'web:proportion-total:warning']);
+    expect(result.all.map((f) => `${f.path}:${f.code}:${f.severity}`)).toEqual(['web:proportion-invalid:error', 'web:proportion-total-mismatch:warning']);
   });
 });
 
@@ -290,18 +290,18 @@ describe('checkTokens: group review', () => {
       other: { 100: { $value: '#fee' } },
     },
   });
-  const reviews = (all: { code: string; path: string; message: string }[]) => all.filter((f) => f.code === 'needs-review');
+  const reviews = (all: { code: string; path: string; message: string }[]) => all.filter((f) => f.code === 'review-pending');
 
   it('reports a flagged ramp once, at the group, with its note', async () => {
     const found = reviews(checkTokens(await compileTokens({ 'a.json': ramp() })).warnings);
-    expect(found).toEqual([{ code: 'needs-review', severity: 'warning', path: 'color.brand', message: 'proposed ramp' }]);
+    expect(found).toEqual([{ code: 'review-pending', severity: 'warning', path: 'color.brand', message: 'proposed ramp' }]);
   });
 
   it('lets a token report on its own, and status ok override the group', async () => {
     const own = { $extensions: flag('this one is off') };
-    expect(codesOf(reviews(checkTokens(await compileTokens({ 'a.json': ramp(own) })).warnings))).toEqual(['color.brand:needs-review', 'color.brand.300:needs-review']);
+    expect(codesOf(reviews(checkTokens(await compileTokens({ 'a.json': ramp(own) })).warnings))).toEqual(['color.brand:review-pending', 'color.brand.300:review-pending']);
     const ok = { $extensions: { 'dev.blazon': { review: { status: 'ok' } } } };
-    expect(codesOf(reviews(checkTokens(await compileTokens({ 'a.json': ramp(ok) })).warnings))).toEqual(['color.brand:needs-review']);
+    expect(codesOf(reviews(checkTokens(await compileTokens({ 'a.json': ramp(ok) })).warnings))).toEqual(['color.brand:review-pending']);
   });
 
   it('reports each nested flagged group once; the nearest group covers its tokens', async () => {

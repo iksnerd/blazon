@@ -12,7 +12,7 @@ export function duplicateFindings(items: TokenItem[]): Finding[] {
     const key = `${parent}\u0000${String(item.value).toLowerCase()}`;
     const first = seen.get(key);
     if (first) {
-      findings.push(finding('duplicate-value', { path: item.path, message: `Same value as {${first.path}} (${item.value})` }));
+      findings.push(finding('token-value-duplicate', { path: item.path, message: `Same value as {${first.path}} (${item.value})` }));
     } else {
       seen.set(key, item);
     }

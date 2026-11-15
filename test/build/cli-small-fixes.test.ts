@@ -30,7 +30,7 @@ describe('a brand with no tokens in it', () => {
     const ran = blazon('check', empty(), '--json');
     expect(ran.status, ran.stdout + ran.stderr).toBe(0);
     const report = JSON.parse(ran.stdout);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'tokens-empty', severity: 'warning', fix: expect.stringContaining('token') }));
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'tokens-missing', severity: 'warning', fix: expect.stringContaining('token') }));
   });
 
   it('fails with --strict', () => {

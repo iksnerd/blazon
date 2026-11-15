@@ -172,7 +172,7 @@ describe('the check role', () => {
     it.each([
       ['a code without the plugin\'s name', { ...good, code: 'x' }, 'code must start with "acme.a/"'],
       ['a code with another plugin\'s name', { ...good, code: 'acme.b/x' }, 'code must start with "acme.a/"'],
-      ['a core code, which a plugin may not report under', { ...good, code: 'contrast' }, 'code must start with "acme.a/"'],
+      ['a core code, which a plugin may not report under', { ...good, code: 'contrast-insufficient' }, 'code must start with "acme.a/"'],
       ['a code with a bad ending', { ...good, code: 'acme.a/Bad Code' }, 'code must be "acme.a/" followed by lowercase letters, digits and hyphens'],
       ['an unknown severity', { ...good, severity: 'fatal' }, 'severity must be error, warning or info'],
       ['a path that is not a string', { ...good, path: 5 }, 'path must be a non-empty string'],

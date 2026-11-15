@@ -65,7 +65,7 @@ Color guidelines here.
 });
 
 describe('parseDocs: a front matter title that is not a string', () => {
-  it('reports a numeric title as invalid-frontmatter instead of throwing in the sort', () => {
+  it('reports a numeric title as page-frontmatter-invalid instead of throwing in the sort', () => {
     const dir = tempDir();
     fs.writeFileSync(path.join(dir, '01-a.md'), '---\ntitle: 2026\norder: 1\n---\n\nBody.\n');
     fs.writeFileSync(path.join(dir, '02-b.md'), '---\ntitle: Fine\norder: 1\n---\n\nBody.\n');
@@ -74,7 +74,7 @@ describe('parseDocs: a front matter title that is not a string', () => {
     const docs = parseDocs(dir, problems);
 
     expect(docs.map((d) => d.title)).toEqual(['Fine']);
-    expect(problems.map((p) => `${p.path}:${p.code}:${p.severity}`)).toEqual(['01-a.md:invalid-frontmatter:error']);
+    expect(problems.map((p) => `${p.path}:${p.code}:${p.severity}`)).toEqual(['01-a.md:page-frontmatter-invalid:error']);
   });
 });
 
@@ -93,7 +93,7 @@ describe('parseDocs: slugs, titles and unreadable pages', () => {
     const docs = parseDocs(write({ '01-colors.md': '# One\n', 'colors.md': '# Two\n' }), problems);
     expect(docs).toHaveLength(2);
     expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatchObject({ code: 'page-duplicate-slug', severity: 'error', path: 'colors.md' });
+    expect(problems[0]).toMatchObject({ code: 'page-slug-duplicate', severity: 'error', path: 'colors.md' });
     expect(problems[0]!.message).toContain('01-colors.md');
     expect(problems[0]!.message).toContain('colors.md');
   });
@@ -135,11 +135,11 @@ describe('compileBlazonData: guideline pages with broken front matter', () => {
 
     for (let run = 0; run < 2; run++) {
       const data = await compileBlazonData({ ...TEST_CONFIG }, root);
-      // Notes (a project with no theme gets one) are not problems, and this project has no tokens, which is `tokens-empty`'s business
+      // Notes (a project with no theme gets one) are not problems, and this project has no tokens, which is `tokens-missing`'s business
       expect(
-        data.findings.filter((f) => f.severity !== 'info' && f.code !== 'tokens-empty').map((f) => `${f.path}:${f.code}:${f.severity}`),
+        data.findings.filter((f) => f.severity !== 'info' && f.code !== 'tokens-missing').map((f) => `${f.path}:${f.code}:${f.severity}`),
         `compile ${run + 1}`,
-      ).toEqual(['01-icons.md:invalid-frontmatter:error']);
+      ).toEqual(['01-icons.md:page-frontmatter-invalid:error']);
       expect(data.docs.map((d) => d.title)).toEqual(['Fine']);
     }
   });

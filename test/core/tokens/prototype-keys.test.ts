@@ -70,7 +70,7 @@ describe('token keys named like Object.prototype members', () => {
       expectClean(before);
 
       expect(data.tokens.byPath.get('color.constructor')?.value).toBe('#222222');
-      expect(data.tokens.problems.map((p) => p.code)).toEqual(['duplicate-definition']);
+      expect(data.tokens.problems.map((p) => p.code)).toEqual(['token-path-duplicate']);
     }));
 
   it('writes the same names to tokens.json, tokens.ts and brand.json', () =>

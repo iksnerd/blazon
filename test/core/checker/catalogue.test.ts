@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CHECKS, finding, type CheckCode } from '../../../src/core/checker/catalogue.js';
+import { CHECKS, PROBLEMS, finding, type CheckCode } from '../../../src/core/checker/catalogue.js';
 import { fixFor } from '../../../src/core/checker/fixes.js';
 import { read, walk } from '../../support/spec-helpers.js';
 
@@ -7,12 +7,27 @@ const codes = Object.keys(CHECKS) as CheckCode[];
 
 // Notes that may stay without a fix, each with the reason. Every error and every warning has one.
 const NOTES_WITHOUT_FIX: Record<string, string> = {
-  'asset-local-absent': "the message already carries the category's own `local` sentence, which says how to make the files",
+  'asset-local-missing': "the message already carries the category's own `local` sentence, which says how to make the files",
 };
 
 describe('check catalogue', () => {
   it('lists its codes sorted and unique', () => {
     expect(codes).toEqual([...new Set(codes)].sort());
+  });
+
+  it.each(codes)('%s follows the naming rule: kebab-case <area>-<problem>, the problem a word from PROBLEMS', (code) => {
+    expect(code).toMatch(/^[a-z]+(-[a-z]+)+$/);
+    const problem = code.slice(code.lastIndexOf('-') + 1);
+    expect(PROBLEMS as readonly string[], `${code} ends in "${problem}", which is not a known problem word`).toContain(problem);
+  });
+
+  it('uses every problem word at least once', () => {
+    const used = new Set(codes.map((code) => code.slice(code.lastIndexOf('-') + 1)));
+    expect([...PROBLEMS].filter((word) => !used.has(word))).toEqual([]);
+  });
+
+  it('does not know a code written the way it was named before the rule', () => {
+    for (const old of ['contrast', 'needs-review', 'unresolved-alias', 'invalid-json', 'starter-file', 'blazon-pin-mismatch']) expect(codes).not.toContain(old);
   });
 
   it.each(codes)('%s has a summary, a place and a severity', (code) => {
@@ -41,13 +56,13 @@ describe('check catalogue', () => {
 
   it('gives fixFor the catalogue text, and nothing for a code with none or an unknown one', () => {
     for (const code of codes) expect(fixFor(code)).toBe((CHECKS[code] as { fix?: string }).fix);
-    expect(fixFor('asset-local-absent')).toBeUndefined();
+    expect(fixFor('asset-local-missing')).toBeUndefined();
     expect(fixFor('not-a-code')).toBeUndefined();
     expect(fixFor('toString')).toBeUndefined();
   });
 
   it('takes the severity from the catalogue and keeps only the fields it is given', () => {
-    expect(finding('contrast', { path: 'a.b', message: 'm' })).toStrictEqual({ code: 'contrast', severity: 'error', path: 'a.b', message: 'm' });
+    expect(finding('contrast-insufficient', { path: 'a.b', message: 'm' })).toStrictEqual({ code: 'contrast-insufficient', severity: 'error', path: 'a.b', message: 'm' });
     expect(finding('theme-missing', { path: 'theme', message: 'm', context: 'locale=ja', file: 'f.json', line: 3 })).toStrictEqual({
       code: 'theme-missing',
       severity: 'info',
@@ -59,15 +74,15 @@ describe('check catalogue', () => {
     });
   });
 
-  it('lists every kind of place a check emits at: needs-review, approval-stale and invalid-font-meta', () => {
-    expect(CHECKS['needs-review'].appliesTo).toEqual(['token', 'asset', 'group']);
+  it('lists every kind of place a check emits at: review-pending, approval-stale and font-meta-invalid', () => {
+    expect(CHECKS['review-pending'].appliesTo).toEqual(['token', 'asset', 'group']);
     expect(CHECKS['approval-stale'].appliesTo).toEqual(['token', 'asset']);
-    expect(CHECKS['invalid-font-meta'].appliesTo).toEqual(['token', 'group']);
+    expect(CHECKS['font-meta-invalid'].appliesTo).toEqual(['token', 'group']);
     // what the code points at: a group's pairs, a group or token $type, a section id, a token file's name
-    expect(CHECKS['invalid-pair'].appliesTo).toEqual(['group']);
-    expect(CHECKS['unknown-type'].appliesTo).toEqual(['token', 'group']);
+    expect(CHECKS['contrast-pair-invalid'].appliesTo).toEqual(['group']);
+    expect(CHECKS['token-type-unknown'].appliesTo).toEqual(['token', 'group']);
     expect(CHECKS['section-missing'].appliesTo).toEqual(['project']);
-    expect(CHECKS['invalid-json'].appliesTo).toEqual(['project']);
+    expect(CHECKS['token-file-invalid'].appliesTo).toEqual(['project']);
   });
 
   it('has no dead code: every code is named in an emitter under src', () => {

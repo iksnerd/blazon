@@ -40,7 +40,7 @@ export function fontMetaFindings(items: readonly TokenItem[], groups: readonly G
   ];
   return rules.flatMap(({ path, rule, type, onToken }): Finding[] => {
     const why = problemWith(rule, type, onToken);
-    if (why) return [finding('invalid-font-meta', { path, message: why })];
+    if (why) return [finding('font-meta-invalid', { path, message: why })];
     // The license is either an SPDX identifier or a name, so a value that is neither is a note, never an error
     const note = spdxNote((rule as { license?: string }).license ?? '');
     return note

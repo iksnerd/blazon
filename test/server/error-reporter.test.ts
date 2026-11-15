@@ -14,8 +14,8 @@ const run = (reporter: ErrorReporter, findings: Finding[]): string[] => {
 
 describe('ErrorReporter', () => {
   it('says each error in one line: where, its code, the message and what to do', () => {
-    const lines = run(new ErrorReporter(), [error('invalid-value', { file: 'tokens/colors.json', line: 12, message: '"x" is not a color' })]);
-    expect(lines).toEqual(['[blazon] tokens/colors.json:12 [invalid-value]: "x" is not a color. Change the value so it fits the token\'s $type; the message says how.']);
+    const lines = run(new ErrorReporter(), [error('token-value-invalid', { file: 'tokens/colors.json', line: 12, message: '"x" is not a color' })]);
+    expect(lines).toEqual(['[blazon] tokens/colors.json:12 [token-value-invalid]: "x" is not a color. Change the value so it fits the token\'s $type; the message says how.']);
   });
 
   it('names the token path when a finding has no file', () => {

@@ -129,7 +129,7 @@ describe('conformance: examples/conformance', async () => {
     const sketch = data.assets.custom.experiments!.find((a) => a.name === 'example-sketch')!;
     expect(sketch.meta!.review!.status).toBe('needs-review');
     expect(data.docs.some((doc) => doc.markdown.includes('blazon:assets experiments'))).toBe(true);
-    expect(data.findings.filter((f) => ['needs-review', 'needs-review-in-use', 'generated-unreviewed'].includes(f.code))).toEqual([]);
+    expect(data.findings.filter((f) => ['review-pending', 'page-review-pending', 'asset-review-missing'].includes(f.code))).toEqual([]);
   });
 });
 
@@ -152,16 +152,16 @@ describe('conformance: blazon.lock on examples/conformance', () => {
     expect(JSON.parse(fs.readFileSync(path.join(copy, BLAZON_LOCK), 'utf-8'))).toEqual({ v: 1, commit: A });
     expect(blazonPinFindings(copy, built(A))).toEqual([]);
     const codes = (identity: BlazonIdentity | null) => blazonPinFindings(copy, identity).map((f) => [f.code, f.severity, f.path]);
-    expect(codes(built(B))).toEqual([['blazon-pin-mismatch', 'error', BLAZON_LOCK]]);
-    expect(codes(built(A, true))).toEqual([['blazon-pin-mismatch', 'error', BLAZON_LOCK]]);
-    expect(codes(null)).toEqual([['blazon-pin-mismatch', 'error', BLAZON_LOCK]]);
+    expect(codes(built(B))).toEqual([['pin-mismatch', 'error', BLAZON_LOCK]]);
+    expect(codes(built(A, true))).toEqual([['pin-mismatch', 'error', BLAZON_LOCK]]);
+    expect(codes(null)).toEqual([['pin-mismatch', 'error', BLAZON_LOCK]]);
   });
 
   it('refuses a lock that is not { v: 1, commit: <40 hex digits> }, with a fixed fake hash', () => {
     const copy = copyProject(FIXTURE);
     fs.writeFileSync(path.join(copy, BLAZON_LOCK), `${JSON.stringify({ v: 1, commit: A.toUpperCase() })}\n`);
-    expect(blazonPinFindings(copy, built(A)).map((f) => f.code)).toEqual(['blazon-pin-invalid']);
+    expect(blazonPinFindings(copy, built(A)).map((f) => f.code)).toEqual(['pin-invalid']);
     fs.writeFileSync(path.join(copy, BLAZON_LOCK), `${JSON.stringify({ v: 1, commit: A, extra: true })}\n`);
-    expect(blazonPinFindings(copy, built(A)).map((f) => f.code)).toEqual(['blazon-pin-invalid']);
+    expect(blazonPinFindings(copy, built(A)).map((f) => f.code)).toEqual(['pin-invalid']);
   });
 });

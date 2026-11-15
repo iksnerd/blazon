@@ -67,7 +67,7 @@ const lineOf = (text: string, key: string): number | undefined => {
   return index < 0 ? undefined : index + 1;
 };
 
-const problem = (message: string, line?: number): Finding => finding('blazon-pin-invalid', { path: BLAZON_LOCK, file: BLAZON_LOCK, ...(line !== undefined && { line }), message });
+const problem = (message: string, line?: number): Finding => finding('pin-invalid', { path: BLAZON_LOCK, file: BLAZON_LOCK, ...(line !== undefined && { line }), message });
 
 /** Read blazon.lock strictly. No file is no pin; a file with any mistake is an error, never a pin. */
 export function readBlazonPin(cwd: string): { pin?: BlazonPin; line?: number; problems: Finding[] } {
@@ -91,14 +91,14 @@ export function readBlazonPin(cwd: string): { pin?: BlazonPin; line?: number; pr
 const short = (commit: string): string => commit.slice(0, 12);
 
 /**
- * The findings for blazon.lock in `cwd`: none without a pin, `blazon-pin-invalid` for a file that cannot be read, and
- * `blazon-pin-mismatch` when this blazon is not the pinned commit, was built from a tree with changes, or cannot say what it is.
+ * The findings for blazon.lock in `cwd`: none without a pin, `pin-invalid` for a file that cannot be read, and
+ * `pin-mismatch` when this blazon is not the pinned commit, was built from a tree with changes, or cannot say what it is.
  * A pin that cannot be checked is not met.
  */
 export function blazonPinFindings(cwd: string, identity: BlazonIdentity | null = blazonIdentity(), root?: string): Finding[] {
   const { pin, line, problems } = readBlazonPin(cwd);
   if (problems.length > 0 || !pin) return problems;
-  const mismatch = (message: string): Finding[] => [finding('blazon-pin-mismatch', { path: BLAZON_LOCK, file: BLAZON_LOCK, ...(line !== undefined && { line }), message })];
+  const mismatch = (message: string): Finding[] => [finding('pin-mismatch', { path: BLAZON_LOCK, file: BLAZON_LOCK, ...(line !== undefined && { line }), message })];
   if (!identity) {
     return mismatch(
       `this book is pinned to blazon ${short(pin.commit)}, but this blazon cannot say which commit it is (it is not a git checkout and carries no build stamp); build blazon from a git checkout of that commit`,

@@ -190,7 +190,7 @@ export function absentLocalCategories(catalog: AssetCatalog, configs: Record<str
 /** One note per absent local category, which stands in for the findings its absence would cause. */
 export function absentLocalFindings(absent: ReadonlySet<string>, configs: Record<string, AssetCategoryConfig>): Finding[] {
   return [...absent].map((key): Finding =>
-    finding('asset-local-absent', { path: key, message: `The images are kept out of git and are not here. ${configs[key]!.local} Until then the brand book leaves them out.` }),
+    finding('asset-local-missing', { path: key, message: `The images are kept out of git and are not here. ${configs[key]!.local} Until then the brand book leaves them out.` }),
   );
 }
 
@@ -212,7 +212,7 @@ function pixelSize(asset: Asset): { width: number; height: number } | undefined 
  */
 export function ruleFindings(catalog: AssetCatalog, configs: Record<string, AssetCategoryConfig>): Finding[] {
   const findings: Finding[] = [];
-  const violation = (asset: Asset, message: string) => findings.push(finding('asset-rule-violation', { path: asset.id, message }));
+  const violation = (asset: Asset, message: string) => findings.push(finding('asset-rule-violated', { path: asset.id, message }));
 
   for (const asset of catalog.all) {
     const rules: AssetRules | undefined = configs[asset.category]?.rules;

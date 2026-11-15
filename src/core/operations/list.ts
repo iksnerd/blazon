@@ -98,7 +98,7 @@ export const OPERATIONS: readonly Operation[] = [
             properties: {
               code: {
                 type: 'string',
-                description: 'The finding code, such as starter-logo',
+                description: 'The finding code, such as starter-logo-unchanged',
               },
               severity: {
                 type: 'string',

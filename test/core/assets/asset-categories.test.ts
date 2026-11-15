@@ -39,7 +39,7 @@ function project(files: Record<string, Buffer | string>, shared: Record<string, 
 const compile = (root: string, assets?: Record<string, AssetCategoryConfig | unknown>) =>
   compileBlazonData({ ...DEFAULT_CONFIG, ...(assets && { assets: assets as Record<string, AssetCategoryConfig> }) }, root);
 const assetFindings = async (root: string, assets?: Record<string, unknown>) =>
-  (await compile(root, assets)).findings.filter((f) => f.code.startsWith('asset-') && f.code !== 'asset-sidecar-orphan');
+  (await compile(root, assets)).findings.filter((f) => f.code.startsWith('asset-') && f.code !== 'asset-sidecar-orphaned');
 
 const LIBRARY = { 'logos/mark.svg': SVG, 'icons/a.svg': SVG, 'photography/hero.png': png(1600, 900), 'zebra/z.png': png(10, 10), 'alpha/a.png': png(10, 10) };
 
@@ -159,14 +159,14 @@ describe('findings', () => {
   it('reports two files with one id from different folders as an error, since the id would name both', async () => {
     const { root } = project({ 'photography/a/hero.png': png(1, 1), 'photography/b/hero.png': png(1, 1) });
     const found = await assetFindings(root);
-    expect(found).toEqual([expect.objectContaining({ code: 'asset-duplicate-id', severity: 'error', path: 'photography/hero' })]);
+    expect(found).toEqual([expect.objectContaining({ code: 'asset-id-duplicate', severity: 'error', path: 'photography/hero' })]);
     expect(found[0]!.message).toMatch(/photography\/a\/hero\.png and photography\/b\/hero\.png/);
   });
 
   it('reports the same id from assets/ and from a dir', async () => {
     const { root } = project({ 'illustrations/scene.png': png(1, 1) }, { 'scene.png': png(1, 1) });
     const found = await assetFindings(root, { illustrations: { dir: '../shared' } });
-    expect(found).toEqual([expect.objectContaining({ code: 'asset-duplicate-id', path: 'illustrations/scene' })]);
+    expect(found).toEqual([expect.objectContaining({ code: 'asset-id-duplicate', path: 'illustrations/scene' })]);
   });
 
   it('allows one name in two formats side by side: they are one asset with one sidecar', async () => {

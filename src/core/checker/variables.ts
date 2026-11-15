@@ -29,7 +29,7 @@ function collide(
       if (reported.has(key)) continue;
       reported.add(key);
       findings.push(
-        finding('css-variable-collision', {
+        finding('css-variable-duplicate', {
           path: token.path,
           message: `${token.path} and ${first.path} both write the CSS variable ${variable}${where}; rename one`,
           ...(context && { context }),

@@ -26,11 +26,11 @@ describe('blazon.lock through the CLI', () => {
     const root = await lockedProject('0'.repeat(40));
     const json = blazon('check', root, '--json');
     expect(json.status, json.stdout + json.stderr).toBe(1);
-    const finding = JSON.parse(json.stdout).findings.find((f: { code: string }) => f.code === 'blazon-pin-mismatch');
+    const finding = JSON.parse(json.stdout).findings.find((f: { code: string }) => f.code === 'pin-mismatch');
     expect(finding).toMatchObject({ severity: 'error', file: 'blazon.lock', line: 3 });
     const text = blazon('check', root);
     expect(text.stdout).toContain('Next:');
-    expect(text.stdout).toContain('blazon-pin-mismatch');
+    expect(text.stdout).toContain('pin-mismatch');
   });
 
   it('build stops before it writes anything', async () => {
@@ -40,11 +40,11 @@ describe('blazon.lock through the CLI', () => {
     expect(fs.existsSync(path.join(root, 'dist'))).toBe(false);
   });
 
-  it('a malformed lock is blazon-pin-invalid', async () => {
+  it('a malformed lock is pin-invalid', async () => {
     const root = await lockedProject('short');
     const ran = blazon('check', root, '--json');
     expect(ran.status).toBe(1);
-    expect(JSON.parse(ran.stdout).findings.some((f: { code: string }) => f.code === 'blazon-pin-invalid')).toBe(true);
+    expect(JSON.parse(ran.stdout).findings.some((f: { code: string }) => f.code === 'pin-invalid')).toBe(true);
   });
 
   it('no lock, no check', async () => {

@@ -46,7 +46,7 @@ A [context](04-contexts.md) other than the default gets its own block in `theme.
 | every `cubicBezier` token | `--ease-*` | `motion.easing.mechanical` is `--ease-mechanical` |
 | a `duration` token named `default` | `--default-transition-duration` | `motion.duration.default` |
 
-The name is the token's path in kebab-case, without leading words that repeat the namespace: `color.neutral.900` is `--color-neutral-900`, `font.family.sans` is `--font-sans`. Two tokens that write one variable with different values are the `css-variable-collision` check.
+The name is the token's path in kebab-case, without leading words that repeat the namespace: `color.neutral.900` is `--color-neutral-900`, `font.family.sans` is `--font-sans`. Two tokens that write one variable with different values are the `css-variable-duplicate` check.
 
 These have no Tailwind namespace and stay `var(--path)` from `theme.css`: `border`, `transition` and `typography` composites (use `.type-*` from `typography.css` for the last), gradients, any other dimension, numbers, and every `duration` that is not named `default` (Tailwind sets a duration by its utility, such as `duration-300`). A shadow with several layers is one `--shadow-*` value. `--text-*` takes the size only, so `text-lg` does not set a line height; Tailwind's own `--text-*--line-height` is not written.
 

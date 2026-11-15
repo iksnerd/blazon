@@ -90,7 +90,7 @@ The rules of a brand sit next to its values. In blazon's own tokens, the signal 
 A token that sets text in Signal Orange breaks that rule, and `blazon check` says so:
 
 ```text
-ERROR  tokens/colors.json:155  text.warning: Used as text, but {color.signal.orange} is not allowed as text [usage-violation]
+ERROR  tokens/colors.json:155  text.warning: Used as text, but {color.signal.orange} is not allowed as text [usage-violated]
 ```
 
 The same token is written as `--color-signal-orange: #FF5A1F;` in `theme.css` and as the flat key `"color.signal.orange"` in `tokens.ts`. `tokens.json` nests the same value under `color` > `signal` > `orange`.

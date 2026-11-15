@@ -45,9 +45,7 @@ describe('icon sets', () => {
       { name: 'Navigation', icons: ['arrow-left', 'home'] },
       { name: 'Other', icons: ['plus'] },
     ]);
-    expect(data.findings.filter((f) => f.code === 'icon-set-unknown-icon')).toMatchObject([
-      { severity: 'warning', path: 'lucide', message: expect.stringMatching(/"nope".*Navigation/) },
-    ]);
+    expect(data.findings.filter((f) => f.code === 'icon-unknown')).toMatchObject([{ severity: 'warning', path: 'lucide', message: expect.stringMatching(/"nope".*Navigation/) }]);
   });
 
   it('read the brand map from a JSON file in the project', async () => {

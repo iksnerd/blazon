@@ -100,7 +100,7 @@ describe('a token file that is not an object', () => {
   const finding = async (content: string) => {
     const project = await starterProject();
     fs.writeFileSync(path.join(project, 'tokens/colors.json'), content);
-    return (await compileBlazonData(await loadConfig(project), project)).findings.find((f) => f.code === 'invalid-json');
+    return (await compileBlazonData(await loadConfig(project), project)).findings.find((f) => f.code === 'token-file-invalid');
   };
 
   it('names the file in `file` when the JSON does not parse', async () => {
