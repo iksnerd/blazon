@@ -99,6 +99,7 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- Plugin output is scrubbed of secrets after its control and format characters are removed, not before, so a secret split by a zero-width character or an escape byte no longer reaches a finding, an exit 2 message or the stderr tail; a finding whose code the scrubber would change is refused as a malformed answer.
 - MCP truncation keeps the most findings that fit, not a power-of-two fraction of them (120 that fit used to come back as 62), counts the `warnings` it adds in that fit, and keeps `counts` and `passed` when it falls back to cutting the text. The fallback cuts on code points, not inside a surrogate pair.
 - A plugin's finding message stays within 1000 characters with its ` (instance X)` suffix counted.
 - Every error and warning finding code, and every note but `asset-local-absent`, has a fix line, and a test fails when an error or warning code has none.

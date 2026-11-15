@@ -11,7 +11,7 @@ import { LOCK_FILE, pinFor, readLock, type Lock } from '../pins/lock.js';
 import { ManifestError, decodeManifest, manifestTimeout, type Manifest } from '../wire/manifest.js';
 import { instanceIdTooLong, isPluginName } from '../../core/plugin-name.js';
 import { BLAZON_CORE_PROFILE, BLAZON_PROFILE, roleRuntime } from '../wire/profile.js';
-import { scrub } from '../host/scrub.js';
+import { scrub, scrubPlain } from '../host/scrub.js';
 import { findShipped, shippedDirectory, type Shipped } from '../pins/shipped.js';
 import { message, truncateGraphemes } from '../wire/text.js';
 import { finding } from '../../core/checker/catalogue.js';
@@ -33,7 +33,6 @@ const MAX_PATH = 500;
 const STDERR_LINES = 5;
 const STDERR_CHARS = 500;
 const SEVERITIES = ['error', 'warning', 'info'];
-const CONTROL_OR_FORMAT = /[\p{Cc}\p{Cf}]/gu;
 
 export interface PluginRunOptions {
   /** Programs the operator named on the command line: they run unpinned, once, with a warning */
@@ -83,7 +82,7 @@ const unsafe = (stat: fs.Stats) => (stat.mode & 0o022) !== 0;
 
 /** What a plugin printed, as text: the secrets and the characters a person should not see taken out, and cut to a length. */
 function plain(value: string, secrets: readonly string[], limit: number): string {
-  return truncateGraphemes(scrub(value, secrets).replace(CONTROL_OR_FORMAT, '').trim(), limit);
+  return truncateGraphemes(scrubPlain(value, secrets).trim(), limit);
 }
 
 /**
@@ -92,10 +91,9 @@ function plain(value: string, secrets: readonly string[], limit: number): string
  * blazon's, and cut from the front to a length. Empty when it wrote nothing. Never used for a call that answered.
  */
 export function stderrTail(stderr: Buffer, secrets: readonly string[]): string {
-  const lines = scrub(stderr, secrets)
-    .toString('utf-8')
+  const lines = scrubPlain(stderr.toString('utf-8'), secrets, true)
     .split(/\r?\n|\r/)
-    .map((line) => line.replace(CONTROL_OR_FORMAT, '').trim())
+    .map((line) => line.trim())
     .filter((line) => line !== '');
   const text = lines.slice(-STDERR_LINES).join(' | ');
   const chars = Array.from(text);
@@ -333,7 +331,7 @@ export class PluginRun {
     const failed = (reason: string, fix?: string): Finding => failedFor(target, reason, fix);
     if (!result.answered) return { failure: failed(brokeWith(result, secrets), breakFix(result.cause, name, pinPath)), ended: 'break' };
     if (result.code === 2) {
-      const reason = message(scrub(result.stdout, secrets), `plugin ${name} could not answer`);
+      const reason = message(result.stdout, `plugin ${name} could not answer`, secrets);
       return { failure: failed(`could not answer: ${reason}`, COULD_NOT_FIX), ended: 'exit-2' };
     }
     const parsed = readAnswer(role, name, result.stdout, secrets, target.shown ? target.id : undefined);
@@ -372,6 +370,8 @@ export function readAnswer(role: Role, name: string, stdout: Buffer, secrets: re
     if (cleanPath === '') return wrong('path must be a non-empty string');
     const cleanMessage = typeof what === 'string' ? plain(what, secrets, MAX_MESSAGE - Array.from(suffix).length) : '';
     if (cleanMessage === '') return wrong('message must be a non-empty string');
+    // A code is shown and stored as it is, so one the scrubber would change holds a secret: refused, not repaired
+    if (scrub(code, secrets) !== code) return wrong('code holds a value blazon scrubs');
     findings.push({ code, severity: severity as Finding['severity'], path: cleanPath, message: `${cleanMessage}${suffix}` });
   }
   return { findings };

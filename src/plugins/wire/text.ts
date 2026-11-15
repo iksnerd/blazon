@@ -1,3 +1,5 @@
+import { scrub, scrubPlain } from '../host/scrub.js';
+
 // Text for people and the message of a plugin that could not answer (RFC 0005 sections 3.8 and 5).
 
 const CONTROL_OR_FORMAT = /[\p{Cc}\p{Cf}]/u;
@@ -73,9 +75,12 @@ export const MAX_MESSAGE = 300;
 /**
  * What a host shows for a plugin that exited 2: the first line of stdout, cleaned. Ignored when it is not valid
  * UTF-8. Every control (Cc) and format (Cf) character is removed, white space trimmed, and the rest cut to 300
- * grapheme clusters. When nothing is left, `fallback`: a message of the host's own that names the plugin.
+ * grapheme clusters. Every labelled value in `secrets` is scrubbed after those characters are removed, so a value split by
+ * one is found. When nothing is left, `fallback`: a message of the host's own that names the plugin.
  */
-export function message(stdout: Uint8Array, fallback: string): string {
+export function message(raw: Uint8Array, fallback: string, secrets: readonly string[] = []): string {
+  // Whole first, so a value that spans lines is found before the line is taken; the line again after its characters are gone
+  const stdout = scrub(Buffer.from(raw), secrets);
   const newline = stdout.indexOf(0x0a);
   const line = newline < 0 ? stdout : stdout.subarray(0, newline);
   let text: string;
@@ -84,6 +89,6 @@ export function message(stdout: Uint8Array, fallback: string): string {
   } catch {
     return fallback;
   }
-  const cleaned = text.replace(/[\p{Cc}\p{Cf}]/gu, '').trim();
+  const cleaned = scrubPlain(text, secrets).trim();
   return cleaned === '' ? fallback : truncateGraphemes(cleaned, MAX_MESSAGE);
 }

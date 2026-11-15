@@ -42,3 +42,19 @@ export function scrub<T extends string | Buffer>(text: T, secrets: Iterable<stri
   pieces.push(isText ? (text as string).slice(end) : (text as Buffer).subarray(end));
   return (isText ? pieces.join('') : Buffer.concat(pieces as Buffer[])) as T;
 }
+
+const CONTROL_OR_FORMAT = /[\p{Cc}\p{Cf}]/gu;
+const CONTROL_OR_FORMAT_KEEPING_BREAKS = /(?![\n\r])[\p{Cc}\p{Cf}]/gu;
+
+/**
+ * `text` with its control (Cc) and format (Cf) characters taken out, and then every labelled value scrubbed from it. The
+ * order matters: a value split by a zero-width character or a bare ESC is whole only once those are gone, and a strip
+ * that came after the scrub would join it back together past the scrubber. A value that holds such a character itself
+ * is looked for in its stripped form too. `keepBreaks` leaves line breaks for a caller that splits lines afterwards, so
+ * a value that spans lines is still found.
+ */
+export function scrubPlain(text: string, secrets: readonly string[], keepBreaks = false): string {
+  const strip = (value: string, breaks: boolean) => value.replace(breaks ? CONTROL_OR_FORMAT_KEEPING_BREAKS : CONTROL_OR_FORMAT, '');
+  const forms = secrets.flatMap((secret) => [secret, strip(secret, keepBreaks), strip(secret, false)]);
+  return scrub(strip(text, keepBreaks), forms);
+}
