@@ -133,7 +133,7 @@ export const OPERATIONS: readonly Operation[] = [
   {
     name: 'list_tokens',
     title: 'List the tokens',
-    description: `Lists the design tokens of the brand, or of one group, or of one type, each with its path, type and value, in the order the token files write them. Use it to find a path or to read many values at once. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over ${MAX_TEXT} characters is cut and says so. The list is cut to fit and says how many were left out: narrow with \`group\` or \`type\`.`,
+    description: `Lists the design tokens of the brand, or of one group, or of one type, each with its path, type and value, in the order the token files write them. Use it to find a path or to read many values at once. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over ${MAX_TEXT} characters is cut to whole tokens, and \`tokensTotal\` says how many matched: narrow with \`group\` or \`type\`.`,
     annotations: READ_ONLY,
     inputSchema: input(
       {
@@ -551,7 +551,7 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'get_shadcn',
     title: 'Read the shadcn/ui variables',
     description:
-      'Gets the shadcn/ui variables the brand supplies (theme.shadcn): which token each variable takes, its value, and the variables nothing supplies. Use it when the site uses shadcn/ui. It compiles the brand now (blazon brand --key theme.shadcn), so it needs no build and is never out of date.',
+      'Gets the shadcn/ui variables the brand supplies (theme.shadcn): which token each variable takes, its value, and the variables nothing supplies. Use it when the site uses shadcn/ui. It compiles the brand when called, so it needs no build and is never out of date.',
     annotations: READ_ONLY,
     inputSchema: input({}, []),
     outputSchema: output(

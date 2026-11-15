@@ -6,9 +6,9 @@ import { BlazonError, BlazonRunner, type BlazonTarget, type RunOptions } from '.
 import { checkAgainst } from './generated/check.js';
 import { toolInput, toolOf } from './generated/project.js';
 import type { JsonSchema, Operation } from './generated/types.js';
-import { commandFor, operationNamed, OPERATIONS, withDefaults } from './operations.js';
+import { coerceArgs, commandFor, operationNamed, OPERATIONS, withDefaults } from './operations.js';
 import { buildPageText, INSTRUCTIONS } from './prompts.js';
-import { answerWith, failure, limitItems, NARROW_FINDINGS, NARROW_TOKENS, type ToolResult } from './result.js';
+import { answerWith, failure, limitItems, NARROW_FINDINGS, NARROW_NONE, NARROW_TOKENS, removedNotice, stripInvisible, type ToolResult } from './result.js';
 
 const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
 
@@ -42,13 +42,17 @@ const LOOKUPS: Record<string, Lookup> = {
   },
   get_token: {
     hint: FIND_PATH,
+    narrow: NARROW_NONE,
     reword: (message, args) =>
       /is a group of tokens/.test(message)
         ? `"${String(args.path)}" is a group of tokens, not one token. Call list_tokens with group "${String(args.path)}" to see its tokens.`
         : undefined,
   },
   get_rules: { hint: FIND_PATH },
-  can_use: { hint: FIND_PATH },
+  can_use: { hint: FIND_PATH, narrow: NARROW_NONE },
+  get_fonts: { narrow: NARROW_NONE },
+  get_logo: { narrow: NARROW_NONE },
+  get_shadcn: { narrow: NARROW_NONE },
 };
 
 /** A schema as `tools/list` sends it: the JSON Schema dialect named, as the protocol's own schema generator does. */
@@ -79,13 +83,16 @@ export function createServer(target: BlazonTarget, runner: BlazonRunner = new Bl
     const { hint, narrow, shape, reword, brandHasErrors } = LOOKUPS[op.name] ?? {};
     try {
       const { argv, options } = commandFor(op, args);
-      const { document, warnings } = await runner.run(argv, options);
-      const shaped = shape ? shape(document, args, warnings) : document;
-      return answerWith(shaped, warnings, narrow, brandHasErrors?.(shaped));
+      const run = await runner.run(argv, options);
+      const cleaned = stripInvisible(run.document);
+      const warnings = cleaned.removed > 0 ? [...run.warnings, removedNotice(cleaned.removed)] : run.warnings;
+      const shaped = shape ? shape(cleaned.value, args, warnings) : cleaned.value;
+      // the notice above is ours, so it must not decide `brandHasErrors` when the lookup leaves that to blazon's own warnings
+      return answerWith(shaped, warnings, narrow, brandHasErrors ? brandHasErrors(shaped) : run.warnings.some((w) => /\b\d+ error\(s\)/.test(w)));
     } catch (error) {
       if (error instanceof BlazonError) {
         const reworded = error.fromBlazon ? reword?.(error.message, args) : undefined;
-        return failure(reworded ?? (error.fromBlazon && hint ? `${error.message} ${hint}` : error.message));
+        return failure(stripInvisible(reworded ?? (error.fromBlazon && hint ? `${error.message} ${hint}` : error.message)).value);
       }
       throw error;
     }
@@ -99,7 +106,7 @@ export function createServer(target: BlazonTarget, runner: BlazonRunner = new Bl
     const op = operationNamed(request.params.name);
     if (!op) return failure(`Tool ${request.params.name} not found`);
     try {
-      const given = request.params.arguments ?? {};
+      const given = coerceArgs(op, request.params.arguments ?? {});
       const problems = checkAgainst(toolInput(op) as unknown as JsonSchema, given, 'arguments');
       if (problems.length > 0) return failure(`Invalid arguments for tool ${op.name}: ${problems.join('; ')}`);
       const result = await answer(op, withDefaults(op, given));
@@ -115,7 +122,9 @@ export function createServer(target: BlazonTarget, runner: BlazonRunner = new Bl
 
   const resource = (name: string, uri: string, title: string, description: string, args: string[], options?: RunOptions) =>
     server.registerResource(name, uri, { title, description, mimeType: 'application/json' }, async (url) => {
-      const { document, warnings } = await runner.run(args, options);
+      const run = await runner.run(args, options);
+      const { value: document, removed } = stripInvisible(run.document);
+      const warnings = removed > 0 ? [...run.warnings, removedNotice(removed)] : run.warnings;
       // Warnings are a separate entry, so the JSON entry stays a valid document.
       const note = warnings.length > 0 ? [{ uri: url.href, mimeType: 'text/plain', text: `Warning from blazon: ${warnings.join(' ')}` }] : [];
       return { contents: [...note, { uri: url.href, mimeType: 'application/json', text: JSON.stringify(document) }] };

@@ -6,7 +6,9 @@ The tools are read-only. None of them writes a file or builds the brand. The man
 
 ## Trust
 
-`--brand` must be a folder you trust. Reading a brand reads its `blazon.json` as data, but compiling one starts the plugins that file names, as child processes with your permissions, so a brand folder can run code as your user. The server gives the blazon child only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `BLAZON_*`, `NO_COLOR`, `SystemRoot`, `windir`, `COMSPEC`, `PATHEXT`), so tokens and cloud keys in the client's environment do not reach those plugins. That limits the damage; it does not make an untrusted brand safe.
+Use a `--brand` folder you trust. The server runs no plugin: `check_brand` is `blazon check --no-plugins`, and the other tools run read commands that never start one, so the plugins a `blazon.json` names are not run (a test keeps this true for every tool). `blazon.json` is plain JSON, read as data. What a brand says does reach your agent: token names and values, rule text and finding messages come back as tool results, and a brand can try to put instructions in them. The server's instructions tell the model to read that text as data, and the server removes zero-width, bidirectional and Unicode tag characters from every answer and says how many it removed in `warnings`. That makes an instruction harder to hide; it does not stop a plain sentence in a rule, so use a brand you trust.
+
+The server hands the blazon program only an allowlist of its environment: `PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `BLAZON_*`, `NO_COLOR`, `SystemRoot`, `windir`, `COMSPEC`, `PATHEXT`. Tokens and cloud keys in the client's environment do not reach it.
 
 ## Tools
 
@@ -23,7 +25,7 @@ The server's instructions give the order: `check_brand` once per session, `list_
 | `get_logo` | none | `blazon logo` | read the logo variants and their clear space, minimum size and forbidden backgrounds |
 | `get_shadcn` | none | `blazon brand --key theme.shadcn` | read the shadcn/ui variables the brand supplies, compiled now, so no build is needed |
 
-Every tool has a title and an input schema that refuses extra arguments. A token path is dot-separated segments of ASCII letters, digits, `_` and `-`; a segment starts with a letter, digit or `_`. So `a..b`, `a.`, `-x` and `.x` are refused, and an argument can never become a flag.
+Every tool has a title, `readOnlyHint: true` and an input schema that refuses extra arguments. A number or boolean sent as a string (`"5"`, `"true"`) is accepted when it reads as one. A token path is dot-separated segments of ASCII letters, digits, `_` and `-`; a segment starts with a letter, digit or `_`. So `a..b`, `a.`, `-x` and `.x` are refused, and an argument can never become a flag.
 
 An error from blazon, such as an unknown token, comes back as a tool error carrying blazon's message and the next step ("To find a token path, call list_tokens."). A group path given to `get_token` is refused the same way.
 
@@ -34,7 +36,7 @@ Each answer has `structuredContent`, validated against the tool's `outputSchema`
 - `warnings`: the lines blazon printed on standard error. A read command prints "this brand has N error(s), so a value below may be wrong" there when the brand has errors. When `warnings` is not empty it also comes first as its own text block, so the model reads it before the value.
 - `brandHasErrors`: true when the brand has errors.
 
-The size cap is 40 000 characters, about 10 000 tokens, the point where Claude Code starts to warn about a tool result. An answer over it is cut in the text block with a notice ("narrow with a path"), and the structured result then holds only `truncated`, `notice`, `warnings` and `brandHasErrors`. `check_brand` and `list_tokens` instead keep whole items: `check_brand` keeps `counts` and `passed` whole and cuts `findings` to `limit` (default 50, at most 500, and fewer if still too large); `list_tokens` cuts `tokens` to fit. Both add `findingsTotal` or `tokensTotal`, `truncated` and `notice`.
+The size cap is 40 000 characters, about 10 000 tokens, the point where Claude Code starts to warn about a tool result. An answer over it is cut in the text block with a notice that says how to narrow the question ("narrow with a path" for `get_rules`; a tool with no argument that narrows it says so), and the structured result then holds only `truncated`, `notice`, `warnings` and `brandHasErrors`. `check_brand` and `list_tokens` instead keep whole items: `check_brand` keeps `counts` and `passed` whole and cuts `findings` to `limit` (default 50, at most 500, and fewer if still too large); `list_tokens` cuts `tokens` to fit. Both add `findingsTotal` or `tokensTotal`, `truncated` and `notice`.
 
 ### Resources and prompt
 
@@ -45,6 +47,13 @@ The size cap is 40 000 characters, about 10 000 tokens, the point where Claude C
 | prompt `build_page` (argument `description`) | the workflow of the manual's chapter 19: check first, read the rules, fonts, logo and shadcn variables, find paths with `list_tokens`, never hard-code a value, `can_use` for each pair, and list the questions the brand does not answer |
 
 Resources are not cut to the size limit. A warning from blazon comes as a separate `text/plain` entry before the JSON entry.
+
+## Not built
+
+- The package is not on npm; run it from a source checkout.
+- Only the stdio transport. There is no HTTP server and no sign-in.
+- No tool writes, builds or runs a plugin, so findings that only a plugin raises are not in `check_brand`.
+- No paging: a list is cut to whole items and says how many were left out, and you narrow it (`group`, `type`, `severity`). An `offset` argument is proposed, not built.
 
 ## Limits
 

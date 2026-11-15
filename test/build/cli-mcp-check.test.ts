@@ -235,8 +235,8 @@ describe('blazon mcp --check (command line)', () => {
       expect(ran.status, ran.stderr + ran.stdout).toBe(0);
       const out = JSON.parse(ran.stdout);
       expect(Object.keys(out).slice(0, 2)).toEqual(['command', 'passed']);
-      expect(out).toMatchObject({ command: 'mcp', passed: true, mode: 'check', runsBrandConfig: true, registered: false });
-      expect(out.trust).toMatch(/runs the plugins its blazon\.json names/);
+      expect(out).toMatchObject({ command: 'mcp', passed: true, mode: 'check', runsPlugins: false, registered: false });
+      expect(out.trust).toMatch(/runs blazon with no plugin/);
       expect(out.checks.map((c: { name: string }) => c.name)).toEqual(['built', 'blazon', 'handshake', 'registered']);
       expect(out.checks[2].tools).toEqual(expectedTools());
       expect(out.checks[3]).toMatchObject({ passed: false, advisory: true, fix: expect.stringContaining('blazon mcp --print-config') });

@@ -74,7 +74,7 @@ blazon mcp --print-config --client claude-code --brand my-brand
 blazon mcp --check --brand my-brand                    # built? finds blazon? answers a real handshake? registered?
 ```
 
-`blazon mcp --check` writes no file, prints a `fix` command for each check that fails, and exits 1 when the server is not ready. It starts the server on the brand folder, which compiles it and runs the plugins its `blazon.json` names: use a brand you trust. [Blazon for agents](docs/manual/20-blazon-for-agents.md) has the tools and the clients. For an agent that reads skills, [`skills/blazon/SKILL.md`](skills/blazon/SKILL.md) teaches the loop (check, contrast, MCP tools, what never to edit).
+`blazon mcp --check` writes no file, prints a `fix` command for each check that fails, and exits 1 when the server is not ready. It starts the server on the brand folder, which compiles it with no plugin; what a brand says reaches your agent as tool results, so use a brand you trust. [Blazon for agents](docs/manual/20-blazon-for-agents.md) has the tools and the clients. For an agent that reads skills, [`skills/blazon/SKILL.md`](skills/blazon/SKILL.md) teaches the loop (check, contrast, MCP tools, what never to edit).
 
 ## A rule that fails the build
 

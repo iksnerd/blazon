@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { OPERATIONS as LIST, toolOf, toolOperations } from '../../src/core/operations/index.js';
 import { OPERATIONS } from '../src/operations.js';
-import { commandFor } from '../src/operations.js';
+import { coerceArgs, commandFor, operationNamed } from '../src/operations.js';
 
 // The tools the server lists are the operations of src/core/operations/list.ts that have one, in its order, each with the list's own words.
 
@@ -90,5 +90,14 @@ describe('the blazon command a tool runs', () => {
       expect(pattern(tool, prop).test('dark'), `${tool}.${prop}`).toBe(true);
       expect(pattern(tool, prop).test('fontFamily'), `${tool}.${prop}`).toBe(true);
     }
+  });
+});
+
+describe('coerceArgs', () => {
+  it('turns an integer or boolean sent as a string into one, and leaves anything else alone', () => {
+    const check = operationNamed('check_brand')!;
+    expect(coerceArgs(check, { limit: ' 5 ', severity: 'error' })).toEqual({ limit: 5, severity: 'error' });
+    expect(coerceArgs(check, { limit: '5x' })).toEqual({ limit: '5x' });
+    expect(coerceArgs(operationNamed('get_token')!, { path: '12' })).toEqual({ path: '12' });
   });
 });

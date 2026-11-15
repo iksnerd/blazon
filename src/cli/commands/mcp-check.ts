@@ -11,9 +11,9 @@ import { printJson } from '../read.js';
 /** The longest the whole handshake may take before the server is killed. */
 export const HANDSHAKE_TIMEOUT_MS = 30_000;
 
-/** What the check says before anything else: the server compiles the brand, and a compile runs the plugins the brand's config names. */
+/** What the check says before anything else. The server runs no plugin (`check_brand` passes `--no-plugins`, and the read commands never run one), so the risk is the brand's text reaching the agent. */
 export const TRUST_NOTICE =
-  'This check starts blazon-mcp on the brand folder, and compiling a brand runs the plugins its blazon.json names, with your permissions. Check only a brand folder you trust.';
+  'This check starts blazon-mcp on the brand folder. The server runs blazon with no plugin and a limited environment, and reads the brand files as data. What the brand says reaches your agent as tool results, so check only a brand folder you trust.';
 
 /** One line of the answer. `advisory` marks a finding that does not make the check fail. */
 export interface McpCheck {
@@ -305,7 +305,7 @@ export async function runMcpCheck(options: McpCheckOptions): Promise<number> {
   const checks: McpCheck[] = [builtCheck, blazon, shake, registered];
   const passed = checks.filter((check) => !check.advisory).every((check) => check.passed);
   if (options.json) {
-    printJson('mcp', passed, { mode: 'check', client, brand, runsBrandConfig: true, trust: TRUST_NOTICE, registered: registered.passed, checks });
+    printJson('mcp', passed, { mode: 'check', client, brand, runsPlugins: false, trust: TRUST_NOTICE, registered: registered.passed, checks });
     return passed ? 0 : 1;
   }
   console.log(`\n  ${pc.bold(`blazon-mcp for ${client}, brand ${brand}`)}\n  ${pc.yellow(TRUST_NOTICE)}\n`);

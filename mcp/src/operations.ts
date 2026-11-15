@@ -1,4 +1,5 @@
 import { OPERATIONS } from './generated/operations.js';
+import { toolInput } from './generated/project.js';
 import type { Operation } from './generated/types.js';
 import type { RunOptions } from './blazon.js';
 
@@ -8,6 +9,18 @@ const kebab = (name: string): string => name.replace(/[A-Z]/g, (letter) => `-${l
 
 /** The tool for a name, or undefined. */
 export const operationNamed = (name: string): Operation | undefined => OPERATIONS.find((op) => op.name === name);
+
+/** Models send "5" and "true". A string that reads as the integer or boolean the schema asks for is turned into it; anything else is left for the schema check to refuse. */
+export function coerceArgs(op: Operation, args: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...args };
+  for (const [name, prop] of Object.entries(toolInput(op).properties)) {
+    const value = out[name];
+    if (typeof value !== 'string') continue;
+    if (prop.type === 'integer' && /^\s*-?\d+\s*$/.test(value)) out[name] = Number(value);
+    else if (prop.type === 'boolean' && /^(true|false)$/i.test(value.trim())) out[name] = value.trim().toLowerCase() === 'true';
+  }
+  return out;
+}
 
 /** The arguments of a call with each default the input schema states filled in. */
 export function withDefaults(op: Operation, args: Record<string, unknown>): Record<string, unknown> {

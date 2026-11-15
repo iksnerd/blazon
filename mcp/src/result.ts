@@ -22,6 +22,31 @@ export const failure = (message: string): ToolResult => ({ content: [{ type: 'te
 export const NARROW_BY_PATH = 'narrow with a path';
 export const NARROW_FINDINGS = 'narrow with severity';
 export const NARROW_TOKENS = 'narrow with group or type';
+/** For a tool that takes no argument that makes its answer smaller. */
+export const NARROW_NONE = 'this tool has no argument that narrows it, so tell the user the brand file is too large to read whole';
+
+// The characters that hide text from a person and not from a model: zero-width and bidirectional controls, and the Unicode tag block.
+const INVISIBLE = /[\u200B\u200E\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\u{E0000}-\u{E007F}]/gu;
+
+/**
+ * The value with invisible characters taken out of every string and key, and how many were taken out. Text in an answer comes from the brand's
+ * files, so a brand can hide an instruction in it; the zero-width joiner and non-joiner stay, because scripts need them.
+ */
+export function stripInvisible<T>(value: T): { value: T; removed: number } {
+  let removed = 0;
+  const clean = (text: string): string => text.replace(INVISIBLE, () => (removed++, ''));
+  const walk = (node: unknown): unknown => {
+    if (typeof node === 'string') return clean(node);
+    if (Array.isArray(node)) return node.map(walk);
+    if (typeof node === 'object' && node !== null) return Object.fromEntries(Object.entries(node).map(([key, item]) => [clean(key), walk(item)]));
+    return node;
+  };
+  const result = walk(value) as T;
+  return { value: result, removed };
+}
+
+/** The line that tells the model its answer was cleaned. */
+export const removedNotice = (count: number): string => `Removed ${count} invisible character(s) from the brand's text in this answer.`;
 
 /**
  * A successful answer. `structuredContent` is blazon's document plus `warnings` (what blazon said on standard error) and `brandHasErrors`;

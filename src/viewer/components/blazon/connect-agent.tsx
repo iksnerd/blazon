@@ -23,7 +23,8 @@ export function ConnectAgent() {
           <DialogTitle>Connect your agent</DialogTitle>
           <DialogDescription>
             blazon-mcp lets a coding agent ask blazon about this brand as tool calls. Paste one of these into your client. Nothing is written for you. The brand folder is{' '}
-            <code className="font-mono text-[0.9em]">{config.brand}</code>; use a folder you trust, because reading a brand runs the plugins its config names.
+            <code className="font-mono text-[0.9em]">{config.brand}</code>. The server runs no plugin, but what the brand says reaches your agent as tool results, so use a folder
+            you trust.
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue={config.clients[0]?.client}>

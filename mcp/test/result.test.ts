@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { answerWith, limitItems, MAX_TEXT, NARROW_FINDINGS } from '../src/result.js';
+import { answerWith, limitItems, MAX_TEXT, NARROW_FINDINGS, stripInvisible } from '../src/result.js';
 
 /** A check document with `n` findings of about `pad` characters each. */
 const check = (n: number, pad = 0) => ({
@@ -60,5 +60,13 @@ describe('answerWith over the size limit', () => {
     const text = result.content.at(-1)?.text ?? '';
     expect(text).not.toMatch(/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/);
     expect(result.structuredContent?.notice).toMatch(/code points/);
+  });
+});
+
+describe('stripInvisible', () => {
+  it('removes zero-width, bidirectional and tag characters from strings and keys, and counts them', () => {
+    const { value, removed } = stripInvisible({ ['a\u200bb']: ['x\u202ey', { n: 1, t: 'z\u{E0041}' }], ok: 'caf\u00e9 \u200d' });
+    expect(value).toEqual({ ab: ['xy', { n: 1, t: 'z' }], ok: 'caf\u00e9 \u200d' });
+    expect(removed).toBe(3);
   });
 });
