@@ -34,10 +34,10 @@ One change is planned that touches stable surfaces, and it is made before 1.0 so
 - While blazon is 0.x, a change that breaks a stable surface raises the minor version, and the CHANGELOG lists it under "Breaking" with what to do about it.
 - A config key, a command or a finding code is not removed outright. It stays for one minor as an alias, and using it gives a warning that names its replacement.
 - That alias mechanism is not built. Nothing in `src/` reads an old name and warns, and no key, command or code has been renamed since there was something to keep. It is built with the first rename after a release.
-- The exceptions are changes made before the first release, with no alias, because nothing had been published and nobody depended on the old form: the rename from folio to blazon (the command, the package, the config and lock files, the `.blazon` folder, the `BLAZON_` environment variables and the `dev.blazon` extension key), the move of the config to plain JSON in `blazon.json`, and the one naming rule for finding codes, which renamed 42 of them. The CHANGELOG lists each.
+- The exceptions are changes made before the first release, with no alias, because nothing had been published and nobody depended on the old form: the move of the config to plain JSON in `blazon.json`, and the one naming rule for finding codes, which renamed 42 of them. The CHANGELOG lists each.
 - Adding a key, a command, a field or a finding code is not a breaking change. A tool that reads `--json` treats a code it does not know as a finding, not as an error.
 
-These names are kept: the package `@iksnerd/blazon` and the `blazon` command, the `dev.blazon` extension key, and the files `blazon.json`, `blazon.lock`, `blazon.plugins.lock` and `blazon.resolver.json`.
+These names are stable: the package `@iksnerd/blazon` and the `blazon` command, the `dev.blazon` extension key, and the files `blazon.json`, `blazon.lock`, `blazon.plugins.lock` and `blazon.resolver.json`.
 
 ## The deprecation window
 

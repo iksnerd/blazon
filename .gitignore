@@ -34,3 +34,6 @@ reads.json.lines
 # The program of each shipped plugin and the lock over them are build output (scripts/build-plugins.mjs, `npm run build:plugins`)
 plugins/*/bin/*.🔌
 plugins/shipped.lock
+
+# Claude Code agent worktrees
+.claude/worktrees/

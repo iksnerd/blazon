@@ -262,4 +262,4 @@ npm run dev:blazon        # blazon's own brand book from source, with live reloa
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The plugin conformance corpus in `test/spec/` is a copy of a plugin specification's, licensed Apache-2.0 (`test/spec/LICENSE`, `test/spec/NOTICE`); `test/spec/SOURCE.json` names the commit it came from. Another company's brand guidelines are not part of this repository. Blazon's own brand book, `examples/blazon/`, holds hand-drawn SVG and no generated images; the earlier starter's eight images, generated with Google's Gemini, remain in the git history, where each image's sidecar says `generated`.
+MIT, see [LICENSE](LICENSE). The plugin conformance corpus in `test/spec/` is a copy of a plugin specification's, licensed Apache-2.0 (`test/spec/LICENSE`, `test/spec/NOTICE`); `test/spec/SOURCE.json` names the commit it came from. Another company's brand guidelines are not part of this repository. Blazon's own brand book, `examples/blazon/`, holds hand-drawn SVG and no generated images.
