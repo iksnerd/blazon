@@ -138,7 +138,7 @@ describe.skipIf(!PRESENT)('the print book as slides', () => {
 
   it('tells the printer it is laid out, and how many pages it has', async () => {
     open('#print/pages=doc/motion,doc/colors');
-    await waitFor(() => expect((window as unknown as { __blazonPrint?: unknown }).__blazonPrint).toEqual({ ready: true, pages: 6 }));
+    await waitFor(() => expect((window as unknown as { __blazonPrint?: unknown }).__blazonPrint).toEqual({ ready: true, pages: 6, clipped: [] }));
   });
 
   const slides = () => [...document.querySelectorAll<HTMLElement>('[data-print-slide]')];
