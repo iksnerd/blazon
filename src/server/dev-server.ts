@@ -6,6 +6,7 @@ import type { BlazonConfig } from '../types/index.js';
 import { packageRoot } from '../core/package-root.js';
 import { BLAZON_VERSION } from '../core/version.js';
 import { createBlazonVitePlugin } from './plugin.js';
+import { editorLauncherGuard } from './editor-guard.js';
 
 export type ViewerSource =
   /** Running blazon from its own source: Vite compiles src/viewer with vite.viewer.config.ts and hot-reloads it */
@@ -35,6 +36,16 @@ export function resolvePrebuiltViewerDir(): string {
   return dir;
 }
 
+/**
+ * What the dev server may read over `/@fs/`. Vite's default is the workspace root found above the viewer: for an installed blazon the
+ * package root, and only because blazon's own package.json carries a `workspaces` field (the search stops there; without it a folder above
+ * would be next). The viewer needs its own folder and nothing else: never the brand (served by /brand-assets and /brand.json) and never a
+ * parent folder. `strict` stays on and Vite's `deny` list (.env, keys, .git) is kept.
+ */
+export function viewerFsOptions(viewer: ViewerSource): { strict: true; allow: string[] } {
+  return { strict: true, allow: [viewer.kind === 'prebuilt' ? path.resolve(viewer.dir) : packageRoot()] };
+}
+
 export async function startDevServer(config: BlazonConfig, cwd: string = process.cwd(), options: { strictPort?: boolean; host?: string | boolean } = {}): Promise<ViteDevServer> {
   const viewer = resolveViewer();
 
@@ -45,8 +56,9 @@ export async function startDevServer(config: BlazonConfig, cwd: string = process
       strictPort: options.strictPort ?? false,
       host: options.host ?? 'localhost',
       open: false,
+      fs: viewerFsOptions(viewer),
     },
-    plugins: [createBlazonVitePlugin(config, cwd)],
+    plugins: [editorLauncherGuard(), createBlazonVitePlugin(config, cwd)],
     optimizeDeps: {
       include: [],
     },

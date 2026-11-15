@@ -102,6 +102,7 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- `blazon dev` and `blazon preview` answer 404 on Vite's `/__open-in-editor?file=...` route. Vite registers it on every dev server with no switch to turn it off, and any web page that can reach localhost could make a running editor open a local path. The dev server also sets `server.fs.allow` to the viewer's own folder (`dist/ui` when installed, the checkout from source) with `strict` on, instead of Vite's workspace-root search: an installed blazon served its own package files (`package.json`, `bin/`, plugin programs) over `/@fs/`, and the search would reach a folder above it if blazon's `package.json` lost its `workspaces` field.
 - `blazon dev` and `blazon build` read and served the SVGs of any folder through an icon set whose `package` was a path (`../../Downloads`). `package` must now be a package name (`name` or `@scope/name`); a path fails with `icon-set-invalid`. `blazon preview` followed a link in the built site (`dist/site/leak.txt -> ~/secret`) and served what it pointed at; it now answers 403 for a link that leaves the site.
 
 - A resolver with an inline modifier or set that reuses the name of a declared set or modifier is a `resolver-invalid` error, not an uncaught TypeError.
