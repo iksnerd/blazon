@@ -103,12 +103,15 @@ export interface PlacedDirective {
   text: string;
 }
 
+/** The Markdown with its fenced code blocks (``` and ~~~) cut out, so what a page shows as an example is not read as the page. */
+export const withoutFences = (markdown: string): string => markdown.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, '');
+
 /**
  * The directives a page's Markdown places. Code fences and inline code are skipped: a page that shows
  * the syntax as an example must not be taken to use it.
  */
 export function directivesIn(markdown: string): PlacedDirective[] {
-  const prose = markdown.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, '').replace(/`[^`\n]*`/g, '');
+  const prose = withoutFences(markdown).replace(/`[^`\n]*`/g, '');
   return [...prose.matchAll(/<!--\s*blazon:([\w-]+)(?:\s+([^>]*?))?\s*-->/g)].map((m) => ({
     name: m[1]!,
     args: (m[2] ?? '').split(/\s+/).filter(Boolean),

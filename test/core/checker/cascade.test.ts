@@ -45,6 +45,23 @@ describe('withoutCascade', () => {
   });
 });
 
+describe('withoutCascade, every kind of missing token', () => {
+  it.each([
+    '<!-- blazon:cards x -->: no color or gradient token at x',
+    '<!-- blazon:strokes x -->: no border token at x',
+    '<!-- blazon:spots x -->: no color, gradient or border token at x',
+    '<!-- blazon:formats x -->: no format at x (a group with dimension tokens width and height)',
+    '<!-- blazon:patterns x -->: no pattern at x (a group with dev.blazon.pattern set to a)',
+  ])('drops %s once a token file is unreadable', (message) => {
+    expect(withoutCascade([broken, f('directive-invalid', { message })])).toEqual([broken]);
+  });
+
+  it('keeps a missing asset, which an unreadable token file does not explain', () => {
+    const asset = f('directive-invalid', { message: '<!-- blazon:assets x -->: no asset at x' });
+    expect(withoutCascade([broken, asset])).toEqual([broken, asset]);
+  });
+});
+
 describe('compileBlazonData with a resolver and a broken token file', () => {
   it('reports the broken file with its line, and the other files still load', async () => {
     const root = await starterProject();

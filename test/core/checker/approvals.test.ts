@@ -152,6 +152,14 @@ describe('approval-stale (review.value)', () => {
     expect(codes(group)).toContain('color:invalid-review');
   });
 
+  it('says nothing about an alias that does not resolve, or loops: there is no value to compare', async () => {
+    const approval = { status: 'ok', by: 'Dana', at: '2026-10-29', value: '0123456789ab' };
+    for (const target of ['{color.nope}', '{color.loop}']) {
+      const root = tempProject({ 'tokens/a.json': { color: { $type: 'color', loop: { $value: '{color.text}' }, text: { $value: target, ...blazon(approval) } } } });
+      expect((await compile(root)).findings.filter((f) => f.code === 'approval-stale')).toEqual([]);
+    }
+  });
+
   it('follows an alias: the approval is of the value shown, so a change to the aliased token makes it stale', async () => {
     const files = (primary: string, review?: unknown) => ({
       'tokens/a.json': { color: { $type: 'color', brand: { $value: primary }, text: { $value: '{color.brand}', ...(review !== undefined && blazon(review)) } } },

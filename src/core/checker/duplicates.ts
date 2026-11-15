@@ -6,7 +6,9 @@ export function duplicateFindings(items: TokenItem[]): Finding[] {
   const findings: Finding[] = [];
   for (const item of items) {
     if (item.aliasOf || item.type !== 'color') continue;
-    const parent = item.path.slice(0, item.path.lastIndexOf('.'));
+    const dot = item.path.lastIndexOf('.');
+    // A token with no group is a sibling of the others with none: lastIndexOf is -1, and slice(0, -1) would cut its last letter
+    const parent = dot < 0 ? '' : item.path.slice(0, dot);
     const key = `${parent}\u0000${String(item.value).toLowerCase()}`;
     const first = seen.get(key);
     if (first) {

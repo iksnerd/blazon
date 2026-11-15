@@ -193,6 +193,16 @@ describe('checkTokens (RFC 0001 §4)', () => {
     expect(checkTokens(await compileTokens({ 'a.json': { hue: { $type: 'color', a: { $value: '#fff' }, b: { $value: '#fff' } } } }), { strict: true }).passed).toBe(false);
   });
 
+  it('treats root-level tokens as siblings, whatever their names', async () => {
+    const dups = async (tokens: object) =>
+      checkTokens(await compileTokens({ 'a.json': tokens }))
+        .warnings.filter((f) => f.code === 'duplicate-value')
+        .map((f) => f.path);
+    expect(await dups({ ab: { $type: 'color', $value: '#112233' }, cd: { $type: 'color', $value: '#112233' } })).toEqual(['cd']);
+    expect(await dups({ ab: { $type: 'color', $value: '#112233' }, ac: { $type: 'color', $value: '#112233' } })).toEqual(['ac']);
+    expect(await dups({ g: { $type: 'color', ab: { $value: '#112233' }, ac: { $value: '#112233' } } })).toEqual(['g.ac']);
+  });
+
   it('counts a composite whose parts alias primitives as an alias, not a literal', async () => {
     const result = checkTokens(
       await compileTokens({

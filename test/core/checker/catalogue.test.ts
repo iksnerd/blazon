@@ -63,6 +63,11 @@ describe('check catalogue', () => {
     expect(CHECKS['needs-review'].appliesTo).toEqual(['token', 'asset', 'group']);
     expect(CHECKS['approval-stale'].appliesTo).toEqual(['token', 'asset']);
     expect(CHECKS['invalid-font-meta'].appliesTo).toEqual(['token', 'group']);
+    // what the code points at: a group's pairs, a group or token $type, a section id, a token file's name
+    expect(CHECKS['invalid-pair'].appliesTo).toEqual(['group']);
+    expect(CHECKS['unknown-type'].appliesTo).toEqual(['token', 'group']);
+    expect(CHECKS['section-missing'].appliesTo).toEqual(['project']);
+    expect(CHECKS['invalid-json'].appliesTo).toEqual(['project']);
   });
 
   it('has no dead code: every code is named in an emitter under src', () => {

@@ -99,6 +99,11 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- `approval-stale` no longer fires for a token whose alias does not resolve or loops, and so no longer tells you to record the fingerprint of the broken `{...}` text; one unreadable token file used to bring one for every approved alias into it.
+- `duplicate-value` compares tokens that sit at the root of a file as siblings; it cut the last letter off their names, so `ab` and `ac` were compared and `ab` and `cd` were not.
+- `tokens-not-shown` no longer notes a page that places tokens with `cards`, `strokes`, `spots`, `logo-on`, `formats` or `patterns`; the exempt directives now come from the directive table.
+- With a token file unreadable, the findings that a directive names a missing color, border, format or pattern are left out as well, not only "no token at".
+- `blazon explain` lists what `invalid-pair`, `unknown-type`, `section-missing` and `invalid-json` point at as the code does: a group, a token or group, the project.
 - A contrast pair measures a translucent foreground blended over its background, as WCAG does; `transparent` or `rgba(0,0,0,.05)` on white used to pass AAA. A translucent background gives `contrast-unknown`, as what is behind it is not known. A failing ratio is floored to two decimals, so 4.496 no longer prints as "4.50:1; AA needs 4.5:1".
 - MCP truncation keeps the most findings that fit, not a power-of-two fraction of them (120 that fit used to come back as 62), counts the `warnings` it adds in that fit, and keeps `counts` and `passed` when it falls back to cutting the text. The fallback cuts on code points, not inside a surrogate pair.
 - A plugin's finding message stays within 1000 characters with its ` (instance X)` suffix counted.
