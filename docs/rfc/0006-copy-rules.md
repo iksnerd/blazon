@@ -39,23 +39,28 @@ A **copy rule** is a statement about how text is written that a program can test
 
 ### 1. Where the rules live
 
-In the plugin's `options`, in `blazon.config.ts`:
+In the plugin's `options`, in `blazon.json`:
 
-```ts
-plugins: [
-  {
-    name: 'blazon.copy',
-    options: {
-      avoid: [
-        { terms: ['powerful', 'seamless', 'robust', 'effortless'], say: 'a number, or nothing' },
-        { terms: ['\u2014', '\u2013'], say: 'a period, a colon or parentheses' },
-      ],
-      headings: 'sentence',
-      sentences: { maxWords: 25 },
-      skip: ['11-voice.md'],
-    },
-  },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.copy",
+      "options": {
+        "avoid": [
+          {
+            "terms": [ "powerful", "seamless", "robust", "effortless" ],
+            "say": "a number, or nothing"
+          },
+          { "terms": [ "—", "–" ], "say": "a period, a colon or parentheses" }
+        ],
+        "headings": "sentence",
+        "sentences": { "maxWords": 25 },
+        "skip": [ "11-voice.md" ]
+      }
+    }
+  ]
+}
 ```
 
 - `avoid` is a list of groups. `terms` are strings, matched case-insensitively as text, as whole words when the term starts and ends with a letter or digit. A term is never a pattern: a single trailing `*` makes it a stem, which matches every word that begins with it (`решени*` finds решение, решения and решенията), and no other character is special. `say` is the advice the finding quotes. `only` and `skip` are lists of paths, a page's path from the docs folder or an asset's id, that scope the group: it applies to every page and asset, or to those in `only`, less those in `skip`. A path ending in `*` is a prefix, so `social/*` covers a category of assets and `layout/*` a folder of pages. A word that means one thing in marketing copy and another in a layout note, such as "free", is scoped to the pages where it is a claim.

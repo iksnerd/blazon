@@ -13,7 +13,7 @@ import { Missing, paints } from './shared';
  */
 export function LogoOn({ data, args }: { data: BlazonData; args: string[] }) {
   const logo = data.logo;
-  if (!logo) return <Missing>No logo is configured (blazon.config.ts → logo).</Missing>;
+  if (!logo) return <Missing>No logo is configured (blazon.json → logo).</Missing>;
   return (
     <div className="not-prose my-4 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2.5">
       {paints(data, args).map((item) => {

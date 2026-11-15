@@ -162,7 +162,7 @@ The Auth0 locale case:
 
 Output per context:
 
-- **CSS:** the default context goes under `cssSelector`. Each other context emits only the tokens that differ, under a selector set per modifier in `blazon.config.ts` (for example `locale` → `:lang({context})`, `theme` → `[data-theme="{context}"]`).
+- **CSS:** the default context goes under `cssSelector`. Each other context emits only the tokens that differ, under a selector set per modifier in `blazon.json` (for example `locale` → `:lang({context})`, `theme` → `[data-theme="{context}"]`).
 - **TypeScript:** `tokens` holds the default context, and `contexts.<modifier>.<name>` holds the overrides.
 - **Brand book:** a context switcher.
 
@@ -170,7 +170,7 @@ The brand and product palettes are not contexts. Both are always present, and th
 
 As implemented (`src/core/tokens/resolver/`):
 
-- The resolver document is `blazon.resolver.json` in the project root, or `resolver` in `blazon.config.ts`. With one, blazon loads only the files it names; without one, every file in `tokensDir`.
+- The resolver document is `blazon.resolver.json` in the project root, or `resolver` in `blazon.json`. With one, blazon loads only the files it names; without one, every file in `tokensDir`.
 - Sources merge as DTCG documents: groups key by key, tokens replaced whole, so an override with no `$type` inherits its group's type from an earlier source. Aliases resolve after the merge (Resolver §6.3).
 - Every modifier MUST have a `default`. The defaults are blazon's main output; each other context is compiled with one modifier changed at a time. Combinations (Japanese and dark at once) are not compiled; their CSS blocks cascade.
 - A context lists only the tokens whose resolved value differs from the default context, aliases included: switching the body family to Kinto changes every `type.*` style that uses it.
@@ -187,7 +187,7 @@ A new command, which also runs at the start of `blazon build`:
 | Unresolvable or circular alias, or an alias mixed into other text | error | Template `{brand.accent}` |
 | Missing or unknown `$type`, a bare value with no `$value`, a value that does not fit its `$type`, an alias to a token of another type | error | none in the fixture |
 | A token whose `role` the usage of a token it aliases does not allow (a semantic `text.*` aliasing a `deny: ["text"]` token) | error | `text.brand` → `color.secondary.pink` |
-| `theme` or `logo` in `blazon.config.ts` points at a token or file that does not exist, or `logo` is not set | error | none in the fixture |
+| `theme` or `logo` in `blazon.json` points at a token or file that does not exist, or `logo` is not set | error | none in the fixture |
 | A guideline page whose front matter is not valid YAML (the page is left out) | error | an unquoted description containing ": " |
 | A proportion bucket naming a token that does not exist | error | none in the fixture |
 | Proportion shares that do not add up to 100% | warning | none in the fixture |
@@ -196,7 +196,7 @@ A new command, which also runs at the start of `blazon build`:
 | `review.status: needs-review` | warning, listed in the brand book | Product ramp copy errors |
 | Semantic or component token with no alias anywhere in its value (a composite whose parts alias primitives counts as aliased) | warning | none in the fixture |
 | A page directive that is unknown, has the wrong argument count, names a token of the wrong type or an asset that does not exist, or draws a logo that is not configured (`src/core/docs/directives.ts` is the table) | error | a typo in `blazon:spots illustration.stroke.onGray` |
-| No `theme` in `blazon.config.ts` | info | none in the fixture: blazon infers roles from conventional token names (`src/core/tokens/theme.ts`) and says which (`theme-inferred`), or that none matched (`theme-missing`) |
+| No `theme` in `blazon.json` | info | none in the fixture: blazon infers roles from conventional token names (`src/core/tokens/theme.ts`) and says which (`theme-inferred`), or that none matched (`theme-missing`) |
 | A path defined in two files (the later file wins), an alias to a `$deprecated` token | warning | none in the fixture |
 
 **Finding codes.** Each finding has a `code`, a `severity` and a `path`. The check catalogue, `src/core/checker/catalogue.ts`, is the machine-readable form of the list below: for each code it holds the severity, a one-sentence summary, the RFC section that names the code and the manual page that explains it. The table is written from the catalogue by `npm run checks-docs` and a test fails when it differs. The text after the table says what each code means, and it is normative: where the two differ, this text decides. Codes that plugins report (`name/code`) are not in the catalogue. The manual's chapter on checks says what to do about each code.
@@ -216,7 +216,7 @@ A new command, which also runs at the start of `blazon build`:
 | `blazon-pin-invalid` | error | blazon.lock is not a valid pin. |
 | `blazon-pin-mismatch` | error | The blazon build in use is not the commit blazon.lock names. |
 | `circular-alias` | error | Aliases lead back to the token that started them. |
-| `config-invalid` | error | A key or value in blazon.config.ts is not valid. |
+| `config-invalid` | error | A key or value in blazon.json is not valid. |
 | `contrast` | error | A color pair has less contrast than its level asks for. |
 | `contrast-unknown` | warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-collision` | error | Two tokens write the same CSS custom property. |
@@ -288,7 +288,7 @@ What each code means:
 - `asset-sidecar-invalid`: A sidecar is not valid JSON, has an unknown or malformed field, or leaves the assets folder (section 7)
 - `asset-sidecar-orphan`: A sidecar has no image of its name beside it
 - `circular-alias`: An alias leads back to itself
-- `config-invalid`: `blazon.config.ts` has an unknown key or a value of the wrong type (section 14)
+- `config-invalid`: `blazon.json` has an unknown key or a value of the wrong type (section 14)
 - `contrast`: A `pairs` contrast pair is below its WCAG level
 - `contrast-unknown`: A pair has a value that is not a CSS color (a gradient, a `var()`), so it cannot be measured
 - `css-variable-collision`: Two tokens write one CSS custom property in the same output block (`theme.css`, a resolver context's block, or `tailwind.css`); reported at the later token, the first keeps the variable
@@ -359,8 +359,8 @@ What each code means:
 
 A brand book that looks like the tool and not the brand fails its main job. Auth0 made this concrete: the deck's identity is its typefaces, its indigo and black section openers, and its logo rules. A generic dark dashboard showed none of it. So the viewer takes its presentation from the brand's own data:
 
-- `theme` in `blazon.config.ts` maps viewer roles (`background`, `canvas`, `text`, `muted`, `border`, `accent`, `accentText`, `inverse`, `inverseText`, `fontDisplay`, `fontBody`, `radius`) to token paths. The compiler resolves them into `BlazonData.theme`.
-- `shadcn` in `blazon.config.ts` maps a shadcn/ui variable name (`primary`, `destructive`, `chart-1`, `sidebar-ring`, ... without the leading dashes) to a token path, for the variables the theme roles do not supply or that the brand wants from another token. The derivation of shadcn variables from the roles, and from `shadcn`, is one function (`deriveShadcn`, `src/core/tokens/shadcn.ts`); `brand.json` states its result (section 12). A `shadcn` path that is not a token is `theme-unresolved`; a variable name shadcn does not have is a config error. Blazon writes no shadcn file.
+- `theme` in `blazon.json` maps viewer roles (`background`, `canvas`, `text`, `muted`, `border`, `accent`, `accentText`, `inverse`, `inverseText`, `fontDisplay`, `fontBody`, `radius`) to token paths. The compiler resolves them into `BlazonData.theme`.
+- `shadcn` in `blazon.json` maps a shadcn/ui variable name (`primary`, `destructive`, `chart-1`, `sidebar-ring`, ... without the leading dashes) to a token path, for the variables the theme roles do not supply or that the brand wants from another token. The derivation of shadcn variables from the roles, and from `shadcn`, is one function (`deriveShadcn`, `src/core/tokens/shadcn.ts`); `brand.json` states its result (section 12). A `shadcn` path that is not a token is `theme-unresolved`; a variable name shadcn does not have is a config error. Blazon writes no shadcn file.
 - `fonts` lists what the viewer loads: stylesheet URLs (Auth0: Google Fonts, per slide 27) and font files of the project, which blazon embeds as an `@font-face`.
 - `logo` is one file or `{ onLight, onDark }`, inlined as data URIs. The viewer follows the primary usage rule: the `onDark` artwork on inverse and accent backgrounds, and on the canvas in dark mode; `onLight` elsewhere.
 - Doc frontmatter `group` names the section (the deck's "Brand foundations", "System elements"), and `cover: accent | inverse | canvas` picks the section opener.
@@ -429,13 +429,19 @@ These tokens are not in the Auth0 fixture. The deck states no pixel sizes for it
 
 ### 9. Icon sets
 
-An icon package is previewed by naming it in `blazon.config.ts`, not by copying its files into `assets/`:
+An icon package is previewed by naming it in `blazon.json`, not by copying its files into `assets/`:
 
-```ts
-iconSets: [
-  { name: 'lucide', package: 'lucide-static', categories: { Navigation: ['arrow-left', 'house'] } },
-  { name: 'tabler', package: '@tabler/icons' },
-]
+```json
+{
+  "iconSets": [
+    {
+      "name": "lucide",
+      "package": "lucide-static",
+      "categories": { "Navigation": [ "arrow-left", "house" ] }
+    },
+    { "name": "tabler", "package": "@tabler/icons" }
+  ]
+}
 ```
 
 `name` is lowercase letters, digits and hyphens (it is a URL segment). Blazon reads `node_modules/<package>/<dir>/*.svg`; `dir` defaults for `lucide-static` (`icons`), `@tabler/icons` (`icons/outline`), `@mdi/svg` (`svg`) and `@material-symbols/svg-*` (`outlined`), and is required for any other package. An icon is a file name without `.svg`. A link that leaves the package is not an icon of the set, and `dir` MUST stay inside the package.
@@ -476,7 +482,7 @@ Blazon assumes what the guidelines rarely state, and the manual says so: the par
 
 ### 11. Asset categories
 
-A category is a folder of `assets/` (section 7). An optional `assets` block in `blazon.config.ts` adds what a folder cannot say, as plain data:
+A category is a folder of `assets/` (section 7). An optional `assets` block in `blazon.json` adds what a folder cannot say, as plain data:
 
 ```ts
 assets?: Record<string, {
@@ -597,7 +603,7 @@ A brand book has standard parts, and a brand may add parts of its own. The stand
 
 A page declares the sections it holds with `section` in its front matter, one id or a list (`section: [patterns, 3d]`). `DocItem.sections` is that list: always an array, empty when the page declares none, each id once, in the order written. An id that is not a section of this brand book (a standard one, or one added in `customSections`) is an error on the page (`section-invalid`) and is left out. `meta.section` stays as authored.
 
-`blazon check` reports each expected section that no page holds as one `section-missing` finding, severity `info`, with the section as its path. It reports them only once the project uses sections: when at least one page declares a section, or the config sets `sections`. A project that has not started is not told about fourteen sections at once. `sections?: SectionId[]` in `blazon.config.ts` narrows the list a brand expects, so a brand with no motion is not reminded of it; an id in it that is not a section of this brand book is `section-invalid` on `sections`. Without `sections`, the sections expected are the standard ones followed by the custom ones. A section a page holds that the config did not list is not an error.
+`blazon check` reports each expected section that no page holds as one `section-missing` finding, severity `info`, with the section as its path. It reports them only once the project uses sections: when at least one page declares a section, or the config sets `sections`. A project that has not started is not told about fourteen sections at once. `sections?: SectionId[]` in `blazon.json` narrows the list a brand expects, so a brand with no motion is not reminded of it; an id in it that is not a section of this brand book is `section-invalid` on `sections`. Without `sections`, the sections expected are the standard ones followed by the custom ones. A section a page holds that the config did not list is not an error.
 
 The directive `blazon:section <category> [asset ...]` takes the arguments of `blazon:assets` and draws the category as a section: each asset with its title, description, traits, dos and don'ts, image and source, in order, then the category's file rules and its `notSpecified` list. `blazon:assets` stays the bare gallery. The prose a section needs lives in sidecars and the category config, so two brands' sections are built the same way and the page's Markdown holds only its own words.
 
@@ -607,7 +613,7 @@ Not in it, on purpose: a section id is not a page address (the slug is), and a s
 
 ### 14. Configuration
 
-`blazon.config.ts` is optional. It is code, so blazon checks it as it would data: every key below is allowed, and no other. A project may use `.js` or `.mjs` in place of `.ts`, or the name `brandbook.config`; the file exports its config as the default export (`export default defineConfig({ ... })`) or as `config`.
+`blazon.json` is optional. It is plain JSON, so a person can read it and a tool can write it: data that blazon reads and never runs, with no comments. Blazon checks it: every key below is allowed, and no other. It is the only form. A folder with `blazon.config.ts`, `blazon.config.js`, `blazon.config.mjs`, `brandbook.config.ts` or `brandbook.config.js` is refused with a `config-invalid` error on that file, which names it and says to move its values into `blazon.json` and delete it; the refusal holds even when a `blazon.json` is there too.
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
@@ -641,7 +647,7 @@ Not in it, on purpose: a section id is not a page address (the slug is), and a s
 
 The rest of a key's rules (a theme role, an `assets` entry, an icon set) are checked where the key is used, in the section named in the table.
 
-**`blazon.lock`.** A brand book may name the blazon it builds with in `blazon.lock`, next to `blazon.config.ts`. Blazon is pre-release and every commit says `0.1.0`, so the commit is the only version there is. The file is JSON, written by `blazon pin` and committed with the book:
+**`blazon.lock`.** A brand book may name the blazon it builds with in `blazon.lock`, next to `blazon.json`. Blazon is pre-release and every commit says `0.1.0`, so the commit is the only version there is. The file is JSON, written by `blazon pin` and committed with the book:
 
 ```json
 { "v": 1, "commit": "0123456789abcdef0123456789abcdef01234567" }
@@ -701,14 +707,14 @@ There is no published version, so there are no external users. Inside the repo:
 Token and resolver files are local and trusted as much as the repo is. Two points still apply:
 
 - Resolver `$ref`s and asset sidecars MUST resolve inside the project root. A `$ref` to `../../` or an absolute path is an error.
-- `blazon.config.ts` is executed (`loadConfig` runs it through Vite's module runner). That is the same trust as any build config, and the README says so.
+- `blazon.json` is read as JSON and never executed. What can run a program is the `plugins` allowlist it holds (RFC 0002 section 2).
 - `fonts` URLs are loaded by every viewer of the brand book; they are as trusted as the config that lists them.
 
 Asset files come from anyone who can add to the assets folder. The viewer shows every asset, SVG included, through `<img src="Asset.url">`, so an SVG cannot run script, load resources into the page, or restyle it with its own `<style>`. Copy SVG, Copy JSX and Download pass the markup through DOMPurify's SVG profile, which removes scripts, event handlers, `javascript:` URLs and `foreignObject` (`src/viewer/lib/markup/sanitize.ts`). `<style>` survives the copy: it is not executable, but pasted inline into another page it applies to that page. The dev server's `/brand-assets/` route sends SVG with a sandbox Content-Security-Policy; the static build has no headers of its own, which is the host's job. Guideline pages still inline their Markdown as HTML, unsanitized, so raw HTML in `docs/` is trusted like the config.
 
 ## Status
 
-Implemented on `main` as of 2026-11-07. The sections of this RFC are all built; the table says where, and the Conformance section says what pins each one.
+Implemented on `main` as of 2026-11-15. The sections of this RFC are all built; the table says where, and the Conformance section says what pins each one.
 
 | Section | Where |
 |---|---|
@@ -725,7 +731,7 @@ Implemented on `main` as of 2026-11-07. The sections of this RFC are all built; 
 | 11. Asset categories | The `assets` block, including `experimental: true`, which shows an asset labelled "Experiment", and `reference: true`, which shows it labelled "Reference"; both exempt it from the review-gating findings |
 | 12. `brand.json` | `src/core/brand/`, with a JSON Schema beside it and a `generator` that records the blazon commit. Read by `scripts/read-brand.py` and drawn by `blazon.brand-deck` |
 | 13. Sections | `customSections`, `section-invalid`, `section-missing`, the `blazon:section` directive |
-| 14. Configuration | Unknown keys and wrong types are `config-invalid`; a config that cannot load stops the run. `customSections` and `vocabulary` are vocabulary as data (RFC 0002 section 1). `blazon pin` writes `blazon.lock` |
+| 14. Configuration | `blazon.json`, plain JSON, is the one form (`src/core/config/index.ts`); the older code spellings are refused by name with `config-invalid`. Unknown keys and wrong types are `config-invalid`; a config that cannot load stops the run. `customSections` and `vocabulary` are vocabulary as data (RFC 0002 section 1). `blazon pin` writes `blazon.lock` |
 
 The brand book starter belongs to [RFC 0003](0003-adopting-blazon.md): `blazon init` copies `examples/blazon/`, and `template/` is built from it by `npm run build-starter` and not committed.
 
@@ -739,7 +745,7 @@ Proposed next: compiling combinations of contexts across modifiers, if a brand n
 4. ~~Asset metadata (clear space, minimum size, logo variants): this RFC or the next?~~ Decided: this RFC, sections 7 and 10.
 5. ~~Should `blazon check` read contrast pairs from `dev.blazon` only, or also infer them from semantic `text.*` × `surface.*` tokens?~~ Decided on 2026-10-31: `dev.blazon` only (section 2, `pairs`). A check that guessed which text sits on which surface would report findings the brand never wrote. Revisit when a second brand book asks for it.
 6. ~~Which parts of the model should a brand be able to extend, and how?~~ Decided in [RFC 0002](0002-extension-model.md). Sections, logo lockups and usage roles are vocabularies a brand extends as data (section 14). Checks and outputs are plugins. The logo corners, pattern kinds, theme roles and tiers stay closed because blazon draws or reads them. A custom page directive is still closed (RFC 0002 section 3).
-7. ~~Should the config also be allowed as plain data (`blazon.config.json`), so a tool can generate it and a schema can check it?~~ Deferred on 2026-10-31, not decided against: a `blazon.config.json` is additive and can be added without changing the TypeScript config, so it waits for a tool that needs to generate the config.
+7. ~~Should the config also be allowed as plain data (`blazon.config.json`), so a tool can generate it and a schema can check it?~~ Decided on 2026-11-15, and stronger: the config is plain JSON only, in `blazon.json` (section 14). The code spellings are removed, not kept beside it, because two forms would mean a tool could not know which one the book reads.
 
 ## References
 

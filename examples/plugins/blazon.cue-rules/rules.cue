@@ -1,7 +1,7 @@
 import "list"
 // Starter rules for the blazon.cue-rules plugin. The brand's brand.json is in scope: `tokens`, `brand`, `pages`, and the
 // rest. Define `out`, a list of findings; each has a rule (lowercase words and dashes), a severity (error, warning or
-// info), a path and a message. Copy this file next to blazon.config.ts and change it.
+// info), a path and a message. Copy this file next to blazon.json, change it, and put its text in the plugin's `options.rules` in blazon.json.
 
 // Every semantic color points at a primitive, so a change to the palette reaches every use.
 out: [

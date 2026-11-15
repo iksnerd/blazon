@@ -113,8 +113,8 @@ export async function runGuided(ctx: FlowContext): Promise<Plan> {
   const family = value(parseFont, font);
   if (family) {
     answers.font = family;
-    if (googleFontsUrl(family)) p.log.success(`${family} is on Google Fonts. Its stylesheet will be added to fonts in blazon.config.ts.`);
-    else p.log.warn(`${family} is not in blazon's short list of Google Fonts, so only the font name is written. Add its stylesheet to fonts in blazon.config.ts.`);
+    if (googleFontsUrl(family)) p.log.success(`${family} is on Google Fonts. Its stylesheet will be added to fonts in blazon.json.`);
+    else p.log.warn(`${family} is not in blazon's short list of Google Fonts, so only the font name is written. Add its stylesheet to fonts in blazon.json.`);
   }
 
   p.log.step(stepTitle(4, TOTAL, 'Logo'));

@@ -8,12 +8,12 @@ import { TIMEOUT_CAP } from '../wire/limits.js';
 const AUTHOR = "fix the program, or send the message to the plugin's author";
 const PROTOCOL_PAGE = 'docs/manual/13-writing-a-plugin.md';
 
-/** The plugin's entry in blazon.config.ts or a --plugin argument cannot be used as it is. */
-export const CONFIG_FIX = 'Change the plugins entry in blazon.config.ts, or the --plugin argument, that the message names.';
+/** The plugin's entry in blazon.json or a --plugin argument cannot be used as it is. */
+export const CONFIG_FIX = 'Change the plugins entry in blazon.json, or the --plugin argument, that the message names.';
 
 /** No program was found for a plugin that is not pinned or shipped. */
 export const notFoundFix = (name: string): string =>
-  `Pin the plugin with blazon plugin pin <path> --name ${name}, or put a program called blazon-${name} in .blazon/plugins or on PATH; if the name is wrong, correct it in blazon.config.ts.`;
+  `Pin the plugin with blazon plugin pin <path> --name ${name}, or put a program called blazon-${name} in .blazon/plugins or on PATH; if the name is wrong, correct it in blazon.json.`;
 
 /** An unpinned program that group or others can write. It is the user's own file or the project's own folder, never a shared one. */
 export const writableFix = (place: string): string =>

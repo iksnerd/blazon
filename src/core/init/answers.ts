@@ -3,7 +3,7 @@ import path from 'node:path';
 import { googleFontsUrl } from './shared/google-fonts.js';
 import { toHex } from './shared/hex.js';
 import { cleanSvg } from './shared/svg.js';
-import { flagReview, FONTS_ENTRY, LOGO_ENTRY, setSignal, STARTER_LOGOS, STARTER_LOGO_FILES, tokenAt, withFontStylesheets } from './vocabulary.js';
+import { flagReview, readJson, setSignal, STARTER_LOGOS, STARTER_LOGO_FILES, tokenAt, withFontStylesheets, writeJson } from './vocabulary.js';
 
 export type Parsed<T> = { value: T } | { hint: string };
 
@@ -81,22 +81,22 @@ export interface Applied {
 export function applyAnswers(destDir: string, answers: Answers, created: Set<string>): Applied {
   const applied: Applied = { set: [], hints: [], files: [] };
   const kept = (file: string) => applied.hints.push(`${file} already existed, so it was kept as it was`);
-  const configPath = path.join(destDir, 'blazon.config.ts');
-  let config = created.has('blazon.config.ts') ? fs.readFileSync(configPath, 'utf-8') : undefined;
-  const original = config;
+  const configPath = path.join(destDir, 'blazon.json');
+  const config: Json | undefined = created.has('blazon.json') ? readJson(configPath) : undefined;
+  const original = config === undefined ? undefined : JSON.stringify(config);
   const needsConfig = (what: string): boolean => {
-    if (config === undefined) kept(`blazon.config.ts (${what} not set)`);
+    if (config === undefined) kept(`blazon.json (${what} not set)`);
     return config !== undefined;
   };
 
   if (answers.name !== undefined && needsConfig('name')) {
-    config = config!.replace(/^(\s*)title: .*,$/m, (_m, indent: string) => `${indent}title: ${JSON.stringify(answers.name)},`);
+    config!['title'] = answers.name;
     applied.set.push(`name "${answers.name}"`);
   }
 
   if (answers.description) {
     if (needsConfig('description')) {
-      config = config!.replace(/^(\s*)description: .*,$/m, (_m, indent: string) => `${indent}description: ${JSON.stringify(answers.description)},`);
+      config!['description'] = answers.description;
       applied.set.push('description');
     }
   }
@@ -134,11 +134,11 @@ export function applyAnswers(destDir: string, answers: Answers, created: Set<str
         applied.files.push('tokens/typography.json');
         const url = googleFontsUrl(answers.font);
         if (url && needsConfig('font stylesheet')) {
-          config = FONTS_ENTRY.test(config!) ? withFontStylesheets(config!, [url]) : config!.replace(LOGO_ENTRY, (m) => `${m}\n  fonts: [${JSON.stringify(url)}],`);
+          config!['fonts'] = withFontStylesheets(config!['fonts'], [url]);
           applied.set.push(`font ${answers.font} (font.family.display and font.family.body)`);
         } else if (!url) {
           applied.set.push(`font ${answers.font} (font.family.display and font.family.body)`);
-          applied.hints.push(`${answers.font} is not a font blazon knows a stylesheet for: add its stylesheet to fonts in blazon.config.ts`);
+          applied.hints.push(`${answers.font} is not a font blazon knows a stylesheet for: add its stylesheet to fonts in blazon.json`);
         }
         applied.hints.push("font.family.mono and the type scale are still blazon's: set the brand's own");
       } else applied.hints.push('font.family.display and font.family.body were not found in tokens/typography.json, so the font was not set');
@@ -173,15 +173,15 @@ export function applyAnswers(destDir: string, answers: Answers, created: Set<str
         path.join(logos, `${stem}.json`),
         `${JSON.stringify({ title: 'Logo', description: "The brand's logo. Clear space, minimum size, lockup, placement and partnership are blazon's, not the brand's: set them.", ...rules }, null, 2)}\n`,
       );
-      config = config!.replace(LOGO_ENTRY, (_m, indent: string) => `${indent}logo: ${JSON.stringify(`./assets/logos/${base}`)},`);
+      config!['logo'] = `./assets/logos/${base}`;
       applied.files.push(`assets/logos/${base}`, `assets/logos/${stem}.json`);
       applied.set.push(`logo ${base}`);
     }
   }
 
-  if (config !== undefined && config !== original) {
-    fs.writeFileSync(configPath, config);
-    applied.files.push('blazon.config.ts');
+  if (config !== undefined && JSON.stringify(config) !== original) {
+    writeJson(configPath, config);
+    applied.files.push('blazon.json');
   }
   return applied;
 }

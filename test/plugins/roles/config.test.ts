@@ -5,7 +5,7 @@ import type { BlazonConfig } from '../../../src/types/index.js';
 import { tempDir } from '../../support/project';
 import { literal, shippedPluginNames } from '../../support/starter-facts';
 
-// The `plugins` key of blazon.config.ts is the allowlist (RFC 0002, section 2; RFC 0005 section
+// The `plugins` key of blazon.json is the allowlist (RFC 0002, section 2; RFC 0005 section
 // 3.2): only the operator names the plugins that may run, and the config holds no path and no command.
 
 const compile = (plugins: unknown) => compileBlazonData({ ...DEFAULT_CONFIG, plugins } as unknown as BlazonConfig, tempDir());

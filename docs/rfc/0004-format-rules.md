@@ -35,32 +35,44 @@ A **format rule** is a statement of how one kind of value is written in one lang
 
 ### 1. Where the rules live
 
-In the plugin's `options`, in `blazon.config.ts`, which is how a plugin receives anything (RFC 0001 section 14, RFC 0002 section 2):
+In the plugin's `options`, in `blazon.json`, which is how a plugin receives anything (RFC 0001 section 14, RFC 0002 section 2):
 
-```ts
-plugins: [
-  {
-    name: 'blazon.formats',
-    options: {
-      zone: 'Europe/Sofia',
-      languages: {
-        bg: { locale: 'bg-BG', decimal: ',', group: 'nbsp', fractionDigits: 2,
-              currency: { symbol: '€', code: 'EUR', position: 'after', space: 'nbsp' },
-              percent: { space: false },
-              date: { numeric: 'dd.MM.yyyy', time: 'HH:mm', joiner: ', ' } },
-        en: { locale: 'en-US', decimal: '.', group: 'nbsp', fractionDigits: 2,
-              currency: { symbol: '€', code: 'EUR', position: 'after', space: 'nbsp' },
-              percent: { space: false },
-              date: { numeric: 'dd.MM.yyyy', time: 'HH:mm', joiner: ', ' } },
-      },
-      examples: [
-        { language: 'bg', money: 14000, text: '14 000,00 €' },
-        { language: 'en', money: 14000, text: '14 000.00 €' },
-        { language: 'bg', instant: '2026-03-14T14:21:00Z', dateTime: '14.03.2026, 16:21' },
-      ],
-    },
-  },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.formats",
+      "options": {
+        "zone": "Europe/Sofia",
+        "languages": {
+          "bg": {
+            "locale": "bg-BG",
+            "decimal": ",",
+            "group": "nbsp",
+            "fractionDigits": 2,
+            "currency": { "symbol": "€", "code": "EUR", "position": "after", "space": "nbsp" },
+            "percent": { "space": false },
+            "date": { "numeric": "dd.MM.yyyy", "time": "HH:mm", "joiner": ", " }
+          },
+          "en": {
+            "locale": "en-US",
+            "decimal": ".",
+            "group": "nbsp",
+            "fractionDigits": 2,
+            "currency": { "symbol": "€", "code": "EUR", "position": "after", "space": "nbsp" },
+            "percent": { "space": false },
+            "date": { "numeric": "dd.MM.yyyy", "time": "HH:mm", "joiner": ", " }
+          }
+        },
+        "examples": [
+          { "language": "bg", "money": 14000, "text": "14 000,00 €" },
+          { "language": "en", "money": 14000, "text": "14 000.00 €" },
+          { "language": "bg", "instant": "2026-03-14T14:21:00Z", "dateTime": "14.03.2026, 16:21" }
+        ]
+      }
+    }
+  ]
+}
 ```
 
 `group` is `nbsp`, `space`, `thin` or `none`. `position` is `before` or `after`. The date tokens are `dd`, `MM`, `yyyy`, `HH` and `mm` only, so the generated code needs no date library. A key the plugin does not know, a value of the wrong type and a language with no `locale` are each an `option-invalid` finding (section 4), and the language is left out. At least one example per language is RECOMMENDED, and a brand with none gets a warning: the examples are what the rules are held to.

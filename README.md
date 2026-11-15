@@ -41,7 +41,7 @@ my-brand/
 ├── fonts/         the mono typeface as two font files, with its licence
 ├── AGENTS.md      notes for a coding agent that edits the brand (CLAUDE.md points to it)
 ├── blazon.resolver.json   loads the token files and the dark theme
-└── blazon.config.ts
+└── blazon.json
 ```
 
 The book starts as blazon's brand and becomes yours as you replace it. `blazon check` notes every file that is still the starter's text, which is the list of what is left to do, and warns about each logo that is still blazon's own. To start from a company's site instead, run `blazon init acme-brand --from https://acme.com`: blazon reads the page and its stylesheets for colors, fonts and the logo, and flags each value `needs-review` until the brand owner confirms it ([how](docs/manual/01-getting-started.md#starting-from-a-live-site)).
@@ -74,7 +74,7 @@ blazon mcp --print-config --client claude-code --brand my-brand
 blazon mcp --check --brand my-brand                    # built? finds blazon? answers a real handshake? registered?
 ```
 
-`blazon mcp --check` writes no file, prints a `fix` command for each check that fails, and exits 1 when the server is not ready. It starts the server on the brand folder, which runs that folder's `blazon.config.ts` as code: use a brand you trust. [Blazon for agents](docs/manual/20-blazon-for-agents.md) has the tools and the clients. For an agent that reads skills, [`skills/blazon/SKILL.md`](skills/blazon/SKILL.md) teaches the loop (check, contrast, MCP tools, what never to edit).
+`blazon mcp --check` writes no file, prints a `fix` command for each check that fails, and exits 1 when the server is not ready. It starts the server on the brand folder, which compiles it and runs the plugins its `blazon.json` names: use a brand you trust. [Blazon for agents](docs/manual/20-blazon-for-agents.md) has the tools and the clients. For an agent that reads skills, [`skills/blazon/SKILL.md`](skills/blazon/SKILL.md) teaches the loop (check, contrast, MCP tools, what never to edit).
 
 ## A rule that fails the build
 
@@ -136,10 +136,12 @@ The same compile feeds the dev server, so a change to a token, a page or the con
 
 ## Plugins
 
-A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships ten, so there is nothing to install: name one in `blazon.config.ts` and run `blazon build`.
+A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships ten, so there is nothing to install: name one in `blazon.json` and run `blazon build`.
 
-```ts
-plugins: [{ name: 'blazon.brand-deck' }, { name: 'blazon.print-book' }],
+```json
+{
+  "plugins": [ { "name": "blazon.brand-deck" }, { "name": "blazon.print-book" } ]
+}
 ```
 
 | Plugin | Writes |
@@ -155,7 +157,7 @@ plugins: [{ name: 'blazon.brand-deck' }, { name: 'blazon.print-book' }],
 | [`blazon.press-kit`](docs/manual/14-shipped-plugins.md#blazonpress-kit) | A folder and zip for people outside the brand: logos, colors, fonts, a one-page PDF |
 | [`blazon.social-cards`](docs/manual/14-shipped-plugins.md#blazonsocial-cards) | Marketing images from the tokens and logo, checked for contrast |
 
-Several need Chrome for their PDF or PNG output; the manual says which. The starter's config enables `blazon.copy` with blazon's own rules, and has the other plugins of blazon's own book (the deck, the social cards, the favicons, the logo kit, the press kit and the platform and Office files) ready and commented out, because most need Chrome and a new book has no use for the kits yet. To write your own, see [Writing a plugin](docs/manual/13-writing-a-plugin.md). A plugin can be pinned, so one that changed on disk does not run.
+Several need Chrome for their PDF or PNG output; the manual says which. The starter's config enables `blazon.copy` with blazon's own rules, and leaves out the other plugins of blazon's own book (the deck, the social cards, the favicons, the logo kit, the press kit and the platform and Office files), because most need Chrome and a new book has no use for the kits yet; add one by name when you want it. To write your own, see [Writing a plugin](docs/manual/13-writing-a-plugin.md). A plugin can be pinned, so one that changed on disk does not run.
 
 ## Using the tokens
 
@@ -194,21 +196,25 @@ getVar('interactive.primary'); // "var(--interactive-primary)"
 
 ## Configuration
 
-`blazon.config.ts` is optional. The common options:
+`blazon.json` is optional. The common options:
 
-```ts
-import { defineConfig } from '@iksnerd/blazon';
-
-export default defineConfig({
-  title: 'Acme Brand Book',
-  theme: { accent: 'interactive.primary', text: 'text.primary', fontDisplay: 'font.family.display' },
-  logo: { onLight: './assets/logos/logo-black.svg', onDark: './assets/logos/logo-white.svg' },
-  iconSets: [{ name: 'lucide', package: 'lucide-static', categories: { Navigation: ['arrow-left', 'house'] } }],
-  fonts: ['https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap'],
-});
+```json
+{
+  "title": "Acme Brand Book",
+  "theme": { "accent": "interactive.primary", "text": "text.primary", "fontDisplay": "font.family.display" },
+  "logo": { "onLight": "./assets/logos/logo-black.svg", "onDark": "./assets/logos/logo-white.svg" },
+  "iconSets": [
+    {
+      "name": "lucide",
+      "package": "lucide-static",
+      "categories": { "Navigation": [ "arrow-left", "house" ] }
+    }
+  ],
+  "fonts": [ "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" ]
+}
 ```
 
-Every option and the theme roles are in [Theme and configuration](docs/manual/07-theme-and-config.md). The config file is executed through Vite's module runner, so treat it like any build script. The functions the CLI uses are exported for scripts (`compileBlazonData`, `checkTokens`, `emitTokenOutputs`, `buildSite`, `startDevServer` and more; see `src/index.ts`).
+Every option and the theme roles are in [Theme and configuration](docs/manual/07-theme-and-config.md). The file is plain JSON, read as data and never run: no comments, no code. A config written as `blazon.config.ts` (or `.js`, `.mjs`, or `brandbook.config.*`) is refused with an error that names the file; move its values into `blazon.json`. The functions the CLI uses are exported for scripts (`compileBlazonData`, `checkTokens`, `emitTokenOutputs`, `buildSite`, `startDevServer` and more; see `src/index.ts`).
 
 ## Examples
 

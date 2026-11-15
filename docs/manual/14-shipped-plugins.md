@@ -2,7 +2,7 @@
 
 ← [Manual index](index.md)
 
-Blazon's package carries plugins of its own. To use one, allow it by name in `blazon.config.ts`; how blazon finds and trusts a shipped plugin is in [Plugins](12-plugins.md#plugins-that-ship-with-blazon). This chapter says what each one writes and how to configure it.
+Blazon's package carries plugins of its own. To use one, allow it by name in `blazon.json`; how blazon finds and trusts a shipped plugin is in [Plugins](12-plugins.md#plugins-that-ship-with-blazon). This chapter says what each one writes and how to configure it.
 
 ## The plugins
 
@@ -10,8 +10,13 @@ Blazon's package carries plugins of its own. To use one, allow it by name in `bl
 
 `blazon.brand-deck` draws the brand as a PDF deck of 16:9 slides, `brand-deck.pdf` in its `out_dir`: the cover and contents, each logo with its clear space and rules, the palette with its print values, the gradients, the typefaces and type scale, the brand book's pages with the asset slides and figure grids their directives list, and the Favicons part. It has the `build` role. Drawing needs Google Chrome on the computer (or `BLAZON_CHROME`), as `blazon.print-book` does. It is TypeScript on blazon's own npm dependencies, so it needs no Python, no uv and no network, and it runs offline on a page made in memory. Chapter 11 says what each slide shows and how the deck fits an asset's text to its slide ([Drawing a deck](11-brand-json.md#drawing-a-deck)).
 
-```ts
-plugins: [{ name: 'blazon.favicons' }, { name: 'blazon.brand-deck', options: { skip: ['favicons-supplied'] } }],
+```json
+{
+  "plugins": [
+    { "name": "blazon.favicons" },
+    { "name": "blazon.brand-deck", "options": { "skip": [ "favicons-supplied" ] } }
+  ]
+}
 ```
 
 | Option | Value |
@@ -37,21 +42,28 @@ It exits `2` with the reason, and writes nothing, when the request is wrong, whe
 
 Holds the brand book's text to the brand's copy rules: the terms it avoids, the case of its headings and the length of its sentences. It is a `check` plugin. It reads `brand.json` (the pages' Markdown and the assets' sidecar text), writes nothing and needs only Node.
 
-```ts
-plugins: [
-  {
-    name: 'blazon.copy',
-    options: {
-      avoid: [{ terms: ['powerful', 'seamless', 'robust', 'effortless'], say: 'a number, or nothing' }],
-      headings: 'sentence',
-      sentences: { maxWords: 25 },
-      skip: ['11-voice.md'],
-    },
-  },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.copy",
+      "options": {
+        "avoid": [
+          {
+            "terms": [ "powerful", "seamless", "robust", "effortless" ],
+            "say": "a number, or nothing"
+          }
+        ],
+        "headings": "sentence",
+        "sentences": { "maxWords": 25 },
+        "skip": [ "11-voice.md" ]
+      }
+    }
+  ]
+}
 ```
 
-With no options it checks nothing. The starter's `blazon.config.ts` names it with blazon's own rules, as a model to edit. It reads a page's title and description and its Markdown outside code spans, code fences, HTML comments (the directives) and link targets, and an asset's `title`, `description`, `traits`, `do` and `dont`. A term inside code is not flagged, so a counter-example written as code is safe. A page that quotes counter-examples as plain text, such as a voice page with a "Not" column, goes in `skip`.
+With no options it checks nothing. The starter's `blazon.json` names it with blazon's own rules, as a model to edit. It reads a page's title and description and its Markdown outside code spans, code fences, HTML comments (the directives) and link targets, and an asset's `title`, `description`, `traits`, `do` and `dont`. A term inside code is not flagged, so a counter-example written as code is safe. A page that quotes counter-examples as plain text, such as a voice page with a "Not" column, goes in `skip`.
 
 | Option | Default | Does |
 |---|---|---|
@@ -76,8 +88,15 @@ The checks are heuristics, and every finding but a wrong option is a warning. A 
 
 `blazon.favicons` draws a brand's favicon and app-icon set from its symbol, three views of it for the brand book, and the Android adaptive layers, and judges the symbol as an icon. It has both roles, so `blazon check` and `blazon build` run it. Drawing needs Google Chrome on the computer (or `BLAZON_CHROME`, the path of a Chrome or Chromium program), as `blazon.print-book` does. The browser runs offline on a page made in memory: the logo file is never sent anywhere, and the plugin makes no network call.
 
-```ts
-plugins: [{ name: 'blazon.favicons', options: { symbol: 'logos/mark', ground: 'brand.primary', ink: '#FFFFFF' } }],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.favicons",
+      "options": { "symbol": "logos/mark", "ground": "brand.primary", "ink": "#FFFFFF" }
+    }
+  ]
+}
 ```
 
 The symbol is an SVG asset of the brand. It is the one SVG asset whose [sidecar](06-assets-and-icons.md#sidecars) says `"lockup": "mark"`, or the asset `symbol` names. It is drawn in one color: the plugin takes the fills off its shapes, so give it a single-color drawing of paths and shapes. Strokes are not recolored: a shape with a `stroke` keeps that color, so draw the symbol with fills. A file with a script, a style, an embedded image, a link or an event handler is refused, not rendered.
@@ -124,8 +143,10 @@ The book then asks for `favicons/favicons.json` when it opens. When the file is 
 
 The print book (`blazon.print-book`) gets a Favicons chapter the same way: after the guideline pages in the full book, and as `favicons` in `pages`. It is not in `essentials` or `reference`. The chapter is in the printed book only if the copy is in the site when `blazon.print-book` runs, so **list `blazon.favicons` before `blazon.print-book`**: plugins run in the order of the list.
 
-```ts
-plugins: [{ name: 'blazon.favicons' }, { name: 'blazon.print-book' }],
+```json
+{
+  "plugins": [ { "name": "blazon.favicons" }, { "name": "blazon.print-book" } ]
+}
 ```
 
 In the wrong order the book prints without the chapter, and `blazon.print-book` can say so only from the second build on, when the folder of the earlier build is there: the warning `blazon.print-book/favicons-not-in-site`. It also shows when `blazon.favicons` was removed from the list and its folder is left in `dist/tokens`; delete the folder then.
@@ -147,8 +168,10 @@ The same brand gives the same bytes. **Supplied files.** When the project alread
 
 Measures the logos in the brand and draws the construction figure that brand guidelines show (Auth0's "Logotype construction", Slack's 19×19 octothorpe grid). It reads each logo's file from the built site. It needs Node for SVG, and a Chrome for PNG and WebP (`BLAZON_CHROME`, or the Google Chrome on the computer). With no Chrome the SVGs are still measured and each raster gets a `raster-skipped` warning.
 
-```ts
-plugins: [{ name: 'blazon.logo-geometry', options: { require: ['mirror-x'], grid: 4 } }],
+```json
+{
+  "plugins": [ { "name": "blazon.logo-geometry", "options": { "require": [ "mirror-x" ], "grid": 4 } } ]
+}
 ```
 
 `blazon build` writes into `dist/tokens/blazon.logo-geometry/`:
@@ -197,8 +220,10 @@ What it does not read is named, not guessed. Live `<text>` is refused because it
 
 Draws the files a brand's logo rules describe, from the `partnership`, `initiative` and `clearSpace` rules in the logo sidecars ([chapter 6](06-assets-and-icons.md#sidecars)). It needs Node for SVG, and a Chrome for PNG (`BLAZON_CHROME`, or the Google Chrome on the computer).
 
-```ts
-plugins: [{ name: 'blazon.logo-kit' }],
+```json
+{
+  "plugins": [ { "name": "blazon.logo-kit" } ]
+}
 ```
 
 `blazon build` writes into `dist/tokens/blazon.logo-kit/`:
@@ -234,8 +259,10 @@ It does not draw a stacked lockup of the logo itself or the URL beside the logo:
 
 Writes an editable PowerPoint template from the brand: a theme with the brand's colors and fonts, a slide master, and five layouts with real placeholders and the logo placed as its sidecar says. It needs only Node, no browser.
 
-```ts
-plugins: [{ name: 'blazon.office-template' }],
+```json
+{
+  "plugins": [ { "name": "blazon.office-template" } ]
+}
 ```
 
 `blazon build` writes into `dist/tokens/blazon.office-template/`:
@@ -292,8 +319,10 @@ It writes PowerPoint files only, and checks the result in Keynote, not in PowerP
 
 Writes the brand's color and dimension tokens as native files for apps: Android resources, an iOS Swift file with an asset catalog, and Jetpack Compose Kotlin. It reads `brand.json` and nothing else, and needs only Node, no browser.
 
-```ts
-plugins: [{ name: 'blazon.platform-tokens' }],
+```json
+{
+  "plugins": [ { "name": "blazon.platform-tokens" } ]
+}
 ```
 
 `blazon build` writes into `dist/tokens/blazon.platform-tokens/` only the files of the platforms you ask for (all three by default):
@@ -340,8 +369,10 @@ The Swift file type-checks for macOS 10.15 and iOS 13 and the asset catalog comp
 
 Packs what a person outside the brand (a journalist, a partner, an agency) needs into one folder and one zip. It needs only Node; the one-page PDF needs a Chrome as well (`BLAZON_CHROME`, or the Google Chrome on the computer), and without one the rest is still written.
 
-```ts
-plugins: [{ name: 'blazon.press-kit' }],
+```json
+{
+  "plugins": [ { "name": "blazon.press-kit" } ]
+}
 ```
 
 `blazon build` writes into `dist/tokens/blazon.press-kit/`:
@@ -350,9 +381,9 @@ plugins: [{ name: 'blazon.press-kit' }],
 - `logos/`: the brand's logos, copied as they are and never drawn again, in `on-light-backgrounds/` and `on-dark-backgrounds/` by what each sidecar's `background` says (else by the pair `logo.onLight` and `logo.onDark` name, else in `background-not-stated/`), and `logos.txt`, which gives each file's description, lockup, clear space, smallest and largest size and main color where its sidecar states them.
 - `colors/`: `colors.json`, `colors.css` (custom properties) and `colors.txt` (name, hex and RGB), for the brand's own colors; a token that is another name for a color is listed under that color. A CMYK, Pantone or RAL value is written only for a token whose `print` states it. A value that is not a hex or `rgb()` color (an `oklch()`, say) is given as written, with no hex or RGB.
 - `fonts.txt`: each family the font roles, the font tokens and the font stylesheets name, what it is used for and where it comes from: its own Google Fonts address (`https://fonts.googleapis.com/css2?family=Big+Shoulders+Display`, with no weights, which the brand data does not give per family) or a font file the brand embeds, which is not copied into the kit. The source and license are what the font token's `font` extension states (`source`, `license`, `licenseUrl`; see [Extensions](02-tokens.md)): a stated source wins over the one found in a stylesheet, a license address alone is written as `License: see <address>`, and a `license` text in any other extension still counts. What is not stated is `not stated`, for a font whose stylesheet is not Google's too, and blazon does not guess it.
-- `about.txt`: the brand's name and description, to quote. Without a description it says `No description is set in blazon.config.ts.` below the name, and a finding says so. A brand with no name has no file.
+- `about.txt`: the brand's name and description, to quote. Without a description it says `No description is set in blazon.json.` below the name, and a finding says so. A brand with no name has no file.
 - `README.txt`: what is in the kit, in plain words, with no date.
-- `press-kit.pdf` (`<name>.pdf`): one A4 page of the name, the description, up to ten colors as swatches and a logo (the one for light backgrounds, else the first). The page uses the fonts the brand embeds (a font file listed in `fonts` of `blazon.config.ts`, `{ family: 'Kinto', file: 'fonts/Kinto.woff2' }`; the file is not copied into the kit, and the brand's listing it is the statement that its license allows embedding) and otherwise a font Chrome has, else its sans serif; it does not fetch Google Fonts, and a `pdf-font-fallback` finding names the display and body families it could not set.
+- `press-kit.pdf` (`<name>.pdf`): one A4 page of the name, the description, up to ten colors as swatches and a logo (the one for light backgrounds, else the first). The page uses the fonts the brand embeds (a font file listed in `fonts` of `blazon.json`, `{ family: 'Kinto', file: 'fonts/Kinto.woff2' }`; the file is not copied into the kit, and the brand's listing it is the statement that its license allows embedding) and otherwise a font Chrome has, else its sans serif; it does not fetch Google Fonts, and a `pdf-font-fallback` finding names the display and body families it could not set.
 
 A logo is left out, and a finding says which and why, when its sidecar marks it `needs-review`, or when it is generated and has no `review` yet: an unchecked file must not reach an outsider. A color token marked `needs-review` is left out the same way, unless the `unreviewed` option is `true`: the color is then in the kit, labelled `(unreviewed)` in `colors.txt` and with `"review": "needs-review"` in `colors.json`. The same brand gives the same bytes, the PDF included: its dates and producer are fixed.
 
@@ -388,8 +419,10 @@ It states no color's CMYK, Pantone or RAL value that a token does not, no font l
 
 `blazon.print-book` prints the built brand book to a PDF of 16:9 slides (1280 by 720 px) and to a PowerPoint file of the same slides. In the PowerPoint each slide is a picture, so its text is not editable; for an editable file see [blazon.office-template](#blazonoffice-template). It fills the `build` role, so `blazon build` runs it once the site is written. It needs Node and a Chrome (`BLAZON_CHROME`, or the Google Chrome on the computer), and never downloads a browser. The plugin waits up to 30 seconds for the page to say it is ready; `BLAZON_PRINT_SECONDS`, a whole number from 1 to 30, shortens that wait, and any other value is ignored.
 
-```ts
-plugins: [{ name: 'blazon.print-book', options: { preset: 'essentials' } }],
+```json
+{
+  "plugins": [ { "name": "blazon.print-book", "options": { "preset": "essentials" } } ]
+}
 ```
 
 | `options` | Prints | Files in `out_dir` |
@@ -410,24 +443,56 @@ Without them the cover and the footers show the brand's title and description, a
 
 Every option set writes the same file names, so to print more than one book list the plugin once for each, with an `as` ([Use one plugin more than once](12-plugins.md#use-one-plugin-more-than-once)). Each instance writes into its own folder, `dist/tokens/<as>/`, so the four books below are four `brand-book-pages.pdf` that do not overwrite one another, and you copy each out of its folder:
 
-```ts
-plugins: [
-  { name: 'blazon.print-book', as: 'blazon.print-logo', options: { pages: ['doc/logo'] } },
-  { name: 'blazon.print-book', as: 'blazon.print-colors', options: { pages: ['tokens/colors'] } },
-  { name: 'blazon.print-book', as: 'blazon.print-both', options: { pages: ['doc/logo', 'tokens/colors'] } },
-  { name: 'blazon.print-book', as: 'blazon.print-all' },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.print-book",
+      "as": "blazon.print-logo",
+      "options": { "pages": [ "doc/logo" ] }
+    },
+    {
+      "name": "blazon.print-book",
+      "as": "blazon.print-colors",
+      "options": { "pages": [ "tokens/colors" ] }
+    },
+    {
+      "name": "blazon.print-book",
+      "as": "blazon.print-both",
+      "options": { "pages": [ "doc/logo", "tokens/colors" ] }
+    },
+    { "name": "blazon.print-book", "as": "blazon.print-all" }
+  ]
+}
 ```
 
 Each of the four also runs Chrome once, so the build takes as long as four print runs.
 
 Two books of one brand, told apart by `title` and `subtitle`:
 
-```ts
-plugins: [
-  { name: 'blazon.print-book', as: 'blazon.print-logo', options: { pages: ['doc/logo'], title: 'Acme Logo Guide', subtitle: 'Marks, clear space and minimum sizes' } },
-  { name: 'blazon.print-book', as: 'blazon.print-colors', options: { pages: ['tokens/colors'], title: 'Acme Colour Guide', subtitle: 'The palette and its print values' } },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.print-book",
+      "as": "blazon.print-logo",
+      "options": {
+        "pages": [ "doc/logo" ],
+        "title": "Acme Logo Guide",
+        "subtitle": "Marks, clear space and minimum sizes"
+      }
+    },
+    {
+      "name": "blazon.print-book",
+      "as": "blazon.print-colors",
+      "options": {
+        "pages": [ "tokens/colors" ],
+        "title": "Acme Colour Guide",
+        "subtitle": "The palette and its print values"
+      }
+    }
+  ]
+}
 ```
 
 A heading is never the last thing on a slide, and a paragraph that introduces a figure or a table goes with it. A table, a list or a grid of figures that is taller than a slide is split by its rows over as many slides as it takes, and each slide draws it at its own size. Text is set at slide size: a slide prints at 0.75 pt per px, so body text is 20 px, which is 15 pt, a table 16 px (12 pt), and the small type of captions and labels 12 px or more (9 pt). A slide the packer fills is never drawn at less than 0.9 of its size, so body text stays at 13.5 pt or more and a caption at 8 pt or more on paper. A table narrower than half a slide (two or three short columns, no merged cells, no footer or caption) is set, when it has to be split, in two groups of rows side by side with the header over each, read down the left group and then the right, and its slides are cut in even pieces; a grid of wide marks, which each take a whole row, is laid out in as many columns as fit when it has to be split, so that a slide holds several rows of marks and not two. A grid of tiles that are all the same height (colour swatches, say) is cut with the slack that guards a table's rows given back, and without counting the gap under a slide's last row, so a slide holds every whole row it can: a row that fits is not left for the next slide, at the cost of drawing the slide a few per cent smaller. A table or a grid that is not split is drawn as it was. The heading and the paragraph above a table or a grid stay with its first slide. A later slide of the same table or grid is a continued slide: it starts a slide of its own (a short last piece is not joined to the slide before it), it has no heading of its own but a label at the top, the nearest heading above the block and "(continued)", such as "Rates (continued)", in the book's muted text colour at 14 px on one line (a heading that is too long is cut with an ellipsis, the "(continued)" never), the label's height is taken off the room for rows, the first slide has no label, a table repeats its header row below the label, and a note under the table or grid is on the last one. A note or a small table with no heading of its own, a third of a slide or less, is never left alone on a slide: it joins the slide before it when the two fit (drawn at 0.9 at the smallest), else the slide after it, and a section still starts a slide of its own. One block that has no rows to cut at, such as a single tall figure or a long code block, is drawn smaller to fit, down to 0.5 of its size, so that none of it is lost (a wide picture shrinks with the text: its width is held while the slide is drawn smaller). Only a block that is taller than a slide even at 0.5 is cut off at the foot, and then the warning `blazon.print-book/slide-clipped` names the pages of the PDF that are cut off: shorten the block or split it in the page's Markdown. The cover is page 1 and the contents follow it, three columns of up to 10 lines. An entry is one line, and a title that does not fit a column of about 320 px wraps to a second line (or a third) and is never cut: the entry counts as the lines it takes, with its page number on the first line at the right. A book with more entries than the columns hold, more than 30 one-line chapters or fewer when some titles wrap, has more than one contents slide, each with an even share of the lines, and the first chapter starts after the last of them, so a page number in the contents, and a link to a page, is the page of the PDF. A code block has no Copy button in the book. A logo sample that states a minimum size, such as `Minimum width 150px`, is drawn at that many px of the 1280 px slide even when the slide is drawn smaller to fit; a slide prints at 0.75 pt per px, so the sample measures that many px at 96 dpi only when the PDF is printed at 100%. A PDF with a different number of pages than planned is a warning, `blazon.print-book/page-count`, and both files are still written. When a `blazon.favicons` folder with a `favicons.json` sits beside this plugin's but the site has no `favicons/` copy, the book has no Favicons chapter and the warning is `blazon.print-book/favicons-not-in-site`: list `blazon.favicons` before `blazon.print-book` in `plugins`, or delete the leftover folder. The plugin exits `2` with the reason, and writes nothing, when its options are wrong, when the site has no `index.html`, when it finds no browser, and when the page does not say it is ready in time. When `blazon.favicons` has drawn its set, the book gets a Favicons chapter: see [blazon.favicons](#blazonfavicons) for the order to list them in.
@@ -436,18 +501,33 @@ A heading is never the last thing on a slide, and a paragraph that introduces a 
 
 `blazon.social-cards` draws marketing images, one PNG for each card you list, from what the brand already has: its tokens, its logo and a background picture. It fills the `build` role, so `blazon build` writes the files to `<tokensOutDir>/blazon.social-cards/`. It needs Node and a Chrome, like `blazon.print-book` (`BLAZON_CHROME` names one; it never downloads a browser). It composes images you already have. It does not generate pictures.
 
-```ts
-plugins: [
-  {
-    name: 'blazon.social-cards',
-    options: {
-      cards: [
-        { id: 'launch', format: 'horizontal', background: 'backgrounds/aurora', headline: 'Say it in one line.', subline: 'A brand book that checks itself.' },
-        { id: 'post', format: 'square', background: 'backgrounds/aurora', headline: 'One signal. Every surface.', align: 'center', logo: 'dark' },
-      ],
-    },
-  },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.social-cards",
+      "options": {
+        "cards": [
+          {
+            "id": "launch",
+            "format": "horizontal",
+            "background": "backgrounds/aurora",
+            "headline": "Say it in one line.",
+            "subline": "A brand book that checks itself."
+          },
+          {
+            "id": "post",
+            "format": "square",
+            "background": "backgrounds/aurora",
+            "headline": "One signal. Every surface.",
+            "align": "center",
+            "logo": "dark"
+          }
+        ]
+      }
+    }
+  ]
+}
 ```
 
 `examples/blazon` does exactly this: its two cards are `launch.png` (1200 by 630) and `post.png` (1080 by 1080), drawn on `assets/backgrounds/aurora.svg`, a background made for the example.

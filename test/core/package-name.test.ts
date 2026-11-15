@@ -5,8 +5,7 @@ import { PACKAGE_NAME } from '../../src/core/package-name.js';
 import { packageRoot } from '../../src/core/package-root.js';
 import { ROOT_DIR } from '../plugins/support/spec.js';
 
-// The name blazon is published under is used in three places: package.json, the module a config imports (`import { defineConfig } from
-// '@iksnerd/blazon'`), and the search for blazon's own folder. One constant names it in the code; this test keeps it equal to the file.
+// The name blazon is published under is used in two places: package.json and the search for blazon's own folder. One constant names it in the code; this test keeps it equal to the file.
 
 describe('the package name', () => {
   it('is the name in package.json', () => {

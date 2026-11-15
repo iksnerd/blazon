@@ -383,7 +383,7 @@ describe('the pre-commit hook', () => {
       ['a file in src/', { 'src/a.ts': 'export const a: number = 5;\n' }, ['related', 'docs']],
       ['a file in test/', { 'test/x.test.ts': '// a test\n' }, ['related']],
       ['a support file in test/', { 'test/support/x.ts': '// helper\n' }, ['related']],
-      ['a file in examples/', { 'examples/x/blazon.config.ts': '// config\n' }, []],
+      ['a file in examples/', { 'examples/x/blazon.json': '// config\n' }, []],
       ['a golden under test/, which a test reads by path and imports never reach', { 'test/examples/golden/x/check.json': '{}\n' }, []],
       ['a fixture under test/support/', { 'test/support/fixture.json': '{}\n' }, []],
       ['package.json', { 'package.json': BASE['package.json']!.replace('throwaway', 'throwaway2') }, []],
@@ -400,7 +400,7 @@ describe('the pre-commit hook', () => {
       ['docs and a Python script', { 'README.md': '# again\n', 'scripts/y.py': 'print(2)\n' }, ['deck', 'docs']],
       ['source and docs', { 'src/a.ts': 'export const a: number = 6;\n', 'README.md': '# again\n' }, ['related', 'docs']],
       ['a test and a Python script', { 'test/x.test.ts': '// t\n', 'scripts/y.py': 'print(2)\n' }, ['related', 'deck']],
-      ['source and an example', { 'src/a.ts': 'export const a: number = 6;\n', 'examples/x/blazon.config.ts': '// c\n' }, ['related', 'docs']],
+      ['source and an example', { 'src/a.ts': 'export const a: number = 6;\n', 'examples/x/blazon.json': '// c\n' }, ['related', 'docs']],
       ['the ESLint config, which no test reads', { 'eslint.config.js': '// cfg\n' }, []],
       ['the Prettier ignore file', { '.prettierignore': 'dist/\n' }, []],
     ])(
@@ -417,7 +417,7 @@ describe('the pre-commit hook', () => {
 
     it('says the full suite waits for the push, for a path that asks for it', () => {
       const dir = repo();
-      stage(dir, { 'examples/x/blazon.config.ts': '// config\n' });
+      stage(dir, { 'examples/x/blazon.json': '// config\n' });
       const result = commit(dir);
       expect(result.status, result.out).toBe(0);
       expect(result.out).toContain('the full suite runs at push, not at commit');
@@ -650,7 +650,7 @@ describe('the pre-commit hook', () => {
     it('takes other arguments for the suites from BLAZON_HOOK_TEST_ARGS, and none when it is empty', () => {
       const checker = "process.exit(process.argv.includes('--maxWorkers=2') && !process.argv.includes('--retry=1') ? 0 : 1)";
       const dir = repo({ 'package.json': noisy(`node -e "${checker}"`) });
-      stage(dir, { 'examples/x/blazon.config.ts': '// 13\n' });
+      stage(dir, { 'examples/x/blazon.json': '// 13\n' });
       const result = commit(dir, { BLAZON_HOOK_TEST_ARGS: '--maxWorkers=2' });
       expect(result.status, result.out).toBe(0);
     }, 120_000);

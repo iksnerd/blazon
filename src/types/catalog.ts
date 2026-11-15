@@ -1,6 +1,6 @@
 import type { Asset, AssetFormat } from './assets.js';
 
-/** An icon package to preview, from `iconSets` in blazon.config.ts (RFC 0001 §9). */
+/** An icon package to preview, from `iconSets` in blazon.json (RFC 0001 §9). */
 export interface IconSetConfig {
   /** Name the directive and the URLs use: lowercase letters, digits and hyphens */
   name: string;
@@ -38,7 +38,7 @@ export interface AssetRules {
   aspectRatios?: string[];
 }
 
-/** One entry of the `assets` block in blazon.config.ts: settings for an asset category. */
+/** One entry of the `assets` block in blazon.json: settings for an asset category. */
 export interface AssetCategoryConfig {
   /** Sidebar and page title; the humanized folder name when absent */
   label?: string;

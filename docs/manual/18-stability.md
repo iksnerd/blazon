@@ -14,13 +14,12 @@ A stable surface changes only by the rule in the next section. An unstable one c
 | `brand.json` | Stable | Format `blazon-brand`, version 1: its keys, and what each holds | [11](11-brand-json.md) |
 | The plugin protocol | Stable | Request version 1, manifest version 2, the `check` and `build` roles, the answer and the exit codes | [13](13-writing-a-plugin.md) |
 | The command line | Stable | The commands and their flags, the exit statuses, and the `--json` documents | [1](01-getting-started.md), [3](03-checks.md) |
-| `blazon.config.ts` | Stable | The keys, and the keys inside them (the `assets` block, a plugin entry, the e-mail signature) | [7](07-theme-and-config.md) |
+| `blazon.json` | Stable | The file name and its plain JSON form, the keys, and the keys inside them (the `assets` block, a plugin entry, the e-mail signature) | [7](07-theme-and-config.md) |
 | Finding codes | Stable | The code of every finding blazon's own checks raise, because a tool that reads `--json` keys on it | [3](03-checks.md) |
 | Output files | Stable | The names of the files `blazon tokens` writes | [8](08-using-the-outputs.md) |
 | Shipped plugin names | Stable | The names blazon ships, so a config that names one keeps working | [14](14-shipped-plugins.md) |
 | The brand book | Unstable | Its look, layout and markup | [5](05-pages.md) |
 | The programmatic API | Unstable | The functions the package exports for scripts | [README](../../README.md) |
-| The TypeScript config types | Unstable | `defineConfig` and its types. The keys it accepts are stable | [7](07-theme-and-config.md) |
 
 A shipped plugin's options and findings follow the same rule, but the test below does not record them yet.
 
@@ -34,7 +33,7 @@ A test in the repository (`test/surface/`) records the stable surfaces as one li
 - The one exception is the rename from folio to blazon (the command, the package, the config and lock files, the `.blazon` folder, the `BLAZON_` environment variables and the `dev.blazon` extension key). It was made before the first release, with no alias, because nothing had been published under the old name and nobody depended on it. The CHANGELOG lists it under "Breaking".
 - Adding a key, a command, a field or a finding code is not a breaking change. A tool that reads `--json` treats a code it does not know as a finding, not as an error.
 
-These names are kept: the package `@iksnerd/blazon` and the `blazon` command, the `dev.blazon` extension key, and the files `blazon.config.ts`, `blazon.lock`, `blazon.plugins.lock` and `blazon.resolver.json`.
+These names are kept: the package `@iksnerd/blazon` and the `blazon` command, the `dev.blazon` extension key, and the files `blazon.json`, `blazon.lock`, `blazon.plugins.lock` and `blazon.resolver.json`.
 
 ## The deprecation window
 
@@ -52,7 +51,7 @@ While blazon is 0.x, the middle number carries the weight that the first number 
 
 A fix can still change a brand's output: a check that was wrong now reports, or stops reporting, a finding. Such a fix is listed under "Fixed", and moving a pin with `scripts/pin-compare.ts` shows it.
 
-Unstable surfaces (the brand book, the programmatic API, the TypeScript config types) can change in any release, and a change to one is not listed as "Breaking".
+Unstable surfaces (the brand book and the programmatic API) can change in any release, and a change to one is not listed as "Breaking".
 
 ## Reading the CHANGELOG
 

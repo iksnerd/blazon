@@ -24,13 +24,12 @@ To write a plugin, see [Writing a plugin](13-writing-a-plugin.md). The plugins t
 
 ## Allow a plugin
 
-Only you decide which plugins may run. Name them in `blazon.config.ts`:
+Only you decide which plugins may run. Name them in `blazon.json`:
 
-```ts
-plugins: [
-  { name: 'acme.house-style', options: { headingFont: 'Inter' } },
-  { name: 'acme.deck' },
-],
+```json
+{
+  "plugins": [ { "name": "acme.house-style", "options": { "headingFont": "Inter" } }, { "name": "acme.deck" } ]
+}
 ```
 
 A name is dotted lowercase words, such as `acme.house-style`, and its program is called `blazon-<name>`: `blazon-acme.house-style`. The dot keeps a plugin apart from anything blazon has built in. `options` is a JSON object that blazon passes the plugin in every request. The config holds no path and no command, and a field that names one (`command`, `path`, `digest`) is an error: a copied config must not be able to run a program you did not put there.
@@ -41,11 +40,13 @@ Blazon runs plugins in the order of the list, one at a time.
 
 List a plugin again, with an `as`, to use it more than once. Each entry is an **instance** with an id: `as` when it is given, the plugin's name when it is not, so a config without `as` works as it always did.
 
-```ts
-plugins: [
-  { name: 'acme.report', as: 'acme.report-short', options: { pages: ['intro'] } },
-  { name: 'acme.report', as: 'acme.report-full' },
-],
+```json
+{
+  "plugins": [
+    { "name": "acme.report", "as": "acme.report-short", "options": { "pages": [ "intro" ] } },
+    { "name": "acme.report", "as": "acme.report-full" }
+  ]
+}
 ```
 
 - **The id.** `as` has the form of a name (dotted lowercase words, at least one dot) and is at most 64 characters. An entry with no `as` has its name as its id, held to the same 64 characters. Ids are unique across the list, and an id may not be the name of a different plugin in it. A mistake is `config-invalid` on `plugins[n].as` or `plugins[n].name`. A program named with `--plugin` takes its plugin's name as its id unless the config lists that plugin, and a `--plugin` program whose id an entry already has is refused with `plugin-failed` and not run.
@@ -112,8 +113,10 @@ Blazon warns, `acme.house-style runs unpinned because it was named on the comman
 
 Blazon's package carries ten plugins of its own: `blazon.brand-deck`, `blazon.copy`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.press-kit`, `blazon.print-book` and `blazon.social-cards`. The table below says where each is described. To use one, allow it by name and do nothing else:
 
-```ts
-plugins: [{ name: 'blazon.print-book' }],
+```json
+{
+  "plugins": [ { "name": "blazon.print-book" } ]
+}
 ```
 
 There is nothing to pin and no lock entry to write: the lock is in the package. It is the `plugins/shipped.lock` beside the plugin folders in `plugins/` at the package root. Each folder holds the whole program of its plugin, `bin/blazon-<name>.🔌`, so the digest in the lock covers the code that runs. Two packages are the exception: a plugin that draws with Chrome loads `playwright-core`, and `pdf-lib` is loaded by those that write PDFs, from blazon's `node_modules` when it runs, and the lock does not cover them. The programs and the lock are made by `npm run build:plugins` (`npm run build` and `npm pack` run it), so a package always carries a lock that agrees with its programs. A shipped plugin counts as pinned, so it may be a `check` plugin.
@@ -162,11 +165,11 @@ The shipped plugins, and where each is described:
 
 ## Plugins in blazon dev
 
-`blazon dev` runs the `check` plugins when it starts and after every change to a token, a page, an asset, `blazon.config.ts`, `blazon.plugins.lock` or `blazon.lock`. Blazon sends the browser its own findings a moment after the change, as it always did: it waits 75 milliseconds for the file events of a burst, such as a `git checkout` of many files, to end, and a burst is one change and one update. The plugins run after that, one call at a time, and when they finish the page gets a second update with their findings added after blazon's. So for about a second after a save, a plugin's findings are not on the Review page, and they come back when it has finished. A page you open or reload gets the findings of the last finished run.
+`blazon dev` runs the `check` plugins when it starts and after every change to a token, a page, an asset, `blazon.json`, `blazon.plugins.lock` or `blazon.lock`. Blazon sends the browser its own findings a moment after the change, as it always did: it waits 75 milliseconds for the file events of a burst, such as a `git checkout` of many files, to end, and a burst is one change and one update. The plugins run after that, one call at a time, and when they finish the page gets a second update with their findings added after blazon's. So for about a second after a save, a plugin's findings are not on the Review page, and they come back when it has finished. A page you open or reload gets the findings of the last finished run.
 
 - **A save while a plugin runs.** The running call is not stopped, but its answer is dropped, because it describes files that have changed. Only the newest change runs next, so a burst of saves costs one more run.
 - **A plugin that breaks rests for 30 seconds.** A crash, a timeout, an answer that breaks the rules or too much output is a break. Blazon does not start the program again until 30 seconds after its latest break, and shows `stopped after a break, and runs again in N seconds` as a `plugin-failed` finding. A plugin that exits `2` because it cannot judge is not rested here and runs again at the next change. (`blazon check`, `tokens` and `build` stop a plugin for the rest of the run after three breaks in a row instead, and exit `2` counts as one of them. The next run starts clean.)
-- **No restart needed.** Blazon reads `blazon.plugins.lock` and `blazon.config.ts` again at every run, so pinning a plugin or changing its `options` takes effect at the next change. A half-written config is ignored, as for the rest of the dev server.
+- **No restart needed.** Blazon reads `blazon.plugins.lock` and `blazon.json` again at every run, so pinning a plugin or changing its `options` takes effect at the next change. A half-written config is ignored, as for the rest of the dev server.
 - **The terminal.** One line when the result changes, such as `[blazon] plugins: 2 errors, 1 warning`, and the reason of each `plugin-failed` finding, once while it reads the same.
 - **`/brand.json` stays blazon's own.** The dev server compiles `/brand.json` again on every request and does not run plugins for it, so it has no plugin findings. A plugin is given the brand without them in any case.
 - A project that allows no plugin starts no process and sends one update for a change or a burst of changes.

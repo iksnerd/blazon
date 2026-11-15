@@ -14,12 +14,16 @@ cp -R examples/plugins/blazon.cue-rules plugins/          # the plugin, into you
 blazon plugin pin plugins/blazon.cue-rules --name blazon.cue-rules
 ```
 
-A check plugin gets no file paths, so the rules reach it as text. Read the file in `blazon.config.ts`:
+A check plugin gets no file paths, so the rules reach it as text, in `options.rules` of the plugin's entry in `blazon.json`. JSON has no multi-line strings, so write the rules as one string with `\n` for each line break. `jq` does it for you:
 
-```ts
-import { readFileSync } from 'node:fs';
-// ...
-plugins: [{ name: 'blazon.cue-rules', options: { rules: readFileSync('rules.cue', 'utf-8') } }],
+```bash
+jq -Rs '{rules: .}' rules.cue
+```
+
+```json
+{
+  "plugins": [ { "name": "blazon.cue-rules", "options": { "rules": "out: [\n  ...\n]\n" } } ]
+}
 ```
 
 Blazon starts a plugin with an empty environment, so say where `cue` is: set `BLAZON_CUE` to its path in the shell that runs blazon (`export BLAZON_CUE=$(which cue)`). Without it the plugin looks for `cue` on the `PATH` blazon gives a pinned script, which is `/usr/local/bin`, `/usr/bin` and `/bin`.

@@ -27,7 +27,7 @@ IBM Plex Mono at 14/20px, as typed and with no tracking (`type.code`), for comma
 
 Function names in code are set in the semibold weight (`font.weight.semibold`, 600) and take the `syntax` colors (see the [color page](03-color.md)).
 
-This starter loads Plex Mono from two files in the folder, `fonts/IBMPlexMono-Regular-latin.woff2` and `fonts/IBMPlexMono-SemiBold-latin.woff2`, to show how a brand carries its own font. They are the Latin subsets of IBM Plex Mono Regular and SemiBold from the `@fontsource/ibm-plex-mono` package, under the SIL Open Font License 1.1 (`fonts/OFL.txt`). A brand replaces them with its own licensed files and lists them in `fonts` in `blazon.config.ts`.
+This starter loads Plex Mono from two files in the folder, `fonts/IBMPlexMono-Regular-latin.woff2` and `fonts/IBMPlexMono-SemiBold-latin.woff2`, to show how a brand carries its own font. They are the Latin subsets of IBM Plex Mono Regular and SemiBold from the `@fontsource/ibm-plex-mono` package, under the SIL Open Font License 1.1 (`fonts/OFL.txt`). A brand replaces them with its own licensed files and lists them in `fonts` in `blazon.json`.
 
 ## Scale
 

@@ -18,7 +18,7 @@ const blazon = (...args: string[]) =>
 
 async function projectWithPlugin(name: string): Promise<string> {
   const root = await starterProject();
-  fs.writeFileSync(path.join(root, 'blazon.config.ts'), `export default { title: 'T', plugins: [{ name: '${name}' }] };\n`);
+  fs.writeFileSync(path.join(root, 'blazon.json'), `${JSON.stringify({ title: 'T', plugins: [{ name }] })}\n`);
   return root;
 }
 
@@ -41,7 +41,7 @@ describe('a plugin name that matches nothing', () => {
 describe('plugins: ["nope"] in the config', () => {
   it('says each entry is an object, lists the shipped plugins, and offers the near one', async () => {
     const root = await starterProject();
-    fs.writeFileSync(path.join(root, 'blazon.config.ts'), "export default { title: 'T', plugins: ['blazon.favicns'] };\n");
+    fs.writeFileSync(path.join(root, 'blazon.json'), '{"title": "T", "plugins": ["blazon.favicns"]}\n');
     const ran = blazon('check', root, '--json');
     expect(ran.status, ran.stdout + ran.stderr).toBe(1);
     const message = JSON.parse(ran.stdout).error.message as string;

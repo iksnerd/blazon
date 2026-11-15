@@ -73,7 +73,7 @@ describe('blazon init --json', () => {
     expect(result.status).toBe(0);
     const out = JSON.parse(result.stdout);
     expect(out).toMatchObject({ command: 'init', passed: true, dir });
-    expect(out.created).toEqual(expect.arrayContaining(['blazon.config.ts', 'tokens/colors.json']));
+    expect(out.created).toEqual(expect.arrayContaining(['blazon.json', 'tokens/colors.json']));
     expect(out.kept).toEqual([]);
     expect(result.stderr).toContain('Initializing Blazon Brand Book');
   }, 60_000);
@@ -83,7 +83,7 @@ describe('blazon init --json', () => {
     blazon('init', dir, '--yes');
     const again = JSON.parse(blazon('init', dir, '--json').stdout);
     expect(again.created).toEqual([]);
-    expect(again.kept).toContain('blazon.config.ts');
+    expect(again.kept).toContain('blazon.json');
   }, 90_000);
 
   it('does not start the dev server: --dev with --json is refused', () => {

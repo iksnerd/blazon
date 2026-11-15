@@ -163,8 +163,8 @@ function problems(directive: PlacedDirective, context: DirectiveContext): string
   const found: string[] = [];
   if (spec.bare && args.length > 0) found.push('takes no arguments');
   if (!spec.bare && args.length === 0) found.push('needs at least one argument');
-  if (spec.needsLogo && !context.hasLogo) found.push('needs a logo (blazon.config.ts → logo)');
-  if (spec.needsEmailSignature && !context.hasEmailSignature) found.push('needs an email signature (blazon.config.ts → emailSignature)');
+  if (spec.needsLogo && !context.hasLogo) found.push('needs a logo (blazon.json → logo)');
+  if (spec.needsEmailSignature && !context.hasEmailSignature) found.push('needs an email signature (blazon.json → emailSignature)');
 
   let rest = args;
   if (spec.folder && args[0]) {
@@ -210,7 +210,7 @@ function problems(directive: PlacedDirective, context: DirectiveContext): string
   if (spec.iconSet && args[0]) {
     const sets = context.iconSets ?? [];
     const set = sets.find((candidate) => candidate.name === args[0]);
-    if (!set) found.push(`no icon set at ${args[0]}; known: ${sets.map((candidate) => candidate.name).join(', ') || 'none (add iconSets to blazon.config.ts)'}`);
+    if (!set) found.push(`no icon set at ${args[0]}; known: ${sets.map((candidate) => candidate.name).join(', ') || 'none (add iconSets to blazon.json)'}`);
     else {
       for (const category of args.slice(1)) {
         if (!set.categories.some((c) => c.name === category)) found.push(`no category ${category} in ${set.name}; known: ${set.categories.map((c) => c.name).join(', ')}`);

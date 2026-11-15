@@ -6,7 +6,7 @@ export function aboutText(brand: Pick<BrandRead, 'title' | 'named' | 'descriptio
   if (!brand.named) return { findings: [] };
   if (!brand.description)
     return {
-      text: `${brand.title}\n\nNo description is set in blazon.config.ts.\n`,
+      text: `${brand.title}\n\nNo description is set in blazon.json.\n`,
       findings: [finding('about-no-description', 'warning', 'brand.description', 'the brand has no description, so about.txt says none is set')],
     };
   return { text: `${brand.title}\n\n${brand.description}\n`, findings: [] };

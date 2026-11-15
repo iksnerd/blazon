@@ -2,20 +2,18 @@
 
 ← [Manual index](index.md)
 
-`blazon.config.ts` is optional. Without it, blazon uses the defaults below.
+`blazon.json` is optional. Without it, blazon uses the defaults below.
 
-```ts
-import { defineConfig } from '@iksnerd/blazon';
-
-export default defineConfig({
-  title: 'Acme Brand Book',
-  theme: { accent: 'brand.primary', text: 'text.primary', fontDisplay: 'font.family.sans' },
-  logo: { onLight: './assets/logos/logo-black.svg', onDark: './assets/logos/logo-white.svg' },
-  fonts: ['https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap'],
-});
+```json
+{
+  "title": "Acme Brand Book",
+  "theme": { "accent": "brand.primary", "text": "text.primary", "fontDisplay": "font.family.sans" },
+  "logo": { "onLight": "./assets/logos/logo-black.svg", "onDark": "./assets/logos/logo-white.svg" },
+  "fonts": [ "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" ]
+}
 ```
 
-The file may also be named `blazon.config.js`, `blazon.config.mjs`, `brandbook.config.ts` or `brandbook.config.js`. The config runs as code with your permissions, so run blazon only in a project whose config you trust. `import ... from '@iksnerd/blazon'` works even where blazon is not installed as a dependency, so a project needs nothing added to type its config. If the file fails to load, the command stops with `Could not load <file>: ...` and exits with status 1; blazon does not carry on with defaults (see [When the config is wrong](#when-the-config-is-wrong)).
+`blazon.json` is the only config file, and it is plain JSON: data that blazon reads and never runs, with no comments and no trailing commas. A person can read it and a tool can write it. Older blazons read the config as code from `blazon.config.ts`, `blazon.config.js`, `blazon.config.mjs`, `brandbook.config.ts` or `brandbook.config.js`. None of those is read any more: a folder that holds one stops every command with an error that names the file and says to move its values into `blazon.json` and delete it. If `blazon.json` does not parse, the command stops with `Could not load blazon.json: ...` and exits with status 1; blazon does not carry on with defaults (see [When the config is wrong](#when-the-config-is-wrong)).
 
 ## Every option
 
@@ -99,11 +97,13 @@ Set `theme` yourself when your names differ, or when you want to choose, for exa
 
 `fonts` lists what the brand book loads, in two forms that mix in one list:
 
-```ts
-fonts: [
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap',
-  { family: 'Mulish', file: 'fonts/Mulish.woff2', weight: '200 1000' },
-],
+```json
+{
+  "fonts": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap",
+    { "family": "Mulish", "file": "fonts/Mulish.woff2", "weight": "200 1000" }
+  ]
+}
 ```
 
 A string is a stylesheet URL, such as the Google Fonts link for the families your tokens name. The brand book loads it for every visitor, from the URL you give. An object is a font file in the project (`.woff2`, `.woff`, `.ttf` or `.otf`, with a path from the project root, and the file must be inside the project folder, links included): blazon reads it and embeds it as an `@font-face` of that `family`, with the `weight` (a number from 1 to 1000, `normal`, `bold`, or a range such as `'200 1000'` for a variable font) and `style` you give, so the book, its print version and `blazon build` need no stylesheet made by hand and no server for the file. The font is part of the book's page, so list only files whose license lets you publish them. A file that is missing, or is not one of those formats, is a `font-file-invalid` error. A font blazon does not embed, and a stylesheet at a URL of your own, are what you host and list as a URL. A site that serves the file itself gets its `@font-face` from `blazon fonts --css` ([chapter 8](08-using-the-outputs.md), [chapter 19](19-building-a-website.md#fonts)) instead of writing it.
@@ -116,16 +116,13 @@ Where a typeface comes from and under what license is not in `fonts`, which says
 
 ## Adding your own names
 
-Three lists of names are checked, so a misspelling is an error and not a silent miss: the sections a page may hold, the logo lockups a sidecar may state, and the usage roles a token may allow or deny. Each has a standard list that is always valid, and you add your own next to it. Nothing runs: these are plain lists in `blazon.config.ts`.
+Three lists of names are checked, so a misspelling is an error and not a silent miss: the sections a page may hold, the logo lockups a sidecar may state, and the usage roles a token may allow or deny. Each has a standard list that is always valid, and you add your own next to it. These are plain lists in `blazon.json`.
 
-```ts
-export default defineConfig({
-  customSections: [{ id: 'voice', title: 'Voice and tone' }],
-  vocabulary: {
-    lockups: ['monogram'],
-    usageRoles: ['chart'],
-  },
-});
+```json
+{
+  "customSections": [ { "id": "voice", "title": "Voice and tone" } ],
+  "vocabulary": { "lockups": [ "monogram" ], "usageRoles": [ "chart" ] }
+}
 ```
 
 | You add | Where it is then valid |
@@ -140,10 +137,11 @@ The logo corners, the pattern kinds, the theme roles and the token tiers stay fi
 
 ## When the config is wrong
 
-Blazon checks `blazon.config.ts` before it uses it. Every command stops, and exits with status 1, when the config has:
+Blazon checks `blazon.json` before it uses it. Every command stops, and exits with status 1, when the config has:
 
 - **A key blazon does not know.** The message names the key blazon is closest to: `asset: unknown key "asset"; known: title, description, ... (did you mean "assets"?)`.
 - **A value of the wrong type.** For example `port: '3000'` (it must be a number from 0 to 65535), or a `logo` with no `onLight`.
-- **A file that cannot be run.** A syntax error, an import that fails, or no default export: `Could not load blazon.config.ts: ...`. Write `export default defineConfig({ ... })`.
+- **A file that is not JSON.** A syntax error, a comment, a trailing comma, or a value that is not an object: `Could not load blazon.json: ...`.
+- **An old config file.** `blazon.config.ts`, `.js` or `.mjs`, or `brandbook.config.ts` or `.js`, is `config-invalid` on that file, even beside a `blazon.json`: `blazon.config.ts is not read any more: blazon reads plain JSON from blazon.json. Move its values into blazon.json and delete blazon.config.ts`.
 
 The message lists every mistake at once. Blazon does not carry on with defaults: a brand book built that way would have the wrong title and no theme or logo and look fine. While `blazon dev` runs, a config that is wrong half-way through an edit is reported in the terminal and the last good config stays in use.

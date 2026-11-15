@@ -100,7 +100,7 @@ describe('errors in text: what happened on the first line, the fix on its own li
 
   it('an invalid config, with the --debug hint after the fix', async () => {
     const root = await starterProject();
-    fs.writeFileSync(path.join(root, 'blazon.config.ts'), 'export default { tokenDir: 1 }\n');
+    fs.writeFileSync(path.join(root, 'blazon.json'), '{"tokenDir": 1}\n');
     const ran = blazonIn(root, 'check');
     expect(ran.status).toBe(1);
     expect(ran.stderr).not.toContain('[blazon check error]');

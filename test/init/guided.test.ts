@@ -81,12 +81,13 @@ describe('the manual path', () => {
     expect(out).toMatch(/AA for text on white: (yes|no) \(\d+\.\d:1/);
     expect(out).toContain('Inter is on Google Fonts');
     expect(out).toContain('currentColor');
-    const config = text(dir, 'blazon.config.ts');
-    expect(config).toContain('title: "Acme Payments"');
-    expect(config).toContain('description: "Payments for teams that move money every day."');
-    expect(config).toContain('logo: "./assets/logos/my-logo.svg"');
-    expect(config).toContain('fonts: ["https://fonts.googleapis.com/css2?family=Inter');
-    expect(config).toContain("{ family: 'IBM Plex Mono', file: 'fonts/IBMPlexMono-Regular-latin.woff2'"); // --font sets display and body, so the mono file stays
+    const config = text(dir, 'blazon.json');
+    expect(config).toContain('"title": "Acme Payments"');
+    expect(config).toContain('"description": "Payments for teams that move money every day."');
+    const parsed = JSON.parse(config);
+    expect(parsed.logo).toBe('./assets/logos/my-logo.svg');
+    expect(parsed.fonts[0]).toContain('https://fonts.googleapis.com/css2?family=Inter');
+    expect(parsed.fonts).toContainEqual(expect.objectContaining({ family: 'IBM Plex Mono', file: 'fonts/IBMPlexMono-Regular-latin.woff2' })); // --font sets display and body, so the mono file stays
     expect(config).not.toContain('Big+Shoulders');
     const colors = json(dir, 'tokens/colors.json');
     // the brand's color is the signal color, and interactive.primary uses it
@@ -109,7 +110,7 @@ describe('the manual path', () => {
     const dir = project();
     const { code, p } = await run(dir, ['', '', 'manual', '', '', '', false]);
     expect(code).toBe(0);
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Acme Brand Book"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Acme Brand Book"');
     expect(json(dir, 'tokens/colors.json').color.signal.orange.$value).toBe('#FF5A1F');
     expect(fs.existsSync(path.join(dir, 'assets/logos/blazon-graphite.svg'))).toBe(true);
     expect(p.output.join('\n')).not.toContain('Set ');
@@ -163,8 +164,8 @@ describe('the manual path', () => {
     expect(p.rejected[0]).toContain('There is no file at /nope/logo.svg');
     expect(p.rejected[1]).toContain('must be an SVG or PNG');
     // the stylesheet in the config is still blazon's, and the hint says to add the brand's own
-    expect(text(dir, 'blazon.config.ts')).toContain('Big+Shoulders');
-    expect(out).toContain('Add its stylesheet to fonts in blazon.config.ts');
+    expect(text(dir, 'blazon.json')).toContain('Big+Shoulders');
+    expect(out).toContain('Add its stylesheet to fonts in blazon.json');
   });
 
   it('starts the dev server only when asked', async () => {
@@ -195,7 +196,7 @@ describe('the website path', () => {
     let sawBeforeWrite = false;
     const confirm = p.confirm;
     p.confirm = async (o) => {
-      if (o.message.startsWith('Write these')) sawBeforeWrite = !text(dir, 'blazon.config.ts').includes('Acme Corp');
+      if (o.message.startsWith('Write these')) sawBeforeWrite = !text(dir, 'blazon.json').includes('Acme Corp');
       return confirm(o);
     };
     expect(await runInit(dir, { prompter: p, tty: true, look: PLAIN })).toBe(0);
@@ -212,14 +213,14 @@ describe('the website path', () => {
     const colors = json(dir, 'tokens/colors.json');
     expect(colors.color.brand.primary.$value).toBe('#635dff');
     expect(colors.color.brand.accent).toBeUndefined();
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Acme Corp"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Acme Corp"');
   });
 
   it('a typed name wins over the site title', async () => {
     quiet();
     const dir = project();
     await run(dir, ['Mine', '', 'site', `${base}/`, ['--brand-primary', '--brand-accent'], true, false]);
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Mine"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Mine"');
   });
 
   it('on an unreachable site says what happened, offers to give values by hand, and writes nothing from the site', async () => {
@@ -231,7 +232,7 @@ describe('the website path', () => {
     expect(out).toContain('spinner failed: Could not read http://127.0.0.1:1/');
     expect(out).toContain('Check the address and your connection');
     expect(out).not.toMatch(/at \S+\.(ts|js):\d+/);
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Acme Brand Book"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Acme Brand Book"');
   });
 
   it('an empty website address, first or on a retry, goes to the manual questions instead of asking again', async () => {
@@ -262,7 +263,7 @@ describe('cancelling', () => {
     const { code, p } = await run(dir, ['Half Way', '', 'manual', CANCEL]);
     expect(code).toBe(130);
     expect(p.output.join('\n')).toContain('cancel: Stopped. The starter was copied as it is');
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Acme Brand Book"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Acme Brand Book"');
     expect(fs.existsSync(path.join(dir, 'tokens/colors.json'))).toBe(true);
   });
 
@@ -277,8 +278,8 @@ describe('without questions', () => {
     quiet();
     const dir = project();
     await run(dir, ['Acme', '', 'manual', '', '', false]);
-    expect(text(dir, 'blazon.config.ts')).toContain('description: "Brand guidelines, built from design tokens"');
-    expect(text(dir, 'blazon.config.ts')).not.toContain('neo-industrial');
+    expect(text(dir, 'blazon.json')).toContain('"description": "Brand guidelines, built from design tokens"');
+    expect(text(dir, 'blazon.json')).not.toContain('neo-industrial');
   });
 
   it('refuses a description over 240 characters from the flag, before anything is copied', async () => {
@@ -327,7 +328,7 @@ describe('without questions', () => {
     });
     expect(code).toBe(0);
     expect(p.asked).toEqual([]);
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Flagged"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Flagged"');
     expect(json(dir, 'tokens/colors.json').color.signal.primary.$value).toBe('#123456');
     expect(json(dir, 'tokens/typography.json').font.family.display.$value).toEqual(['DM Sans', 'sans-serif']);
     expect(json(dir, 'tokens/typography.json').font.family.body.$value).toEqual(['DM Sans', 'sans-serif']);
@@ -337,7 +338,7 @@ describe('without questions', () => {
     quiet();
     const dir = project();
     expect(await runInit(dir, { from: `${base}/`, name: 'Mine', prompter: scriptedPrompter([]), tty: true })).toBe(0);
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Mine"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Mine"');
   });
 
   it('keeps an existing logo and sidecar of the same name instead of overwriting them', async () => {
@@ -350,7 +351,7 @@ describe('without questions', () => {
     expect(code).toBe(0);
     expect(text(dir, 'assets/logos/brand.svg')).toBe('<svg id="mine"/>');
     expect(text(dir, 'assets/logos/brand.json')).toBe('{"title":"Mine"}');
-    expect(text(dir, 'blazon.config.ts')).not.toContain('./assets/logos/brand.svg');
+    expect(text(dir, 'blazon.json')).not.toContain('./assets/logos/brand.svg');
   });
 
   it('starts the dev server with --dev', async () => {
@@ -380,7 +381,7 @@ describe('without questions', () => {
     const p = scriptedPrompter([]);
     expect(await runInit(dir, { prompter: p, tty: true, ...extra })).toBe(0);
     expect(p.asked).toEqual([]);
-    expect(text(dir, 'blazon.config.ts')).toContain('title: "Acme Brand Book"');
+    expect(text(dir, 'blazon.json')).toContain('"title": "Acme Brand Book"');
   });
 });
 

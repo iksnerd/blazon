@@ -6,7 +6,7 @@ Some values replace each other: Japanese text uses another typeface, a dark them
 
 ## The resolver document
 
-By default it is `blazon.resolver.json` in the project folder. Set `resolver` in `blazon.config.ts` to use another path. With one, blazon loads only the token files it names. Without one, blazon loads every file in `tokens/`. A project from `blazon init` has one: the starter's `theme` modifier, with a `light` default and a `dark` context in `tokens/theme/dark.json`. A token file you add to `tokens/` loads only once you list it in `sets`. Deleting the resolver loads every file in `tokens/` again, the dark file included, so remove or move that file with it.
+By default it is `blazon.resolver.json` in the project folder. Set `resolver` in `blazon.json` to use another path. With one, blazon loads only the token files it names. Without one, blazon loads every file in `tokens/`. A project from `blazon init` has one: the starter's `theme` modifier, with a `light` default and a `dark` context in `tokens/theme/dark.json`. A token file you add to `tokens/` loads only once you list it in `sets`. Deleting the resolver loads every file in `tokens/` again, the dark file included, so remove or move that file with it.
 
 ```json
 {
@@ -41,7 +41,7 @@ By default it is `blazon.resolver.json` in the project folder. Set `resolver` in
 | `tokens.<modifier>.<context>.json` | A complete DTCG file for that context |
 | The brand book | A select per modifier in the top bar, and in the menu on a phone. A `theme` modifier with a `light` and a `dark` context has none: the light and dark switch picks it ([theme roles](07-theme-and-config.md#theme-roles)) |
 
-The selector of each context block comes from `contextSelectors` in `blazon.config.ts` ([every option](07-theme-and-config.md#every-option)): a selector per modifier, with `{context}` as the placeholder. The defaults are `:lang({context})` for a modifier named `locale`, and `[data-<modifier>="{context}"]` for any other. A `theme` modifier with a `dark` context therefore writes `[data-theme="dark"] { ... }`.
+The selector of each context block comes from `contextSelectors` in `blazon.json` ([every option](07-theme-and-config.md#every-option)): a selector per modifier, with `{context}` as the placeholder. The defaults are `:lang({context})` for a modifier named `locale`, and `[data-<modifier>="{context}"]` for any other. A `theme` modifier with a `dark` context therefore writes `[data-theme="dark"] { ... }`.
 
 ## When the resolver document is wrong
 
@@ -49,7 +49,7 @@ Problems are `resolver-invalid` errors, not crashes. The message names the probl
 
 | Message starts | Cause |
 |---|---|
-| `resolver <path> does not exist` | `resolver` in `blazon.config.ts` points at a missing file |
+| `resolver <path> does not exist` | `resolver` in `blazon.json` points at a missing file |
 | `version must be "2025.10"` | Wrong or missing `version` |
 | `resolutionOrder is required and must be an array` | No `resolutionOrder` |
 | `modifier "x" needs a "default" context` | A modifier has no `default`. Blazon compiles the defaults as its main tokens |

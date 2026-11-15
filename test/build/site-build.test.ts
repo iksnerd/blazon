@@ -51,6 +51,6 @@ describe('blazon build with the prebuilt viewer', () => {
   it.each(['.', '..'])('refuses outDir "%s" and deletes nothing', async (outDir) => {
     const config = { ...(await loadConfig(project)), outDir };
     await expect(buildSite(config, project)).rejects.toThrow(/holds the project folder/);
-    expect(fs.existsSync(path.join(project, 'blazon.config.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(project, 'blazon.json'))).toBe(true);
   });
 });

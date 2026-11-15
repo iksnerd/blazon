@@ -1,0 +1,153 @@
+{
+  "title": "Blazon Brand Book",
+  "description": "blazon's own identity: neo-industrial, built from exposed structure and one signal color",
+  "sections": [
+    "intro",
+    "logo",
+    "color",
+    "typography",
+    "icons",
+    "diagrams",
+    "motion",
+    "layout",
+    "social",
+    "applications",
+    "voice"
+  ],
+  "customSections": [
+    {
+      "id": "voice",
+      "title": "Voice and tone"
+    }
+  ],
+  "tokensDir": "./tokens",
+  "docsDir": "./docs",
+  "assetsDir": "./assets",
+  "outDir": "./dist/site",
+  "tokensOutDir": "./dist/tokens",
+  "port": 3000,
+  "logo": {
+    "onLight": "./assets/logos/blazon-graphite.svg",
+    "onDark": "./assets/logos/blazon-bone.svg"
+  },
+  "theme": {
+    "background": "surface.background",
+    "canvas": "surface.canvas",
+    "text": "text.primary",
+    "muted": "text.muted",
+    "border": "rule.default",
+    "accent": "interactive.primary",
+    "accentText": "text.onSignal",
+    "inverse": "surface.inverse",
+    "inverseText": "text.inverse",
+    "fontDisplay": "font.family.display",
+    "fontBody": "font.family.body",
+    "radius": "radius.hairline"
+  },
+  "shadcn": {
+    "ring": "text.primary",
+    "sidebar-ring": "text.primary",
+    "destructive": "text.primary",
+    "chart-1": "text.primary",
+    "chart-2": "text.muted",
+    "chart-3": "surface.canvas",
+    "chart-4": "rule.default",
+    "chart-5": "rule.quiet"
+  },
+  "fonts": [
+    "https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=IBM+Plex+Sans:wght@400;600&display=swap",
+    {
+      "family": "IBM Plex Mono",
+      "file": "fonts/IBMPlexMono-Regular-latin.woff2",
+      "weight": 400
+    },
+    {
+      "family": "IBM Plex Mono",
+      "file": "fonts/IBMPlexMono-SemiBold-latin.woff2",
+      "weight": 600
+    }
+  ],
+  "plugins": [
+    {
+      "name": "blazon.copy",
+      "options": {
+        "avoid": [
+          {
+            "terms": [
+              "powerful",
+              "seamless",
+              "robust",
+              "effortless",
+              "leverage",
+              "comprehensive"
+            ],
+            "say": "a number, or nothing"
+          },
+          {
+            "terms": [
+              "—",
+              "–"
+            ],
+            "say": "a period, a colon or parentheses"
+          }
+        ],
+        "headings": "sentence",
+        "sentences": {
+          "maxWords": 25
+        },
+        "skip": [
+          "11-voice.md"
+        ]
+      }
+    },
+    {
+      "name": "blazon.favicons",
+      "options": {
+        "ground": "color.ink.graphite",
+        "ink": "#F2F0EB",
+        "favicon": "#FF5A1F",
+        "share": {
+          "app": 0.43,
+          "favicon": 0.88
+        }
+      }
+    },
+    {
+      "name": "blazon.logo-kit"
+    },
+    {
+      "name": "blazon.brand-deck"
+    },
+    {
+      "name": "blazon.social-cards",
+      "options": {
+        "cards": [
+          {
+            "id": "launch",
+            "format": "horizontal",
+            "background": "backgrounds/aurora",
+            "headline": "Say it in one line.",
+            "subline": "A brand book that checks itself."
+          },
+          {
+            "id": "post",
+            "format": "square",
+            "background": "backgrounds/aurora",
+            "headline": "One signal. Every surface.",
+            "align": "center",
+            "logo": "dark"
+          }
+        ]
+      }
+    },
+    {
+      "name": "blazon.press-kit"
+    },
+    {
+      "name": "blazon.platform-tokens"
+    },
+    {
+      "name": "blazon.office-template"
+    }
+  ]
+}

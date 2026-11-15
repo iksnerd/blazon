@@ -43,7 +43,7 @@ export function missingSections(docs: readonly DocItem[], configured: SectionId[
     .map((id): Finding =>
       finding('section-missing', {
         path: id,
-        message: `No page holds the ${id} section. Declare it with "section: ${id}" in a page's front matter, or leave it out of sections in blazon.config.ts`,
+        message: `No page holds the ${id} section. Declare it with "section: ${id}" in a page's front matter, or leave it out of sections in blazon.json`,
       }),
     );
 }

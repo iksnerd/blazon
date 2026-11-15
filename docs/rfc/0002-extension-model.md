@@ -11,7 +11,7 @@ Blazon is meant to be a package a company installs to build its own brand book, 
 
 This RFC proposes, in this order:
 
-1. **Brand vocabulary as data.** A brand declares its own sections, logo lockups and usage roles in `blazon.config.ts`, next to the standard ones. No code runs. Blazon keeps checking spellings, because the declared lists are the vocabulary.
+1. **Brand vocabulary as data.** A brand declares its own sections, logo lockups and usage roles in `blazon.json`, next to the standard ones. No code runs. Blazon keeps checking spellings, because the declared lists are the vocabulary.
 2. **Blazon as a plugin host.** A brand adds a check or a build step as a plugin: a program in any language that blazon starts as a child process, with a JSON request on standard input and a JSON answer on standard output, found, pinned, limited and checked as RFC 0005 says. Blazon writes a profile for two roles, `check` and `build`, and gives the brand a command to check a plugin.
 
 Things blazon draws or reads (pattern kinds, theme roles, logo corners, token tiers) stay closed. A custom page directive stays closed in this RFC and is an open question (section 3).
@@ -45,14 +45,11 @@ A **vocabulary** is a list of names that blazon checks a value against and other
 
 Three vocabularies become data. Each has a standard list that is always valid, and a brand adds to it.
 
-```ts
-export default defineConfig({
-  customSections: [{ id: 'voice', title: 'Voice and tone' }],
-  vocabulary: {
-    lockups: ['monogram'],
-    usageRoles: ['chart'],
-  },
-});
+```json
+{
+  "customSections": [ { "id": "voice", "title": "Voice and tone" } ],
+  "vocabulary": { "lockups": [ "monogram" ], "usageRoles": [ "chart" ] }
+}
 ```
 
 **Names.** Every added name MUST match `^[a-z][a-z0-9-]*$` and MUST NOT repeat a standard one or another added one. A mistake is `config-invalid` (RFC 0001 §14), and the entry is left out.
@@ -79,7 +76,7 @@ export default defineConfig({
 
 | RFC 0005 | What it gives a blazon brand |
 |---|---|
-| 3.1 to 3.3 | A plugin name is dotted lowercase words (`acme.house-style`) and the program is `blazon-<name>`. Only the operator allows a plugin, in `blazon.config.ts`. Data a plugin could influence never names a plugin or a path |
+| 3.1 to 3.3 | A plugin name is dotted lowercase words (`acme.house-style`) and the program is `blazon-<name>`. Only the operator allows a plugin, in `blazon.json`. Data a plugin could influence never names a plugin or a path |
 | 3.4, 3.6 | A pin by digest, of one file or of a directory tree, checked on a copy before every launch. Which plugins must be pinned follows from what flows through them |
 | 3.5 | A value the operator labels secret reaches only a plugin that accepts it as secret, and is scrubbed from everything the plugin hands back |
 | 3.8 | A manifest, printed by `--blazon-manifest`, with `v: 2`, the plugin's roles, a timeout, and the environment names it needs |
@@ -135,11 +132,13 @@ Plugins are written in any language: RFC 0005 fixes JSON on standard streams, so
 
 **Configuration.** The config is the allowlist and holds no path and no digest.
 
-```ts
-plugins: [
-  { name: 'acme.house-style', options: { headingFont: 'font.family.display' } },
-  { name: 'acme.deck' },
-],
+```json
+{
+  "plugins": [
+    { "name": "acme.house-style", "options": { "headingFont": "font.family.display" } },
+    { "name": "acme.deck" }
+  ]
+}
 ```
 
 A `name` follows the core's name rule. `options` is a JSON object. A plugin MAY be listed more than once, and then each entry is an instance with an id, given as `as`: a name of the same form, at most 64 characters, that defaults to the entry's `name`, and an id taken from the `name` is held to the same limit. Ids MUST be unique across the `plugins` entries and the programs named with `--plugin`, which take the plugin's name as their id, and an id MUST NOT be the name of a different plugin. Two different `--plugin` programs for one plugin name are refused. The pin is for the plugin's name and is checked before every call of every instance. The instance's id, not the plugin's name, names its output folder `<tokensOutDir>/<id>/`, which is emptied before its call, and its breaker. Each request carries the options of its own entry, and a plugin is not told its id. A finding or a failure of a plugin that is listed more than once, or whose id is not its name, names the instance as well as the plugin. The wire does not change: the manifest and the request are as RFC 0005 defines them. A mistake is `config-invalid` on `plugins[n]`. A plugin that is not allowed here is never started.
@@ -225,7 +224,7 @@ Blazon is pre-release, so nothing below has a shim.
 
 The threat model is RFC 0005 section 10, and it applies to blazon as it does to any host. In short: pinning defends against another local user or a changed file, and does not defend against a same-user attacker or a malicious plugin. What blazon adds:
 
-1. **The trust is the config's.** `blazon.config.ts` is code that blazon runs (RFC 0001 Security considerations). The allowlist is in that file, so a plugin adds no new party the config did not already trust. A config copied from another brand now also names programs, and the pin file decides whether they run.
+1. **The trust is the config's.** `blazon.json` is data that blazon reads and never runs (RFC 0001 Security considerations), and the allowlist is in that file, so a plugin adds no new party the config did not already trust. A config copied from another brand now also names programs, and the pin file decides whether they run.
 2. **Blazon holds no secret of its own.** A value the operator labels secret (`BLAZON_SECRET_*`, for a plugin that pushes tokens to another service, say) is passed only to a plugin that lists it in `secret_env`, and is scrubbed from the plugin's message, answer and standard error before blazon shows or stores it.
 3. **Plugin text is shown as text.** The viewer and the terminal show a finding's `message` and `path` as text and never as HTML.
 4. **Names.** A plugin's findings carry its name as a prefix, so a plugin cannot report under a core code and a user can tell which plugin said what.
@@ -233,10 +232,11 @@ The threat model is RFC 0005 section 10, and it applies to blazon as it does to 
 
 ## Status
 
-Implemented on `main` as of 2026-11-10, except what the last paragraph names.
+Implemented on `main` as of 2026-11-15, except what the last paragraph names.
 
 | Part | Where | Tests |
 |---|---|---|
+| The config is plain JSON (section 2, Configuration): `blazon.json` only, read as data; the code spellings are refused by name | `src/core/config/index.ts` | `test/core/config/` |
 | Vocabulary as data (section 1): `customSections` and `vocabulary`, the resolved lists in `BlazonData` and `brand.json`, the viewer's lockup groups | `src/core/config/` (`validate.ts`, `vocabulary.ts`); RFC 0001 section 14 | `test/core/tokens/vocabulary.test.ts`, `test/viewer/vocabulary-viewer.test.tsx` |
 | The host core (section 2): names, the manifest, one call (clean environment, private request file, process group, limits, exit codes, never a pass), the breaker, scrubbing, admission, pins with a verified private copy, `blazon plugin check` and `blazon plugin pin` | `src/plugins/`; RFC 0005 | `test/plugins/`, and the protocol's conformance corpus in `test/spec/` |
 | The roles: the `plugins` config key as the allowlist, `blazon.plugins.lock`, the `check` role in `blazon check`, `blazon tokens` and `blazon build`, the `build` role in `blazon build`, `plugin-failed`, `plugin-lock-invalid`, `BLAZON_SECRET_` scrubbing, `blazon check --plugin <program>`, `blazon plugin profile` | `src/plugins/roles/`, `src/plugins/pins/lock.ts`. The profile document is valid under the draft profile schema and a CUE check of it, both in `test/spec/` | `test/plugins/roles/`, `test/plugins/host/profile.test.ts` |
@@ -273,7 +273,7 @@ Not built, and named so that nobody assumes them: long-lived plugins, the page r
 5. ~~Should a check see the files?~~ Decided: no. A `build` plugin already runs after the site is written, receives `site_dir`, and fails `blazon build` with an error, so a rule that needs the built site, the fonts or the images is a build plugin. It runs under `blazon build`, not under `check` or `dev`. A third role would repeat it. Two answers go with this one. A plugin's output stays in its `out_dir`, and a book that shows generated files builds twice: build plugins run after the book's data is read, and a phase before it was weighed and not built, because `blazon dev` would start plugin processes on every save. A build plugin that works from the exported tokens reads `tokens_dir`, a field of the build request that holds the token files before the role runs. Blazon is not public, so a change to the protocol costs no compatibility, but each one adds surface to keep: the rule is to build what a second book needs and to document the rest.
 6. **Declarative rules.** Which of the first plugins' checks are common enough to become config rules, and what would the smallest form be?
 7. **Localized titles.** `customSections` has one `title`. A brand in several locales may want one per context.
-8. **A plain-data config.** RFC 0001's open question 7: `plugins`, `vocabulary` and `customSections` are already plain data, so a `blazon.config.json` would carry them.
+8. ~~**A plain-data config.**~~ Decided on 2026-11-15: the whole config is plain JSON in `blazon.json`, and `plugins`, `vocabulary` and `customSections` are in it (RFC 0001 open question 7).
 
 ## References
 

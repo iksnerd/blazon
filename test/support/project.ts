@@ -36,8 +36,8 @@ export function tempProject(files: Record<string, unknown> = {}): string {
   return root;
 }
 
-/** A plugin a test allows by name, with its options as data (written as JSON) or as TypeScript source (`optionsSource`) when they need code. */
-export type PluginEntry = string | { name: string; options?: unknown; optionsSource?: string };
+/** A plugin a test allows by name, with its options as data. */
+export type PluginEntry = string | { name: string; options?: unknown };
 
 /**
  * The plugins a test wants in a new project: `'none'` (the default) allows no plugin, `'starter'` keeps the list the starter was made with
@@ -45,26 +45,24 @@ export type PluginEntry = string | { name: string; options?: unknown; optionsSou
  */
 export type StarterPlugins = 'none' | 'starter' | PluginEntry[];
 
-const entrySource = (entry: PluginEntry): string => {
-  if (typeof entry === 'string') return `{ name: '${entry}' }`;
-  const options = entry.optionsSource ?? (entry.options === undefined ? undefined : JSON.stringify(entry.options));
-  return `{ name: '${entry.name}'${options === undefined ? '' : `, options: ${options}`} }`;
+const entryValue = (entry: PluginEntry): Record<string, unknown> => {
+  if (typeof entry === 'string') return { name: entry };
+  return { name: entry.name, ...(entry.options === undefined ? {} : { options: entry.options }) };
 };
 
 /**
- * Sets the plugins a project's config allows. The starter's own list is taken out first (a `plugins` key written before it would lose to it,
- * silently), and a list of entries is written as one `plugins` line at the top of the config.
+ * Sets the plugins a project's config allows. The starter's own list is replaced: `'none'` leaves no `plugins` key, and a list of
+ * entries is written as the `plugins` key.
  */
 export function setPlugins(root: string, plugins: StarterPlugins): void {
   if (plugins === 'starter') return;
-  const file = path.join(root, 'blazon.config.ts');
-  let text = fs.readFileSync(file, 'utf-8').replace(/\n {2}plugins: \[[\s\S]*?\n {2}\],\n/, '\n');
-  if (plugins !== 'none' && plugins.length > 0) {
-    const start = 'export default defineConfig({';
-    if (!text.includes(start)) throw new Error(`${file} has no "${start}" line to put the plugins after`);
-    text = text.replace(start, `${start}\n  plugins: [${plugins.map(entrySource).join(', ')}],`);
-  }
-  fs.writeFileSync(file, text);
+  const file = path.join(root, 'blazon.json');
+  const config: unknown = JSON.parse(fs.readFileSync(file, 'utf-8'));
+  if (typeof config !== 'object' || config === null || Array.isArray(config)) throw new Error(`${file} must be a JSON object`);
+  const next = { ...(config as Record<string, unknown>) };
+  delete next['plugins'];
+  if (plugins !== 'none' && plugins.length > 0) next['plugins'] = plugins.map(entryValue);
+  fs.writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
 }
 
 /** Runs `blazon init` in `dir` and sets the plugins the project allows (none unless the test says). */

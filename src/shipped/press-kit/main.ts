@@ -69,7 +69,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
             'pdf-font-fallback',
             'info',
             'theme.roles',
-            `the PDF is not set in ${fallen.join(' or ')}: the brand names ${fallen.length === 1 ? 'it' : 'them'} but does not embed a font file, and the plugin fetches none, so Chrome sets the text in a font it has. To embed ${fallen.length === 1 ? 'it' : 'one'}, list its file in \`fonts\` of blazon.config.ts as {"family": name, "file": path} (only if its license allows embedding)`,
+            `the PDF is not set in ${fallen.join(' or ')}: the brand names ${fallen.length === 1 ? 'it' : 'them'} but does not embed a font file, and the plugin fetches none, so Chrome sets the text in a font it has. To embed ${fallen.length === 1 ? 'it' : 'one'}, list its file in \`fonts\` of blazon.json as {"family": name, "file": path} (only if its license allows embedding)`,
           ),
         );
     } catch (error) {

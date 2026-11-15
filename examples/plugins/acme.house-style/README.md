@@ -10,10 +10,12 @@ blazon plugin check examples/plugins/acme.house-style/blazon-acme.house-style
 blazon plugin pin examples/plugins/acme.house-style --name acme.house-style
 ```
 
-Then allow it in `blazon.config.ts`, and say which font:
+Then allow it in `blazon.json`, and say which font:
 
-```ts
-plugins: [{ name: 'acme.house-style', options: { headingFont: 'Inter' } }],
+```json
+{
+  "plugins": [ { "name": "acme.house-style", "options": { "headingFont": "Inter" } } ]
+}
 ```
 
 `blazon check` now fails with `type.heading is set in -apple-system, not Inter` until the heading style uses `Inter`.

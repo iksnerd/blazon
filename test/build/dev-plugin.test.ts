@@ -219,7 +219,7 @@ describe('blazon dev: a config that moves the tokens folder', () => {
     try {
       // The tokens move to another folder, and the config says so
       fs.cpSync(path.join(project, 'tokens'), path.join(project, 'moved-tokens'), { recursive: true });
-      const config = path.join(project, 'blazon.config.ts');
+      const config = path.join(project, 'blazon.json');
       fs.writeFileSync(config, fs.readFileSync(config, 'utf-8').replace("tokensDir: './tokens'", "tokensDir: './moved-tokens'"));
       const moved = path.join(project, 'moved-tokens/colors.json');
       fs.writeFileSync(moved, fs.readFileSync(moved, 'utf-8').replace('#FF5A1F', '#112233'));
@@ -258,7 +258,7 @@ describe('blazon dev: a config that does not load', () => {
     });
     await new Promise((resolve) => socket.addEventListener('open', resolve, { once: true }));
     try {
-      fs.writeFileSync(path.join(project, 'blazon.config.ts'), 'export default {{{ not a config');
+      fs.writeFileSync(path.join(project, 'blazon.json'), '{{{ not a config');
       const deadline = Date.now() + 10_000;
       while (updates === 0 && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 50));
       expect(updates).toBeGreaterThan(0);

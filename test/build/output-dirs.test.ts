@@ -71,9 +71,9 @@ describe('output-dirs-overlap', () => {
 
   it('stops blazon build before it writes anything', async () => {
     fs.writeFileSync(
-      path.join(project, 'blazon.config.ts'),
+      path.join(project, 'blazon.json'),
       fs
-        .readFileSync(path.join(project, 'blazon.config.ts'), 'utf-8')
+        .readFileSync(path.join(project, 'blazon.json'), 'utf-8')
         .replace("outDir: './dist/site'", "outDir: './same'")
         .replace("tokensOutDir: './dist/tokens'", "tokensOutDir: './same'"),
     );
@@ -100,7 +100,7 @@ describe('an output folder that overlaps an input', () => {
   ])('is an error for an %s, naming the input', async (_name, over, input) => {
     const found = await overlaps(over);
     expect(found).toHaveLength(1);
-    expect(found[0]).toMatchObject({ severity: 'error', path: 'blazon.config.ts' });
+    expect(found[0]).toMatchObject({ severity: 'error', path: 'blazon.json' });
     expect(found[0]!.message).toContain(String((over as { outDir: string }).outDir));
     expect(found[0]!.message).toContain(input);
     expect(found[0]!.message).toMatch(/empties outDir|would read/);

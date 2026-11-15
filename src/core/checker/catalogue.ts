@@ -34,7 +34,7 @@ export const CHECKS = {
   'asset-config-invalid': {
     severity: 'error',
     summary: 'An asset category in the config is not a valid object or has a bad rule.',
-    fix: 'Fix that category under assets in blazon.config.ts: it must be an object with only the fields the message lists as known.',
+    fix: 'Fix that category under assets in blazon.json: it must be an object with only the fields the message lists as known.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -42,7 +42,7 @@ export const CHECKS = {
   'asset-config-unused': {
     severity: 'warning',
     summary: 'An asset category in the config matches no asset.',
-    fix: 'Correct the category key under assets in blazon.config.ts so it matches the asset folder name, or remove the entry.',
+    fix: 'Correct the category key under assets in blazon.json so it matches the asset folder name, or remove the entry.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -65,7 +65,7 @@ export const CHECKS = {
   'asset-rule-violation': {
     severity: 'error',
     summary: 'An asset breaks the rules of its category.',
-    fix: "Replace the file so it meets its category's rules, or change the rules in blazon.config.ts.",
+    fix: "Replace the file so it meets its category's rules, or change the rules in blazon.json.",
     appliesTo: ['asset'],
     rfc: '1#4',
     manual: '03-checks',
@@ -120,8 +120,8 @@ export const CHECKS = {
   },
   'config-invalid': {
     severity: 'error',
-    summary: 'A key or value in blazon.config.ts is not valid.',
-    fix: 'Fix the key or value in blazon.config.ts; the message lists the keys blazon knows.',
+    summary: 'A key or value in blazon.json is not valid.',
+    fix: 'Fix the key or value in blazon.json; the message lists the keys blazon knows.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -217,7 +217,7 @@ export const CHECKS = {
   'font-not-loaded': {
     severity: 'warning',
     summary: 'A font family a token uses is not loaded by any fonts entry.',
-    fix: 'Add a fonts entry in blazon.config.ts that loads the family, with its file or its stylesheet URL, or put a loaded family first in the token.',
+    fix: 'Add a fonts entry in blazon.json that loads the family, with its file or its stylesheet URL, or put a loaded family first in the token.',
     appliesTo: ['token'],
     rfc: '1#4',
     manual: '03-checks',
@@ -233,7 +233,7 @@ export const CHECKS = {
   'icon-set-invalid': {
     severity: 'error',
     summary: 'An icon set in the config cannot be loaded.',
-    fix: 'Fix the icon set in blazon.config.ts: install its package, or correct its name or dir.',
+    fix: 'Fix the icon set in blazon.json: install its package, or correct its name or dir.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -241,7 +241,7 @@ export const CHECKS = {
   'icon-set-unknown-icon': {
     severity: 'warning',
     summary: 'An icon set category lists an icon the package does not have.',
-    fix: 'Correct the icon name under categories in the icon set in blazon.config.ts so it is one the package has, or remove it.',
+    fix: 'Correct the icon name under categories in the icon set in blazon.json so it is one the package has, or remove it.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -329,7 +329,7 @@ export const CHECKS = {
   'logo-missing': {
     severity: 'error',
     summary: 'No logo is configured, or the configured logo is not an image file in the project.',
-    fix: 'Set `logo` in blazon.config.ts to an image file inside the project.',
+    fix: 'Set `logo` in blazon.json to an image file inside the project.',
     appliesTo: ['asset'],
     rfc: '1#4',
     manual: '03-checks',
@@ -361,7 +361,7 @@ export const CHECKS = {
   'output-dirs-overlap': {
     severity: 'error',
     summary: 'An output folder is or holds an input, or is inside one.',
-    fix: 'Set outDir and tokensOutDir in blazon.config.ts to separate folders that are not an input folder or inside one.',
+    fix: 'Set outDir and tokensOutDir in blazon.json to separate folders that are not an input folder or inside one.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -433,7 +433,7 @@ export const CHECKS = {
   'resolver-invalid': {
     severity: 'error',
     summary: 'The resolver file is missing or breaks the DTCG resolver rules.',
-    fix: 'Fix the resolver file that `resolver` in blazon.config.ts names, or point `resolver` at a file that exists.',
+    fix: 'Fix the resolver file that `resolver` in blazon.json names, or point `resolver` at a file that exists.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -441,7 +441,7 @@ export const CHECKS = {
   'section-invalid': {
     severity: 'error',
     summary: 'The sections setting names a section blazon does not have or has the wrong shape.',
-    fix: 'Set sections in blazon.config.ts to a list of the section names the message gives.',
+    fix: 'Set sections in blazon.json to a list of the section names the message gives.',
     appliesTo: ['page'],
     rfc: '1#4',
     manual: '03-checks',
@@ -449,7 +449,7 @@ export const CHECKS = {
   'section-missing': {
     severity: 'info',
     summary: 'No page holds a section the book lists.',
-    fix: "Declare the section with `section: <id>` in a page's front matter, or leave it out of sections in blazon.config.ts.",
+    fix: "Declare the section with `section: <id>` in a page's front matter, or leave it out of sections in blazon.json.",
     appliesTo: ['project'],
     rfc: '1#4',
     manual: '03-checks',
@@ -481,7 +481,7 @@ export const CHECKS = {
   'starter-logo': {
     severity: 'warning',
     summary: "A configured logo is still blazon's own mark, byte for byte.",
-    fix: "Replace the logo file with the brand's own and point `logo` in `blazon.config.ts` at it.",
+    fix: "Replace the logo file with the brand's own and point `logo` in `blazon.json` at it.",
     appliesTo: ['project'],
     rfc: '1#4',
     manual: '03-checks',
@@ -489,7 +489,7 @@ export const CHECKS = {
   'theme-inferred': {
     severity: 'info',
     summary: 'No theme is set, so blazon took the theme roles from token names.',
-    fix: 'Set `theme` in blazon.config.ts to name the token for each role, so the roles no longer depend on token names.',
+    fix: 'Set `theme` in blazon.json to name the token for each role, so the roles no longer depend on token names.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -497,7 +497,7 @@ export const CHECKS = {
   'theme-missing': {
     severity: 'info',
     summary: 'No theme is set and no token has a conventional name, so blazon uses neutral colors.',
-    fix: 'Set `theme` in blazon.config.ts to name a token for each role, or give tokens the conventional names such as color.primary.',
+    fix: 'Set `theme` in blazon.json to name a token for each role, or give tokens the conventional names such as color.primary.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',
@@ -505,7 +505,7 @@ export const CHECKS = {
   'theme-unresolved': {
     severity: 'error',
     summary: 'A theme role or a shadcn variable points at a token that does not exist.',
-    fix: 'Point that theme role or shadcn variable in blazon.config.ts at a token that exists.',
+    fix: 'Point that theme role or shadcn variable in blazon.json at a token that exists.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',

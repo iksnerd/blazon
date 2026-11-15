@@ -148,14 +148,16 @@ describe('blazon init --from', () => {
     const sidecar = json(dir, 'assets/logos/site-white.json');
     expect(sidecar).toMatchObject({ background: 'dark', review: { status: 'needs-review' } });
 
-    const config = fs.readFileSync(path.join(dir, 'blazon.config.ts'), 'utf8');
-    expect(config).toContain('title: "Acme Corp"');
-    expect(config).toContain('logo: { onLight: "./assets/logos/site.svg", onDark: "./assets/logos/site-white.svg" }');
+    const config = fs.readFileSync(path.join(dir, 'blazon.json'), 'utf8');
+    expect(config).toContain('"title": "Acme Corp"');
+    expect(JSON.parse(config).logo).toEqual({ onLight: './assets/logos/site.svg', onDark: './assets/logos/site-white.svg' });
     // the site's stylesheet replaces the starter's, and the starter's own font file (the mono family the tokens still name) stays listed
-    expect(config).toContain(
-      "fonts: [\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\", { family: 'IBM Plex Mono', file: 'fonts/IBMPlexMono-Regular-latin.woff2', weight: 400 }, { family: 'IBM Plex Mono', file: 'fonts/IBMPlexMono-SemiBold-latin.woff2', weight: 600 }]",
-    );
-    expect(config).toContain("fontDisplay: 'font.family.display'"); // the theme already names the display family
+    expect(JSON.parse(config).fonts).toEqual([
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+      { family: 'IBM Plex Mono', file: 'fonts/IBMPlexMono-Regular-latin.woff2', weight: 400 },
+      { family: 'IBM Plex Mono', file: 'fonts/IBMPlexMono-SemiBold-latin.woff2', weight: 600 },
+    ]);
+    expect(JSON.parse(config).theme.fontDisplay).toBe('font.family.display'); // the theme already names the display family
 
     // the project still loads, and every token that names a variable matches the site
     const data = await compileBlazonData(await loadConfig(dir), dir);
@@ -183,7 +185,7 @@ describe('blazon init --from', () => {
     const dir = path.join(tempDir(), 'r');
     expect(await runInit(dir, { from: `${base}/raster` })).toBe(0);
     expect(fs.readFileSync(path.join(dir, 'assets/logos/site.png')).length).toBe(4);
-    expect(fs.readFileSync(path.join(dir, 'blazon.config.ts'), 'utf8')).toContain('logo: "./assets/logos/site.png"');
+    expect(JSON.parse(fs.readFileSync(path.join(dir, 'blazon.json'), 'utf8')).logo).toBe('./assets/logos/site.png');
     expect(log.mock.calls.flat().join('\n')).toMatch(/raster icon/);
   });
 
@@ -242,10 +244,10 @@ describe('blazon init --from', () => {
     fs.mkdirSync(path.join(dir, 'tokens'), { recursive: true });
     const mine = '{"color":{"$type":"color","mine":{"$value":"#010203"}}}';
     fs.writeFileSync(path.join(dir, 'tokens/colors.json'), mine);
-    fs.writeFileSync(path.join(dir, 'blazon.config.ts'), "export default { title: 'Mine', logo: './x.svg' };\n");
+    fs.writeFileSync(path.join(dir, 'blazon.json'), '{"title": "Mine", "logo": "./x.svg"}\n');
     expect(await runInit(dir, { from: `${base}/` })).toBe(0);
     expect(fs.readFileSync(path.join(dir, 'tokens/colors.json'), 'utf8')).toBe(mine);
-    expect(fs.readFileSync(path.join(dir, 'blazon.config.ts'), 'utf8')).toContain("title: 'Mine'");
+    expect(fs.readFileSync(path.join(dir, 'blazon.json'), 'utf8')).toContain('"title": "Mine"');
     expect(json(dir, 'tokens/typography.json').font.family.body.$value).toEqual(['Inter', 'sans-serif']);
   });
 
@@ -264,9 +266,9 @@ describe('blazon init --from', () => {
     quiet();
     const dir = path.join(tempDir(), 'auth0-brand');
     expect(await runInit(dir, { from: `${base}/named` })).toBe(0);
-    const config = fs.readFileSync(path.join(dir, 'blazon.config.ts'), 'utf8');
-    expect(config).toContain('title: "Auth0"');
-    expect(config).toContain('description: "Identity and access for apps."');
+    const config = fs.readFileSync(path.join(dir, 'blazon.json'), 'utf8');
+    expect(config).toContain('"title": "Auth0"');
+    expect(config).toContain('"description": "Identity and access for apps."');
     const colors = json(dir, 'tokens/colors.json');
     expect(colors.interactive.primary.$value).toMatch(/^\{color\.brand\.primary/);
     // the other brand colors the site names are kept as primitives, nothing aliases them
@@ -278,7 +280,7 @@ describe('blazon init --from', () => {
     quiet();
     const dir = path.join(tempDir(), 'any-folder');
     expect(await runInit(dir, { from: `${base}/manifest` })).toBe(0);
-    expect(fs.readFileSync(path.join(dir, 'blazon.config.ts'), 'utf8')).toContain('title: "Acme"');
+    expect(fs.readFileSync(path.join(dir, 'blazon.json'), 'utf8')).toContain('"title": "Acme"');
   });
 
   describe('starter leftovers', () => {

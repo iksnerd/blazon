@@ -51,7 +51,7 @@ VS Code's `.vscode/mcp.json` uses `servers` in place of `mcpServers`. Leave out 
 
 The server talks over standard input and output. `--brand <folder>` or `--brand=<folder>` (or the environment variable `BLAZON_BRAND`) names the brand folder; it defaults to the folder the client starts the server in. `BLAZON_BIN` names the blazon program when it is not on `PATH`.
 
-**Use a brand folder you trust.** Reading a brand loads its `blazon.config.ts` as code, so a brand folder can run any code as your user. The server hands the blazon program only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `BLAZON_*`, `NO_COLOR` and a few Windows names), so secrets in the client's environment do not reach that code. That limits the harm; it does not make an untrusted brand safe.
+**Use a brand folder you trust.** Reading a brand reads its `blazon.json` as data, but compiling it runs the plugins that file names, so a brand folder can run programs as your user. The server hands the blazon program only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `BLAZON_*`, `NO_COLOR` and a few Windows names), so secrets in the client's environment do not reach that code. That limits the harm; it does not make an untrusted brand safe.
 
 ## Check that it works
 
@@ -74,7 +74,7 @@ It runs four checks, and each one that does not pass names a `fix` command:
 
 `--json` prints one document, `command` and `passed` first, then `mode`, `client`, `brand`, `runsBrandConfig`, `trust`, `registered` and the `checks` list of `{ name, passed, detail, fix }`. Exit status: 0 when the server is ready, 1 when it is not, 2 for an unknown client, a brand folder that does not exist, or `--check` given with `--print-config` or with neither flag.
 
-**The check runs the brand's config.** The handshake makes the server compile the brand, which loads its `blazon.config.ts` as code. Run `--check` only on a brand folder you trust, as described above.
+**The check compiles the brand.** The handshake makes the server compile the brand, which runs the plugins its `blazon.json` names. Run `--check` only on a brand folder you trust, as described above.
 
 ## The tools
 

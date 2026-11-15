@@ -37,7 +37,7 @@ Items 1 to 8 are each small. Together they turn a ten-minute setup into an after
 
 The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT" and "MAY" are to be interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all capitals.
 
-The **project** is the repository blazon runs in, such as an app. The **book folder** is the folder that holds `blazon.config.ts`, `brand/` by default. A **source** is a file in the project that states brand values blazon can import, such as a CSS file. **`<run>`** stands for how the project runs packages: `npx @scope/blazon`, `yarn blazon`, or `pnpm blazon`.
+The **project** is the repository blazon runs in, such as an app. The **book folder** is the folder that holds `blazon.json`, `brand/` by default. A **source** is a file in the project that states brand values blazon can import, such as a CSS file. **`<run>`** stands for how the project runs packages: `npx @scope/blazon`, `yarn blazon`, or `pnpm blazon`.
 
 ## The model
 
@@ -76,7 +76,7 @@ Installing straight from git (`npm install github:iksnerd/blazon`) does not work
   Imported from app/globals.css: 43 colors, 1 radius, a dark theme (42 colors)
   Imported from app/layout.tsx: 3 font families
   Imported from app/icon.svg: the logo
-  Wrote brand/blazon.config.ts, brand/blazon.resolver.json, brand/tokens/colors.json, … (11 files)
+  Wrote brand/blazon.json, brand/blazon.resolver.json, brand/tokens/colors.json, … (11 files)
 
   Next:
     npx @scope/blazon dev brand       the brand book at http://localhost:3000, live
@@ -87,7 +87,7 @@ Installing straight from git (`npm install github:iksnerd/blazon`) does not work
 
 ### 3. `blazon sync [dir]`
 
-Re-runs the detectors that `init` recorded in `blazon.config.ts` (`sources: [{ from: 'shadcn', file: '../app/globals.css' }]`) and rewrites the token files they own.
+Re-runs the detectors that `init` recorded in `blazon.json` (`"sources": [{ "from": "shadcn", "file": "../app/globals.css" }]`) and rewrites the token files they own.
 
 Each detector owns its files (`tokens/imported/<detector>.json`, and `tokens/imported/<detector>.<context>.json` per context) and is the only writer of them through blazon. Facts added by hand to an imported token (a description, `dev.blazon` rules, a review note) go into the same file, on the token. They cannot go into a second file: blazon replaces a token whole when a later file defines the same path (`src/core/tokens/merge.ts`), so a token cannot be split across files without changing RFC 0001. Instead, a sync reads the file it owns before rewriting it, and MUST keep every key of a token except `$value` (and `$value` of an alias the detector did not write) for each path that still exists. It adds new tokens, and lists removed ones without deleting their hand facts silently: a removed token is reported, and dropped only with `--prune`.
 
@@ -99,7 +99,7 @@ Prints one line per requirement and exits 1 if any command in the config cannot 
 
 ```text
 ✓ Node 24.11.0
-✓ blazon.config.ts loads; 4 pages, 85 tokens, 1 context (theme: light, dark)
+✓ blazon.json loads; 4 pages, 85 tokens, 1 context (theme: light, dark)
 ✓ sources: app/globals.css, in sync
 ✗ blazon.print-book: no browser. Install Google Chrome, or set BLAZON_CHROME
 ```
@@ -146,7 +146,7 @@ New keys and where each is specified:
 
 | Key | Specified in |
 |---|---|
-| `sources` in `blazon.config.ts` | RFC 0001 §14 (the config table), `src/core/config/validate.ts`, manual chapter 7. `brand.schema.json` is not affected |
+| `sources` in `blazon.json` | RFC 0001 §14 (the config table), `src/core/config/validate.ts`, manual chapter 7. `brand.schema.json` is not affected |
 | `dev.blazon.duplicates` | `brand.schema.json` (`$defs/blazon`), manual chapter 2's field table |
 | `UI` in `pairs[].min` | manual chapter 2 (the levels list), the contrast check, `brand.schema.json` |
 
@@ -169,7 +169,7 @@ Sections 2 to 5 are not implemented. Section 1 is done as far as the name goes: 
 
 Partly addressed, and still open: wall 5, by `46616d2 feat(template): ship original demo artwork in place of dashed placeholder boxes` and `553867b feat(check): note files that are still the starter's text` (the demo artwork was flagged `needs-review` and each unedited starter file gets a `starter-file` note). Since then the starter is no longer a demo brand with placeholder values: `init` copies blazon's own brand book, `examples/blazon/`, as the one source, so the starter and the example cannot drift apart, and the placeholder artwork and its `needs-review` flags are gone. That does not fix wall 5. A company still gets a brand that is not its own: eleven pages and eight files that describe blazon, which `blazon check` lists as 24 `starter-file` notes (checked on a fresh `blazon init`: 0 errors, 0 warnings) and which the company still has to rewrite or delete by hand. Only section 2's import of the project's own tokens and pages closes it. Walls 1, 4, 6, 7, 8 and 9 are unchanged: the next steps are still fixed strings, and the title still comes from the folder name, not from the project's `package.json` (section 2). A guided run in a terminal asks for a name and `--name` gives one, but a bare `blazon init dir` still derives the title from the folder.
 
-`blazon init --from <url>` (`3a8b2e3 feat(init): add --from to start a brand book from a live site`, then `8d90a43` and `89654c7`) is a different route from section 2. It reads a live site's page and stylesheets, not a project's files, writes everything `needs-review`, and names the tokens' `source.cssVar` for `blazon drift`. Section 2 first named its explicit CSS form `--from css <file>`, which would have collided with it. That is settled: `--from <url>` keeps its name, because it ships and the manual describes it in chapter 1, and section 2's flag is `--css <file>` (repeatable; it takes the same `--context <selector>=<name>` option). The two never share a flag. `--from` takes an http(s) address only, and `blazon init` exits 2 for anything else, so a file path cannot be mistaken for a site. The `from: 'css'` key of a `sources` entry in `blazon.config.ts` is a config field, not a flag, and is unchanged.
+`blazon init --from <url>` (`3a8b2e3 feat(init): add --from to start a brand book from a live site`, then `8d90a43` and `89654c7`) is a different route from section 2. It reads a live site's page and stylesheets, not a project's files, writes everything `needs-review`, and names the tokens' `source.cssVar` for `blazon drift`. Section 2 first named its explicit CSS form `--from css <file>`, which would have collided with it. That is settled: `--from <url>` keeps its name, because it ships and the manual describes it in chapter 1, and section 2's flag is `--css <file>` (repeatable; it takes the same `--context <selector>=<name>` option). The two never share a flag. `--from` takes an http(s) address only, and `blazon init` exits 2 for anything else, so a file path cannot be mistaken for a site. The `from: 'css'` key of a `sources` entry in `blazon.json` is a config field, not a flag, and is unchanged.
 
 Blazon is dogfooded before it is published: its first adopters are the owner's own projects, starting with a private Next.js app, each set up as a company would from a packed tarball (`npx --package <tarball> blazon …`). Each run adds its walls to the motivation's table, and a section is implemented once a dogfood run needs it. Publishing (section 1) comes after.
 
@@ -177,5 +177,5 @@ Blazon is dogfooded before it is published: its first adopters are the owner's o
 
 1. **The scope.** Whether a public release keeps `@iksnerd/blazon` or moves to an organization scope is open. Every README command follows the current name.
 2. **Where detectors live.** In core, or as plugins of a new `import` role (the plugin protocol, RFC 0005, would need the role). Core is simpler for the first three.
-3. **Whether `init` adds blazon to the project's `devDependencies`** and a `brand` script, so the config's `import { defineConfig } from '@iksnerd/blazon'` has types and the version is pinned. Today the import resolves at run time but the editor cannot type-check it.
+3. **Whether `init` adds blazon to the project's `devDependencies`** and a `brand` script, so the version is pinned.
 4. **Plugin requirements in the manifest**, for `doctor`: a question for blazon's profile (RFC 0002 section 2).

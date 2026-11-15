@@ -7,7 +7,7 @@ A list of everything blazon reads, holds and writes, with the name each field ha
 Blazon works in three steps. It **reads** the files you write, **compiles** them into one model (`BlazonData`), and **writes** outputs from that model. `blazon check` tests the model, and plugins see a copy of it as [`brand.json`](11-brand-json.md).
 
 ```text
-tokens/  docs/  assets/  blazon.config.ts   →   BlazonData   →   dist/tokens/  dist/site/  brand.json
+tokens/  docs/  assets/  blazon.json   →   BlazonData   →   dist/tokens/  dist/site/  brand.json
 (what you write)                                (compiled)       (what blazon writes)
 ```
 
@@ -21,7 +21,7 @@ tokens/  docs/  assets/  blazon.config.ts   →   BlazonData   →   dist/tokens
 | Assets | `assets/` (`assetsDir`) | Image files, grouped into categories by folder | [6](06-assets-and-icons.md) |
 | Sidecars | `<name>.json` beside an asset | The asset's title, rules, review and provenance | [6](06-assets-and-icons.md) |
 | Icon packages | `node_modules` (`iconSets`) | Icons, listed by category | [6](06-assets-and-icons.md) |
-| Configuration | `blazon.config.ts` | Titles, folders, theme, logo, the `assets` block, sections, vocabulary, plugins, fonts | [7](07-theme-and-config.md) |
+| Configuration | `blazon.json` | Titles, folders, theme, logo, the `assets` block, sections, vocabulary, plugins, fonts | [7](07-theme-and-config.md) |
 | Locks | `blazon.lock`, `blazon.plugins.lock` | The blazon commit that builds the brand, and the digests of pinned plugins | [12](12-plugins.md), [15](15-maintaining-a-brand-book.md) |
 
 ## What blazon holds: `BlazonData`
@@ -182,7 +182,7 @@ The front matter has `title`, `order`, `description`, `group` (the sidebar headi
 
 ### A category: `AssetCategoryConfig` and `AssetCategoryInfo`
 
-`AssetCategoryConfig` is what the `assets` block of `blazon.config.ts` says about a folder: `label`, `order`, `description`, `dir`, `rules`, `notSpecified`, `source`, `local` and the flags below. `AssetCategoryInfo` is what the brand book and `brand.json` show: the folder's name as `category`, and the config fields except `dir`. `dir` is read from the config only and is left out of the viewer data and `brand.json`, so a local path is not published.
+`AssetCategoryConfig` is what the `assets` block of `blazon.json` says about a folder: `label`, `order`, `description`, `dir`, `rules`, `notSpecified`, `source`, `local` and the flags below. `AssetCategoryInfo` is what the brand book and `brand.json` show: the folder's name as `category`, and the config fields except `dir`. `dir` is read from the config only and is left out of the viewer data and `brand.json`, so a local path is not published.
 
 | Field | Holds |
 |---|---|

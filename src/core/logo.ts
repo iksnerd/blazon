@@ -22,7 +22,7 @@ export const logoFiles = (config: BlazonConfig): string[] => Object.values(logoP
  */
 export function loadLogo(config: BlazonConfig, cwd: string, inAbsentLocal: (file: string) => boolean): { set?: LogoSet; problems: Finding[] } {
   if (!config.logo)
-    return { problems: [finding('logo-missing', { path: 'blazon.config.ts', message: 'No logo is configured: set `logo` in blazon.config.ts to an image in the project' })] };
+    return { problems: [finding('logo-missing', { path: 'blazon.json', message: 'No logo is configured: set `logo` in blazon.json to an image in the project' })] };
   const paths = logoPaths(config);
   const problems: Finding[] = [];
 

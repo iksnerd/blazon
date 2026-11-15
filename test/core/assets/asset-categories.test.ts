@@ -6,7 +6,7 @@ import { compileBlazonData } from '../../../src/core/index.js';
 import type { AssetCategoryConfig } from '../../../src/types/index.js';
 import { tempDir } from '../../support/project';
 
-// The `assets` block of blazon.config.ts (RFC 0001 §11): a label, an order and a description for each asset
+// The `assets` block of blazon.json (RFC 0001 §11): a label, an order and a description for each asset
 // category, an extra folder to scan, and the findings that keep a library honest.
 
 /** The smallest PNG header that carries a pixel size; the scanner reads nothing past it. */

@@ -778,7 +778,7 @@ describe('a new project from `blazon init`', () => {
     }
   });
 
-  it('names the section of every page, and expects the sections blazon.config.ts lists', async () => {
+  it('names the section of every page, and expects the sections blazon.json lists', async () => {
     const project = await started();
     for (const doc of project.docs) expect(doc.sections.length, doc.slug).toBeGreaterThan(0);
     expect(project.findings.filter((f) => f.code.startsWith('section-'))).toEqual([]);

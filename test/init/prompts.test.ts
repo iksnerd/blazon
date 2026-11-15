@@ -45,7 +45,7 @@ describe('clackPrompter', () => {
     const dir = path.join(tempDir(), 'acme-brand');
     expect(await runInit(dir, { tty: true })).toBe(130);
     expect(clack.cancel).toHaveBeenCalled();
-    expect(fs.readFileSync(path.join(dir, 'blazon.config.ts'), 'utf8')).toContain('title: "Acme Brand Book"');
+    expect(fs.readFileSync(path.join(dir, 'blazon.json'), 'utf8')).toContain('"title": "Acme Brand Book"');
   });
 });
 

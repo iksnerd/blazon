@@ -18,7 +18,7 @@ export function requireFolder(cwd: string): void {
 export function requireTokens(cwd: string, tokensDir: string): void {
   if (isDirectory(path.resolve(cwd, tokensDir))) return;
   const named = tokensDir.replace(/^\.\//, '').replace(/\/$/, '');
-  throw new UsageError(`no tokens folder (${named}) in "${cwd}"`, `${startOne(cwd)}, or set tokensDir in blazon.config.ts.`, 'no-tokens-folder');
+  throw new UsageError(`no tokens folder (${named}) in "${cwd}"`, `${startOne(cwd)}, or set tokensDir in blazon.json.`, 'no-tokens-folder');
 }
 
 /** The config of the brand book in `cwd`, after checking that there is a folder and a tokens folder to read. */

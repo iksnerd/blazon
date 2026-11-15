@@ -1,11 +1,11 @@
 ---
 name: blazon
-description: Works on a blazon brand book (a folder with tokens/, docs/, assets/ and blazon.config.ts) - checks it, reads token values and rules, tests color contrast, and edits tokens, pages and assets. Use when a task touches such a folder or builds a site in its look. Not for other design-token tools or for editing blazon's own source code.
+description: Works on a blazon brand book (a folder with tokens/, docs/, assets/ and blazon.json) - checks it, reads token values and rules, tests color contrast, and edits tokens, pages and assets. Use when a task touches such a folder or builds a site in its look. Not for other design-token tools or for editing blazon's own source code.
 ---
 
 # Working with a blazon brand book
 
-A brand book is a folder: `tokens/` (DTCG JSON), `docs/` (Markdown pages), `assets/` (files with JSON sidecars), `blazon.config.ts` and `blazon.resolver.json`. `blazon` compiles it and `blazon check` reports where it breaks its own rules. If the folder has an `AGENTS.md`, read it too: it is the brand's own notes. The manual is `docs/manual/index.md` in the blazon repository.
+A brand book is a folder: `tokens/` (DTCG JSON), `docs/` (Markdown pages), `assets/` (files with JSON sidecars), `blazon.json` and `blazon.resolver.json`. `blazon` compiles it and `blazon check` reports where it breaks its own rules. If the folder has an `AGENTS.md`, read it too: it is the brand's own notes. The manual is `docs/manual/index.md` in the blazon repository.
 
 ## The loop
 
@@ -47,7 +47,7 @@ A denied `can_use` is a normal answer (`allowed: false`), not an error. When a r
 
 - `dist/`: `blazon tokens` and `blazon build` overwrite it. Change the source and build again. Take colors, fonts and sizes from `dist/tokens/` and logo and font paths from `dist/site/brand.json`, never a literal.
 - `blazon.lock` and `blazon.plugins.lock`: a person writes them with `blazon pin` and `blazon plugin pin`.
-- The `plugins` list in `blazon.config.ts`, and the `review` block of a token or sidecar. Never set `status: ok`, `by` or `at`.
+- The `plugins` list in `blazon.json`, and the `review` block of a token or sidecar. Never set `status: ok`, `by` or `at`.
 
 ## Reading a finding
 

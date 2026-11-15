@@ -25,7 +25,7 @@ const blazonWith = (env: Record<string, string>, cwd: string, ...args: string[])
 const output = (result: { stdout: string; stderr: string }) => result.stdout + result.stderr;
 
 /** The starter, with the reference plugin copied in, pinned by the command, and allowed with these options. */
-async function starter(options: string, firstLine?: string): Promise<string> {
+async function starter(options: Record<string, unknown> | undefined, firstLine?: string): Promise<string> {
   const root = await starterProject();
   // blazon's h3 is set in the body face; the plugin wants every heading in one font, so the project sets it in the display face
   const typography = path.join(root, 'tokens/typography.json');
@@ -39,8 +39,9 @@ async function starter(options: string, firstLine?: string): Promise<string> {
   }
   const pin = blazon(root, 'plugin', 'pin', 'plugins/acme.house-style', '--name', 'acme.house-style');
   expect(pin.status, output(pin)).toBe(0);
-  const config = path.join(root, 'blazon.config.ts');
-  fs.writeFileSync(config, fs.readFileSync(config, 'utf-8').replace('export default defineConfig({', `export default defineConfig({\n  plugins: [{ name: 'acme.house-style'${options} }],`));
+  const config = path.join(root, 'blazon.json');
+  const brand = JSON.parse(fs.readFileSync(config, 'utf-8')) as Record<string, unknown>;
+  fs.writeFileSync(config, `${JSON.stringify({ ...brand, plugins: [{ name: 'acme.house-style', ...(options ? { options } : {}) }] }, null, 2)}\n`);
   return root;
 }
 
@@ -64,7 +65,7 @@ describe.skipIf(!python)('the reference plugin', () => {
   });
 
   it('fails `blazon check` for a heading in another font than the one the options name', async () => {
-    const root = await starter(", options: { headingFont: 'Inter' }");
+    const root = await starter({ headingFont: 'Inter' });
     const result = blazon(root, 'check');
     expect(result.status, output(result)).toBe(1);
     expect(output(result)).toContain('type.h1 is set in Big Shoulders Display, not Inter');
@@ -72,7 +73,7 @@ describe.skipIf(!python)('the reference plugin', () => {
   }, 120_000);
 
   it('passes `blazon check` and `blazon build` when the heading is in the named font, and the site is built', async () => {
-    const root = await starter(", options: { headingFont: 'Big Shoulders Display' }");
+    const root = await starter({ headingFont: 'Big Shoulders Display' });
     expect(blazon(root, 'check').status).toBe(0);
     const build = blazon(root, 'build');
     expect(build.status, output(build)).toBe(0);
@@ -80,14 +81,14 @@ describe.skipIf(!python)('the reference plugin', () => {
   }, 120_000);
 
   it('says it cannot judge, and does not pass, when the options do not name a font', async () => {
-    const root = await starter('');
+    const root = await starter(undefined);
     const result = blazon(root, 'check');
     expect(result.status).toBe(1);
     expect(output(result)).toContain('could not answer: options.headingFont is required');
   }, 120_000);
 
   it('is not run once its bytes change, whatever the pin once said', async () => {
-    const root = await starter(", options: { headingFont: 'Big Shoulders Display' }");
+    const root = await starter({ headingFont: 'Big Shoulders Display' });
     fs.appendFileSync(path.join(root, 'plugins/acme.house-style/blazon-acme.house-style'), '\n# edited after pinning\n');
     const result = blazon(root, 'check');
     expect(result.status).toBe(1);
@@ -109,7 +110,7 @@ describe.skipIf(!python)('the reference plugin', () => {
     };
 
     it('is refused, with what to change, when it is in none of the directories blazon trusts', async () => {
-      const root = await starter(", options: { headingFont: 'Big Shoulders Display' }", '#!/usr/bin/env pyalias');
+      const root = await starter({ headingFont: 'Big Shoulders Display' }, '#!/usr/bin/env pyalias');
       const result = blazon(root, 'check');
       expect(result.status, output(result)).toBe(1);
       expect(output(result)).toContain('[plugin-failed]');
@@ -120,7 +121,7 @@ describe.skipIf(!python)('the reference plugin', () => {
     it('is found in a directory the operator names in BLAZON_PLUGIN_PATH, and the plugin then runs', async () => {
       const dir = aliasDir();
       if (!dir) return; // no clean place to put the alias on this machine
-      const root = await starter(", options: { headingFont: 'Big Shoulders Display' }", '#!/usr/bin/env pyalias');
+      const root = await starter({ headingFont: 'Big Shoulders Display' }, '#!/usr/bin/env pyalias');
       const result = blazonWith({ BLAZON_PLUGIN_PATH: dir }, root, 'check');
       expect(result.status, output(result)).toBe(0);
       const build = blazonWith({ BLAZON_PLUGIN_PATH: dir }, root, 'build');
@@ -131,7 +132,7 @@ describe.skipIf(!python)('the reference plugin', () => {
       const dir = aliasDir();
       if (!dir) return;
       fs.chmodSync(dir, 0o775);
-      const root = await starter(", options: { headingFont: 'Big Shoulders Display' }", '#!/usr/bin/env pyalias');
+      const root = await starter({ headingFont: 'Big Shoulders Display' }, '#!/usr/bin/env pyalias');
       const result = blazonWith({ BLAZON_PLUGIN_PATH: dir }, root, 'check');
       expect(result.status, output(result)).toBe(1);
       expect(output(result)).toContain(`${dir}: ${dir} can be written by group or others`);
@@ -140,7 +141,7 @@ describe.skipIf(!python)('the reference plugin', () => {
     it('is not looked for on the PATH of the host', async () => {
       const dir = aliasDir();
       if (!dir) return;
-      const root = await starter(", options: { headingFont: 'Big Shoulders Display' }", '#!/usr/bin/env pyalias');
+      const root = await starter({ headingFont: 'Big Shoulders Display' }, '#!/usr/bin/env pyalias');
       const result = blazonWith({ PATH: `${dir}:${process.env.PATH}` }, root, 'check');
       expect(result.status, output(result)).toBe(1);
       expect(output(result)).toContain('pyalias is not in the directories blazon trusts');

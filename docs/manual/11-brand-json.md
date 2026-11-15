@@ -82,7 +82,7 @@ Ignore keys you do not know. A later blazon may add keys without changing `versi
 
 ## Drawing a deck
 
-[`blazon.brand-deck`](14-shipped-plugins.md#blazonbrand-deck), a plugin that ships with blazon, turns a `brand.json` into a 16:9 PDF, for a review meeting or a printout. It draws the slides as web pages and prints them with Google Chrome (or the browser `BLAZON_CHROME` names), as `blazon.print-book` does, so it needs Node and a Chrome and nothing else: no Python, no uv and no network. Allow it by name in `blazon.config.ts`, and `blazon build` writes `dist/tokens/blazon.brand-deck/brand-deck.pdf`. From a checkout of blazon, built with `npm run build`, its program is also a command line:
+[`blazon.brand-deck`](14-shipped-plugins.md#blazonbrand-deck), a plugin that ships with blazon, turns a `brand.json` into a 16:9 PDF, for a review meeting or a printout. It draws the slides as web pages and prints them with Google Chrome (or the browser `BLAZON_CHROME` names), as `blazon.print-book` does, so it needs Node and a Chrome and nothing else: no Python, no uv and no network. Allow it by name in `blazon.json`, and `blazon build` writes `dist/tokens/blazon.brand-deck/brand-deck.pdf`. From a checkout of blazon, built with `npm run build`, its program is also a command line:
 
 ```bash
 plugins/blazon.brand-deck/bin/blazon-blazon.brand-deck.🔌 dist/site/brand.json -o deck.pdf
@@ -116,8 +116,10 @@ An asset that a `blazon:section` of the same page draws is not drawn again in a 
 
 **Leaving asset categories out.** A category marked `reference: true` or `experimental: true` in `brand.json` is always left out of the deck, with no option needed. An otherwise ordinary category that you do not want in the deck, such as a set that was supplied and is not used, still costs a slide for each asset, or a place in a grid, when a page lists it. Name it in the plugin's `skip` option and the deck leaves it out: its asset slides and grid figures, and what the guidelines leave open for it on the divider. The page's divider and everything else stay.
 
-```ts
-plugins: [{ name: 'blazon.brand-deck', options: { skip: ['favicons-supplied'] } }],
+```json
+{
+  "plugins": [ { "name": "blazon.brand-deck", "options": { "skip": [ "favicons-supplied" ] } } ]
+}
 ```
 
 On the command line it is `--skip favicons-supplied`, repeatable. A name is an asset category of the brand (a folder of `assets/`); `logos` leaves out the logo slides. A name that is no category is a warning, `blazon.brand-deck/skip-unknown`, and the deck is drawn without leaving anything out for it. A `skip` that is not a list of names is `blazon.brand-deck/option-invalid`, any other option is `blazon.brand-deck/option-unknown`; both are warnings and the deck is still drawn. The command line says the same on standard error.

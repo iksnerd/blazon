@@ -55,7 +55,7 @@ describe('doctorChecks', () => {
     expect(none.status).toBe('fail');
     expect(none.fix).toContain('blazon init');
     const root = await starterProject();
-    fs.writeFileSync(path.join(root, 'blazon.config.ts'), 'throw new Error("broken config");\n');
+    fs.writeFileSync(path.join(root, 'blazon.json'), 'throw new Error("broken config");\n');
     const broken = byId(await doctorChecks(root, calm()), 'brand');
     expect(broken.status).toBe('fail');
     expect(broken.message).toContain('broken config');

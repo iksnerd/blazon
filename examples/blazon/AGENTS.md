@@ -13,8 +13,8 @@ Run commands from the folder that holds this file, or pass the folder as the las
 3. Check again until `counts.errors` is 0, then run `blazon build`.
 
 - Never edit `dist/`. `blazon tokens` writes `dist/tokens/` (`theme.css`, `tokens.ts`, `tokens.json`) and `blazon build` also writes the site to `dist/site/`; both overwrite it, and both stop on an error. `--no-plugins` builds without Google Chrome.
-- The brand lives in `tokens/` (DTCG JSON, `{ "$value": ..., "$type": ... }`, an alias is `"{color.ink.graphite}"`), `docs/` (numbered Markdown pages), `assets/` (images, each with a JSON sidecar of the same name: `mark.svg` and `mark.json`), `blazon.config.ts` (title, theme, logo, plugins) and `blazon.resolver.json` (the token files that load, and the themes; a new token file is listed in `sets` there or it is not read; dark is `tokens/theme/dark.json`).
-- Safe to change: token values, pages, assets with their sidecars, and the title and theme in `blazon.config.ts`. Everything under "Do not touch" needs the person.
+- The brand lives in `tokens/` (DTCG JSON, `{ "$value": ..., "$type": ... }`, an alias is `"{color.ink.graphite}"`), `docs/` (numbered Markdown pages), `assets/` (images, each with a JSON sidecar of the same name: `mark.svg` and `mark.json`), `blazon.json` (title, theme, logo, plugins) and `blazon.resolver.json` (the token files that load, and the themes; a new token file is listed in `sets` there or it is not read; dark is `tokens/theme/dark.json`).
+- Safe to change: token values, pages, assets with their sidecars, and the title and theme in `blazon.json`. Everything under "Do not touch" needs the person.
 - `blazon dev` serves the book with live reload; `-p <port>` sets the port.
 
 Codes you meet first:
@@ -27,7 +27,7 @@ Codes you meet first:
 
 - Put a value in `tokens/` once. In a page, use a directive such as `<!-- blazon:tokens color.signal -->`, not the hex (the `pages` chapter lists them). A directive inside a code fence is not run.
 - Rules live next to the values under `$extensions["dev.blazon"]` (`usage`, `pairs`, `review`). Never remove a rule or the `logo` to clear a finding; fix the value or ask. The `usage` rule on `color.signal` and the `pairs` rule on `text` are blazon's own: replace them with the new brand's.
-- Replace starter files in groups and check after each: tokens, then pages, then assets, then `blazon.config.ts`. Most errors of a rebrand are a page or token still pointing at something removed.
+- Replace starter files in groups and check after each: tokens, then pages, then assets, then `blazon.json`. Most errors of a rebrand are a page or token still pointing at something removed.
 - A passing check does not mean the rebrand is done: the starter passes too. You are done when no `starter-file` note remains except files you chose to keep, and you list those.
 
 ## The MCP server
@@ -40,7 +40,7 @@ Read the `building-a-website` chapter first. Build on a brand that passes `blazo
 
 ## Do not touch, unless asked
 
-- The `plugins` list in `blazon.config.ts`, and `.blazon/plugins/`.
+- The `plugins` list in `blazon.json`, and `.blazon/plugins/`.
 - `blazon.lock` and `blazon.plugins.lock`; a person writes them with `blazon pin` and `blazon plugin pin`.
 - The `review` block of a token or sidecar, except to flag a value. Never set `status: ok`, `by` or `at` yourself.
 

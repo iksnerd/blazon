@@ -27,7 +27,6 @@ export default defineConfig({
       entry: {
         index: path.resolve(rootDir, 'src/index.ts'),
         'cli/index': path.resolve(rootDir, 'src/cli/index.ts'),
-        'config/index': path.resolve(rootDir, 'src/core/config/index.ts'),
         // The plugins blazon ships are not entries here: scripts/build-plugins.mjs builds each into its own folder under plugins/
       },
       formats: ['es'],
