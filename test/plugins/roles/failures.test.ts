@@ -91,6 +91,24 @@ describe('the end of a broken plugin\'s stderr', () => {
     }
   });
 
+  it('is the end of what it wrote, even when it wrote over 8 KB, and a secret across the old 8 KB cut is gone', async () => {
+    const HELD = 'hidden-value-0042';
+    const installed = failing(
+      // 8185 bytes of filler, then the secret in the same line (it crosses byte 8192), then the crash trace
+      `head -c 8185 /dev/zero | tr '\\0' a >&2; printf '%s\\n' "$BLAZON_SECRET_TOKEN" >&2; printf 'Traceback (most recent call last)\\nBoomError: crash here\\n' >&2; exit 3`,
+      { v: 2, roles: ['check'], env: ['BLAZON_SECRET_TOKEN'], secret_env: ['BLAZON_SECRET_TOKEN'] },
+    );
+    process.env.BLAZON_SECRET_TOKEN = HELD;
+    try {
+      const found = await only(installed);
+      expect(found.message.endsWith('BoomError: crash here')).toBe(true);
+      expect(found.message).toContain('[REDACTED]');
+      expect(found.message).not.toContain(HELD.slice(0, 7));
+    } finally {
+      delete process.env.BLAZON_SECRET_TOKEN;
+    }
+  });
+
   it('is not shown for a plugin that answered, even with an answer blazon refuses', async () => {
     expect((await only(failing("echo 'a note' >&2; echo 'cannot judge'; exit 2"))).message).toBe('could not answer: cannot judge');
     expect((await only(failing("echo 'a note' >&2; echo 'not json'"))).message).not.toContain('a note');

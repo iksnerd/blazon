@@ -36,11 +36,11 @@ A plugin that cannot judge MUST exit `2`, never `0`. Blazon cuts the reason to 3
 
 Every request has a version, `"v": 1`. A plugin refuses a version it does not speak with exit `2`.
 
-Limits: 64 KB of standard output (1 MiB for a `check` plugin, so that 500 findings fit), 8 KB of standard error kept, a request of at most 4 MiB, and the manifest's timeout. A plugin that keeps breaking, three times in a row, is stopped for the rest of that run: the next calls end at once and the program is not started.
+Limits: 64 KB of standard output (1 MiB for a `check` plugin, so that 500 findings fit), the last 8 KB of standard error kept, a request of at most 4 MiB, and the manifest's timeout. A plugin that keeps breaking, three times in a row, is stopped for the rest of that run: the next calls end at once and the program is not started.
 
-**What the plugin sees.** An empty environment, plus `HOME`, `LANG` and `TMPDIR` if blazon has them set, plus the variables the manifest lists, plus a `PATH`. For a pinned script that `PATH` is the trusted directories above; otherwise it is yours. Your other variables never reach it. It runs in a process group of its own, which blazon ends when the call ends, so a program the plugin started does not outlive it.
+**What the plugin sees.** An empty environment, plus `HOME`, `LANG` and `TMPDIR` if blazon has them set, plus the variables the manifest lists, plus a `PATH`. For a pinned script that `PATH` is the trusted directories above; otherwise it is yours. Your other variables never reach it. It runs in a process group of its own, which blazon ends when the call ends, so a program the plugin started does not outlive it. When a call runs out of time or prints too much, blazon sends the group SIGTERM first and kills what is left after 2 seconds, so a plugin can stop what it started (a browser it opened, say) in a handler.
 
-**Secrets.** A variable whose name starts `BLAZON_SECRET_` is secret without you doing anything else. Blazon gives it only to a plugin whose manifest lists it in `secret_env`, and refuses to start a plugin that lists it in `env` only. It removes the value, and its base64 and URL-encoded forms, from everything the plugin prints before blazon shows or keeps any of it.
+**Secrets.** A variable whose name starts `BLAZON_SECRET_` is secret without you doing anything else. Blazon gives it only to a plugin whose manifest lists it in `secret_env`, and refuses to start a plugin that lists it in `env` only. It removes the value, and its base64, URL-encoded and JSON-escaped forms, from everything the plugin prints before blazon shows or keeps any of it.
 
 A plugin's name is dotted lowercase words, `acme.house-style`, and a manifest that names a role blazon does not define is refused. A plugin may fill one role only: `blazon.copy` fills `check` alone.
 
@@ -128,7 +128,7 @@ If the program sits in the layout blazon's own plugins use, `<name>/bin/blazon-<
 
 A program anywhere else, such as a script beside its README or a pinned copy under `.blazon/plugins/`, is not checked for its name.
 
-Add `--core` to run only the core cases of the protocol (1 to 5). It skips blazon's own cases (6 to 9, including the rule that a finding's code starts with the plugin's name) and the `layout` line, and prints `core cases only (1 to 5): no role cases, no layout line` under the first line. Use it to check a plugin against the protocol alone, for example one that was not written for blazon's roles. The exit status is the same: `0` when the core cases pass, `1` when one fails, `2` for bad arguments. A plugin that passes `--core` can still fail without it. With `--json`, the document has `"core": true` after `adopts`, only cases 1 to 5, and no `layout` key.
+Add `--core` to run only the core cases of the protocol (1 to 5). It skips blazon's own cases (6 to 9, including the rule that a finding's code starts with the plugin's name) and the `layout` line, and prints `core cases only (1 to 5): no role cases, no layout line` under the first line. Use it to check the protocol's cases alone, for a plugin that declares `check` or `build`. The manifest is still read against blazon's profile, so a plugin whose roles are not blazon's fails case 1; `--core` does not check a plugin written for another host. The exit status is the same: `0` when the core cases pass, `1` when one fails, `2` for bad arguments. A plugin that passes `--core` can still fail without it. With `--json`, the document has `"core": true` after `adopts`, only cases 1 to 5, and no `layout` key.
 
 | Exit status | Means |
 |---|---|

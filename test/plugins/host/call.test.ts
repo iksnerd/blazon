@@ -110,11 +110,43 @@ describe('limits', () => {
     expect(result.answered && result.stdout.length).toBe(100000);
   });
 
+  it('keeps the last bytes of stderr, so the end of a long trace is what a person reads', async () => {
+    const file = program(tempDir(), "#!/bin/sh\nhead -c 20000 /dev/zero | tr '\\0' a >&2\nprintf 'END-OF-TRACE\\n' >&2\n");
+    const result = await run({ program: file, timeout: 5 });
+    expect(result.stderr.length).toBe(STDERR_KEEP);
+    expect(result.stderr.toString().endsWith('END-OF-TRACE\n')).toBe(true);
+  });
+
   it('a call may keep more stderr than the host default', async () => {
     const file = program(tempDir(), "#!/bin/sh\nhead -c 20000 /dev/zero | tr '\\0' a >&2\n");
     expect((await run({ program: file, timeout: 5 })).stderr.length).toBe(STDERR_KEEP);
     expect((await run({ program: file, timeout: 5, stderrKeep: 16384 })).stderr.length).toBe(16384);
   });
+});
+
+describe('ending a call that ran out of time', () => {
+  it('asks the group to stop first, so a plugin that traps SIGTERM can clean up what it started', async () => {
+    const dir = tempDir();
+    const mark = path.join(dir, 'cleaned');
+    const file = program(dir, `#!/bin/sh\nsleep 60 &\nchild=$!\ntrap 'kill $child; echo cleaned > ${mark}; exit 0' TERM\nwait\n`);
+    const result = await run({ program: file, timeout: 1 });
+    expect(result.answered).toBe(false);
+    expect(result.cause).toBe('timeout');
+    expect(fs.existsSync(mark)).toBe(true);
+  }, 20_000);
+
+  it('still kills a plugin that ignores SIGTERM, within the grace', async () => {
+    const dir = tempDir();
+    const log = path.join(dir, 'alive');
+    const file = program(dir, `#!/bin/sh\ntrap '' TERM\nwhile :; do echo x >> ${log}; sleep 0.2; done\n`);
+    const start = Date.now();
+    const result = await run({ program: file, timeout: 1 });
+    expect(result.cause).toBe('timeout');
+    expect(Date.now() - start).toBeLessThan(6000);
+    const size = fs.statSync(log).size;
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(fs.statSync(log).size).toBe(size);
+  }, 20_000);
 });
 
 describe('the request file', () => {

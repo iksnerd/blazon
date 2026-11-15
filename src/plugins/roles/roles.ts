@@ -9,9 +9,9 @@ import { RunBreakers, type Gate } from './gate.js';
 import { MANIFEST_TIMEOUT } from '../wire/limits.js';
 import { LOCK_FILE, pinFor, readLock, type Lock } from '../pins/lock.js';
 import { ManifestError, decodeManifest, manifestTimeout, type Manifest } from '../wire/manifest.js';
-import { instanceIdTooLong, isPluginName } from '../../core/plugin-name.js';
+import { instanceIdTooLong, isPluginName, isTokenOutputName, pluginNameOfEntry } from '../../core/plugin-name.js';
 import { BLAZON_CORE_PROFILE, BLAZON_PROFILE, roleRuntime } from '../wire/profile.js';
-import { scrub } from '../host/scrub.js';
+import { scrub, scrubPlain } from '../host/scrub.js';
 import { findShipped, shippedDirectory, type Shipped } from '../pins/shipped.js';
 import { message, truncateGraphemes } from '../wire/text.js';
 import { finding } from '../../core/checker/catalogue.js';
@@ -33,7 +33,6 @@ const MAX_PATH = 500;
 const STDERR_LINES = 5;
 const STDERR_CHARS = 500;
 const SEVERITIES = ['error', 'warning', 'info'];
-const CONTROL_OR_FORMAT = /[\p{Cc}\p{Cf}]/gu;
 
 export interface PluginRunOptions {
   /** Programs the operator named on the command line: they run unpinned, once, with a warning */
@@ -83,7 +82,7 @@ const unsafe = (stat: fs.Stats) => (stat.mode & 0o022) !== 0;
 
 /** What a plugin printed, as text: the secrets and the characters a person should not see taken out, and cut to a length. */
 function plain(value: string, secrets: readonly string[], limit: number): string {
-  return truncateGraphemes(scrub(value, secrets).replace(CONTROL_OR_FORMAT, '').trim(), limit);
+  return truncateGraphemes(scrubPlain(value, secrets).trim(), limit);
 }
 
 /**
@@ -92,10 +91,9 @@ function plain(value: string, secrets: readonly string[], limit: number): string
  * blazon's, and cut from the front to a length. Empty when it wrote nothing. Never used for a call that answered.
  */
 export function stderrTail(stderr: Buffer, secrets: readonly string[]): string {
-  const lines = scrub(stderr, secrets)
-    .toString('utf-8')
+  const lines = scrubPlain(stderr.toString('utf-8'), secrets, true)
     .split(/\r?\n|\r/)
-    .map((line) => line.replace(CONTROL_OR_FORMAT, '').trim())
+    .map((line) => line.trim())
     .filter((line) => line !== '');
   const text = lines.slice(-STDERR_LINES).join(' | ');
   const chars = Array.from(text);
@@ -164,7 +162,9 @@ export class PluginRun {
     const refused: Target[] = [];
     for (const given of this.options.named ?? []) {
       const program = path.resolve(this.cwd, given);
-      const name = path.basename(program).replace(/^blazon-/, '');
+      // `blazon-<name>` or `blazon-<name>.🔌`: the name is what lies between `blazon-` and the final extension (RFC 0005 section 3.6)
+      const file = path.basename(program);
+      const name = pluginNameOfEntry(file) ?? file.replace(/^blazon-/, '');
       const first = named.get(name);
       if (!isPluginName(name)) refused.push({ name: path.basename(program), id: path.basename(program), from: `--plugin ${program}`, shown: false, options: {}, problem: NOT_A_PROGRAM });
       else if (first !== undefined && first !== program)
@@ -182,6 +182,7 @@ export class PluginRun {
     const checked = targets.map((target): Target => {
       const long = instanceIdTooLong(target.id);
       if (long) return { ...target, problem: `the id ${long}` };
+      if (isTokenOutputName(target.id)) return { ...target, problem: `the id ${target.id} of ${target.from} is a file blazon writes in tokensOutDir, where the instance's output folder would go. Give it another "as"` };
       const owner = owners.get(target.id);
       if (owner)
         return { ...target, problem: `the id ${target.id} of ${target.from} is already the id of ${owner.from} (an instance of ${owner.name}): two instances with one id would share the output folder and the breaker. Give one of them another "as"` };
@@ -273,8 +274,14 @@ export class PluginRun {
 
     // The manifest call: what the plugin is, before anything else is asked of it.
     const manifestAnswer = await run(this.callFor(located, { args: [`--${BLAZON_PROFILE.host}-manifest`], timeout: MANIFEST_TIMEOUT }));
-    // A manifest call that broke counts as a break; one that answered says nothing, so it does not reset a count
-    if (runtime.breaker && !manifestAnswer.answered) this.gate.record(id, 'break');
+    // A manifest call is a call like any other (RFC 0002 section 2): one that broke, exited 1 or printed a manifest blazon cannot load is a
+    // break; exit 2 is the plugin saying it cannot answer, which counts for a run's breaker and not for the dev cooldown. One that answered
+    // with a manifest says nothing, so it does not reset a count.
+    const ended = (how: 'break' | 'exit-2') => {
+      if (runtime.breaker) this.gate.record(id, how);
+    };
+    if (!manifestAnswer.answered || manifestAnswer.code === 1) ended('break');
+    else if (manifestAnswer.code === 2) ended('exit-2');
     // The manifest call is given no variables, so no labelled value can be in its stderr; scrub every one this process holds all the same
     const held = Object.entries(this.env).flatMap(([variable, value]) => (value && SECRET_PREFIXES.some((prefix) => variable.startsWith(prefix)) ? [value] : []));
     if (!manifestAnswer.answered) return [failed(`the manifest call did not exit 0 (${manifestAnswer.breakReason})${tailOf(manifestAnswer, held)}`, breakFix(manifestAnswer.cause, name, pinPath))];
@@ -283,6 +290,7 @@ export class PluginRun {
     try {
       manifest = decodeManifest(manifestAnswer.stdout, BLAZON_CORE_PROFILE);
     } catch (err) {
+      ended('break');
       return [failed(`its manifest is not one blazon loads: ${err instanceof ManifestError ? err.message : String(err)}`, PROTOCOL_FIX)];
     }
     if (!manifest.roles.includes(role)) return [];
@@ -333,7 +341,7 @@ export class PluginRun {
     const failed = (reason: string, fix?: string): Finding => failedFor(target, reason, fix);
     if (!result.answered) return { failure: failed(brokeWith(result, secrets), breakFix(result.cause, name, pinPath)), ended: 'break' };
     if (result.code === 2) {
-      const reason = message(scrub(result.stdout, secrets), `plugin ${name} could not answer`);
+      const reason = message(result.stdout, `plugin ${name} could not answer`, secrets);
       return { failure: failed(`could not answer: ${reason}`, COULD_NOT_FIX), ended: 'exit-2' };
     }
     const parsed = readAnswer(role, name, result.stdout, secrets, target.shown ? target.id : undefined);
@@ -372,6 +380,8 @@ export function readAnswer(role: Role, name: string, stdout: Buffer, secrets: re
     if (cleanPath === '') return wrong('path must be a non-empty string');
     const cleanMessage = typeof what === 'string' ? plain(what, secrets, MAX_MESSAGE - Array.from(suffix).length) : '';
     if (cleanMessage === '') return wrong('message must be a non-empty string');
+    // A code is shown and stored as it is, so one the scrubber would change holds a secret: refused, not repaired
+    if (scrub(code, secrets) !== code) return wrong('code holds a value blazon scrubs');
     findings.push({ code, severity: severity as Finding['severity'], path: cleanPath, message: `${cleanMessage}${suffix}` });
   }
   return { findings };

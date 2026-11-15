@@ -159,7 +159,7 @@ Blazon ignores a field it does not know, so a manifest written for a newer blazo
 - **Standard input** is a regular file made for the call in a directory of mode 0700, created exclusively at mode 0600, so no other user can open it, and removed afterwards. It holds one JSON object (a request) or nothing (the manifest). A plugin MUST NOT assume it ends in a newline.
 - **Environment** is empty plus `PATH`, `HOME`, `LANG` and `TMPDIR`, those of them that are set, plus the names the manifest's `env` lists. For a pinned plugin `PATH` is not the operator's own: it is the list of trusted directories of section 3.4. Blazon's own environment never reaches a plugin.
 - **Working directory** is the plugin's own directory for a pinned plugin. For an unpinned one it is not defined, and a plugin MUST NOT depend on it.
-- **Processes.** One process for each call, in its own process group, killed as a group when the call's time runs out and again after it exits. A plugin MUST be safe to run concurrently with itself. The mechanism needs a POSIX system, and blazon does not run plugins on Windows.
+- **Processes.** One process for each call, in its own process group, killed as a group when the call's time runs out and again after it exits. Blazon sends the group SIGTERM first and kills what is left 2 seconds later, so a plugin that started a program of its own (a browser, say) can stop it; the grace is blazon's, not the protocol's. A plugin MUST be safe to run concurrently with itself. The mechanism needs a POSIX system, and blazon does not run plugins on Windows.
 - **Standard error** goes to blazon, which scrubs it (section 3.5) and bounds what it keeps. A plugin MUST NOT print a secret to it.
 
 ## 5. Output and exit codes
