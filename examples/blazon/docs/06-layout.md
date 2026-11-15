@@ -19,7 +19,7 @@ Panels are divided by a 2px rule (`border.rule`, Graphite in light and Zinc in d
 
 Ticks and measure marks are rules too, and take the rule colors. A long tick is `rule.default` at the width of `border.rule`, and a short tick is `rule.quiet` at the width of `border.hairline`. Long ticks fall every 64px (`space.16`) and short ones every 16px (`space.4`). On an inverse surface every tick is `text.inverse`. A tick is never Signal Orange.
 
-Steel is the lightest a tick gets: `blazon can rule.quiet surface.canvas --role ui` reports 4.94:1 against the 3:1 a mark needs. In dark `rule.quiet` is Steel, 2.30:1 on Graphite and 2.64:1 on Carbon, so a scale there draws every tick in `rule.default` and tells long from short by width and spacing.
+Steel is the lightest a tick gets: `blazon can rule.quiet surface.canvas --role ui` reports 4.94:1 against the 3:1 a mark needs. In dark `rule.quiet` is Steel, 2.30:1 on Graphite and 2.64:1 on Carbon. A scale there draws every tick in `rule.default` and tells long from short by width and spacing.
 
 ## Surfaces
 

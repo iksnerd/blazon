@@ -52,7 +52,7 @@ Light is the default. The dark theme is a context of the same tokens (`blazon.re
 - The canvas is the deeper surface in both themes: Concrete under Bone, Carbon under Graphite.
 - Labels on Signal Orange stay Graphite in dark. Bone on Signal Orange is 2.74:1.
 - The edge of an orange part is `rule.onSignal`, Graphite in both themes: 5.29:1 on Signal Orange. `rule.default` would not do in dark. Zinc on Signal Orange is 1.03:1, below the 3:1 a part's edge needs.
-- Carbon and Zinc exist for the dark theme. Steel reaches only 2.30:1 on Graphite: too little for muted text or the edge of a control, so in dark it is the quiet hairline and nothing that has to be read. No other color of the brand sits below Graphite.
+- Carbon and Zinc exist for the dark theme. Steel reaches only 2.30:1 on Graphite, too little for muted text or the edge of a control. In dark it is the quiet hairline and nothing that has to be read. No other color of the brand sits below Graphite.
 
 ## Rules the build checks
 

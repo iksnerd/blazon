@@ -2,14 +2,14 @@
 
 This folder is a brand book made with blazon. Tokens, Markdown pages and assets are the source; `blazon` compiles them into CSS, a typed module and a static site, and `blazon check` reports where they break the brand's own rules. These notes are for an agent that edits the brand or builds a site in its look.
 
-The manual is at https://blazon-website-drab.vercel.app/docs. A chapter is `/docs/<name>` there, such as `/docs/checks`, and every page is also served as Markdown to a request that sends `Accept: text/markdown`.
+The manual is the `docs/manual/` folder of the blazon source repository; it is not in the installed package. A chapter is named here by its title, as the `checks` chapter, which is `docs/manual/03-checks.md`.
 
 ## How an agent should use blazon
 
 Run commands from the folder that holds this file, or pass the folder as the last argument.
 
 1. Run `blazon check --json --severity warning`. It prints one JSON document with `passed`, `counts` and `findings`. Exit 0 means no errors; `--strict` also fails on warnings.
-2. For each finding, read `code`, `message`, `path`, `file`, `line` and `fix`, and edit the file it names. `/docs/checks` describes every code; look it up, do not guess.
+2. For each finding, read `code`, `message`, `path`, `file`, `line` and `fix`, and edit the file it names. The `checks` chapter describes every code; look it up, do not guess.
 3. Check again until `counts.errors` is 0, then run `blazon build`.
 
 - Never edit `dist/`. `blazon tokens` writes `dist/tokens/` (`theme.css`, `tokens.ts`, `tokens.json`) and `blazon build` also writes the site to `dist/site/`; both overwrite it, and both stop on an error. `--no-plugins` builds without Google Chrome.
@@ -25,18 +25,18 @@ Codes you meet first:
 
 ## Rules that cost time
 
-- Put a value in `tokens/` once. In a page, use a directive such as `<!-- blazon:tokens color.signal -->`, not the hex (`/docs/pages` lists them). A directive inside a code fence is not run.
+- Put a value in `tokens/` once. In a page, use a directive such as `<!-- blazon:tokens color.signal -->`, not the hex (the `pages` chapter lists them). A directive inside a code fence is not run.
 - Rules live next to the values under `$extensions["dev.blazon"]` (`usage`, `pairs`, `review`). Never remove a rule or the `logo` to clear a finding; fix the value or ask. The `usage` rule on `color.signal` and the `pairs` rule on `text` are blazon's own: replace them with the new brand's.
 - Replace starter files in groups and check after each: tokens, then pages, then assets, then `blazon.config.ts`. Most errors of a rebrand are a page or token still pointing at something removed.
 - A passing check does not mean the rebrand is done: the starter passes too. You are done when no `starter-file` note remains except files you chose to keep, and you list those.
 
 ## The MCP server
 
-`blazon mcp` sets up blazon-mcp, a server that answers questions about this brand as Model Context Protocol tool calls: `check_brand`, `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo`, `get_shadcn`. It is not published yet, so it runs only from a blazon source checkout with the server built. Run `blazon mcp --check` to learn whether it is ready; each failed check names the `fix` to run. Without it, the commands above do the same work. Setup: `/docs/blazon-for-agents`.
+`blazon mcp` sets up blazon-mcp, a server that answers questions about this brand as Model Context Protocol tool calls: `check_brand`, `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo`, `get_shadcn`. It is not published yet, so it runs only from a blazon source checkout with the server built. Run `blazon mcp --check` to learn whether it is ready; each failed check names the `fix` to run. Without it, the commands above do the same work. Setup: the `blazon-for-agents` chapter.
 
 ## Building a site from this brand
 
-Read `/docs/building-a-website` first. Build on a brand that passes `blazon check`; take every color, font and size from `dist/tokens/`, never a literal; follow the `usage`, `pairs` and logo rules; take fonts and logo paths from `dist/site/brand.json`. Where the pages do not state a decision (a button, section spacing, where the logo goes), ask the person and list the question in your report.
+Read the `building-a-website` chapter first. Build on a brand that passes `blazon check`; take every color, font and size from `dist/tokens/`, never a literal; follow the `usage`, `pairs` and logo rules; take fonts and logo paths from `dist/site/brand.json`. Where the pages do not state a decision (a button, section spacing, where the logo goes), ask the person and list the question in your report.
 
 ## Do not touch, unless asked
 

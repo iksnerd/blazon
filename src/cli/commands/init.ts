@@ -8,7 +8,6 @@ import { clackPrompter, PromptCancelled, type Prompter } from '../../core/init/p
 import { runGuided, type Plan } from '../init-flow.js';
 import { lookFor, type Look } from '../init-ui.js';
 import { blazonCommand, inDir, shownDir } from '../where.js';
-import { SITE_URL } from '../../core/site.js';
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
@@ -254,7 +253,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     console.log(`  1. ${colorStep}`);
     nextSteps.forEach((step, i) => console.log(`  ${i + 2}. ${step}`));
   }
-  console.log(pc.dim(`\nThe manual: ${SITE_URL}/docs\n`));
+  console.log();
   if (options.dev) await (options.startDev ?? startDev)(destDir);
   return code;
 }

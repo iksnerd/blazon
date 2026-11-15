@@ -28,6 +28,16 @@ describe('blazon build with the prebuilt viewer', () => {
     expect(fs.existsSync(path.join(siteOutDir, 'brand-assets/logos/blazon-graphite.svg'))).toBe(true);
   });
 
+  it('ships the Geist font with its OFL license beside it', async () => {
+    const config = await loadConfig(project);
+    const { siteOutDir } = await buildSite(config, project);
+    const assets = path.join(siteOutDir, 'assets');
+    expect(fs.readdirSync(assets).some((file) => /^geist-.*\.woff2$/.test(file))).toBe(true);
+    const license = fs.readFileSync(path.join(assets, 'geist-OFL.txt'), 'utf-8');
+    expect(license).toContain('SIL OPEN FONT LICENSE Version 1.1');
+    expect(license).toContain('The Geist Project Authors');
+  });
+
   it('replaces the previous build instead of leaving stale files', async () => {
     const config = await loadConfig(project);
     const stale = path.join(project, config.outDir, 'stale.txt');

@@ -6,7 +6,6 @@ import { REPO } from '../support/paths';
 import { starterProject, tempDir } from '../support/project';
 import { literal, starterFacts } from '../support/starter-facts';
 import { runInit } from '../../src/cli/commands/init.js';
-import { SITE_URL } from '../../src/core/site.js';
 
 // What a new user sees: `blazon init`, then `blazon check` on the starter. The findings stay one for each file in the
 // data; only the text the command prints is grouped.
@@ -93,6 +92,6 @@ describe('blazon init output', () => {
     expect(out).toMatch(new RegExp(`2\\. Run\\s+blazon dev ${literal(dir)}`));
     expect(out).toContain(`3. Replace blazon's artwork in ${dir}/assets/ and the text in ${dir}/docs/`);
     expect(out).toMatch(new RegExp(`4\\. Run\\s+blazon check ${literal(dir)}`));
-    expect(out).toContain(`The manual: ${SITE_URL}/docs`);
+    expect(out).not.toMatch(/The manual:|vercel\.app/);
   });
 });

@@ -4,19 +4,19 @@ Blazon is MIT licensed (see [LICENSE](LICENSE)). The published package contains 
 
 ## Font
 
-The brand book's viewer ships the **Geist** variable font (`@fontsource-variable/geist`), under the SIL Open Font License 1.1.
+The brand book's viewer ships the **Geist** variable font (`@fontsource-variable/geist`), under the SIL Open Font License 1.1. The build writes the package's own license text beside the font files, as `assets/geist-OFL.txt` in `dist/ui` and in every built site.
 
 > Copyright 2024 The Geist Project Authors (<https://github.com/vercel/geist-font>)
 >
 > This Font Software is licensed under the SIL Open Font License, Version 1.1. The license is at <https://openfontlicense.org/open-font-license-official-text/>.
 
-The starter brand book (`template/`, copied by `blazon init`) carries one font file, `fonts/IBMPlexMono-Regular-latin.woff2`: the Latin subset of **IBM Plex Mono** Regular from `@fontsource/ibm-plex-mono` 5.3.0, under the SIL Open Font License 1.1. The licence text is `fonts/OFL.txt` beside it. A brand replaces the file with its own.
+The starter brand book (`template/`, copied by `blazon init`) carries two font files, `fonts/IBMPlexMono-Regular-latin.woff2` and `fonts/IBMPlexMono-SemiBold-latin.woff2`: the Latin subsets of **IBM Plex Mono** Regular (from `@fontsource/ibm-plex-mono` 5.3.0) and SemiBold, under the SIL Open Font License 1.1. The license text is `fonts/OFL.txt` beside them. A brand replaces the file with its own.
 
 > Copyright 2017 IBM Corp. All rights reserved. This Font Software is licensed under the SIL Open Font License, Version 1.1. The license is at <https://openfontlicense.org/open-font-license-official-text/>.
 
 ## Packages
 
-These are blazon's direct dependencies and the packages bundled into the viewer and the shipped plugins, with the version built against. Packages they depend on in turn are under licenses of the same kind (MIT, ISC, BSD, Apache-2.0); `npm ls --all` lists them and each one's `package.json` names its license.
+These are blazon's direct dependencies and the packages bundled into the viewer and the shipped plugins, with the version built against. Packages they depend on in turn are mostly MIT, ISC, BSD-2-Clause, BSD-3-Clause or Apache-2.0, with the exceptions named below; `npm ls --all` lists them and each one's `package.json` names its license.
 
 | Package | Version | License |
 |---|---|---|
@@ -48,5 +48,13 @@ These are blazon's direct dependencies and the packages bundled into the viewer 
 | `vite` | 8.3.6 | MIT |
 
 `playwright-core` is a dependency, but blazon never downloads a browser: plugins that need Chrome use the one on the computer (`BLAZON_CHROME`).
+
+Packages with a license other than those, and how blazon uses them:
+
+| Package | License | Use |
+|---|---|---|
+| `jszip` 3.10.2 | MIT OR GPL-3.0-or-later | Used by `pptxgenjs`, which is bundled into the `blazon.print-book` plugin program. Blazon uses it under the MIT license. |
+| `lightningcss` 1.33.0 | MPL-2.0 | A dependency of `vite`, so it is installed with blazon, and of the viewer's build. Blazon does not modify it or bundle it into its own files. |
+| `pako` 1.0.11 | MIT AND Zlib | A dependency of `pdf-lib`, which is bundled into the plugin programs. |
 
 A new direct or bundled dependency needs a row here.

@@ -27,7 +27,7 @@ node bin/blazon.js init my-brand
 node bin/blazon.js dev my-brand   # the book, with live reload, at http://localhost:3000
 ```
 
-`npm link` in the clone puts `blazon` on your PATH, and the rest of this README writes `blazon` for `node bin/blazon.js`.
+There is no `blazon` on your PATH until you run `npm link` in the clone. The rest of this README writes `blazon`; without the link, write `node bin/blazon.js` in its place.
 
 `blazon init` copies blazon's own brand book, [`examples/blazon/`](examples/blazon/), into the folder:
 
@@ -91,7 +91,7 @@ A token that sets text in Signal Orange breaks that rule, and `blazon check` say
 ERROR  tokens/colors.json:155  text.warning: Used as text, but {color.signal.orange} is not allowed as text [usage-violation]
 ```
 
-The same token is written as `--color-signal-orange: #FF5A1F;` in `theme.css` and as `"color.signal.orange"` in `tokens.json`.
+The same token is written as `--color-signal-orange: #FF5A1F;` in `theme.css` and as the flat key `"color.signal.orange"` in `tokens.ts`. `tokens.json` nests the same value under `color` > `signal` > `orange`.
 
 `blazon tokens` and `blazon build` run the check first and stop on an error, so the brand's rules hold in CI as well as in review.
 
@@ -184,6 +184,8 @@ getVar('interactive.primary'); // "var(--interactive-primary)"
 | `blazon preview [dir]` | Serve the built site |
 | `blazon drift <url-or-css-file>` | Compare tokens with a live site |
 | `blazon list [group]`, `blazon get <path>`, `blazon rules [path]`, `blazon can <fg> <bg>`, `blazon fonts`, `blazon logo`, `blazon brand` | List the tokens, read one, its rules, a text-on-background answer, the fonts, the logo or the whole compiled brand (`blazon brand`, always JSON); `--json` prints JSON |
+| `blazon explain [code]` | Say what a finding code means, its severity, the fix and where to read more; with no code, list every code |
+| `blazon doctor` | Check this machine and folder: Node version, brand folder, plugin folder safety, Chrome (if a plugin needs it) and `blazon.lock`. Writes nothing |
 | `blazon pin [dir]` | Write `blazon.lock`, so only the pinned blazon runs `check`, `tokens` and `build` |
 
 `blazon approvals`, `blazon mcp` (`--print-config`, `--check`) and `blazon plugin check`, `pin` and `profile` are in the [manual](docs/manual/01-getting-started.md#commands) with every flag.
@@ -208,7 +210,7 @@ Every option and the theme roles are in [Theme and configuration](docs/manual/07
 
 ## Examples
 
-- [`examples/blazon/`](examples/blazon/): blazon's own brand book, made from scratch: 79 tokens, a light and a dark theme, twelve pages, no findings. It is also the starter `blazon init` copies.
+- [`examples/blazon/`](examples/blazon/): blazon's own brand book, made from scratch: 79 tokens, a light and a dark theme, twelve pages, and `blazon check examples/blazon` reports no findings (a copy made with `blazon init` also notes each starter file and warns about the two logos until you replace them). It is also the starter `blazon init` copies.
 - [`examples/conformance/`](examples/conformance/): a small fictional brand for the parts of the data model the starter does not reach: review approvals, font metadata, a logo initiative and an experimental asset category. It is the conformance fixture for the tests.
 
 Brand books made from other companies' guidelines are not shipped in this repository, because their art and text belong to those companies. A maintainer can keep them locally; see [CONTRIBUTING](CONTRIBUTING.md#reference-material-maintainers-only).

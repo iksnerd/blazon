@@ -5,7 +5,6 @@ import { loadConfig } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';
 import { starterFiles } from '../../src/core/starter.js';
 import { OPERATIONS, toolOf, toolOperations } from '../../src/core/operations/index.js';
-import { SITE_URL } from '../../src/core/site.js';
 import { REPO } from '../support/paths';
 import { starterProject } from '../support/project';
 
@@ -62,28 +61,27 @@ describe('the starter AGENTS.md', () => {
     expect(agents.trimEnd().split('\n').length).toBeLessThan(60);
   });
 
-  // `docs/` is not in the package and the repository is not public, so a user's agent reads the manual on the website.
-  it('links the manual on the website, named once, never the repository', () => {
-    expect(agents).not.toMatch(/docs\/manual|blazon repository/);
-    expect(agents.split(`${SITE_URL}/docs`).length - 1).toBe(1);
-    expect([...agents.matchAll(/https?:\/\/[^\s)`>]+/g)].map((m) => m[0]).filter((url) => !url.startsWith(SITE_URL))).toEqual([]);
-    expect(agents).toContain('Accept: text/markdown');
+  // `docs/` is not in the package and blazon has no website yet, so the starter names the manual's folder once and chapters by title.
+  it('names the manual folder once and no web address', () => {
+    expect(agents.split('docs/manual/').length - 1).toBe(2);
+    expect(agents).not.toMatch(/https?:\/\//);
     const chapters = new Set(fs.readdirSync(path.join(REPO, 'docs/manual')).map((file) => /^\d+-(.+)\.md$/.exec(file)?.[1]));
-    const named = [...agents.matchAll(/`\/docs\/([a-z0-9-]+)(?:#[a-z0-9-]+)?`/g)].map((m) => m[1]!);
+    const named = [...agents.matchAll(/`([a-z0-9-]+)` chapter/g)].map((m) => m[1]!);
     expect(named.length).toBeGreaterThan(0);
     expect(named.filter((slug) => !chapters.has(slug))).toEqual([]);
+    expect(agents).toContain('`docs/manual/03-checks.md`');
   });
 
-  it('the starter pages link the manual on the website too, at a chapter that exists', () => {
+  it('the starter pages carry no web address for the manual, and name a chapter file that exists', () => {
     const docs = path.join(REPO, 'examples/blazon/docs');
     const pages = fs
       .readdirSync(docs)
       .map((file) => fs.readFileSync(path.join(docs, file), 'utf-8'))
       .join('\n');
-    expect(pages).not.toMatch(/docs\/manual|blazon repository/);
-    const chapters = new Set(fs.readdirSync(path.join(REPO, 'docs/manual')).map((file) => /^\d+-(.+)\.md$/.exec(file)?.[1]));
-    const linked = [...pages.matchAll(/https?:\/\/blazon-[^\s)]*\/docs\/([a-z0-9-]+)/g)].map((m) => ({ url: m[0], slug: m[1]! }));
-    expect(linked.filter(({ url, slug }) => !url.startsWith(`${SITE_URL}/docs/`) || !chapters.has(slug))).toEqual([]);
+    expect(pages).not.toMatch(/vercel\.app|blazon-website/);
+    const named = [...pages.matchAll(/`docs\/manual\/([a-z0-9-]+\.md)`/g)].map((m) => m[1]!);
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.filter((file) => !fs.existsSync(path.join(REPO, 'docs/manual', file)))).toEqual([]);
   });
 
   it('names the MCP server, its check and exactly the tools it serves, and says it is not published', () => {

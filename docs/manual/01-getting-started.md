@@ -71,7 +71,7 @@ Next steps:
   5. Point a coding agent at acme-brand/AGENTS.md: it is the guide for editing this brand
 ```
 
-Each step works from the folder you ran `blazon init` in. A line after the steps, `The manual: <address>`, links the manual on the blazon website (the plain output only; the guided start does not print it). With `--color`, the first step says the primary color is set and the rest of the palette is still blazon's.
+Each step works from the folder you ran `blazon init` in. With `--color`, the first step says the primary color is set and the rest of the palette is still blazon's.
 
 Run `blazon check acme-brand` straight away and it exits 0: it reports 0 errors, 2 warnings and 43 notes. The notes are every starter file in `docs/`, `tokens/`, `assets/` and `fonts/`, grouped by folder. `AGENTS.md` and `CLAUDE.md` get none. The warnings are `starter-logo`: the two logos in `blazon.config.ts` are still blazon's own mark, and the book would show it under your name until you replace them. It then repeats the first three steps under `Next:`. The list shrinks as you replace files. [Chapter 3](03-checks.md#how-the-findings-are-printed) explains the grouping.
 
