@@ -144,6 +144,19 @@ describe('icon sets', () => {
     expect(data.iconSets[0]!.categories.flatMap((c) => c.icons)).not.toContain('escape');
   });
 
+  it.each(['../outside', '../../outside', '/tmp/outside', '@scope/../../outside', 'a/b/c', 'Upper'])(
+    'refuses the package "%s", which is a path and not a package name',
+    async (name) => {
+      const root = project();
+      // `../outside` from node_modules/ is a folder of the project itself, `../../outside` one beside it; both hold an SVG
+      fs.mkdirSync(path.join(root, 'outside'));
+      fs.writeFileSync(path.join(root, 'outside', 'leak.svg'), SVG);
+      const data = await compile(root, [{ name: 'evil', package: name, dir: '.' }]);
+      expect(data.iconSets).toEqual([]);
+      expect(data.findings.filter((f) => f.code === 'icon-set-invalid')).toMatchObject([{ path: 'evil', message: expect.stringMatching(/not a package name/) }]);
+    },
+  );
+
   it('is empty, with no findings, when the config names none', async () => {
     const data = await compileBlazonData({ ...DEFAULT_CONFIG }, project());
     expect(data.iconSets).toEqual([]);

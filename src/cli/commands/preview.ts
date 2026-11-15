@@ -6,6 +6,7 @@ import { loadConfig } from '../../core/config/index.js';
 import { busyPort, UsageError } from '../errors.js';
 import { requireFolder } from '../project.js';
 import { blazonCommand, shownDir } from '../where.js';
+import { siteLinkGuard } from '../../server/preview-guard.js';
 
 export async function runPreview(cwd: string = process.cwd(), portOverride?: number, options: { strictPort?: boolean; host?: string | boolean } = {}) {
   requireFolder(cwd);
@@ -19,6 +20,7 @@ export async function runPreview(cwd: string = process.cwd(), portOverride?: num
   let previewServer;
   try {
     previewServer = await preview({
+      plugins: [siteLinkGuard(outDir)],
       build: {
         outDir,
       },

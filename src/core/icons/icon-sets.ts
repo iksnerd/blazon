@@ -36,8 +36,12 @@ function isInside(root: string, file: string): boolean {
   return file === root || file.startsWith(root + path.sep);
 }
 
-/** The package folder in the project's node_modules, resolved through symlinks (pnpm links them). */
+/** A package name as npm writes it: `name` or `@scope/name`, never a path. A `..` or a leading slash would leave node_modules. */
+const PACKAGE_NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
+
+/** The package folder in the project's node_modules, resolved through symlinks (pnpm links them). Undefined for a name that is not a package name. */
 export function packageDir(cwd: string, name: string): string | undefined {
+  if (!PACKAGE_NAME.test(name)) return undefined;
   try {
     return fs.realpathSync(path.join(cwd, 'node_modules', name));
   } catch {
@@ -143,6 +147,10 @@ export function scanIconSets(configs: IconSetConfig[] | undefined, cwd: string):
     seen.add(set.name);
 
     const known = KNOWN_PACKAGES.find((k) => k.match.test(set.package));
+    if (!PACKAGE_NAME.test(set.package)) {
+      fail(`package "${set.package}" is not a package name: write it as npm does ("name" or "@scope/name"), not as a path`);
+      continue;
+    }
     const pkg = packageDir(cwd, set.package);
     if (!pkg) {
       fail(`package "${set.package}" is not installed (looked in node_modules/${set.package}); run npm install ${set.package}`);

@@ -212,10 +212,10 @@ An icon is a file name without `.svg`.
 
 ### What blazon does with the files
 
-The dev server serves a set's SVGs from the package, under `/brand-assets/icon-sets/<name>/<icon>.svg`. `blazon build` copies every icon of each set to the same place in `dist/site/`. Lucide is about 1 MB and Tabler about 3 MB. A symbolic link inside the package that points outside it is not an icon of the set, and is never copied.
+The dev server serves a set's SVGs from the package, under `/brand-assets/icon-sets/<name>/<icon>.svg`. `blazon build` copies every icon of each set to the same place in `dist/site/`. Lucide is about 1 MB and Tabler about 3 MB. A symbolic link inside the package that points outside it is not an icon of the set, and is never copied. `package` is a package name as npm writes it (`name` or `@scope/name`), looked up in the project's `node_modules`; a path such as `../shared` is not a package name and the set is refused.
 
 ### When a set fails
 
-A set that cannot be read is an error (`icon-set-invalid`) and is left out; the others still load. The message says why: a name that is not lowercase letters, digits and hyphens starting with a letter, a name used twice, a package that is not installed (it names the folder it looked in and the `npm install` to run), a package that needs `dir`, a `dir` outside the package or missing from it, a folder with no `.svg` files, or a categories file that is not valid JSON or is outside the project.
+A set that cannot be read is an error (`icon-set-invalid`) and is left out; the others still load. The message says why: a name that is not lowercase letters, digits and hyphens starting with a letter, a name used twice, a `package` that is a path and not a package name, a package that is not installed (it names the folder it looked in and the `npm install` to run), a package that needs `dir`, a `dir` outside the package or missing from it, a folder with no `.svg` files, or a categories file that is not valid JSON or is outside the project.
 
 The package must be installed at `<project>/node_modules/<package>`. A package hoisted into a parent folder's `node_modules` is not found.
