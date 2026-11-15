@@ -3,6 +3,7 @@ import { build } from 'vite';
 import { execFileSync } from './spawn.js';
 import { pluginsAreFresh, PLUGINS_LOCK } from './plugins-build.js';
 import { ensureBuilt, ensureViewer } from './viewer-build.js';
+import { hooksNotice, hooksState } from './hooks-notice.js';
 import { hasReference, REFERENCE_ROOT } from './reference.js';
 
 /**
@@ -12,6 +13,12 @@ import { hasReference, REFERENCE_ROOT } from './reference.js';
  */
 export default async function setup(): Promise<void> {
   const root = path.resolve(import.meta.dirname, '../..');
+  try {
+    const notice = hooksNotice(hooksState(root));
+    if (notice) process.stderr.write(`${notice}\n`);
+  } catch {
+    // a notice never fails a run
+  }
   if (!hasReference('examples')) {
     process.stderr.write(`No reference material in ${REFERENCE_ROOT}: the tests that need it are skipped (CONTRIBUTING, "Reference material").\n`);
   }
