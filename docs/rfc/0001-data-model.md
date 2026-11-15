@@ -176,7 +176,7 @@ As implemented (`src/core/tokens/resolver/`):
 - A context lists only the tokens whose resolved value differs from the default context, aliases included: switching the body family to Kinto changes every `type.*` style that uses it.
 - Outputs: a CSS block per context under its selector (`contextSelectors` in config overrides the defaults), `contexts` in `tokens.ts`, and a complete `tokens.<modifier>.<context>.json` per context.
 - Checks run in every context; a finding that only occurs in one is tagged with it (`locale=ja`).
-- Spec violations are `resolver-invalid` errors, not exceptions: wrong `version`, missing `resolutionOrder`, a modifier with no contexts or a `default` that is not one of them, a pointer to nothing, a circular set reference, a source referencing a modifier, a file reference with a JSON pointer fragment (not supported), or a file outside the project.
+- Spec violations are `resolver-invalid` errors, not exceptions: wrong `version`, missing `resolutionOrder`, a modifier with no contexts or a `default` that is not one of them, a modifier, context or inline item name that is not letters, digits, `_` and `-` (the names become file names, selectors and CSS comments, and the DTCG module does not restrict them), an inline name that repeats a declared set or modifier, a pointer to nothing, a circular set reference, a source referencing a modifier, a file reference with a JSON pointer fragment (not supported), or a file outside the project.
 
 ### 4. `blazon check`
 
