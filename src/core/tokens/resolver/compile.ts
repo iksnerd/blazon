@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Finding, ParsedTokens, TokenContext, TokenItem } from '../../../types/index.js';
+import { stripBom } from '../key-lines.js';
 import { loadTokenDocuments } from '../merge.js';
 import { resolveTokenTree } from '../resolve.js';
 import { parseResolver, ResolverError, type Resolver } from './parse.js';
@@ -49,7 +50,7 @@ export function compileWithResolver(file: string, root: string, cssPrefix: strin
   let resolver: Resolver;
   let reader: SourceReader;
   try {
-    resolver = parseResolver(file, JSON.parse(fs.readFileSync(file, 'utf-8')));
+    resolver = parseResolver(file, JSON.parse(stripBom(fs.readFileSync(file, 'utf-8'))));
     reader = new SourceReader(resolver, root);
   } catch (err) {
     return invalid(file, err instanceof ResolverError ? err.message : `cannot read the resolver document: ${String(err)}`);

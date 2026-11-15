@@ -3,14 +3,14 @@ import path from 'node:path';
 import type { Finding } from '../../types/index.js';
 import { loadTokenDocuments, type TokenDocument } from './merge.js';
 import type { TokenTree } from './walk.js';
-import { jsonErrorLine } from './key-lines.js';
+import { jsonErrorLine, stripBom } from './key-lines.js';
 import { finding } from '../checker/catalogue.js';
 
 /** Parses a JSON token file into a document, or records why it could not. */
 export function readTokenFile(fullPath: string, name: string, problems: Finding[], shown: string = name): TokenDocument | undefined {
   let text = '';
   try {
-    text = fs.readFileSync(fullPath, 'utf-8');
+    text = stripBom(fs.readFileSync(fullPath, 'utf-8'));
     const content: unknown = JSON.parse(text);
     // A file whose top level is not an object holds no tokens: say so here, with the folder in the path as for a file that does not parse
     if (typeof content !== 'object' || content === null || Array.isArray(content)) {
