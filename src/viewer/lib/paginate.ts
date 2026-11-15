@@ -14,7 +14,12 @@ export interface Block {
   lead?: boolean;
   /** A later piece of a table or grid cut by rows: it starts a slide of its own (it carries a label at its top) and nothing joins it */
   continued?: boolean;
+  /** How much shorter the block's pictures can be drawn, in px, without the figure being lost (see SQUEEZE_FLOOR) */
+  slack?: number;
 }
+
+/** A picture is drawn no shorter than this share of its height to share a slide: a figure kept whole, not made a thumbnail. */
+export const SQUEEZE_FLOOR = 0.6;
 
 /** What a block starts: a continued piece starts a slide as a section does, so that nothing is set above its label. */
 const startOf = (block: Block): Block['kind'] => (block.continued ? 'section' : block.kind);
@@ -116,6 +121,8 @@ export interface Slide {
   scale: number;
   /** split: the text in a column on the left, the figure in the two thirds on the right */
   layout?: 'split';
+  /** A picture on it is drawn shorter than it would be alone, to fit the slide (fit() does it, to the room that is left) */
+  squeeze?: boolean;
 }
 
 /** Blocks that must share a slide: a heading, or a run of them, with the block that follows. */
@@ -172,6 +179,8 @@ function units(blocks: readonly Block[], room: number): Unit[] {
   return merged;
 }
 
+const slackOf = (unit: { blocks: readonly number[] }, blocks: readonly Block[]) => unit.blocks.reduce((sum, i) => sum + (blocks[i]!.slack ?? 0), 0);
+
 /** A slide of blocks with no heading of its own, this share of a slide or less, is a leftover: a note or a small table that spilled. */
 const LEFTOVER = 0.35;
 
@@ -185,9 +194,12 @@ export function joinLeftovers(slides: readonly Slide[], blocks: readonly Block[]
   const out: Slide[] = slides.map((s) => ({ ...s, blocks: [...s.blocks] }));
   const height = (slide: Slide) => slide.blocks.reduce((sum, i) => sum + blocks[i]!.height, 0);
   const starts = (slide: Slide | undefined) => (slide ? startOf(blocks[slide.blocks[0]!]!) : undefined);
-  const set = (slide: Slide, taken: number[], before: boolean) => {
+  const set = (slide: Slide, taken: number[], before: boolean, squeeze = false) => {
     slide.blocks = before ? [...taken, ...slide.blocks] : [...slide.blocks, ...taken];
-    slide.scale = Math.max(MIN_SCALE, Math.min(1, room / height(slide)));
+    if (squeeze) {
+      slide.squeeze = true;
+      slide.scale = 1;
+    } else slide.scale = Math.max(MIN_SCALE, Math.min(1, room / height(slide)));
   };
   const kept: Slide[] = [];
   out.forEach((slide, index) => {
@@ -196,6 +208,9 @@ export function joinLeftovers(slides: readonly Slide[], blocks: readonly Block[]
     const prev = kept.at(-1);
     const next = out[index + 1];
     if (leftover && prev && starts(prev) !== 'opener' && height(prev) + height(slide) <= room * STRETCH) set(prev, slide.blocks, false);
+    // or when the slide before takes it once its pictures are drawn a little shorter
+    else if (leftover && prev && starts(prev) !== 'opener' && prev.scale === 1 && height(prev) + height(slide) - slackOf(prev, blocks) <= room)
+      set(prev, slide.blocks, false, true);
     else if (leftover && next && starts(next) !== 'section' && starts(next) !== 'opener' && height(slide) + height(next) <= room * STRETCH) set(next, slide.blocks, true);
     else kept.push(slide);
   });
@@ -238,6 +253,12 @@ export function paginate(blocks: readonly Block[], room: number): Slide[] {
       current.blocks.push(...unit.blocks);
       used += unit.height;
       current.scale = room / used;
+    } else if (current && !closed && !parted && !unit.section && used + unit.height > room && used + unit.height - slackOf(unit, blocks) - slackOf(current, blocks) <= room) {
+      // A figure that fits once its picture is a little shorter joins the slide, rather than take a slide to itself
+      current.blocks.push(...unit.blocks);
+      current.squeeze = true;
+      used = room;
+      closed = true;
     } else if (!current || closed || parted || (unit.section && current.blocks.length > 0) || used + unit.height > room) {
       slides.push({ blocks: [...unit.blocks], scale: 1 });
       used = unit.height;

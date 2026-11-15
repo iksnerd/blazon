@@ -7,7 +7,7 @@ import type { Mode } from '@/lib/theme/theme';
 import { printBlocks, measured } from './blocks';
 import { printChapters } from './chapters';
 import { printCss } from './css';
-import { fit, footer, frame } from './frames';
+import { fit, footer, frame, slackOf } from './frames';
 import { cut } from './split';
 import { packContents, linesOf } from './contents';
 import { CONTENTS_COLUMN_WIDTH, CONTENTS_COLUMNS, CONTENTS_GAP, firstChapterPage, ROOM } from './geometry';
@@ -98,6 +98,7 @@ export function PrintBook({
           ...(b.table && { table: true }),
           ...(b.lead && { lead: true }),
           ...(b.continued && { continued: true }),
+          ...(b.figure && slackOf(b.el) > 0 && { slack: slackOf(b.el) }),
         }));
         const slides = pairIntros(paginate(measuredBlocks, ROOM), measuredBlocks, ROOM);
         first.push(firstPage + frames.length);
@@ -115,6 +116,7 @@ export function PrintBook({
             kind,
             slide.blocks.map((i) => blocks[i]!.el),
             slide.layout,
+            slide.squeeze,
           );
           if (kind === 'content') built.append(footer(heading, firstPage + frames.length));
           frames.push(built);

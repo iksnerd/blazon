@@ -393,3 +393,19 @@ describe('paginate, on random chapters', () => {
     }
   });
 });
+
+describe('a figure whose picture can be drawn shorter', () => {
+  const figure = (height: number, slack: number): Block => ({ height, figure: true, slack });
+
+  it('joins the slide before it, marked to be squeezed, when it fits once the picture is shorter', () => {
+    const slides = paginate([b(60), figure(80, 45)], ROOM);
+    expect(slides.map((s) => s.blocks)).toEqual([[0, 1]]);
+    expect(slides[0]).toMatchObject({ scale: 1, squeeze: true });
+  });
+
+  it('takes a slide of its own when even the shorter picture does not fit', () => {
+    const slides = paginate([b(60), figure(80, 10)], ROOM);
+    expect(slides.map((s) => s.blocks)).toEqual([[0], [1]]);
+    expect(slides.some((s) => s.squeeze)).toBe(false);
+  });
+});

@@ -5,7 +5,7 @@ export const CONTENT = { width: SLIDE.width - 2 * MARGIN.side, height: SLIDE.hei
 /** A few pixels short of the content height, so a rounding difference between measuring and printing does not spill a slide */
 export const ROOM = CONTENT.height - 8;
 /** The tallest a figure's image is drawn: what is left of a slide under a heading, with the frame's padding and caption. */
-export const FIGURE_MAX = 420;
+export const FIGURE_MAX = 380;
 /**
  * The contents are set in CONTENTS_COLUMNS columns of at most CONTENTS_ROWS lines, each entry a line of 45 px with its gap
  * (the rows then end well above the footer). An entry whose title does not fit a column wraps to a second line (or more:

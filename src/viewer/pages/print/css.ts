@@ -37,9 +37,11 @@ ${book} [data-print-footer] > span:last-child { flex: none; }
 ${book} [data-slot="code-block-actions"], ${book} [data-slot="code-block-copy-button"] { display: none !important; }
 ${book} footer, ${book} [data-section-index] { display: none; }
 ${book} article, ${book} [data-print-chapter] > div, ${book} header { padding-left: 0; padding-right: 0; }
-${book} section:not([data-print-slide] [data-print-slide-body] > section:only-child) { grid-template-columns: minmax(0, 1fr); padding: 24px 0; border: 0; row-gap: 16px; }
+${book} section:not([data-print-slide] [data-print-slide-body] > section:only-child) { grid-template-columns: minmax(0, 1fr); padding: 12px 0; border: 0; row-gap: 12px; }
 ${book} h2 { font-family: var(--font-heading); font-size: 38px; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
-${book} .blazon-prose { max-width: none; font-size: 20px; line-height: 1.5; }
+${book} .blazon-prose { max-width: none; font-size: 20px; line-height: 1.4; }
+${book} .blazon-prose :is(p, ul, ol, table) { margin-bottom: 0.6em; }
+${book} .blazon-prose h3 { margin-top: 1em; }
 ${book} .blazon-prose table { font-size: 16px; }
 ${book} .blazon-prose blockquote { font-size: 15px; }
 ${book} .blazon-prose p, ${book} .blazon-prose li { max-width: 62ch; }
