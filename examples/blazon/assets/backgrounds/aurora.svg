@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1350" width="2400" height="1350" role="img" aria-label="Graphite field with a signal-orange glow and a fine construction grid">
+<defs>
+<radialGradient id="glow" cx="78%" cy="18%" r="62%"><stop offset="0" stop-color="#FF5A1F" stop-opacity="0.95"/><stop offset="0.38" stop-color="#FF5A1F" stop-opacity="0.28"/><stop offset="1" stop-color="#FF5A1F" stop-opacity="0"/></radialGradient>
+<linearGradient id="base" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A2B2E"/><stop offset="1" stop-color="#1E1F21"/></linearGradient>
+</defs>
+<rect width="2400" height="1350" fill="url(#base)"/>
+<rect width="2400" height="1350" fill="url(#glow)"/>
+<g stroke="#F2F0EB" stroke-opacity="0.07" stroke-width="2" fill="none">
+<path d="M0 0V1350"/>
+<path d="M150 0V1350"/>
+<path d="M300 0V1350"/>
+<path d="M450 0V1350"/>
+<path d="M600 0V1350"/>
+<path d="M750 0V1350"/>
+<path d="M900 0V1350"/>
+<path d="M1050 0V1350"/>
+<path d="M1200 0V1350"/>
+<path d="M1350 0V1350"/>
+<path d="M1500 0V1350"/>
+<path d="M1650 0V1350"/>
+<path d="M1800 0V1350"/>
+<path d="M1950 0V1350"/>
+<path d="M2100 0V1350"/>
+<path d="M2250 0V1350"/>
+<path d="M2400 0V1350"/>
+<path d="M0 0H2400"/>
+<path d="M0 150H2400"/>
+<path d="M0 300H2400"/>
+<path d="M0 450H2400"/>
+<path d="M0 600H2400"/>
+<path d="M0 750H2400"/>
+<path d="M0 900H2400"/>
+<path d="M0 1050H2400"/>
+<path d="M0 1200H2400"/>
+<path d="M0 1350H2400"/>
+</g>
+<g stroke="#F2F0EB" stroke-opacity="0.22" stroke-width="3" fill="none"><path d="M1500 0L2400 900"/><path d="M1650 0L2400 750"/><path d="M1800 0L2400 600"/></g>
+<path d="M1950 150H2250V450Z" fill="#FF5A1F" fill-opacity="0.9"/>
+</svg>

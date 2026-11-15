@@ -1,0 +1,10 @@
+{
+  "about": "Three breaks in a row open the breaker (section 7).",
+  "rfc": "7",
+  "sequence": [
+    "break",
+    "break",
+    "break"
+  ],
+  "opens_after_index": 2
+}

@@ -1,0 +1,6 @@
+{
+  "description": "Graphite on light surfaces. Clear space is the height of the fold: 12 of the mark's 40 units, 24px at the file's 80px height.",
+  "background": "light",
+  "clearSpace": { "value": 24, "unit": "px" },
+  "minSize": { "height": { "value": 32, "unit": "px" } }
+}

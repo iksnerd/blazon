@@ -1,0 +1,6 @@
+{
+  "description": "The folded page alone, for places too small for the wordmark: favicons and app icons. Clear space is the height of the fold: 12 of the mark's 40 units, 24px at the file's 80px height.",
+  "lockup": "mark",
+  "background": "light",
+  "clearSpace": { "value": 24, "unit": "px" }
+}

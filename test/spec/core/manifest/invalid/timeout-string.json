@@ -1,0 +1,12 @@
+{
+  "about": "An integer, not text.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "timeout_ms": "5000"
+  },
+  "refuse": true
+}

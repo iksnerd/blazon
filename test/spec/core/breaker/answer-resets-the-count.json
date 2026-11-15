@@ -1,0 +1,12 @@
+{
+  "about": "An answer resets the count: break, break, answer, break, break stays closed.",
+  "rfc": "7",
+  "sequence": [
+    "break",
+    "break",
+    "answer",
+    "break",
+    "break"
+  ],
+  "opens_after_index": null
+}

@@ -1,0 +1,17 @@
+{
+  "about": "An empty directory is an entry: adding one changes the digest.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    },
+    {
+      "path": "data",
+      "type": "dir"
+    }
+  ],
+  "digest": "t1:14051500132b16ffdd8d8959022e731459ce62f32d6f43e42ecb619eccd2231c"
+}

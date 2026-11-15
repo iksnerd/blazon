@@ -1,0 +1,11 @@
+# Ruff, for the Python in scripts/, and test/deck/python/. The scripts are run with `uv run`, which reads the
+# `# /// script` block at the top of each file; these rules are the same for all of them.
+line-length = 140
+target-version = "py311"
+
+[lint]
+# E and W: pycodestyle, F: pyflakes (unused names, undefined names), I: import order, B: bugbear (likely bugs), UP: old syntax
+select = ["E", "W", "F", "I", "B", "UP"]
+ignore = [
+    "E501",  # line length is the formatter's job, and the docstrings here wrap by sense
+]

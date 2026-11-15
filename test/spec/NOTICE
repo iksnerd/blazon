@@ -1,0 +1,5 @@
+Copyright 2026 iksnerd
+
+This product includes a plugin protocol specification: RFC texts, JSON schemas,
+a conformance corpus, reference hosts and plugin SDKs. It is licensed under the
+Apache License, Version 2.0 (see LICENSE).

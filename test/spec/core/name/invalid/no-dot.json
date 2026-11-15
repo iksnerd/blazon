@@ -1,0 +1,8 @@
+{
+  "about": "A name without a dot could be a built-in.",
+  "rfc": "3.1",
+  "names": [
+    "vault",
+    "acme"
+  ]
+}

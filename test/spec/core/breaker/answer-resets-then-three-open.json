@@ -1,0 +1,12 @@
+{
+  "about": "The count restarts after an answer.",
+  "rfc": "7",
+  "sequence": [
+    "break",
+    "answer",
+    "break",
+    "break",
+    "break"
+  ],
+  "opens_after_index": 4
+}

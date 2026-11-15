@@ -1,0 +1,17 @@
+{
+  "about": "The host's own environment never reaches a plugin; a name the manifest lists does (section 4). The runner sets CORPUS_HOST_MARKER=1 in the host process and passes CORPUS_ALLOWED=yes as a listed variable.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\necho \"marker=[${CORPUS_HOST_MARKER-unset}] allowed=[${CORPUS_ALLOWED-unset}]\"\nexit 0\n",
+  "timeout_s": 5.0,
+  "env": {
+    "CORPUS_ALLOWED": "yes"
+  },
+  "host_env": {
+    "CORPUS_HOST_MARKER": "1"
+  },
+  "expect": {
+    "outcome": "exit",
+    "exit": 0,
+    "stdout": "marker=[unset] allowed=[yes]\n"
+  }
+}

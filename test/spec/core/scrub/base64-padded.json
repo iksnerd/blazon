@@ -1,0 +1,18 @@
+{
+  "about": "A padded base64 form leaves none of its letters: the unpadded form is its start.",
+  "rfc": "3.5",
+  "secrets": [
+    "token"
+  ],
+  "text": "auth=dG9rZW4= ok",
+  "expect": {
+    "absent": [
+      "token",
+      "dG9rZW4"
+    ],
+    "present": [
+      "auth=",
+      " ok"
+    ]
+  }
+}

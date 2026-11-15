@@ -1,0 +1,36 @@
+{
+  "aspect": 3.6571,
+  "axes": [],
+  "balance": {
+    "x": -0.0385,
+    "y": 0.0069
+  },
+  "box": {
+    "h": 40.0,
+    "w": 145.349,
+    "x": 0.0,
+    "y": 0.0
+  },
+  "grid": {
+    "detected": null,
+    "off": [],
+    "stated": null
+  },
+  "ink": 0.6152,
+  "symmetry": {
+    "mirror-x": {
+      "color": 0.4501,
+      "silhouette": 0.4667
+    },
+    "mirror-y": {
+      "color": 0.8088,
+      "silhouette": 0.8475
+    },
+    "rot180": {
+      "color": 0.4277,
+      "silhouette": 0.4443
+    },
+    "rot90": null
+  },
+  "tolerance": 0.97
+}

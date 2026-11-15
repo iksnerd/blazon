@@ -1,0 +1,13 @@
+{
+  "about": "single-exec-file without the execute bit: a different digest, since the bit changes what can run.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run",
+      "type": "file",
+      "exec": false,
+      "content": "#!/bin/sh\necho ok\n"
+    }
+  ],
+  "digest": "t1:132bffc63479ed6fe2e5953738c613dae5c84721b3137e3f90bff576c9bab46b"
+}

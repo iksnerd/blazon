@@ -1,0 +1,13 @@
+{
+  "about": "The value goes where a nested pointer says: /auth/token, inside an object the request already has.",
+  "rfc": "9",
+  "program": "#!/bin/sh\ncase \"$1\" in\n  *-manifest) printf '%s' '{\"v\":2,\"roles\":[\"$role\"],\"secret_fields\":[\"/auth/token\"]}'; exit 0;;\n  --validate)\n    in=$(cat)\n    case \"$in\" in\n      '{'*) exit 0;;\n      *) echo 'validation input is not JSON'; exit 2;;\n    esac;;\nesac\nin=$(cat)\ncase \"$in\" in\n  '{'*) ;;\n  *) echo 'request is not JSON'; exit 2;;\nesac\nif printf '%s' \"$in\" | grep -Eq '\"v\" *: *1[,}]'; then\n  echo \"debug: $in\" >&2\n  exit 0\nfi\necho 'unsupported record version'; exit 2\n",
+  "marked_fields": [
+    "/auth/token"
+  ],
+  "request": "{\"v\":1,\"auth\":{\"kind\":\"bearer\"}}",
+  "expect": {
+    "check": "fail",
+    "case": 4
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "about": "Every core field set, each valid.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "timeout_ms": 8000,
+    "env": [
+      "API_URL",
+      "_X1"
+    ],
+    "secret_env": [
+      "API_URL"
+    ],
+    "secret_fields": [],
+    "title": "Example",
+    "description": "Checks that an example holds.",
+    "version": "1.2.0",
+    "homepage": "https://example.com/plugin"
+  }
+}

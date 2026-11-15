@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""A reference blazon plugin: a `check` that headings are set in the brand's heading font.
+
+It speaks blazon's plugin protocol with Python's standard library alone, to show that a plugin needs no SDK:
+
+  blazon-acme.house-style --blazon-manifest   prints the manifest, and exits 0
+  blazon-acme.house-style                    reads one request (JSON) on standard input and prints its answer
+
+The request is {"v": 1, "type": "check", "options": {...}, "brand": <brand.json>}. The answer is
+{"findings": [...]}, each finding with a `code` that starts with this plugin's name and a slash. Exit 2 means "I cannot
+judge", with the reason as the first line of standard output: here, a request of a version this plugin does not speak,
+a brand that is not a version 1 blazon brand, and an `options.headingFont` that is missing. Never exit 0 for what you could not judge.
+
+Options (blazon.config.ts):  plugins: [{ name: 'acme.house-style', options: { headingFont: 'Inter' } }]
+"""
+import json
+import re
+import sys
+
+NAME = "acme.house-style"
+HEADINGS = re.compile(r"type\.(heading|h[1-6])")
+
+
+def cannot_answer(reason):
+    print(reason)
+    return 2
+
+
+def brand_problem(brand):
+    """Why the brand in the request is not one this plugin reads, or None. brand.json says what it is and which version."""
+    if not isinstance(brand, dict) or brand.get("format") != "blazon-brand":
+        shown = json.dumps(brand.get("format")) if isinstance(brand, dict) and "format" in brand else "nothing"
+        return f'the brand in the request is not a blazon brand: its format is {shown}, not "blazon-brand"'
+    if brand.get("version") != 1:
+        shown = json.dumps(brand["version"]) if "version" in brand else "nothing"
+        return f"the brand in the request is version {shown}; this reader understands version 1"
+    return None
+
+
+def first_family(token):
+    """The first font family a typography token resolves to, or None when it has none."""
+    value = token.get("resolvedValue")
+    families = value.get("fontFamily") if isinstance(value, dict) else None
+    if isinstance(families, list) and families:
+        return str(families[0])
+    return families if isinstance(families, str) else None
+
+
+def main(argv):
+    if len(argv) > 1 and argv[1] == "--blazon-manifest":
+        print(json.dumps({"v": 2, "roles": ["check"], "title": "House style", "version": "1.0.0", "timeout_ms": 10000}))
+        return 0
+
+    try:
+        request = json.load(sys.stdin)
+    except ValueError:
+        return cannot_answer("the request is not JSON")
+    if not isinstance(request, dict) or request.get("v") != 1:
+        return cannot_answer("this plugin speaks version 1 of the request")
+    if request.get("type") != "check":
+        return cannot_answer("this plugin fills the check role")
+
+    problem = brand_problem(request.get("brand"))
+    if problem:
+        return cannot_answer(problem)
+
+    expected = (request.get("options") or {}).get("headingFont")
+    if not isinstance(expected, str) or not expected:
+        return cannot_answer("options.headingFont is required: name the font the headings are set in")
+
+    findings = []
+    for token in (request.get("brand") or {}).get("tokens", []):
+        if token.get("type") != "typography" or not HEADINGS.fullmatch(token.get("path", "")):
+            continue
+        family = first_family(token)
+        if family != expected:
+            findings.append(
+                {
+                    "code": f"{NAME}/heading-font",
+                    "severity": "error",
+                    "path": token["path"],
+                    "message": f"{token['path']} is set in {family or 'no font'}, not {expected}",
+                }
+            )
+    print(json.dumps({"findings": findings}))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

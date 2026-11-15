@@ -1,0 +1,233 @@
+{
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "$extensions": {
+        "dev.blazon": {
+          "tier": "primitive"
+        }
+      },
+      "display": {
+        "$value": [
+          "Big Shoulders Display",
+          "Arial Narrow",
+          "sans-serif"
+        ],
+        "$description": "Condensed grotesk from Chicago industrial signage: headlines only",
+        "$extensions": {
+          "dev.blazon": {
+            "font": {
+              "source": "https://fonts.google.com/specimen/Big+Shoulders",
+              "license": "OFL-1.1",
+              "licenseUrl": "https://github.com/google/fonts/blob/main/ofl/bigshouldersdisplay/OFL.txt"
+            }
+          }
+        }
+      },
+      "body": {
+        "$value": [
+          "IBM Plex Sans",
+          "system-ui",
+          "sans-serif"
+        ],
+        "$description": "Engineered sans for reading",
+        "$extensions": {
+          "dev.blazon": {
+            "font": {
+              "source": "https://fonts.google.com/specimen/IBM+Plex+Sans",
+              "license": "OFL-1.1",
+              "licenseUrl": "https://github.com/google/fonts/blob/main/ofl/ibmplexsans/OFL.txt"
+            }
+          }
+        }
+      },
+      "mono": {
+        "$value": [
+          "IBM Plex Mono",
+          "ui-monospace",
+          "monospace"
+        ],
+        "$description": "Labels, values, specs and code. Regular, and semibold for function names in code",
+        "$extensions": {
+          "dev.blazon": {
+            "font": {
+              "source": "https://fonts.google.com/specimen/IBM+Plex+Mono",
+              "license": "OFL-1.1",
+              "licenseUrl": "https://github.com/google/fonts/blob/main/ofl/ibmplexmono/OFL.txt"
+            }
+          }
+        }
+      }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "$extensions": {
+        "dev.blazon": {
+          "tier": "primitive"
+        }
+      },
+      "regular": {
+        "$value": 400
+      },
+      "semibold": {
+        "$value": 600
+      },
+      "heavy": {
+        "$value": 800
+      }
+    }
+  },
+  "type": {
+    "$type": "typography",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "primitive"
+      }
+    },
+    "$description": "Display sizes in Big Shoulders, set tight; everything that is read in Plex",
+    "display": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": {
+          "value": 96,
+          "unit": "px"
+        },
+        "fontWeight": 800,
+        "letterSpacing": {
+          "value": -0.01,
+          "unit": "em"
+        },
+        "lineHeight": 0.917
+      },
+      "$description": "96/88px"
+    },
+    "h1": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": {
+          "value": 64,
+          "unit": "px"
+        },
+        "fontWeight": 800,
+        "letterSpacing": {
+          "value": 0,
+          "unit": "em"
+        },
+        "lineHeight": 1.0
+      },
+      "$description": "64/64px"
+    },
+    "h2": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": {
+          "value": 40,
+          "unit": "px"
+        },
+        "fontWeight": 800,
+        "letterSpacing": {
+          "value": 0,
+          "unit": "em"
+        },
+        "lineHeight": 1.1
+      },
+      "$description": "40/44px"
+    },
+    "subhead": {
+      "$value": {
+        "fontFamily": "{font.family.display}",
+        "fontSize": {
+          "value": 32,
+          "unit": "px"
+        },
+        "fontWeight": 800,
+        "letterSpacing": {
+          "value": 0,
+          "unit": "em"
+        },
+        "lineHeight": 1.125
+      },
+      "$description": "32/36px, the display face between h2 and h3: a sub-section heading inside a page or chapter"
+    },
+    "h3": {
+      "$value": {
+        "fontFamily": "{font.family.body}",
+        "fontSize": {
+          "value": 24,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "letterSpacing": {
+          "value": 0,
+          "unit": "em"
+        },
+        "lineHeight": 1.333
+      },
+      "$description": "24/32px"
+    },
+    "body": {
+      "$value": {
+        "fontFamily": "{font.family.body}",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "letterSpacing": {
+          "value": 0,
+          "unit": "em"
+        },
+        "lineHeight": 1.5
+      },
+      "$description": "16/24px"
+    },
+    "small": {
+      "$value": {
+        "fontFamily": "{font.family.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "letterSpacing": {
+          "value": 0,
+          "unit": "em"
+        },
+        "lineHeight": 1.429
+      },
+      "$description": "14/20px"
+    },
+    "label": {
+      "$value": {
+        "fontFamily": "{font.family.mono}",
+        "fontSize": {
+          "value": 12,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "letterSpacing": {
+          "value": 0.08,
+          "unit": "em"
+        },
+        "lineHeight": 1.333
+      },
+      "$description": "12/16px, set in capitals with wide tracking: part numbers and labels"
+    },
+    "code": {
+      "$value": {
+        "fontFamily": "{font.family.mono}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "letterSpacing": {
+          "value": 0,
+          "unit": "em"
+        },
+        "lineHeight": 1.429
+      },
+      "$description": "14/20px, as typed, with no tracking: commands, file excerpts and code in running text"
+    }
+  }
+}

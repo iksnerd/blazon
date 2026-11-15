@@ -1,0 +1,12 @@
+{
+  "about": "61 characters.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "title": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+  },
+  "refuse": true
+}

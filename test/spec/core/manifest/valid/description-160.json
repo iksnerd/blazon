@@ -1,0 +1,11 @@
+{
+  "about": "A description of exactly 160 characters.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "description": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  }
+}

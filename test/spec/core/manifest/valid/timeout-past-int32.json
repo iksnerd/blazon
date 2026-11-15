@@ -1,0 +1,11 @@
+{
+  "about": "A timeout above 2^31-1 still loads; the host caps it (60000). A host that reads timeout_ms into a 32-bit integer refuses it. Only the load is tested here.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "timeout_ms": 4294967296
+  }
+}

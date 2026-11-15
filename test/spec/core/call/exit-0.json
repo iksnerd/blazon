@@ -1,0 +1,11 @@
+{
+  "about": "Exit 0 is an answer: the host reports the code and stdout.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\nprintf '{\"ok\":true}'\nexit 0\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "exit",
+    "exit": 0,
+    "stdout": "{\"ok\":true}"
+  }
+}

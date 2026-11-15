@@ -1,0 +1,9 @@
+{
+  "about": "65,537 bytes is over the limit: a break, whatever the exit code.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\nhead -c 65537 /dev/zero | tr '\\0' 'a'\nexit 0\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "break"
+  }
+}

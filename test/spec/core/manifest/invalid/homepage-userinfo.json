@@ -1,0 +1,12 @@
+{
+  "about": "No user or password.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "homepage": "https://user:pw@example.com/"
+  },
+  "refuse": true
+}

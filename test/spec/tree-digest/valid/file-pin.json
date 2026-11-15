@@ -1,0 +1,13 @@
+{
+  "about": "A file pin: the sha256 of the file's bytes, written sha256:<hex>.",
+  "kind": "file",
+  "entries": [
+    {
+      "path": "contra-acme.x",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    }
+  ],
+  "digest": "sha256:b4d644d4279594903f1a9911956432d9473041f2984fc6014c14d7402c7d126c"
+}

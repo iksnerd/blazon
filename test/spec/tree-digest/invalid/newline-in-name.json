@@ -1,0 +1,13 @@
+{
+  "about": "A newline in a name could forge a line of its own.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run\nf - fake 0000",
+      "type": "file",
+      "exec": false,
+      "content": "#!/bin/sh\necho ok\n"
+    }
+  ],
+  "refuse": "name"
+}

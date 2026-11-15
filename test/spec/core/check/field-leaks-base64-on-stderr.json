@@ -1,0 +1,13 @@
+{
+  "about": "The plugin writes the base64 form of the field's value to stderr, the form section 3.5 scrubs.",
+  "rfc": "9",
+  "program": "#!/bin/sh\ncase \"$1\" in\n  *-manifest) printf '%s' '{\"v\":2,\"roles\":[\"$role\"],\"secret_fields\":[\"/token\"]}'; exit 0;;\n  --validate)\n    in=$(cat)\n    case \"$in\" in\n      '{'*) exit 0;;\n      *) echo 'validation input is not JSON'; exit 2;;\n    esac;;\nesac\nin=$(cat)\ncase \"$in\" in\n  '{'*) ;;\n  *) echo 'request is not JSON'; exit 2;;\nesac\nif printf '%s' \"$in\" | grep -Eq '\"v\" *: *1[,}]'; then\n  v=$(printf '%s' \"$in\" | sed -n 's/.*\"token\":\"\\([^\"]*\\)\".*/\\1/p')\n  printf '%s' \"$v\" | base64 | tr -d '=\\n' >&2\n  exit 0\nfi\necho 'unsupported record version'; exit 2\n",
+  "marked_fields": [
+    "/token"
+  ],
+  "request": "{\"v\":1,\"token\":\"placeholder\"}",
+  "expect": {
+    "check": "fail",
+    "case": 4
+  }
+}

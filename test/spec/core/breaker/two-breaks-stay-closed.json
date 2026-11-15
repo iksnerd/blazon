@@ -1,0 +1,9 @@
+{
+  "about": "Two breaks are not enough.",
+  "rfc": "7",
+  "sequence": [
+    "break",
+    "break"
+  ],
+  "opens_after_index": null
+}

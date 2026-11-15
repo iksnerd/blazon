@@ -1,0 +1,6 @@
+{
+  "about": "5000.0 is a float in JSON, and the field is written without a fraction (section 3.8).",
+  "rfc": "3.8",
+  "raw": "{\"v\": 2, \"roles\": [\"$role\"], \"timeout_ms\": 5000.0}",
+  "refuse": true
+}

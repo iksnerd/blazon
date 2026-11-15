@@ -1,0 +1,6 @@
+{
+  "about": "A tree with nothing in it: no lines, so the digest is the sha256 of the empty string.",
+  "kind": "tree",
+  "entries": [],
+  "digest": "t1:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

@@ -1,0 +1,9 @@
+{
+  "about": "Any other exit code is a break (section 5).",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\necho '{\"ok\":true}'\nexit 3\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "break"
+  }
+}

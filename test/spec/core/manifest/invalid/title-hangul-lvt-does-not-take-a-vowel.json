@@ -1,0 +1,12 @@
+{
+  "about": "62 clusters: U+AC01 (an LVT syllable) does not take the vowel U+1161 after it, because only a T can follow an LVT (rule GB8), 31 pairs.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "title": "\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161\uac01\u1161"
+  },
+  "refuse": true
+}

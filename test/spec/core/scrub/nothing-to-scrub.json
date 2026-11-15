@@ -1,0 +1,16 @@
+{
+  "about": "Text with no labelled value in it comes back whole.",
+  "rfc": "3.5",
+  "secrets": [
+    "s3cr3t-Tok"
+  ],
+  "text": "nothing secret here",
+  "expect": {
+    "absent": [
+      "s3cr3t-Tok"
+    ],
+    "present": [
+      "nothing secret here"
+    ]
+  }
+}

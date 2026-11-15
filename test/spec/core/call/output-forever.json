@@ -1,0 +1,9 @@
+{
+  "about": "The plugin writes without end. The host stops reading at the limit and ends the call: a break, and the host does not run out of memory.",
+  "rfc": "6",
+  "program": "#!/bin/sh\nwhile :; do printf aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; done\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "break"
+  }
+}

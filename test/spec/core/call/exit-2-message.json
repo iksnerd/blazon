@@ -1,0 +1,11 @@
+{
+  "about": "Exit 2: the plugin could not answer, with a reason on stdout's first line.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\necho 'cannot judge: input missing'\nexit 2\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "exit",
+    "exit": 2,
+    "stdout": "cannot judge: input missing\n"
+  }
+}

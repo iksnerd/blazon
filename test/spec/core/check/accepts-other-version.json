@@ -1,0 +1,12 @@
+{
+  "about": "Case 3: a record of a version the plugin does not speak must exit 2. This plugin answers anything.",
+  "rfc": "9",
+  "program": "#!/bin/sh\ncase \"$1\" in\n  *-manifest) printf '%s' '{\"v\":2,\"roles\":[\"$role\"],\"env\":[\"CORPUS_SECRET\"],\"secret_env\":[\"CORPUS_SECRET\"]}'; exit 0;;\n  --validate)\n    in=$(cat)\n    case \"$in\" in\n      '{'*) exit 0;;\n      *) echo 'validation input is not JSON'; exit 2;;\n    esac;;\nesac\nin=$(cat)\ncase \"$in\" in\n  '{'*) ;;\n  *) echo 'request is not JSON'; exit 2;;\nesac\nexit 0\n",
+  "check_env": {
+    "CORPUS_SECRET": "operator-value-0"
+  },
+  "expect": {
+    "check": "fail",
+    "case": 3
+  }
+}

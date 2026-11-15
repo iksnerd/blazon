@@ -1,0 +1,20 @@
+{
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "$extensions": { "dev.blazon": { "tier": "primitive" } },
+      "display": {
+        "$value": ["Example Display", "sans-serif"],
+        "$description": "A listed SPDX id, with a source and a license page: no finding",
+        "$extensions": {
+          "dev.blazon": { "font": { "source": "https://fonts.example.invalid/example-display", "license": "OFL-1.1", "licenseUrl": "https://openfontlicense.org/" } }
+        }
+      },
+      "body": {
+        "$value": ["Example Text", "sans-serif"],
+        "$description": "A license that looks like an SPDX id and is not one: font-license-unknown",
+        "$extensions": { "dev.blazon": { "font": { "source": "Example Foundry", "license": "OFL-1.2" } } }
+      }
+    }
+  }
+}

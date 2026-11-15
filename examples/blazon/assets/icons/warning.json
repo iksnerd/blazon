@@ -1,0 +1,5 @@
+{
+  "title": "Warning",
+  "description": "A finding that needs a look before the build ships.",
+  "background": "light"
+}

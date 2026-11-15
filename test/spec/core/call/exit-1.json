@@ -1,0 +1,10 @@
+{
+  "about": "Exit 1 is a role-defined result. The core passes it on; the role's table says what it means.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\nexit 1\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "exit",
+    "exit": 1
+  }
+}

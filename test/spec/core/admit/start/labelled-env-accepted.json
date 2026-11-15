@@ -1,0 +1,34 @@
+{
+  "about": "A secret-labelled variable the plugin lists in secret_env starts, pinned.",
+  "rfc": "3.5",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "env": [
+      "TOKEN"
+    ],
+    "secret_env": [
+      "TOKEN"
+    ]
+  },
+  "labels": {
+    "env": [
+      "TOKEN"
+    ],
+    "fields": [],
+    "delegated": []
+  },
+  "marked_fields": [],
+  "pinned": true,
+  "mode": "long-running",
+  "flows": {
+    "returns_secret": false,
+    "authorizes": false
+  },
+  "expect": {
+    "admit": true,
+    "warn": false
+  }
+}

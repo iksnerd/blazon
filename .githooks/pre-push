@@ -1,0 +1,116 @@
+#!/bin/bash
+# .githooks/pre-push: the check of the pushed tree, once, before a commit leaves the machine. pre-commit runs only the quick checks and
+# the tests of what is staged, so a commit is quick; this runs what the pushed commits ask for on the tree as it will be after the push,
+# which is where a change that passes alone meets everyone else's. It is also the backstop for a commit made with --no-verify.
+# It tests the pushed commit's own tree, exported from git, not the working tree, and skips a step a tree already passed.
+#
+# What runs, on every pushed tree: typecheck, lint, and the Prettier check of the whole tree.
+# Then the tests the changed files ask for (classify_paths in lib.sh, the mapping pre-commit uses), where the changed files are those
+# between what the remote has and what is pushed:
+#   the whole suite     when a changed file asks for it (examples/, a fixture, package.json, the build and test config, a path no rule
+#                       names), for a new tag, for a ref the remote does not hold an ancestor of, or when BLAZON_PUSH_FULL=1
+#   otherwise           only the suites those files ask for, on the pushed tree
+#
+# Install:   npm install   (its prepare script runs `git config core.hooksPath .githooks`)
+# Bypass:    git push --no-verify
+set -uo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib.sh
+. "$HERE/lib.sh"
+
+# git sends one line for each ref being pushed: <local ref> <local sha> <remote ref> <remote sha>
+ZERO="0000000000000000000000000000000000000000"
+refs=()
+while read -r _local_ref local_sha remote_ref remote_sha; do
+    [ -n "${local_sha:-}" ] || continue
+    [ "$local_sha" = "$ZERO" ] && continue   # the deletion of a remote ref sends nothing to test
+    refs+=("$local_sha $remote_ref $remote_sha")
+done
+[ "${#refs[@]}" -gt 0 ] || exit 0
+
+REPO="$(git rev-parse --show-toplevel)"
+hook_log pre-push
+echo "pre-push: checking the commits being pushed"
+[ -d "$REPO/node_modules" ] || refuse pre-push 'git push --no-verify' "node_modules is missing in $REPO: run npm install, then push again"
+
+SNAP_PARENT="$(mktemp -d)"
+trap 'rm -rf "$SNAP_PARENT"' EXIT
+unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_PREFIX
+
+# The commit the remote holds, as far as this push is concerned: the old tip of the ref, else where a new ref leaves origin/main.
+# Empty when there is none this hook can trust, which asks for the whole suite.
+base_of() {
+    local sha="$1" remote_sha="$2" base=""
+    if [ "$remote_sha" != "$ZERO" ]; then
+        if git cat-file -e "$remote_sha^{commit}" 2>/dev/null && git merge-base --is-ancestor "$remote_sha" "$sha" 2>/dev/null; then base="$remote_sha"; fi
+    else
+        base="$(git merge-base "$sha" origin/main 2>/dev/null || true)"
+    fi
+    printf '%s' "$base"
+}
+
+seen=""
+for entry in "${refs[@]}"; do
+    read -r sha remote_ref remote_sha <<< "$entry"
+    tree="$(git rev-parse "$sha^{tree}")"
+    case " $seen " in *" $tree "*) continue ;; esac   # two refs with one tree are tested once
+    seen="$seen $tree"
+    echo "  commit $(git rev-parse --short "$sha")"
+    snap="$SNAP_PARENT/$tree"
+    mkdir -p "$snap"
+    git archive "$sha" | tar -x -C "$snap"
+    [ -f "$snap/package.json" ] || refuse pre-push 'git push --no-verify' "the commit $sha has no package.json, so there is nothing to check"
+    ln -s "$REPO/node_modules" "$snap/node_modules"
+
+    # A tree that does not typecheck is not worth the minutes of the suite
+    cached_step "typecheck-$tree" "typecheck" bash -c "cd '$snap' && npm run -s typecheck" || continue
+    cached_step "lint-$tree" "lint" bash -c "cd '$snap' && npm run -s lint"
+    cached_step "format-$tree" "format" bash -c "cd '$snap' && npm run -s format:check"
+
+    # What the pushed commits changed decides how much of the suite to run
+    ask_full=0
+    why=""
+    # The tests of the hooks (test/hooks) take about a third of the suite and read only the hooks and the install script by path, so
+    # the whole suite leaves them out unless those, the tests themselves, or the dependencies changed. A tag, BLAZON_PUSH_FULL and a push
+    # with no base to compare with run everything: there is no list of changed files to trust.
+    skip_hooks_tests=""
+    if [ -n "${BLAZON_PUSH_FULL:-}" ]; then ask_full=1; why="BLAZON_PUSH_FULL is set"
+    elif [[ "$remote_ref" == refs/tags/* ]]; then ask_full=1; why="a tag is pushed"
+    else
+        base="$(base_of "$sha" "$remote_sha")"
+        if [ -z "$base" ]; then
+            ask_full=1; why="the remote's tip is not an ancestor of the push"
+        else
+            changed="$(git -c core.quotepath=off diff --name-only --diff-filter=ACMRD "$base" "$sha")"
+            classify_paths "$snap" <<< "$changed"
+            if [ "$full" -eq 1 ]; then ask_full=1; why="a changed file asks for it"; fi
+            if ! grep -qE '^(\.githooks/|scripts/install-hooks\.mjs$|test/hooks/|package\.json$|package-lock\.json$)' <<< "$changed"; then skip_hooks_tests="--exclude='test/hooks/**'"; fi
+        fi
+    fi
+
+    if [ "$ask_full" -eq 1 ]; then
+        echo "  – the whole suite runs: $why"
+        if [ -n "$skip_hooks_tests" ]; then echo "  – without the tests of the hooks: no hook, script or dependency changed"; fi
+        cached_step "full-$tree${skip_hooks_tests:+-without-hooks}" "tests: full suite" bash -c "cd '$snap' && npm test -- $TEST_ARGS $skip_hooks_tests"
+        continue
+    fi
+    if [ -n "$related_files" ]; then
+        list_key="$(printf '%s' "$related_files" | digest_of)"
+        # shellcheck disable=SC2086
+        cached_step "related-$tree-$list_key" "tests: related to the changed files" bash -c "cd '$snap' && npm run -s test:related -- $TEST_ARGS $related_files"
+    fi
+    if [ "$deck" -eq 1 ]; then
+        cached_step "deck-$tree" "tests: deck and plugins" bash -c "cd '$snap' && npm run -s test:deck -- $TEST_ARGS"
+    fi
+    if [ "$docs" -eq 1 ]; then
+        cached_step "docs-$tree" "tests: manual and RFC" bash -c "cd '$snap' && npm run -s test:docs -- $TEST_ARGS"
+    fi
+    if [ -n "$extra_tests" ]; then
+        files_key="$(printf '%s' "$extra_tests" | digest_of)"
+        # shellcheck disable=SC2086
+        cached_step "files-$tree-$files_key" "tests: hooks and scripts" bash -c "cd '$snap' && npm run -s test:files -- $TEST_ARGS $extra_tests"
+    fi
+done
+
+finish pre-push 'git push --no-verify'

@@ -1,0 +1,6 @@
+{
+  "about": "NaN is not JSON, even in a field the host does not know and would ignore.",
+  "rfc": "3.8",
+  "raw": "{\"v\":2,\"roles\":[\"$role\"],\"x\":NaN}",
+  "refuse": true
+}

@@ -1,0 +1,317 @@
+@import 'tailwindcss' source('.');
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* @theme inline bakes values in at build time, so the brand's fonts arrive through these runtime variables */
+  --font-heading: var(--blazon-font-display, var(--blazon-font-body, 'Geist Variable', sans-serif));
+  --font-sans: var(--blazon-font-body, 'Geist Variable', sans-serif);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * The brand book wears the brand. applyTheme() writes the brand's roles to --blazon-* on <html>
+ * (blazon.config.ts theme); the values here are only the fallback for a brand without one.
+ * shadcn's variables are derived from them, so every component follows the brand in both modes.
+ * blazon's accent is the brand color, which is shadcn's --primary; shadcn's --accent is a hover tint.
+ */
+:root {
+  --blazon-bg: #ffffff;
+  --blazon-canvas: #eef0f2;
+  --blazon-text: #000000;
+  --blazon-muted: #4b5058;
+  --blazon-border: #d3d7dd;
+  --blazon-accent: #3d4ed8;
+  --blazon-accent-text: #ffffff;
+  --blazon-inverse: #000000;
+  --blazon-inverse-text: #ffffff;
+  /* Where a logo made for a light or a dark background is drawn; applyTheme() swaps them for a theme whose page is dark and inverse light */
+  --blazon-surface-light: var(--blazon-bg);
+  --blazon-surface-light-text: var(--blazon-text);
+  --blazon-surface-dark: var(--blazon-inverse);
+  --blazon-surface-dark-text: var(--blazon-inverse-text);
+
+  --background: var(--blazon-bg);
+  --foreground: var(--blazon-text);
+  --card: var(--blazon-bg);
+  --card-foreground: var(--blazon-text);
+  --popover: var(--blazon-bg);
+  --popover-foreground: var(--blazon-text);
+  --primary: var(--blazon-accent);
+  --primary-foreground: var(--blazon-accent-text);
+  --secondary: var(--blazon-canvas);
+  --secondary-foreground: var(--blazon-text);
+  --muted: var(--blazon-canvas);
+  --muted-foreground: var(--blazon-muted);
+  --accent: var(--blazon-canvas);
+  --accent-foreground: var(--blazon-text);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--blazon-border);
+  --input: var(--blazon-border);
+  --ring: var(--blazon-accent);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: var(--blazon-radius, 0.625rem);
+  --sidebar: var(--blazon-bg);
+  --sidebar-foreground: var(--blazon-text);
+  --sidebar-primary: var(--blazon-accent);
+  --sidebar-primary-foreground: var(--blazon-accent-text);
+  --sidebar-accent: var(--blazon-canvas);
+  --sidebar-accent-foreground: var(--blazon-text);
+  --sidebar-border: var(--blazon-border);
+  --sidebar-ring: var(--blazon-accent);
+  --blazon-link: var(--blazon-link-light, var(--blazon-accent));
+  /* The brand's border where it reaches 3:1 on the background (set by applyTheme), else a mid-tone mix */
+  --blazon-edge: var(--blazon-edge-light, color-mix(in srgb, var(--foreground) 50%, var(--background)));
+}
+
+/* Dark mode is the brand's inverse pair, with the in-between tones mixed from it. When the mode switch drives the brand's own
+   dark theme (App.tsx sets data-mode-themed), the roles are already its dark values, so the page is painted from those: a
+   brand whose dark theme changes the inverse token would otherwise show a light page in dark mode. */
+.dark {
+  --dark-bg: var(--blazon-inverse);
+  --dark-fg: var(--blazon-inverse-text);
+}
+.dark[data-mode-themed] {
+  --dark-bg: var(--blazon-bg);
+  --dark-fg: var(--blazon-text);
+}
+.dark {
+  --background: var(--dark-bg);
+  --foreground: var(--dark-fg);
+  --card: color-mix(in srgb, var(--dark-bg) 92%, var(--dark-fg));
+  --card-foreground: var(--dark-fg);
+  --popover: color-mix(in srgb, var(--dark-bg) 92%, var(--dark-fg));
+  --popover-foreground: var(--dark-fg);
+  --secondary: color-mix(in srgb, var(--dark-bg) 86%, var(--dark-fg));
+  --secondary-foreground: var(--dark-fg);
+  --muted: color-mix(in srgb, var(--dark-bg) 86%, var(--dark-fg));
+  --muted-foreground: color-mix(in srgb, var(--dark-fg) 68%, var(--dark-bg));
+  --accent: color-mix(in srgb, var(--dark-bg) 86%, var(--dark-fg));
+  --accent-foreground: var(--dark-fg);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: color-mix(in srgb, var(--dark-fg) 22%, var(--dark-bg));
+  --input: color-mix(in srgb, var(--dark-fg) 22%, var(--dark-bg));
+  --sidebar: var(--dark-bg);
+  --sidebar-foreground: var(--dark-fg);
+  --sidebar-accent: color-mix(in srgb, var(--dark-bg) 86%, var(--dark-fg));
+  --sidebar-accent-foreground: var(--dark-fg);
+  --sidebar-border: color-mix(in srgb, var(--dark-fg) 22%, var(--dark-bg));
+  --blazon-link: var(--blazon-link-dark, var(--blazon-accent));
+  /* Dark mode's border is a faint mix; a color edge needs 3:1 to separate a color the same as the page */
+  --blazon-edge: color-mix(in srgb, var(--foreground) 50%, var(--background));
+  color-scheme: dark;
+}
+/* A brand's own dark theme paints the page from its background and text, so a link is judged against those, as in light mode */
+.dark[data-mode-themed] {
+  --blazon-link: var(--blazon-link-light, var(--blazon-accent));
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+/* The "On this page" column (section-index.tsx) sits at the right from 1280px: a page that shows it gives its content
+   the room, the gutter plus the column's 14rem and a 2.5rem gap */
+@media (width >= 80rem) {
+  main:not([data-print-book]):has([data-section-index]:not([hidden])) [data-page-body] {
+    padding-right: calc(clamp(24px, 5vw, 72px) + 16.5rem);
+  }
+}
+/* Markdown from the brand's docs: no utility classes can reach it, so it is styled here */
+@layer components {
+  .blazon-prose > :first-child {
+    margin-top: 0;
+  }
+  .blazon-prose p,
+  .blazon-prose li {
+    max-width: 44em;
+  }
+  .blazon-prose p,
+  .blazon-prose ul,
+  .blazon-prose ol,
+  .blazon-prose table {
+    margin: 0 0 1em;
+  }
+  .blazon-prose ul {
+    list-style: disc;
+    padding-left: 1.25em;
+  }
+  .blazon-prose ol {
+    list-style: decimal;
+    padding-left: 1.25em;
+  }
+  .blazon-prose h3 {
+    margin: 1.5em 0 0.5em;
+    font-weight: 600;
+  }
+  .blazon-prose a {
+    color: var(--blazon-link);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .blazon-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+  }
+  /* A long line of code scrolls inside its block instead of widening the page on a phone */
+  .blazon-prose pre {
+    overflow-x: auto;
+  }
+  .blazon-prose strong {
+    font-weight: 600;
+  }
+  .blazon-prose img {
+    max-width: 100%;
+  }
+  .blazon-prose table {
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .blazon-prose th,
+  .blazon-prose td {
+    padding: 8px 16px 8px 0;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  .blazon-prose th {
+    font-weight: 600;
+  }
+  .blazon-prose blockquote {
+    margin: 16px 0 0;
+    color: var(--muted-foreground);
+    font-size: 13px;
+  }
+  .blazon-prose blockquote p {
+    margin: 0;
+  }
+}
+
+/* Motion demos: a dot crossing its track; durations and easings come from the tokens, inline */
+@keyframes blazon-demo-slide {
+  from {
+    left: 0;
+  }
+  to {
+    left: calc(100% - 1rem);
+  }
+}
+.blazon-demo-slide {
+  animation-name: blazon-demo-slide;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .blazon-demo-slide {
+    animation-play-state: paused;
+  }
+}
+
+/* Token paths in doc prose, linked to their token page */
+@layer components {
+  .blazon-prose a.blazon-token-link {
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .blazon-prose a.blazon-token-link code {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .blazon-prose a.blazon-token-link code.blazon-badge {
+    text-decoration: none;
+  }
+  /* A color written as text: filled with the color, edged so a light one does not vanish */
+  .blazon-badge {
+    display: inline-block;
+    padding: 0.04em 0.55em;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    line-height: 1.5;
+    box-shadow: inset 0 0 0 1px var(--blazon-edge);
+  }
+  /* An icon file used as a mask, so the element's background (a color or a gradient) paints its shape */
+  .blazon-icon {
+    display: inline-block;
+    -webkit-mask: var(--blazon-icon) center / contain no-repeat;
+    mask: var(--blazon-icon) center / contain no-repeat;
+  }
+  /* A faint edge on a color tile, drawn above its paint, so a color the same as the page still shows */
+  .blazon-swatch {
+    position: relative;
+  }
+  .blazon-swatch::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--blazon-edge);
+    pointer-events: none;
+  }
+  /* A token opened from a link flashes once so the reader finds it */
+  .blazon-flash {
+    animation: blazon-flash 1.6s ease-out;
+  }
+}
+@keyframes blazon-flash {
+  0%,
+  30% {
+    outline: 3px solid var(--primary);
+    outline-offset: 3px;
+  }
+  100% {
+    outline: 3px solid transparent;
+    outline-offset: 3px;
+  }
+}

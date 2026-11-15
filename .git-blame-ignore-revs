@@ -1,0 +1,24 @@
+# Commits `git blame` skips: GitHub reads this file by itself; locally run
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# style: format the code with Prettier
+0f93b18b699c65deb68cc0c8c30e1e52ccd80922
+# refactor: split core/init/from-site.ts into a folder (moves only)
+fcb97c9796306b7b3be36fd09751dfb95e42b86b
+# refactor: group src/plugins into wire, pins, host and roles (moves only)
+1e233b2b7f1e552cf99464787eb21347452a85ad
+# refactor(test): split the social-cards plugin test into a folder (moves only)
+4625e32fd870a0d534c188a61ec661783404d9ad
+# refactor(viewer): group src/viewer/lib into theme, tokens and markup (moves only)
+9c0ce5b809568495df27f3974f92332befc65897
+# refactor(viewer): split the print book page into a folder (moves only)
+6b8e073a9890c9f2ecd723eccc21cc2c3b2515d1
+# refactor(viewer): split the built previews into a folder (moves only)
+680b058003d539be9b6387d45afc593ce6ce0f36
+# refactor: split brand-deck/plan.ts into a folder (moves only)
+76ffaf653ed4affff73f5d1104cd4f6e63b42b4c
+# refactor: split the brand-deck plan test into a folder (moves only)
+10aa6ccc7e7c5db5017234b267f3b3f2442c757a
+# refactor: split the brand-deck plugin test into a folder (moves only)
+65d7cfde243114d3325474ab4bb4cfa49ea302e5
+# refactor: move the helpers the guided init and the site reader share into core/init/shared (moves only)
+a9d79a7e7ee6445e3c9ac507131ef0107245239e

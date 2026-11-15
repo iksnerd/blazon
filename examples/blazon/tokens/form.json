@@ -1,0 +1,199 @@
+{
+  "radius": {
+    "$type": "dimension",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "primitive"
+      }
+    },
+    "none": {
+      "$value": {
+        "value": 0,
+        "unit": "px"
+      },
+      "$description": "Plates, panels and covers: cut square"
+    },
+    "hairline": {
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$description": "Inputs and buttons: just enough to soften a machined edge"
+    }
+  },
+  "border": {
+    "$type": "border",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "semantic"
+      }
+    },
+    "rule": {
+      "$value": {
+        "color": "{rule.default}",
+        "width": {
+          "value": 2,
+          "unit": "px"
+        },
+        "style": "solid"
+      },
+      "$description": "The structural line: panels, tables, section breaks"
+    },
+    "hairline": {
+      "$value": {
+        "color": "{rule.quiet}",
+        "width": {
+          "value": 1,
+          "unit": "px"
+        },
+        "style": "solid"
+      },
+      "$description": "Secondary dividers"
+    },
+    "onSignal": {
+      "$value": {
+        "color": "{rule.onSignal}",
+        "width": {
+          "value": 2,
+          "unit": "px"
+        },
+        "style": "solid"
+      },
+      "$description": "The edge of a part filled with a signal color: the primary key"
+    }
+  },
+  "shadow": {
+    "$type": "shadow",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "semantic"
+      }
+    },
+    "plate": {
+      "$value": {
+        "color": "{color.ink.graphite}",
+        "offsetX": {
+          "value": 4,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 4,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 0,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$description": "A hard offset, like a plate bolted onto a panel: panels and keys at rest. Never blurred."
+    },
+    "shim": {
+      "$value": {
+        "color": "{color.ink.graphite}",
+        "offsetX": {
+          "value": 2,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 2,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 0,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$description": "Half a plate: a key under the pointer, seated halfway into its plate. Never blurred."
+    },
+    "recess": {
+      "$value": {
+        "color": "{color.ink.graphite}",
+        "inset": true,
+        "offsetX": {
+          "value": 2,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 2,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 0,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$description": "A well cut into the panel: inputs and tab rails. Never blurred."
+    }
+  },
+  "motion": {
+    "duration": {
+      "$type": "duration",
+      "$extensions": {
+        "dev.blazon": {
+          "tier": "primitive"
+        }
+      },
+      "snap": {
+        "$value": {
+          "value": 120,
+          "unit": "ms"
+        },
+        "$description": "Toggles and presses"
+      },
+      "move": {
+        "$value": {
+          "value": 200,
+          "unit": "ms"
+        },
+        "$description": "Panels and menus"
+      }
+    },
+    "easing": {
+      "$type": "cubicBezier",
+      "$extensions": {
+        "dev.blazon": {
+          "tier": "primitive"
+        }
+      },
+      "mechanical": {
+        "$value": [
+          0.2,
+          0,
+          0,
+          1
+        ],
+        "$description": "Fast start, hard stop: a machine part seating into place"
+      }
+    },
+    "transition": {
+      "$type": "transition",
+      "$extensions": {
+        "dev.blazon": {
+          "tier": "semantic"
+        }
+      },
+      "default": {
+        "$value": {
+          "duration": "{motion.duration.move}",
+          "delay": {
+            "value": 0,
+            "unit": "ms"
+          },
+          "timingFunction": "{motion.easing.mechanical}"
+        }
+      }
+    }
+  }
+}

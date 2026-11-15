@@ -1,0 +1,257 @@
+{
+  "color": {
+    "$type": "color",
+    "$description": "Raw materials. Semantic roles below alias these.",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "primitive",
+        "proportion": {
+          "color.base": 0.7,
+          "color.ink": 0.2,
+          "color.signal": 0.1
+        }
+      }
+    },
+    "base": {
+      "$description": "Paper, poured concrete and carbon: the surfaces",
+      "bone": {
+        "$value": "#F2F0EB",
+        "$description": "Bone"
+      },
+      "concrete": {
+        "$value": "#D9D6CF",
+        "$description": "Concrete"
+      },
+      "carbon": {
+        "$value": "#101113",
+        "$description": "Carbon: the canvas of the dark theme, below Graphite"
+      }
+    },
+    "ink": {
+      "$description": "Graphite, steel and zinc: text, rules and structure",
+      "graphite": {
+        "$value": "#1E1F21",
+        "$description": "Graphite"
+      },
+      "steel": {
+        "$value": "#54585D",
+        "$description": "Steel"
+      },
+      "zinc": {
+        "$value": "#8C9096",
+        "$description": "Zinc: muted text, quiet rules and shadows in the dark theme"
+      }
+    },
+    "signal": {
+      "$description": "Signal colors: actions and warnings, never body text",
+      "$extensions": {
+        "dev.blazon": {
+          "usage": {
+            "deny": [
+              "text"
+            ]
+          }
+        }
+      },
+      "orange": {
+        "$value": "#FF5A1F",
+        "$description": "Signal Orange"
+      },
+      "hazard": {
+        "$value": "#F2C230",
+        "$description": "Hazard Yellow"
+      }
+    },
+    "pigment": {
+      "$description": "Pigments color code and nothing else",
+      "$extensions": {
+        "dev.blazon": {
+          "usage": {
+            "allow": [
+              "text"
+            ]
+          }
+        }
+      },
+      "oxide": {
+        "$value": "#9E3A12",
+        "$description": "Oxide: rust, the oxide of Signal Orange's iron. Keywords on the light theme"
+      },
+      "verdigris": {
+        "$value": "#1F6652",
+        "$description": "Verdigris: oxidised copper. Strings on the light theme"
+      },
+      "cobalt": {
+        "$value": "#2B4C9B",
+        "$description": "Cobalt: enamel-sign blue. Constants and numbers on the light theme"
+      },
+      "ember": {
+        "$value": "#FF9466",
+        "$description": "Ember: Oxide's counterpart on the dark theme. Keywords"
+      },
+      "patina": {
+        "$value": "#7CCBB0",
+        "$description": "Patina: oxidised copper, lit. Strings on the dark theme"
+      },
+      "enamel": {
+        "$value": "#8FB4F5",
+        "$description": "Enamel: enamel-sign blue, lit. Constants and numbers on the dark theme"
+      }
+    }
+  },
+  "text": {
+    "$type": "color",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "semantic",
+        "role": "text",
+        "pairs": [
+          {
+            "fg": "{text.primary}",
+            "bg": "{surface.background}",
+            "min": "AAA"
+          },
+          {
+            "fg": "{text.primary}",
+            "bg": "{surface.canvas}",
+            "min": "AAA"
+          },
+          {
+            "fg": "{text.muted}",
+            "bg": "{surface.background}",
+            "min": "AA"
+          },
+          {
+            "fg": "{text.muted}",
+            "bg": "{surface.canvas}",
+            "min": "AA"
+          },
+          {
+            "fg": "{text.onSignal}",
+            "bg": "{color.signal.*}",
+            "min": "AA"
+          },
+          {
+            "fg": "{text.inverse}",
+            "bg": "{surface.inverse}",
+            "min": "AAA"
+          }
+        ]
+      }
+    },
+    "primary": {
+      "$value": "{color.ink.graphite}"
+    },
+    "muted": {
+      "$value": "{color.ink.steel}"
+    },
+    "inverse": {
+      "$value": "{color.base.bone}"
+    },
+    "onSignal": {
+      "$value": "{color.ink.graphite}",
+      "$description": "Labels on signal colors are graphite, never white"
+    }
+  },
+  "surface": {
+    "$type": "color",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "semantic",
+        "role": "background"
+      }
+    },
+    "background": {
+      "$value": "{color.base.bone}"
+    },
+    "canvas": {
+      "$value": "{color.base.concrete}"
+    },
+    "inverse": {
+      "$value": "{color.ink.graphite}"
+    }
+  },
+  "interactive": {
+    "$type": "color",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "semantic",
+        "role": "interactive",
+        "logo": {
+          "deny": [
+            "onLight",
+            "onDark"
+          ],
+          "reason": "The fold of the mark is Signal Orange, so on Signal Orange it is not there"
+        }
+      }
+    },
+    "primary": {
+      "$value": "{color.signal.orange}"
+    }
+  },
+  "rule": {
+    "$type": "color",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "semantic",
+        "role": "border"
+      }
+    },
+    "default": {
+      "$value": "{color.ink.graphite}"
+    },
+    "quiet": {
+      "$value": "{color.ink.steel}"
+    },
+    "onSignal": {
+      "$value": "{color.ink.graphite}",
+      "$description": "The edge of a part filled with a signal color, such as the primary key: Graphite in both themes"
+    }
+  },
+  "syntax": {
+    "$type": "color",
+    "$extensions": {
+      "dev.blazon": {
+        "tier": "semantic",
+        "role": "text",
+        "pairs": [
+          {
+            "fg": "{syntax.*}",
+            "bg": "{surface.background}",
+            "min": "AA"
+          },
+          {
+            "fg": "{syntax.*}",
+            "bg": "{surface.canvas}",
+            "min": "AA"
+          }
+        ]
+      }
+    },
+    "keyword": {
+      "$value": "{color.pigment.oxide}",
+      "$description": "Keywords"
+    },
+    "string": {
+      "$value": "{color.pigment.verdigris}",
+      "$description": "Strings"
+    },
+    "constant": {
+      "$value": "{color.pigment.cobalt}",
+      "$description": "Constants and numbers"
+    },
+    "function": {
+      "$value": "{color.ink.graphite}",
+      "$description": "Function names, set in the semibold weight"
+    },
+    "comment": {
+      "$value": "{color.ink.steel}",
+      "$description": "Comments"
+    },
+    "punctuation": {
+      "$value": "{color.ink.steel}",
+      "$description": "Punctuation"
+    }
+  }
+}

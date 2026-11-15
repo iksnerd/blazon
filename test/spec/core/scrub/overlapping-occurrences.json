@@ -1,0 +1,18 @@
+{
+  "about": "A value that overlaps itself is removed at every occurrence: no tail of the second one is left behind.",
+  "rfc": "3.5",
+  "secrets": [
+    "aba"
+  ],
+  "text": "xababa y",
+  "expect": {
+    "absent": [
+      "aba",
+      "ba"
+    ],
+    "present": [
+      "x",
+      " y"
+    ]
+  }
+}

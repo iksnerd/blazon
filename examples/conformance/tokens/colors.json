@@ -1,0 +1,21 @@
+{
+  "color": {
+    "$type": "color",
+    "$extensions": { "dev.blazon": { "tier": "primitive" } },
+    "ink": {
+      "$value": "#14213D",
+      "$description": "Approved, and the fingerprint matches: no finding (the value is filled in below)",
+      "$extensions": { "dev.blazon": { "review": { "status": "ok", "by": "Example Approver", "at": "2026-01-15", "value": "cb387c4533ef", "note": "Fictional approval for the conformance fixture" } } }
+    },
+    "accent": {
+      "$value": "#E4572E",
+      "$description": "Approved against an older value: approval-stale",
+      "$extensions": { "dev.blazon": { "review": { "status": "ok", "by": "Example Approver", "at": "2026-01-15", "value": "000000000000" } } }
+    },
+    "surface": {
+      "$value": "#FAF7F2",
+      "$description": "Approved with no fingerprint: never stale",
+      "$extensions": { "dev.blazon": { "review": { "status": "ok", "by": "Example Approver", "at": "2026-01-15" } } }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "commit": "c7996d565d437647de8c0ddd09825d5c7ee957f9",
+  "folders": [
+    "corpus/core",
+    "corpus/tree-digest"
+  ],
+  "single_files": [
+    "LICENSE",
+    "NOTICE",
+    "schemas/draft/host-profile.schema.json",
+    "experiments/cue-host-profile/profile.cue"
+  ],
+  "files": 188,
+  "digest": "sha256:4c58fde9a93554b498c5546f80416189fb51f35369b9b37f0274555d9b7ec78d"
+}

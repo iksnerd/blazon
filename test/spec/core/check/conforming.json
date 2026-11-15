@@ -1,0 +1,11 @@
+{
+  "about": "A plugin that passes every core case: it loads, refuses junk and another version with exit 2, and never repeats its secret variable.",
+  "rfc": "9",
+  "program": "#!/bin/sh\ncase \"$1\" in\n  *-manifest) printf '%s' '{\"v\":2,\"roles\":[\"$role\"],\"env\":[\"CORPUS_SECRET\"],\"secret_env\":[\"CORPUS_SECRET\"]}'; exit 0;;\n  --validate)\n    in=$(cat)\n    case \"$in\" in\n      '{'*) exit 0;;\n      *) echo 'validation input is not JSON'; exit 2;;\n    esac;;\nesac\nin=$(cat)\ncase \"$in\" in\n  '{'*) ;;\n  *) echo 'request is not JSON'; exit 2;;\nesac\nif printf '%s' \"$in\" | grep -Eq '\"v\" *: *1[,}]'; then\n  exit 0\nfi\necho 'unsupported record version'; exit 2\n",
+  "check_env": {
+    "CORPUS_SECRET": "operator-value-0"
+  },
+  "expect": {
+    "check": "pass"
+  }
+}

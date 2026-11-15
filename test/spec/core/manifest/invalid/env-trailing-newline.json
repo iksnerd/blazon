@@ -1,0 +1,14 @@
+{
+  "about": "A final newline is not part of a name.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "env": [
+      "A\n"
+    ]
+  },
+  "refuse": true
+}

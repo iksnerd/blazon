@@ -1,0 +1,19 @@
+{
+  "about": "An empty file and a file with no final newline.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "empty",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    },
+    {
+      "path": "no-newline",
+      "type": "file",
+      "exec": false,
+      "content": "last line"
+    }
+  ],
+  "digest": "t1:5edf4e02366464afbacd90ce10cff952465219f94a4c5e082356410e152bbb1c"
+}

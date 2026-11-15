@@ -1,0 +1,11 @@
+{
+  "about": "At most 8 KB of stderr is kept for a call (section 6); the call is not a break.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\nhead -c 20000 /dev/zero | tr '\\0' 'e' >&2\nexit 0\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "exit",
+    "exit": 0,
+    "stderr_bytes_at_most": 8192
+  }
+}

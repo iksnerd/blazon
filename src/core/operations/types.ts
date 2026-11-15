@@ -1,0 +1,83 @@
+// The shape of the operations list (list.ts). Plain data: no function, so the list can be written out to the MCP package as JSON.
+
+/** A property of an operation's input. The shapes are the ones both the command line and a tool can take. */
+export type Prop =
+  | { type: 'string'; description: string; default?: string; enum?: readonly string[]; maxLength?: number; pattern?: string }
+  | { type: 'integer'; description: string; default?: number; minimum?: number; maximum?: number }
+  | { type: 'boolean'; description: string; default?: boolean };
+
+/** A JSON Schema fragment. Output schemas use it freely; `check.ts` understands the keywords below and ignores the rest. */
+export type JsonSchema = { [keyword: string]: unknown };
+
+/** The input of an operation: a closed object. */
+export interface InputSchema {
+  type: 'object';
+  properties: Record<string, Prop>;
+  required?: string[];
+  additionalProperties: false;
+}
+
+/** One option of the command, in the order `--help` shows it. `json` is the flag every read command has; any other `property` is a property of the input. */
+export interface CliOption {
+  property: string;
+  /** The placeholder in `--type <type>`; the property name when left out. */
+  value?: string;
+  description: string;
+}
+
+/** How the command line serves an operation. */
+export interface CliSpec {
+  /** Where the command sits in `blazon --help`, among the operations. */
+  rank: number;
+  /** The words typed after `blazon`. */
+  command: string[];
+  /** The properties typed as words, in order. A property is required there when the input requires it. */
+  positional: string[];
+  /** Properties only the command line takes. A tool never does, and an argument naming one is refused. */
+  cliOnly: string[];
+  /** A positional that may be the brand folder instead: `blazon rules ./brand` names a folder when it is one and no folder follows. */
+  folder?: string;
+  /** The one line `blazon --help` shows for the command. */
+  summary: string;
+  options: CliOption[];
+}
+
+/** How the MCP server runs the command line for an operation that does not have its own command. */
+export interface McpSpec {
+  /** The command words, when they are not the operation's own. */
+  command?: string[];
+  /** Arguments always passed. */
+  fixed?: string[];
+  /** The properties passed as flags, when the command line does not list them. */
+  flags?: string[];
+  /** Exit statuses besides 0 that carry an answer: `blazon can` exits 1 when it denies. */
+  answers?: number[];
+  /** False for a command that prints JSON on its own and takes no `--json`. */
+  json?: false;
+  /** Drop standard error: the document says the same. */
+  ignoreStderr?: true;
+}
+
+export interface Operation {
+  /** The tool name: lower case, digits and `_`. */
+  name: string;
+  title: string;
+  description: string;
+  annotations: { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: boolean };
+  inputSchema: InputSchema;
+  outputSchema?: JsonSchema;
+  /** `false`: no command of its own (yet). */
+  cli: false | CliSpec;
+  /** `false`: no tool. Otherwise how the server runs the command. */
+  mcp?: false | McpSpec;
+}
+
+/** What a tool is, as `tools/list` says it, minus the two keys the protocol adds (`$schema` on the schemas, `execution`). */
+export interface Tool {
+  name: string;
+  title: string;
+  description: string;
+  inputSchema: InputSchema;
+  outputSchema?: JsonSchema;
+  annotations: Operation['annotations'];
+}

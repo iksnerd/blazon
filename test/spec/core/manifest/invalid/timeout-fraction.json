@@ -1,0 +1,6 @@
+{
+  "about": "Written without a fraction: 5000.5 is refused.",
+  "rfc": "3.8",
+  "raw": "{\"v\": 2, \"roles\": [\"$role\"], \"timeout_ms\": 5000.5}",
+  "refuse": true
+}

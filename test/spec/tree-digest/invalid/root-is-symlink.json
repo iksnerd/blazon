@@ -1,0 +1,14 @@
+{
+  "about": "A pinned path that is itself a symlink is refused.",
+  "kind": "tree",
+  "root": "symlink",
+  "entries": [
+    {
+      "path": "run",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    }
+  ],
+  "refuse": "symlink"
+}

@@ -1,0 +1,9 @@
+{
+  "about": "A call that runs past its timeout is a break and the process is killed.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\nsleep 5\nexit 0\n",
+  "timeout_s": 0.3,
+  "expect": {
+    "outcome": "break"
+  }
+}

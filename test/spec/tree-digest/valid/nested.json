@@ -1,0 +1,33 @@
+{
+  "about": "A launcher and files beside it, in directories. Directories are listed, with '-' for their contents' hash; the root is not.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "bin",
+      "type": "dir"
+    },
+    {
+      "path": "bin/run",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    },
+    {
+      "path": "lib",
+      "type": "dir"
+    },
+    {
+      "path": "lib/util.sh",
+      "type": "file",
+      "exec": false,
+      "content": "util() { :; }\n"
+    },
+    {
+      "path": "README",
+      "type": "file",
+      "exec": false,
+      "content": "a plugin\n"
+    }
+  ],
+  "digest": "t1:a0a4b00300d1966887783daf287baefc653832de781fc1222b87fa7831b8f104"
+}

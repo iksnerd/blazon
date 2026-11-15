@@ -1,0 +1,242 @@
+# Blazon
+
+Design tokens, guidelines and brand assets in one repo, compiled into CSS, TypeScript and a brand book that looks like your brand.
+
+[Manual](docs/manual/index.md) · [Blazon's own brand book, as source](examples/blazon/) · [Plugins](#plugins) · [Architecture](ARCHITECTURE.md) · [RFCs](docs/rfc)
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Node 24 or later](https://img.shields.io/badge/node-%3E%3D24-brightgreen.svg)
+
+![Blazon's own brand book, built by blazon from its tokens and Markdown](docs/images/brand-book-home.png)
+
+Brand guidelines usually live in a PDF or a slide deck, and the values developers need are copied out of it by hand. Blazon keeps them in the repo as [DTCG](https://www.designtokens.org/TR/2025.10/format/) (Design Tokens Community Group) token files and Markdown. One build writes the CSS variables, a typed TypeScript module and a static brand book, and `blazon check` fails the build when a token breaks the brand's own rules. It reads the same DTCG files as Style Dictionary and Tokens Studio, and adds the rules, the checks and the book.
+
+> **Status: pre-release (0.1.0).** Not published to npm. The package is named `@iksnerd/blazon`, because the npm package named `blazon` is an unrelated project, so `npx blazon` will not run this tool. The name can still change before the first publish.
+
+Jump to: [Quick start](#quick-start), [Set up with your agent](#set-up-with-your-agent), [Use blazon from your agent (MCP)](#use-blazon-from-your-agent-mcp), [When not to use blazon](#when-not-to-use-blazon), [How it works](#how-it-works), [Plugins](#plugins), [Commands](#commands), [Configuration](#configuration), [Documentation](#documentation), [Contributing](#contributing).
+
+## Quick start
+
+Node 24 or later; macOS and Linux, and WSL on Windows is untried. Blazon is not published, so clone it, build it once and run it from the clone:
+
+```bash
+git clone https://github.com/iksnerd/blazon.git
+cd blazon
+npm ci
+npm run build              # builds dist/, which bin/blazon.js runs
+node bin/blazon.js init my-brand
+node bin/blazon.js dev my-brand   # the book, with live reload, at http://localhost:3000
+```
+
+`npm link` in the clone puts `blazon` on your PATH, and the rest of this README writes `blazon` for `node bin/blazon.js`.
+
+`blazon init` copies blazon's own brand book, [`examples/blazon/`](examples/blazon/), into the folder:
+
+```text
+my-brand/
+├── tokens/        colors.json, typography.json, spacing.json, form.json, social.json (DTCG), and theme/dark.json
+├── docs/          twelve pages, from principles, logo and color to diagrams, social, applications, voice and the web
+├── assets/        logos/, construction/, backgrounds/ and icons/, each file with a <name>.json sidecar
+├── fonts/         the mono typeface as two font files, with its licence
+├── AGENTS.md      notes for a coding agent that edits the brand (CLAUDE.md points to it)
+├── blazon.resolver.json   loads the token files and the dark theme
+└── blazon.config.ts
+```
+
+The book starts as blazon's brand and becomes yours as you replace it. `blazon check` notes every file that is still the starter's text, which is the list of what is left to do, and warns about each logo that is still blazon's own. To start from a company's site instead, run `blazon init acme-brand --from https://acme.com`: blazon reads the page and its stylesheets for colors, fonts and the logo, and flags each value `needs-review` until the brand owner confirms it ([how](docs/manual/01-getting-started.md#starting-from-a-live-site)).
+
+To look at a finished book first, run blazon's own brand book from the clone with no build: `npm run dev:blazon`.
+
+## Set up with your agent
+
+Paste this into a coding agent (Claude Code, Codex, Cursor) in the folder where the brand should live. Replace `<path to your blazon clone>`, and give the agent your colors, fonts and logo, or a site address. Blazon is not published; once it is, the first line becomes the package install.
+
+```text
+Set up a blazon brand book here. Blazon is not on npm: build it from my clone at <path to your blazon clone>
+with `npm install && npm run build` there, then run it as `node <that path>/bin/blazon.js`.
+Run `blazon init brand` (add `--from <site url>` to read a site's colors, fonts and logo).
+Read brand/AGENTS.md and follow it. Replace the starter's tokens, docs and assets with my brand:
+<my colors, fonts and logo, or the site address>. Ask me for any color, font or license you
+do not have; do not guess one. Run `blazon check brand` and fix each finding until it reports no
+errors, then run `blazon build brand` and tell me what is still marked needs-review.
+Then run `blazon mcp --check --brand brand`; if it reports a failed check or `registered: false`,
+run the `fix` it names, and register the server with `blazon mcp --print-config --brand brand`.
+```
+
+## Use blazon from your agent (MCP)
+
+A coding agent can ask blazon about the brand as tool calls (`check_brand`, `get_token`, `can_use` and five more, all read-only) instead of reading token files. The server is a separate program in `mcp/`, not published to npm, so build it, print the config for your client and check that it works:
+
+```bash
+npm run build -w mcp                                  # in the blazon clone, once
+blazon mcp --print-config --client claude-code --brand my-brand
+blazon mcp --check --brand my-brand                    # built? finds blazon? answers a real handshake? registered?
+```
+
+`blazon mcp --check` writes no file, prints a `fix` command for each check that fails, and exits 1 when the server is not ready. It starts the server on the brand folder, which runs that folder's `blazon.config.ts` as code: use a brand you trust. [Blazon for agents](docs/manual/20-blazon-for-agents.md) has the tools and the clients. For an agent that reads skills, [`skills/blazon/SKILL.md`](skills/blazon/SKILL.md) teaches the loop (check, contrast, MCP tools, what never to edit).
+
+## A rule that fails the build
+
+The rules of a brand sit next to its values. In blazon's own tokens, the signal colors are never body text:
+
+```json
+"signal": {
+  "$extensions": { "dev.blazon": { "usage": { "deny": ["text"] } } },
+  "orange": { "$value": "#FF5A1F" }
+}
+```
+
+A token that sets text in Signal Orange breaks that rule, and `blazon check` says so:
+
+```text
+ERROR  tokens/colors.json:155  text.warning: Used as text, but {color.signal.orange} is not allowed as text [usage-violation]
+```
+
+The same token is written as `--color-signal-orange: #FF5A1F;` in `theme.css` and as `"color.signal.orange"` in `tokens.json`.
+
+`blazon tokens` and `blazon build` run the check first and stop on an error, so the brand's rules hold in CI as well as in review.
+
+## When not to use blazon
+
+- **You need a release you can install.** Blazon is pre-release and not on npm; you build it from a clone.
+- **You need many output formats.** Blazon writes CSS, Tailwind v4, TypeScript and JSON, and the platform plugin writes Android, Swift and Kotlin for colors and dimensions only. [Style Dictionary](https://styledictionary.com) has a general system of custom transforms and formats.
+- **You want rules enforced in a design tool.** Blazon reads token files in the repo and does not sync with Figma or Tokens Studio. A file exported from them works if it is DTCG 2025.10, but the `usage` roles and `tier` names are blazon's, so the editor will not enforce them.
+- **You are on Windows.** It is tested on macOS and Linux with Node 24; WSL is untried.
+
+## How it works
+
+```mermaid
+flowchart LR
+  T["tokens/<br>DTCG JSON"] --> C[compile]
+  D["docs/<br>Markdown"] --> C
+  A["assets/<br>files and sidecars"] --> C
+  C --> K{"blazon check"}
+  K -->|errors| X[build stops]
+  K -->|passes| O1["theme.css, tokens.ts,<br>tokens.json"]
+  K -->|passes| O2[static brand book]
+  K -->|passes| O3[brand.json]
+  O2 --> P["build plugins<br>deck, press kit, favicons ..."]
+```
+
+The same compile feeds the dev server, so a change to a token, a page or the config reloads in the browser.
+
+## What it does
+
+- **Reads DTCG 2025.10 tokens.** Every `.json` file in `tokens/` merges into one tree, aliases are full paths (`{color.brand.indigo}`), and composite types (typography, gradient, shadow, border, transition) are supported. [Tokens](docs/manual/02-tokens.md)
+- **Holds the brand's rules, not only its values.** `$extensions["dev.blazon"]` carries where a token may be used, its role and tier, print specs (CMYK, PMS, RAL), contrast pairs, forbidden logo backgrounds and proportions.
+- **Varies them by context.** A [DTCG resolver document](https://www.designtokens.org/TR/2025.10/resolver/) declares modifiers such as `locale` or `theme`. Each context compiles to its own CSS block holding only what it changes, and the book gets a switcher. [Contexts](docs/manual/04-contexts.md)
+- **Checks them.** Bad aliases and types, a token used where its source denies it, contrast below its level, duplicate values, values still marked for review, malformed asset sidecars, page directives that name nothing, and more. [Every finding](docs/manual/03-checks.md)
+- **Writes code.** `theme.css`, `typography.css`, a Tailwind v4 `tailwind.css` with an optional `tailwind-reset.css` that closes Tailwind's defaults, a typed `tokens.ts` and a `tokens.json` with aliases resolved. [Using the outputs](docs/manual/08-using-the-outputs.md)
+- **Exports the whole brand.** `blazon build` also writes `brand.json`: the tokens with their rules, the pages, the assets and the findings, in one versioned file with a JSON Schema, readable from any language. [`brand.json`](docs/manual/11-brand-json.md)
+- **Builds a brand book that wears the brand.** The viewer takes its colors, typefaces and logo from your tokens. Pages place live content from them: swatches, the type scale, the logo on each background with its clear space, icons, patterns and social formats. It has search, a dark mode, and a Review page listing what `blazon check` found. [Pages](docs/manual/05-pages.md), [assets and icons](docs/manual/06-assets-and-icons.md)
+- **Compares them with a live site.** `blazon drift <url-or-css-file>` reports which tokens that name a `source.cssVar` have changed since.
+- **Answers a coding agent.** The read commands (`blazon get`, `blazon rules`, `blazon can` and the rest) print JSON, and a separate read-only server in `mcp/` offers them as tool calls over the Model Context Protocol. It is not published: build it from the repository. [Building a website from a brand](docs/manual/19-building-a-website.md), [Blazon for agents](docs/manual/20-blazon-for-agents.md)
+- **Extends with plugins.** See below.
+
+## Plugins
+
+A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships ten, so there is nothing to install: name one in `blazon.config.ts` and run `blazon build`.
+
+```ts
+plugins: [{ name: 'blazon.brand-deck' }, { name: 'blazon.print-book' }],
+```
+
+| Plugin | Writes |
+|---|---|
+| [`blazon.brand-deck`](docs/manual/14-shipped-plugins.md#blazonbrand-deck) | A PDF deck of 16:9 slides |
+| [`blazon.print-book`](docs/manual/14-shipped-plugins.md#blazonprint-book) | The brand book as a PDF and a PowerPoint of pictures |
+| [`blazon.copy`](docs/manual/14-shipped-plugins.md#blazoncopy) | Findings for text that breaks the brand's word rules: avoided terms, title-case headings, long sentences |
+| [`blazon.favicons`](docs/manual/14-shipped-plugins.md#blazonfavicons) | The favicon and app-icon set, and warnings for a symbol too small or too faint |
+| [`blazon.logo-geometry`](docs/manual/14-shipped-plugins.md#blazonlogo-geometry) | Each logo's symmetry, balance and grid, and a construction figure |
+| [`blazon.logo-kit`](docs/manual/14-shipped-plugins.md#blazonlogo-kit) | Lockups beside each partner's logo and a clear-space sheet |
+| [`blazon.office-template`](docs/manual/14-shipped-plugins.md#blazonoffice-template) | An editable PowerPoint template with the brand's theme |
+| [`blazon.platform-tokens`](docs/manual/14-shipped-plugins.md#blazonplatform-tokens) | Android XML, Swift and Kotlin from the color and dimension tokens |
+| [`blazon.press-kit`](docs/manual/14-shipped-plugins.md#blazonpress-kit) | A folder and zip for people outside the brand: logos, colors, fonts, a one-page PDF |
+| [`blazon.social-cards`](docs/manual/14-shipped-plugins.md#blazonsocial-cards) | Marketing images from the tokens and logo, checked for contrast |
+
+Several need Chrome for their PDF or PNG output; the manual says which. The starter's config enables `blazon.copy` with blazon's own rules, and has the other plugins of blazon's own book (the deck, the social cards, the favicons, the logo kit, the press kit and the platform and Office files) ready and commented out, because most need Chrome and a new book has no use for the kits yet. To write your own, see [Writing a plugin](docs/manual/13-writing-a-plugin.md). A plugin can be pinned, so one that changed on disk does not run.
+
+## Using the tokens
+
+A token's CSS variable is its path, kebab-cased: `interactive.primary` is `--interactive-primary`.
+
+```css
+@import './dist/tokens/theme.css';
+
+.button { background: var(--interactive-primary); }
+```
+
+```ts
+import { getToken, getVar } from './dist/tokens/tokens';
+
+getToken('space.4');           // "16px"
+getVar('interactive.primary'); // "var(--interactive-primary)"
+```
+
+## Commands
+
+| Command | Does |
+|---|---|
+| `blazon init [dir]` | Copy the starter into `dir`, asking for a name, color, font and logo in a terminal. `--from <url>` starts from a live site |
+| `blazon dev [dir]` | Start the dev server with live reload |
+| `blazon check [dir]` | Report findings; exits 1 on errors (`--strict` also fails on warnings, `--json` prints them as JSON) |
+| `blazon tokens [dir]` | Check, then write `dist/tokens/` |
+| `blazon build [dir]` | Check, then write the tokens and the site to `dist/site/` |
+| `blazon preview [dir]` | Serve the built site |
+| `blazon drift <url-or-css-file>` | Compare tokens with a live site |
+| `blazon list [group]`, `blazon get <path>`, `blazon rules [path]`, `blazon can <fg> <bg>`, `blazon fonts`, `blazon logo`, `blazon brand` | List the tokens, read one, its rules, a text-on-background answer, the fonts, the logo or the whole compiled brand (`blazon brand`, always JSON); `--json` prints JSON |
+| `blazon pin [dir]` | Write `blazon.lock`, so only the pinned blazon runs `check`, `tokens` and `build` |
+
+`blazon approvals`, `blazon mcp` (`--print-config`, `--check`) and `blazon plugin check`, `pin` and `profile` are in the [manual](docs/manual/01-getting-started.md#commands) with every flag.
+
+## Configuration
+
+`blazon.config.ts` is optional. The common options:
+
+```ts
+import { defineConfig } from '@iksnerd/blazon';
+
+export default defineConfig({
+  title: 'Acme Brand Book',
+  theme: { accent: 'interactive.primary', text: 'text.primary', fontDisplay: 'font.family.display' },
+  logo: { onLight: './assets/logos/logo-black.svg', onDark: './assets/logos/logo-white.svg' },
+  iconSets: [{ name: 'lucide', package: 'lucide-static', categories: { Navigation: ['arrow-left', 'house'] } }],
+  fonts: ['https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap'],
+});
+```
+
+Every option and the theme roles are in [Theme and configuration](docs/manual/07-theme-and-config.md). The config file is executed through Vite's module runner, so treat it like any build script. The functions the CLI uses are exported for scripts (`compileBlazonData`, `checkTokens`, `emitTokenOutputs`, `buildSite`, `startDevServer` and more; see `src/index.ts`).
+
+## Examples
+
+- [`examples/blazon/`](examples/blazon/): blazon's own brand book, made from scratch: 79 tokens, a light and a dark theme, twelve pages, no findings. It is also the starter `blazon init` copies.
+- [`examples/conformance/`](examples/conformance/): a small fictional brand for the parts of the data model the starter does not reach: review approvals, font metadata, a logo initiative and an experimental asset category. It is the conformance fixture for the tests.
+
+Brand books made from other companies' guidelines are not shipped in this repository, because their art and text belong to those companies. A maintainer can keep them locally; see [CONTRIBUTING](CONTRIBUTING.md#reference-material-maintainers-only).
+
+## Documentation
+
+- [Manual](docs/manual/index.md): how to use blazon, chapter by chapter, from [getting started](docs/manual/01-getting-started.md) to [maintaining a brand book](docs/manual/15-maintaining-a-brand-book.md), with [troubleshooting](docs/manual/10-troubleshooting.md) and [deriving your own brand](docs/manual/09-derive-your-own.md). The [glossary](docs/manual/16-glossary.md) defines every word, [the data model](docs/manual/17-data-model.md) lists every field, and [stability](docs/manual/18-stability.md) says what a brand can rely on when it moves its pin.
+- [Architecture](ARCHITECTURE.md): the layers of `src/`, a code map and the invariants, for someone about to change blazon.
+- RFCs, each with a Status table of what is built:
+  [0001 data model](docs/rfc/0001-data-model.md),
+  [0002 extension model](docs/rfc/0002-extension-model.md),
+  [0003 adopting blazon](docs/rfc/0003-adopting-blazon.md),
+  [0004 format rules](docs/rfc/0004-format-rules.md),
+  [0005 plugin protocol](docs/rfc/0005-plugin-protocol.md),
+  [0006 copy rules](docs/rfc/0006-copy-rules.md),
+  [0007 recommended contents](docs/rfc/0007-recommended-contents.md),
+  [0008 print units and brand rules](docs/rfc/0008-print-units-and-brand-rules.md).
+
+## Contributing
+
+```bash
+npm test                 # vitest, including golden-file conformance for examples/conformance
+npm run check            # typecheck, ESLint, Ruff and Prettier
+npm run dev:blazon        # blazon's own brand book from source, with live reload
+```
+
+[ARCHITECTURE](ARCHITECTURE.md) maps the code. [CONTRIBUTING](CONTRIBUTING.md) lists the test layout and what the commit and push hooks run. After a deliberate output change, regenerate the golden files with `UPDATE_GOLDEN=1 npx vitest run test/core/tokens/conformance.test.ts` and review the diff. `test/docs/manual.test.ts` fails when a command, flag, config key, directive, `dev.blazon` field or finding code is not documented in `docs/manual/`, so document what you add.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The plugin conformance corpus in `test/spec/` is a copy of a plugin specification's, licensed Apache-2.0 (`test/spec/LICENSE`, `test/spec/NOTICE`); `test/spec/SOURCE.json` names the commit it came from. Another company's brand guidelines are not part of this repository. Blazon's own brand book, `examples/blazon/`, holds hand-drawn SVG and no generated images; the earlier starter's eight images, generated with Google's Gemini, remain in the git history, where each image's sidecar says `generated`.

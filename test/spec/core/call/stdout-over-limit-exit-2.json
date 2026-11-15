@@ -1,0 +1,9 @@
+{
+  "about": "Over the limit is a break even with exit 2.",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\nhead -c 70000 /dev/zero | tr '\\0' 'a'\nexit 2\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "break"
+  }
+}

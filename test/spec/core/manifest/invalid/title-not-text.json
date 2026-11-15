@@ -1,0 +1,12 @@
+{
+  "about": "A string.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "title": 5
+  },
+  "refuse": true
+}

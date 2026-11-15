@@ -1,0 +1,12 @@
+{
+  "about": "Plain text: no format (Cf) character such as a zero-width space.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "title": "a​b"
+  },
+  "refuse": true
+}

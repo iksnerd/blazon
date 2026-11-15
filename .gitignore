@@ -1,0 +1,36 @@
+node_modules
+dist
+coverage
+.DS_Store
+*.log
+# blazon's project folder; its plugins/ holds the programs a project runs, so that part is committed
+.blazon/*
+!.blazon/plugins/
+
+# Python bytecode from scripts/ and test/deck/python/
+__pycache__
+
+# Editor and agent config
+.idea
+.mcp.json
+.claude/settings.local.json
+.playwright-mcp/
+
+# An old local folder of source decks and guideline PDFs; a third party's material is never committed.
+# A maintainer's copy lives in docs/personal/reference/ (below).
+/references/
+
+# Personal notes and references; never published
+docs/personal/
+
+# Local source images from the earlier starter's art (its script is gone); never committed
+default-assets/
+
+# The starter blazon ships is made from examples/blazon by `npm run build-starter` (prepack); never committed
+/template/
+reads.json
+reads.json.lines
+
+# The program of each shipped plugin and the lock over them are build output (scripts/build-plugins.mjs, `npm run build:plugins`)
+plugins/*/bin/*.🔌
+plugins/shipped.lock

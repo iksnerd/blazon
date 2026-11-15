@@ -1,0 +1,11 @@
+{
+  "about": "A timeout above the host's cap still loads; the host caps it (60000). Only the load is tested here.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "timeout_ms": 90000
+  }
+}

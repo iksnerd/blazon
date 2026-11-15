@@ -1,0 +1,14 @@
+{
+  "about": "A file pin whose path is a symlink is refused.",
+  "kind": "file",
+  "root": "symlink",
+  "entries": [
+    {
+      "path": "contra-acme.x",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    }
+  ],
+  "refuse": "symlink"
+}

@@ -1,0 +1,33 @@
+{
+  "about": "A secret-labelled request field the schema marks and the plugin lists starts, pinned.",
+  "rfc": "3.5",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "secret_fields": [
+      "/webhook"
+    ]
+  },
+  "labels": {
+    "env": [],
+    "fields": [
+      "/webhook"
+    ],
+    "delegated": []
+  },
+  "marked_fields": [
+    "/webhook"
+  ],
+  "pinned": true,
+  "mode": "long-running",
+  "flows": {
+    "returns_secret": false,
+    "authorizes": false
+  },
+  "expect": {
+    "admit": true,
+    "warn": false
+  }
+}

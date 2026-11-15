@@ -1,0 +1,13 @@
+{
+  "about": "The byte 0x7F in a name.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run\u007f",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    }
+  ],
+  "refuse": "name"
+}

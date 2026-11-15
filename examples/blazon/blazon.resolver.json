@@ -1,0 +1,46 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "base": {
+      "sources": [
+        {
+          "$ref": "tokens/colors.json"
+        },
+        {
+          "$ref": "tokens/form.json"
+        },
+        {
+          "$ref": "tokens/social.json"
+        },
+        {
+          "$ref": "tokens/spacing.json"
+        },
+        {
+          "$ref": "tokens/typography.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "description": "Light is the default. Dark puts Bone text on Graphite and keeps Signal Orange as the one signal.",
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "$ref": "tokens/theme/dark.json"
+          }
+        ]
+      },
+      "default": "light"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    }
+  ]
+}

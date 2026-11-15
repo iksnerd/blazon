@@ -1,0 +1,13 @@
+{
+  "about": "single-exec-file with one byte changed: a different digest.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho OK\n"
+    }
+  ],
+  "digest": "t1:41eff6210a74f887e17162a6b085fa32ac5c737b12fef4e75fe9bdecef998aaa"
+}

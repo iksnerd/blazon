@@ -1,0 +1,18 @@
+{
+  "about": "The path-segment form is removed.",
+  "rfc": "3.5",
+  "secrets": [
+    "x y/z?w"
+  ],
+  "text": "/files/x%20y%2Fz%3Fw/x",
+  "expect": {
+    "absent": [
+      "x y/z?w",
+      "x%20y%2Fz%3Fw"
+    ],
+    "present": [
+      "/files/",
+      "/x"
+    ]
+  }
+}

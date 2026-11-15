@@ -1,0 +1,26 @@
+{
+  "social": {
+    "format": {
+      "$type": "dimension",
+      "$description": "Social card formats: link preview, square post, story. The margin is the safe area, wide enough for the logo's clear space (24px at its 80px height, 38px at card size).",
+      "horizontal": {
+        "width": { "$value": { "value": 1200, "unit": "px" } },
+        "height": { "$value": { "value": 630, "unit": "px" } },
+        "margin": { "$value": { "value": 72, "unit": "px" } },
+        "columns": { "$type": "number", "$value": 6 }
+      },
+      "square": {
+        "width": { "$value": { "value": 1080, "unit": "px" } },
+        "height": { "$value": { "value": 1080, "unit": "px" } },
+        "margin": { "$value": { "value": 64, "unit": "px" } },
+        "columns": { "$type": "number", "$value": 6 }
+      },
+      "story": {
+        "width": { "$value": { "value": 1080, "unit": "px" } },
+        "height": { "$value": { "value": 1920, "unit": "px" } },
+        "margin": { "$value": { "value": 80, "unit": "px" } },
+        "columns": { "$type": "number", "$value": 4 }
+      }
+    }
+  }
+}

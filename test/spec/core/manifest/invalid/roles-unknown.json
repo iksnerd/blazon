@@ -1,0 +1,11 @@
+{
+  "about": "A role the host's profile does not define.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "no-such-role"
+    ]
+  },
+  "refuse": true
+}

@@ -1,0 +1,11 @@
+{
+  "about": "v is the integer 2, not the string.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": "2",
+    "roles": [
+      "$role"
+    ]
+  },
+  "refuse": true
+}

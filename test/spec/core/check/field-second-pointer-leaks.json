@@ -1,0 +1,14 @@
+{
+  "about": "Two fields are listed and the plugin leaks only the second: each pointer is tried on its own.",
+  "rfc": "9",
+  "program": "#!/bin/sh\ncase \"$1\" in\n  *-manifest) printf '%s' '{\"v\":2,\"roles\":[\"$role\"],\"secret_fields\":[\"/first\",\"/second\"]}'; exit 0;;\n  --validate)\n    in=$(cat)\n    case \"$in\" in\n      '{'*) exit 0;;\n      *) echo 'validation input is not JSON'; exit 2;;\n    esac;;\nesac\nin=$(cat)\ncase \"$in\" in\n  '{'*) ;;\n  *) echo 'request is not JSON'; exit 2;;\nesac\nif printf '%s' \"$in\" | grep -Eq '\"v\" *: *1[,}]'; then\n  v=$(printf '%s' \"$in\" | sed -n 's/.*\"second\":\"\\([^\"]*\\)\".*/\\1/p')\n  echo \"debug: $v\" >&2\n  exit 0\nfi\necho 'unsupported record version'; exit 2\n",
+  "marked_fields": [
+    "/first",
+    "/second"
+  ],
+  "request": "{\"v\":1,\"first\":\"a\",\"second\":\"b\"}",
+  "expect": {
+    "check": "fail",
+    "case": 4
+  }
+}

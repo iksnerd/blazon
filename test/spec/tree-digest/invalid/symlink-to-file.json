@@ -1,0 +1,18 @@
+{
+  "about": "A symlink inside a tree is refused, whatever it points to.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    },
+    {
+      "path": "link",
+      "type": "symlink",
+      "target": "run"
+    }
+  ],
+  "refuse": "symlink"
+}

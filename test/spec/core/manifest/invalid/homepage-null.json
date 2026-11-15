@@ -1,0 +1,12 @@
+{
+  "about": "null for homepage: a field that is present MUST be valid, and null is not a value of any field.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "homepage": null
+  },
+  "refuse": true
+}

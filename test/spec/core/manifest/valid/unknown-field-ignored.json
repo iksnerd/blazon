@@ -1,0 +1,13 @@
+{
+  "about": "A host MUST ignore a manifest field it does not know (section 3.8, section 8).",
+  "rfc": "8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "from_the_future": {
+      "a": 1
+    }
+  }
+}

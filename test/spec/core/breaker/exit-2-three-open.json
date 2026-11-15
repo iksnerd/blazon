@@ -1,0 +1,10 @@
+{
+  "about": "Exit 2 counts as a break: three in a row open it.",
+  "rfc": "7",
+  "sequence": [
+    "exit-2",
+    "exit-2",
+    "exit-2"
+  ],
+  "opens_after_index": 2
+}

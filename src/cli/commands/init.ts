@@ -1,0 +1,265 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import pc from '../../core/colors.js';
+import { copyStarter, getTemplateDir } from '../../core/starter.js';
+import { applyFromSite, type FromSiteResult } from '../../core/init/from-site/index.js';
+import { applyAnswers, parseColor, parseDescription, parseFont, parseLogo, parseName, type Answers } from '../../core/init/answers.js';
+import { clackPrompter, PromptCancelled, type Prompter } from '../../core/init/prompts.js';
+import { runGuided, type Plan } from '../init-flow.js';
+import { lookFor, type Look } from '../init-ui.js';
+import { blazonCommand, inDir, shownDir } from '../where.js';
+import { SITE_URL } from '../../core/site.js';
+
+const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+
+/** What was written under one top-level folder, in words: its files, or its pages, or the folders the files sit in. */
+function describeCreated(folder: string, files: string[]): string | undefined {
+  const names = files.map((f) => f.split('/').slice(1));
+  if (names.length === 0) return undefined;
+  if (folder === 'docs') return `${plural(names.length, 'page', 'pages')}, ${names[0]![0]} to ${names[names.length - 1]![0]}`;
+  // Token files are few and each one is edited by name, a context's file in its folder too (theme/dark.json)
+  if (folder === 'tokens') return `${plural(names.length, 'file', 'files')}: ${names.map((n) => n.join('/')).join(', ')}`;
+  const subfolders = [...new Set(names.filter((n) => n.length > 1).map((n) => n[0]!))];
+  if (subfolders.length > 0) return `${plural(names.length, 'file', 'files')} in ${plural(subfolders.length, 'folder', 'folders')}: ${subfolders.join(', ')}`;
+  return `${plural(names.length, 'file', 'files')}: ${names.map((n) => n[0]).join(', ')}`;
+}
+
+// Words a folder name often ends with that the title says itself: "acme-brand" is "Acme Brand Book", not "Acme Brand Brand Book".
+const TITLE_SUFFIX = /^(brand|book|guidelines|guide)$/i;
+
+function brandTitle(dir: string): string {
+  let words = path
+    .basename(dir)
+    .split(/[-_\s]+/)
+    .filter(Boolean);
+  const named = words.length > 0;
+  while (words.length > 0 && TITLE_SUFFIX.test(words[words.length - 1]!)) words = words.slice(0, -1);
+  const name = words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  // A folder that is only "brand" says nothing more than the title does
+  return name ? `${name} Brand Book` : named ? 'Brand Book' : 'Blazon Brand Book';
+}
+
+export interface InitOptions {
+  /** An http(s) address to read the first colors, fonts and logo from */
+  from?: string;
+  /** The config title, as given */
+  name?: string;
+  /** One sentence on the brand */
+  description?: string;
+  /** The primary color, hex */
+  color?: string;
+  /** A font family name */
+  font?: string;
+  /** A logo file to copy in */
+  logo?: string;
+  /** Start `blazon dev` in the folder when init is done */
+  dev?: boolean;
+  /** Accept every default and never ask */
+  yes?: boolean;
+  /** cac sets this to false for `--no-input`, an alias of `yes` */
+  input?: boolean;
+  /** The prompter; a test passes a scripted one. Without it a terminal session uses @clack/prompts */
+  prompter?: Prompter;
+  /** Whether stdin and stdout are a terminal; defaults to the process's own */
+  tty?: boolean;
+  /** How the output may look; defaults to what the environment allows */
+  look?: Look;
+  /** Starts the dev server; defaults to `blazon dev` */
+  startDev?: (dir: string) => Promise<void>;
+  /** Told what was made, once the starter is in place: the folder, the files written and those that were already there (relative paths) */
+  report?: (made: InitReport) => void;
+}
+
+export interface InitReport {
+  dir: string;
+  created: string[];
+  kept: string[];
+}
+
+const FLAGS = [
+  ['--name', 'name', parseName],
+  ['--description', 'description', parseDescription],
+  ['--color', 'color', parseColor],
+  ['--font', 'font', parseFont],
+  ['--logo', 'logo', (t: string) => parseLogo(t)],
+] as const;
+
+/** Returns the exit status: 0; 2 when a flag is not valid or the site cannot be read; 130 when the questions are cancelled. */
+export async function runInit(targetDir: string = '.', options: InitOptions = {}): Promise<number> {
+  if (options.from !== undefined && !/^https?:\/\/[^\s/]/i.test(options.from)) {
+    console.error(pc.red(`blazon init: --from needs an http(s) address, got ${JSON.stringify(options.from)}`));
+    return 2;
+  }
+  const answers: Answers = {};
+  for (const [flag, key, parse] of FLAGS) {
+    const given = options[key];
+    if (given === undefined) continue;
+    const parsed = parse(String(given));
+    if ('hint' in parsed) {
+      console.error(pc.red(`blazon init: ${flag}: ${parsed.hint}`));
+      return 2;
+    }
+    answers[key] = parsed.value;
+  }
+  const destDir = path.resolve(process.cwd(), targetDir);
+  const templateDir = getTemplateDir();
+  if (!fs.existsSync(templateDir)) throw new Error(`Template directory not found at ${templateDir}`);
+
+  const tty = options.tty ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const givenAny = [options.from, options.name, options.description, options.color, options.font, options.logo].some((v) => v !== undefined);
+  const guided = tty && !givenAny && !options.yes && options.input !== false;
+  const prompter = guided ? (options.prompter ?? clackPrompter()) : undefined;
+  const look = options.look ?? lookFor(process.env, tty);
+
+  if (!guided) console.log(pc.cyan(`\n✨ Initializing Blazon Brand Book in ${pc.bold(destDir)}...\n`));
+
+  const configPath = path.join(destDir, 'blazon.config.ts');
+  const hadConfig = fs.existsSync(configPath);
+  const copied = copyStarter(destDir, templateDir);
+  const kept = copied.kept;
+  const written = copied.written.map((f) => path.relative(destDir, f).split(path.sep).join('/')).sort();
+  const created = new Set(written);
+  options.report?.({ dir: destDir, created: written, kept: kept.map((f) => path.relative(destDir, f).split(path.sep).join('/')).sort() });
+
+  // A new config is named after the project folder: "acme-brand" -> "Acme Brand Book".
+  if (!hadConfig && fs.existsSync(configPath)) {
+    const config = fs.readFileSync(configPath, 'utf-8');
+    // The description is blazon's own: a new book says what it is until its owner writes it
+    fs.writeFileSync(
+      configPath,
+      config
+        .replace("title: 'Blazon Brand Book'", `title: ${JSON.stringify(brandTitle(destDir))}`)
+        .replace(/^(\s*)description: .*,$/m, (_m, indent: string) => `${indent}description: "Brand guidelines, built from design tokens",`),
+    );
+  }
+
+  const created_lines: string[] = [];
+  for (const folder of ['tokens', 'assets', 'docs']) {
+    const what = describeCreated(
+      folder,
+      written.filter((f) => f.startsWith(`${folder}/`)),
+    );
+    if (what) created_lines.push(`${folder}/ (${what})`);
+  }
+  if (written.includes('blazon.config.ts')) created_lines.push('blazon.config.ts');
+  if (written.includes('blazon.resolver.json')) created_lines.push('blazon.resolver.json');
+
+  let plan: Plan = { answers };
+  if (prompter) {
+    try {
+      plan = await runGuided({ prompter, look, dir: destDir, kept: kept.length });
+    } catch (err) {
+      if (err instanceof PromptCancelled) {
+        prompter.cancel('Stopped. The starter was copied as it is, and nothing else was changed.');
+        return 130;
+      }
+      throw err;
+    }
+  } else {
+    for (const line of created_lines) console.log(`  ${pc.green('✔')} Created ${line}`);
+    if (kept.length > 0) console.log(`  ${pc.yellow('!')} ${kept.length} starter files were already here and are kept as they are`);
+    console.log();
+  }
+
+  // Apply
+  const from = plan.site?.url ?? options.from;
+  let code = 0;
+  let site: FromSiteResult | undefined;
+  const spin = prompter?.spinner();
+  spin?.start('Writing the brand book');
+  if (from !== undefined) {
+    try {
+      site = await applyFromSite(destDir, from, created, new Date(), { page: plan.site?.findings.page, skipVars: plan.site?.skipVars });
+      if (!prompter) {
+        console.log(pc.bold(`Read from ${from}:`));
+        for (const file of site.written) console.log(`  ${pc.green('✔')} Wrote ${file}`);
+        for (const item of site.removed) console.log(`  ${pc.green('✔')} Removed ${item}`);
+        for (const item of site.repointed) console.log(`  ${pc.green('✔')} Re-pointed ${item}`);
+        for (const item of site.missing) console.log(`  ${pc.yellow('!')} ${item}`);
+        console.log(pc.dim('\n  All of it is marked needs-review: it is a starting point, so confirm it with the brand owner.\n'));
+      }
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      if (prompter)
+        prompter.log.error(
+          `Could not read ${from}: ${reason}\nThe starter was copied as it is. To start from the site, run blazon init again with --from in a new folder (a folder that already has the starter is kept as it is), or carry on with the starter.`,
+        );
+      else {
+        console.error(pc.red(`blazon init: ${reason}`));
+        console.error(
+          pc.dim(
+            '  The starter was copied as it is. To start from the site, run blazon init again with --from in a new folder (a folder that already has the starter is kept as it is), or carry on with the starter.\n',
+          ),
+        );
+      }
+      code = 2;
+    }
+  }
+  let applied: ReturnType<typeof applyAnswers>;
+  try {
+    applied = applyAnswers(destDir, plan.answers, created);
+  } catch (err) {
+    spin?.error('Could not write the brand book');
+    throw err;
+  }
+  spin?.stop('Wrote the brand book');
+
+  // Report. Every step is a command or a path that works from the folder blazon was run in: `blazon init a` says `blazon dev a`.
+  const em = (t: string): string => (look.color ? pc.cyan(t) : t);
+  const dir = shownDir(destDir);
+  const nextSteps = [
+    `Run ${em(blazonCommand('dev', dir))} to see the book`,
+    `Replace blazon's artwork in ${em(inDir(dir, 'assets/'))} and the text in ${em(inDir(dir, 'docs/'))}`,
+    `Run ${em(blazonCommand('check', dir))} to see what is left`,
+    `Point a coding agent at ${em(inDir(dir, 'AGENTS.md'))}: it is the guide for editing this brand`,
+  ];
+  // A site that gave no logo leaves blazon's own: say what to do, since blazon check warns about it
+  if (site && !site.written.some((file) => file.startsWith('assets/logos/')))
+    nextSteps.splice(
+      1,
+      0,
+      `Add your logo: the book still shows blazon's own. Put it in ${em(inDir(dir, 'assets/logos/'))} and point ${em('logo')} in ${em(inDir(dir, 'blazon.config.ts'))} at it`,
+    );
+  // The colors step says what is already done: --color set the primary, a site wrote the palette
+  const colors = em(inDir(dir, 'tokens/colors.json'));
+  const colorStep = applied.set.some((item) => item.startsWith('primary color'))
+    ? `Finish the palette in ${colors}: the primary color is set, the rest is still blazon's`
+    : site?.written.includes('tokens/colors.json')
+      ? `Confirm the colors read from the site in ${colors} with the brand owner`
+      : `Edit ${colors} with your colors`;
+  if (prompter) {
+    const wrote = [...created_lines.map((l) => `Created ${l}`)];
+    if (site) wrote.push(`Read from ${from}: ${site.written.length} files written, ${site.removed.length} starter files removed`, ...site.missing.map((m) => `Not found: ${m}`));
+    for (const item of applied.set) wrote.push(`Set ${item}`);
+    wrote.push(...applied.hints.map((h) => `Note: ${h}`));
+    prompter.note(wrote.join('\n'), 'What was written');
+    if (code === 0) prompter.note(nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n'), 'Next steps');
+    let dev: boolean;
+    try {
+      dev = options.dev ?? (await prompter.confirm({ message: 'Start the dev server now?', initialValue: false }));
+    } catch (err) {
+      if (!(err instanceof PromptCancelled)) throw err;
+      prompter.cancel('Stopped. Everything above was written.');
+      return code === 0 ? 130 : code;
+    }
+    prompter.outro(dev ? 'Starting blazon dev. Press Ctrl-C to stop it.' : `Done. Run ${em(blazonCommand('dev', dir))} when you are ready.`);
+    if (dev) await (options.startDev ?? startDev)(destDir);
+    return code;
+  }
+
+  for (const hint of applied.hints) console.log(`  ${pc.yellow('!')} ${hint}`);
+  if (applied.set.length > 0) console.log(`  ${pc.green('✔')} Set ${applied.set.join(', ')}\n`);
+  if (code === 0) {
+    console.log(pc.bold('Next steps:'));
+    console.log(`  1. ${colorStep}`);
+    nextSteps.forEach((step, i) => console.log(`  ${i + 2}. ${step}`));
+  }
+  console.log(pc.dim(`\nThe manual: ${SITE_URL}/docs\n`));
+  if (options.dev) await (options.startDev ?? startDev)(destDir);
+  return code;
+}
+
+async function startDev(dir: string): Promise<void> {
+  const { runDev } = await import('./dev.js');
+  await runDev(dir);
+}

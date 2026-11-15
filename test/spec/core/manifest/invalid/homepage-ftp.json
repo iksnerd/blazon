@@ -1,0 +1,12 @@
+{
+  "about": "An http or https URL.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "homepage": "ftp://example.com/"
+  },
+  "refuse": true
+}

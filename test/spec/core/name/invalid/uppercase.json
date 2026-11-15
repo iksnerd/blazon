@@ -1,0 +1,8 @@
+{
+  "about": "Lowercase only.",
+  "rfc": "3.1",
+  "names": [
+    "Acme.vault",
+    "acme.Vault"
+  ]
+}

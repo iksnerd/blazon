@@ -1,0 +1,12 @@
+[
+  {
+    "code": "approval-stale",
+    "severity": "warning",
+    "path": "color.accent"
+  },
+  {
+    "code": "font-license-unknown",
+    "severity": "info",
+    "path": "font.family.body"
+  }
+]

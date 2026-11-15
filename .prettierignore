@@ -1,0 +1,25 @@
+# What Prettier leaves alone: built output, installed packages, and files that are data, prose or someone else's.
+node_modules/
+dist/
+.idea/
+.claude/
+.blazon/
+coverage/
+
+# The pictures the starter's art is made from, and a maintainer's local notes and reference material
+default-assets/
+docs/personal/
+
+# Recorded outputs the tests compare byte for byte
+test/**/golden/
+
+# Token files, pages and assets are written by hand to be read, in the layout their authors chose
+*.md
+*.json
+*.svg
+*.html
+template/
+examples/
+plugins/
+
+package-lock.json

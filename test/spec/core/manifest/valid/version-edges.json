@@ -1,0 +1,11 @@
+{
+  "about": "A version of 32 characters starting with a digit, with dot, plus and minus.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "version": "1a.+-a.+-a.+-a.+-a.+-a.+-a.+-bbb"
+  }
+}

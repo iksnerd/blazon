@@ -1,0 +1,13 @@
+{
+  "about": "One executable script.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    }
+  ],
+  "digest": "t1:a18338175cd2eff6ee02776f236b46d525f4de771344bea39357fdd77bbed59b"
+}

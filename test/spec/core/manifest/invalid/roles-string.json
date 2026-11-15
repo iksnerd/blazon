@@ -1,0 +1,9 @@
+{
+  "about": "roles is a list, not a string.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": "$role"
+  },
+  "refuse": true
+}

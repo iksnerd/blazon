@@ -1,0 +1,18 @@
+{
+  "about": "The URL-safe base64 alphabet is removed too; the value is chosen so the two alphabets differ.",
+  "rfc": "3.5",
+  "secrets": [
+    "a b/c+d=e??>"
+  ],
+  "text": "b64u=YSBiL2MrZD1lPz8- end",
+  "expect": {
+    "absent": [
+      "a b/c+d=e??>",
+      "YSBiL2MrZD1lPz8-"
+    ],
+    "present": [
+      "b64u=",
+      " end"
+    ]
+  }
+}

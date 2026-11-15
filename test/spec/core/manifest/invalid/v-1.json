@@ -1,0 +1,11 @@
+{
+  "about": "A host MUST refuse a manifest of another version.",
+  "rfc": "8",
+  "manifest": {
+    "v": 1,
+    "roles": [
+      "$role"
+    ]
+  },
+  "refuse": true
+}

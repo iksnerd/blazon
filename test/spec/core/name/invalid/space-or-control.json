@@ -1,0 +1,11 @@
+{
+  "about": "No space or control character.",
+  "rfc": "3.1",
+  "names": [
+    "a b.c",
+    "a.b\n",
+    "a.b ",
+    "a\u0000.b",
+    "a.b\tc"
+  ]
+}

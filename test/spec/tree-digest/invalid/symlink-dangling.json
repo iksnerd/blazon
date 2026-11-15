@@ -1,0 +1,12 @@
+{
+  "about": "A symlink to nothing is refused: the walk reads the link with lstat and never follows it.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "gone",
+      "type": "symlink",
+      "target": "nowhere"
+    }
+  ],
+  "refuse": "symlink"
+}

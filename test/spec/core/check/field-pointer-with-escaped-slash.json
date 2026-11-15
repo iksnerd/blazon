@@ -1,0 +1,13 @@
+{
+  "about": "A pointer escapes a slash in a key as ~1: /a~1b is the key a/b. The plugin leaks only that key's value, so a check that took the pointer literally would put the value under another key and see nothing.",
+  "rfc": "9",
+  "program": "#!/bin/sh\ncase \"$1\" in\n  *-manifest) printf '%s' '{\"v\":2,\"roles\":[\"$role\"],\"secret_fields\":[\"/a~1b\"]}'; exit 0;;\n  --validate)\n    in=$(cat)\n    case \"$in\" in\n      '{'*) exit 0;;\n      *) echo 'validation input is not JSON'; exit 2;;\n    esac;;\nesac\nin=$(cat)\ncase \"$in\" in\n  '{'*) ;;\n  *) echo 'request is not JSON'; exit 2;;\nesac\nif printf '%s' \"$in\" | grep -Eq '\"v\" *: *1[,}]'; then\n  v=$(printf '%s' \"$in\" | sed -n 's|.*\"a/b\":\"\\([^\"]*\\)\".*|\\1|p')\n  echo \"debug: $v\" >&2\n  exit 0\nfi\necho 'unsupported record version'; exit 2\n",
+  "marked_fields": [
+    "/a~1b"
+  ],
+  "request": "{\"v\":1,\"a/b\":\"placeholder\"}",
+  "expect": {
+    "check": "fail",
+    "case": 4
+  }
+}

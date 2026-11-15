@@ -1,0 +1,17 @@
+{
+  "about": "A labelled value is removed and the text around it is kept.",
+  "rfc": "3.5",
+  "secrets": [
+    "s3cr3t-Tok"
+  ],
+  "text": "token=s3cr3t-Tok done",
+  "expect": {
+    "absent": [
+      "s3cr3t-Tok"
+    ],
+    "present": [
+      "token=",
+      " done"
+    ]
+  }
+}

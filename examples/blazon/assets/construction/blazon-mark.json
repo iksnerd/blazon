@@ -1,0 +1,9 @@
+{
+  "title": "The mark, measured",
+  "description": "Drawn by the blazon.logo-geometry plugin from blazon-graphite.svg, cropped to the 40-unit mark. The dashed lines are the axes it is measured on. They cross at the ring, the center of the box. The dot is the center of mass. The squares are the 2-unit grid.",
+  "traits": [
+    "Matches itself 78 to 82% under every mirror and turn: the fold and the two cut lines break the square",
+    "Center of mass within 1% of the center",
+    "Every point on a 2-unit grid"
+  ]
+}

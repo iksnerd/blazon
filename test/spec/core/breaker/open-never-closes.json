@@ -1,0 +1,11 @@
+{
+  "about": "Once open, a later answer does not close it within the unit of work.",
+  "rfc": "7",
+  "sequence": [
+    "break",
+    "break",
+    "break",
+    "answer"
+  ],
+  "opens_after_index": 2
+}

@@ -1,0 +1,135 @@
+#!/bin/bash
+# .githooks/pre-commit: the gate on every commit. CI runs only on version tags and by hand (.github/workflows/ci.yml), so this
+# hook and .githooks/pre-push are the gate for everything else. This hook runs the tests related to the staged files, never the whole
+# suite; `npm test` is the whole suite.
+# It tests the commit you are about to make, not the working tree: the staged files are exported to a temporary folder and
+# every check runs there, so an unstaged edit or an untracked file cannot make a broken commit pass.
+#
+# Install:   npm install   (its prepare script runs `git config core.hooksPath .githooks`)
+# Bypass:    git commit --no-verify
+#
+# What runs, by what is staged (a deletion counts as staged):
+#   every commit        typecheck and lint (ESLint, with the type-aware rules for src/); secret scan of the staged changes (gitleaks);
+#                       syntax of staged shell and Python files; Ruff on staged Python files (through uv); Prettier on staged code files
+#   src/, test/**/*.ts(x)
+#                       -> only the tests related to those files (vitest related), plus the manual and RFC tests for src/
+#   mcp/src/, mcp/test/, and the commands and read functions it wraps (src/cli/, src/core/read/)
+#                       -> the MCP server's tests
+#   scripts/*.py, scripts/blazon-blazon.*, test/deck/python/
+#                       -> the deck and plugin tests
+#   docs/, *.md, .github/, LICENSE, CODEOWNERS, scripts/gen-checks-docs.ts
+#                       -> the manual and RFC tests
+#   .githooks/, scripts/install-hooks.mjs, shipped-lock.mjs, blazon-src.ts
+#                       -> the few tests that read them by name
+#   the linters' and formatter's own config -> no test: the lint and format steps run on every commit
+#   examples/, package.json, other files under test/ (goldens, corpus, fixtures), build and test config
+#   and any path no rule names
+#                       -> nothing more at commit: they need the whole suite, which runs once, at push (.githooks/pre-push)
+# The mapping is classify_paths in lib.sh, and pre-push uses it too. A tree that already passed a step is not run through it again.
+set -uo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib.sh
+. "$HERE/lib.sh"
+
+# Nothing staged (a merge or an empty commit): nothing to check.
+git diff --cached --quiet --diff-filter=ACMRD && exit 0
+
+REPO="$(git rev-parse --show-toplevel)"
+STAGED="$(git -c core.quotepath=off diff --cached --name-only --diff-filter=ACMRD)"
+SNAP_PARENT="$(mktemp -d)"
+SNAP="$SNAP_PARENT/staged"
+mkdir -p "$SNAP"
+trap 'rm -rf "$SNAP_PARENT"' EXIT
+hook_log pre-commit
+
+echo "pre-commit: checking the staged snapshot"
+
+# The index, whichever one this commit uses (a private GIT_INDEX_FILE too), exported without .git.
+git checkout-index -a -f --prefix="$SNAP/"
+[ -f "$SNAP/package.json" ] || refuse pre-commit 'git commit --no-verify' "snapshot: the staged tree has no package.json, so there is nothing to check"
+[ -d "$REPO/node_modules" ] || refuse pre-commit 'git commit --no-verify' "node_modules is missing in $REPO: run npm install, then commit again"
+# The snapshot holds tracked files only, so the dependencies are linked in.
+ln -s "$REPO/node_modules" "$SNAP/node_modules"
+TREE="$(git write-tree)"
+
+# Secret scan of exactly what is staged. It needs the repo and the commit's own index, so it runs before the git variables go.
+if command -v gitleaks >/dev/null 2>&1; then
+    step "secret scan" bash -c "cd '$REPO' && gitleaks git --staged --no-banner --redact --verbose"
+else
+    echo "  – secret scan skipped (gitleaks is not installed)"
+fi
+
+# git exports these to a hook; a test that runs git in a temporary repo would use this commit's index instead of its own.
+unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_PREFIX
+
+# --- what each staged path triggers (classify_paths in lib.sh). A commit never runs the whole suite: pre-push does, once per push.
+classify_paths "$SNAP" <<< "$STAGED"
+
+# --- every commit
+cached_step "typecheck-$TREE" "typecheck" bash -c "cd '$SNAP' && npm run -s typecheck"
+cached_step "lint-$TREE" "lint" bash -c "cd '$SNAP' && npm run -s lint"
+
+shell_files=""; python_files=""; format_files=""
+while IFS= read -r path; do
+    [ -f "$SNAP/$path" ] || continue   # a deleted file has nothing to parse
+    case "$path" in
+        *.sh|.githooks/*) shell_files="$shell_files $path"; continue ;;
+        *.py) python_files="$python_files $path"; continue ;;
+        *.ts|*.tsx|*.js|*.mjs|*.cjs|*.css|*.yml|*.yaml) format_files="$format_files $path"; continue ;;
+    esac
+    # A script with no extension is Python when its first line says so (a launcher such as scripts/blazon-blazon.x).
+    if [ "$(head -c 2 "$SNAP/$path")" = "#!" ] && head -n 1 "$SNAP/$path" | grep -q 'python'; then
+        python_files="$python_files $path"
+    fi
+done <<< "$STAGED"
+
+if [ -n "$format_files" ]; then
+    # Prettier's own ignore file (.prettierignore) decides which of these it checks
+    # shellcheck disable=SC2086
+    step "format" bash -c "cd '$SNAP' && npm run -s format:files -- $format_files"
+fi
+if [ -n "$shell_files" ]; then
+    # shellcheck disable=SC2086
+    step "shell syntax" bash -c "cd '$SNAP' && for f in $shell_files; do bash -n \"\$f\" || exit 1; done"
+fi
+if [ -n "$python_files" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+        # ast.parse and not py_compile: nothing is written next to the files
+        # shellcheck disable=SC2086
+        step "python syntax" bash -c "cd '$SNAP' && python3 -B -c 'import ast, sys
+for name in sys.argv[1:]:
+    ast.parse(open(name, encoding=\"utf-8\").read(), name)' $python_files"
+    else
+        echo "  – python syntax skipped (python3 is not installed)"
+    fi
+    if command -v uvx >/dev/null 2>&1; then
+        cached_step "ruff-$TREE" "python lint" bash -c "cd '$SNAP' && npm run -s lint:py"
+    else
+        echo "  – python lint skipped (uv is not installed)"
+    fi
+fi
+
+# --- the suites the staged paths ask for
+if [ "$full" -eq 1 ]; then
+    echo "  – the full suite runs at push, not at commit"
+fi
+if [ -n "$related_files" ]; then
+    # The key holds the files too: the same tree reached by a different change has other files to cover.
+    list_key="$(printf '%s' "$related_files" | digest_of)"
+    # shellcheck disable=SC2086
+    cached_step "related-$TREE-$list_key" "tests: related to the staged files" bash -c "cd '$SNAP' && npm run -s test:related -- $TEST_ARGS $related_files"
+fi
+if [ "$deck" -eq 1 ]; then
+    cached_step "deck-$TREE" "tests: deck and plugins" bash -c "cd '$SNAP' && npm run -s test:deck -- $TEST_ARGS"
+fi
+if [ "$docs" -eq 1 ]; then
+    cached_step "docs-$TREE" "tests: manual and RFC" bash -c "cd '$SNAP' && npm run -s test:docs -- $TEST_ARGS"
+fi
+if [ -n "$extra_tests" ]; then
+    files_key="$(printf '%s' "$extra_tests" | digest_of)"
+    # shellcheck disable=SC2086
+    cached_step "files-$TREE-$files_key" "tests: hooks and scripts" bash -c "cd '$SNAP' && npm run -s test:files -- $TEST_ARGS $extra_tests"
+fi
+
+finish pre-commit 'git commit --no-verify'

@@ -1,0 +1,8 @@
+{
+  "about": "roles is required.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2
+  },
+  "refuse": true
+}

@@ -1,0 +1,17 @@
+{
+  "about": "Spaces are allowed in a name. A line stays unambiguous: its type fixes whether it ends in 64 hex digits or '-'.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "my plugin",
+      "type": "dir"
+    },
+    {
+      "path": "my plugin/a - b",
+      "type": "file",
+      "exec": false,
+      "content": "x\n"
+    }
+  ],
+  "digest": "t1:74c4168aec0c82be23a7b8cf4a215136333dd50943ec05ade7121a597c802929"
+}

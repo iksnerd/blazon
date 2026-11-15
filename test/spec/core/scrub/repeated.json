@@ -1,0 +1,16 @@
+{
+  "about": "Every occurrence goes, not the first only.",
+  "rfc": "3.5",
+  "secrets": [
+    "s3cr3t-Tok"
+  ],
+  "text": "s3cr3t-Tok and s3cr3t-Tok and s3cr3t-Tok",
+  "expect": {
+    "absent": [
+      "s3cr3t-Tok"
+    ],
+    "present": [
+      " and "
+    ]
+  }
+}

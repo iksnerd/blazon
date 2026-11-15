@@ -1,0 +1,10 @@
+{
+  "about": "v is required.",
+  "rfc": "3.8",
+  "manifest": {
+    "roles": [
+      "$role"
+    ]
+  },
+  "refuse": true
+}

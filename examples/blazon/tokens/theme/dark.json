@@ -1,0 +1,121 @@
+{
+  "text": {
+    "primary": {
+      "$value": "{color.base.bone}"
+    },
+    "muted": {
+      "$value": "{color.ink.zinc}"
+    },
+    "inverse": {
+      "$value": "{color.ink.graphite}"
+    }
+  },
+  "surface": {
+    "background": {
+      "$value": "{color.ink.graphite}"
+    },
+    "canvas": {
+      "$value": "{color.base.carbon}"
+    },
+    "inverse": {
+      "$value": "{color.base.bone}"
+    }
+  },
+  "rule": {
+    "default": {
+      "$value": "{color.ink.zinc}"
+    },
+    "quiet": {
+      "$value": "{color.ink.steel}"
+    }
+  },
+  "shadow": {
+    "plate": {
+      "$value": {
+        "color": "{color.base.carbon}",
+        "offsetX": {
+          "value": 4,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 4,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 0,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$description": "A hard offset, like a plate bolted onto a panel: panels and keys at rest. Never blurred."
+    },
+    "shim": {
+      "$value": {
+        "color": "{color.base.carbon}",
+        "offsetX": {
+          "value": 2,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 2,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 0,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$description": "Half a plate: a key under the pointer, seated halfway into its plate. Never blurred."
+    },
+    "recess": {
+      "$value": {
+        "color": "{color.ink.zinc}",
+        "inset": true,
+        "offsetX": {
+          "value": 2,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 2,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 0,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$description": "A well cut into the panel: inputs and tab rails. Never blurred."
+    }
+  },
+  "syntax": {
+    "keyword": {
+      "$value": "{color.pigment.ember}"
+    },
+    "string": {
+      "$value": "{color.pigment.patina}"
+    },
+    "constant": {
+      "$value": "{color.pigment.enamel}"
+    },
+    "function": {
+      "$value": "{color.base.bone}"
+    },
+    "comment": {
+      "$value": "{color.ink.zinc}"
+    },
+    "punctuation": {
+      "$value": "{color.ink.zinc}"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "about": "Each role once.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role",
+      "$role"
+    ]
+  },
+  "refuse": true
+}

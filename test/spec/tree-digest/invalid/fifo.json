@@ -1,0 +1,17 @@
+{
+  "about": "A FIFO is refused without being opened: opening one blocks.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run",
+      "type": "file",
+      "exec": true,
+      "content": "#!/bin/sh\necho ok\n"
+    },
+    {
+      "path": "pipe",
+      "type": "fifo"
+    }
+  ],
+  "refuse": "special"
+}

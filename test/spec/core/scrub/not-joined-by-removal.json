@@ -1,0 +1,17 @@
+{
+  "about": "Removing a value does not join its neighbours into another secret.",
+  "rfc": "3.5",
+  "secrets": [
+    "bc"
+  ],
+  "text": "bbcc",
+  "expect": {
+    "absent": [
+      "bc"
+    ],
+    "present": [
+      "b",
+      "c"
+    ]
+  }
+}

@@ -1,0 +1,268 @@
+{
+  "schema": 1,
+  "version": "0.1.0",
+  "commands": [
+    {
+      "name": "dev",
+      "usage": "blazon dev [dir]",
+      "summary": "Start interactive Brand Book dev server with HMR"
+    },
+    {
+      "name": "build",
+      "usage": "blazon build [dir]",
+      "summary": "Build static brand book site and compiled design tokens"
+    },
+    {
+      "name": "tokens",
+      "usage": "blazon tokens [dir]",
+      "summary": "Compile design tokens only (theme.css, tokens.ts, tokens.json)"
+    },
+    {
+      "name": "check",
+      "usage": "blazon check [dir]",
+      "summary": "Check tokens: aliases, types, usage rules, contrast pairs, duplicates and review flags"
+    },
+    {
+      "name": "mcp",
+      "usage": "blazon mcp",
+      "summary": "Set up blazon-mcp, the MCP server for coding agents: --print-config prints what registers it in a client, --check tests that it works; neither writes a file"
+    },
+    {
+      "name": "drift",
+      "usage": "blazon drift [target]",
+      "summary": "Find tokens that have drifted from the live site: compare each token that names a source.cssVar with a page (http or https address) or a CSS file"
+    },
+    {
+      "name": "approvals",
+      "usage": "blazon approvals [dir]",
+      "summary": "List the tokens and assets marked review ok with the fingerprint of their value today, to record in review.value so `blazon check` sees a later change"
+    },
+    {
+      "name": "plugin",
+      "usage": "blazon plugin [action] [target]",
+      "summary": "Plugins: `check <program>` checks that a program follows the plugin protocol, `pin <path>` prints the digest that pins it, `profile` prints the profile blazon enforces"
+    },
+    {
+      "name": "explain",
+      "usage": "blazon explain [code]",
+      "summary": "Explain a finding code: its severity, what it means, the fix and where to read more; with no code, list every code"
+    },
+    {
+      "name": "pin",
+      "usage": "blazon pin [dir]",
+      "summary": "Pin the blazon you build with: write blazon.lock with the commit of the blazon that runs this, so check, tokens and build refuse any other"
+    },
+    {
+      "name": "init",
+      "usage": "blazon init [dir]",
+      "summary": "Scaffold a new Blazon brand book and design token structure"
+    },
+    {
+      "name": "preview",
+      "usage": "blazon preview [dir]",
+      "summary": "Preview the static production brand book build"
+    },
+    {
+      "name": "doctor",
+      "usage": "blazon doctor",
+      "summary": "Check this machine and folder: Node version, brand folder, plugin folder safety, Chrome (if a plugin needs it) and blazon.lock; writes nothing"
+    },
+    {
+      "name": "get",
+      "usage": "blazon get [path] [dir]",
+      "summary": "Read one token: its value, type, CSS variable names in theme.css and tailwind.css, its usage, pairs and logo rules, and the file it is in. To find a path, use blazon list"
+    },
+    {
+      "name": "list",
+      "usage": "blazon list [group] [dir]",
+      "summary": "List the tokens: path, type and value, and the token each aliases. With a group path, only the tokens in that group"
+    },
+    {
+      "name": "rules",
+      "usage": "blazon rules [path] [dir]",
+      "summary": "Read the usage, pairs and logo rules of a token or a group, or of the whole brand when no path is given"
+    },
+    {
+      "name": "can",
+      "usage": "blazon can [fg] [bg] [dir]",
+      "summary": "Ask whether the foreground token may be text (or, with --role ui, a border or focus ring) on the background token, by the brand rules; exits 0 allowed, 1 denied, 2 unknown token"
+    },
+    {
+      "name": "fonts",
+      "usage": "blazon fonts [dir]",
+      "summary": "Read the fonts the brand loads (stylesheets and font files) and the families its tokens name"
+    },
+    {
+      "name": "logo",
+      "usage": "blazon logo [dir]",
+      "summary": "Read the configured logo variants and the rules each logo sidecar states: clear space, minimum size, lockups, ink"
+    },
+    {
+      "name": "brand",
+      "usage": "blazon brand [dir]",
+      "summary": "Print the brand as brand.json holds it, compiled now and written nowhere; --key prints one part"
+    }
+  ],
+  "checks": {
+    "total": 66,
+    "error": 42,
+    "warning": 17,
+    "info": 7
+  },
+  "mcpTools": [
+    {
+      "name": "check_brand",
+      "title": "Check the brand",
+      "description": "Runs blazon check on the brand, without plugins, and returns its findings and counts. `passed` is false when the brand has errors, and values read from such a brand can be wrong. Returns at most `limit` findings (default 50, at most 500); `counts` stay whole. Not for reading a value: use get_token."
+    },
+    {
+      "name": "list_tokens",
+      "title": "List the tokens",
+      "description": "Lists the design tokens of the brand, or of one group, or of one type, each with its path, type and value, in the order the token files write them. Use it to find a path or to read many values at once. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over 40000 characters is cut and says so. The list is cut to fit and says how many were left out: narrow with `group` or `type`."
+    },
+    {
+      "name": "get_token",
+      "title": "Read a token",
+      "description": "Looks up one design token of the brand: its value, type, the CSS variable names it gets, and the rules that apply to it. Use it for the value of a path you know; a group path is refused. For a path you do not know use list_tokens."
+    },
+    {
+      "name": "get_rules",
+      "title": "Read the brand rules",
+      "description": "Lists the brand rules (allowed uses, approved color pairs, logo restrictions) of a token or a group of tokens, or of the whole brand when no path is given. The whole brand can be larger than the size limit (40000 characters): give a path, or read the resource blazon://rules, which is not cut."
+    },
+    {
+      "name": "can_use",
+      "title": "Can this color be used here",
+      "description": "Answers whether one color token may be text on another color token, by the brand rules. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. For a color you have not picked, find one with list_tokens and type color."
+    },
+    {
+      "name": "get_fonts",
+      "title": "Read the brand fonts",
+      "description": "Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. For the family a token names, use get_token."
+    },
+    {
+      "name": "get_logo",
+      "title": "Read the brand logo",
+      "description": "Gets the brand logo variants for light and dark surfaces, their files, and the rules for each logo: clear space, minimum size, lockups, and the backgrounds that forbid it. Use it before placing a logo. For the brand's other rules use get_rules."
+    },
+    {
+      "name": "get_shadcn",
+      "title": "Read the shadcn/ui variables",
+      "description": "Gets the shadcn/ui variables the brand supplies (theme.shadcn): which token each variable takes, its value, and the variables nothing supplies. Use it when the site uses shadcn/ui. It compiles the brand now (blazon brand --key theme.shadcn), so it needs no build and is never out of date."
+    }
+  ],
+  "chapters": [
+    {
+      "number": 1,
+      "file": "01-getting-started.md",
+      "title": "Getting started"
+    },
+    {
+      "number": 2,
+      "file": "02-tokens.md",
+      "title": "Tokens"
+    },
+    {
+      "number": 3,
+      "file": "03-checks.md",
+      "title": "Checks"
+    },
+    {
+      "number": 4,
+      "file": "04-contexts.md",
+      "title": "Contexts"
+    },
+    {
+      "number": 5,
+      "file": "05-pages.md",
+      "title": "Pages"
+    },
+    {
+      "number": 6,
+      "file": "06-assets-and-icons.md",
+      "title": "Assets and icons"
+    },
+    {
+      "number": 7,
+      "file": "07-theme-and-config.md",
+      "title": "Theme and configuration"
+    },
+    {
+      "number": 8,
+      "file": "08-using-the-outputs.md",
+      "title": "Using the outputs"
+    },
+    {
+      "number": 9,
+      "file": "09-derive-your-own.md",
+      "title": "Derive your own brand"
+    },
+    {
+      "number": 10,
+      "file": "10-troubleshooting.md",
+      "title": "Troubleshooting"
+    },
+    {
+      "number": 11,
+      "file": "11-brand-json.md",
+      "title": "brand.json for other tools"
+    },
+    {
+      "number": 12,
+      "file": "12-plugins.md",
+      "title": "Plugins"
+    },
+    {
+      "number": 13,
+      "file": "13-writing-a-plugin.md",
+      "title": "Writing a plugin"
+    },
+    {
+      "number": 14,
+      "file": "14-shipped-plugins.md",
+      "title": "Plugins that ship with blazon"
+    },
+    {
+      "number": 15,
+      "file": "15-maintaining-a-brand-book.md",
+      "title": "Maintaining a brand book"
+    },
+    {
+      "number": 16,
+      "file": "16-glossary.md",
+      "title": "Glossary"
+    },
+    {
+      "number": 17,
+      "file": "17-data-model.md",
+      "title": "The data model"
+    },
+    {
+      "number": 18,
+      "file": "18-stability.md",
+      "title": "Stability and compatibility"
+    },
+    {
+      "number": 19,
+      "file": "19-building-a-website.md",
+      "title": "Building a website from a brand"
+    },
+    {
+      "number": 20,
+      "file": "20-blazon-for-agents.md",
+      "title": "Blazon for agents (MCP)"
+    }
+  ],
+  "package": {
+    "name": "@iksnerd/blazon",
+    "license": "MIT",
+    "node": ">=24",
+    "repository": "https://github.com/iksnerd/blazon",
+    "issues": "https://github.com/iksnerd/blazon/issues"
+  },
+  "readme": {
+    "status": "pre-release",
+    "quickStart": "git clone https://github.com/iksnerd/blazon.git\ncd blazon\nnpm ci\nnpm run build              # builds dist/, which bin/blazon.js runs\nnode bin/blazon.js init my-brand\nnode bin/blazon.js dev my-brand   # the book, with live reload, at http://localhost:3000",
+    "agentPrompt": "Set up a blazon brand book here. Blazon is not on npm: build it from my clone at <path to your blazon clone>\nwith `npm install && npm run build` there, then run it as `node <that path>/bin/blazon.js`.\nRun `blazon init brand` (add `--from <site url>` to read a site's colors, fonts and logo).\nRead brand/AGENTS.md and follow it. Replace the starter's tokens, docs and assets with my brand:\n<my colors, fonts and logo, or the site address>. Ask me for any color, font or license you\ndo not have; do not guess one. Run `blazon check brand` and fix each finding until it reports no\nerrors, then run `blazon build brand` and tell me what is still marked needs-review.\nThen run `blazon mcp --check --brand brand`; if it reports a failed check or `registered: false`,\nrun the `fix` it names, and register the server with `blazon mcp --print-config --brand brand`."
+  }
+}

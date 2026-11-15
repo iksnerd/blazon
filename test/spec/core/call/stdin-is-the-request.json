@@ -1,0 +1,12 @@
+{
+  "about": "The request reaches the plugin byte for byte; a plugin must not assume a final newline (section 4).",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\ncat\nexit 0\n",
+  "timeout_s": 5.0,
+  "stdin": "{\"a\":1}",
+  "expect": {
+    "outcome": "exit",
+    "exit": 0,
+    "stdout": "{\"a\":1}"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "description": "The fictional logo, with a program (initiative) that sits beside it",
+  "background": "light",
+  "unit": { "value": 20, "unit": "px" },
+  "initiative": { "name": "Example Lab", "mark": "logos/example-lab-mark", "gap": { "units": 1 }, "position": "beside" }
+}

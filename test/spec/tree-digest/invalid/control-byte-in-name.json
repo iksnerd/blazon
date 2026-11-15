@@ -1,0 +1,13 @@
+{
+  "about": "A byte below 0x20 in a name.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "run\u0001",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    }
+  ],
+  "refuse": "name"
+}

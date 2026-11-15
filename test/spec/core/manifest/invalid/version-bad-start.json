@@ -1,0 +1,12 @@
+{
+  "about": "Starts with a letter or digit.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "version": ".1"
+  },
+  "refuse": true
+}

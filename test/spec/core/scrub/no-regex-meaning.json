@@ -1,0 +1,16 @@
+{
+  "about": "A value is text, not a pattern: dots, stars and brackets in it mean themselves.",
+  "rfc": "3.5",
+  "secrets": [
+    "a.b*c[d]"
+  ],
+  "text": "keep axbbbc d but not a.b*c[d]",
+  "expect": {
+    "absent": [
+      "a.b*c[d]"
+    ],
+    "present": [
+      "keep axbbbc d but not "
+    ]
+  }
+}

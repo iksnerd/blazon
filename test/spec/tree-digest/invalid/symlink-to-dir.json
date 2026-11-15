@@ -1,0 +1,16 @@
+{
+  "about": "A symlink to a directory is refused and never followed.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "lib",
+      "type": "dir"
+    },
+    {
+      "path": "lib2",
+      "type": "symlink",
+      "target": "lib"
+    }
+  ],
+  "refuse": "symlink"
+}

@@ -1,0 +1,6 @@
+{
+  "about": "A JSON array is not a manifest.",
+  "rfc": "3.8",
+  "raw": "[]",
+  "refuse": true
+}

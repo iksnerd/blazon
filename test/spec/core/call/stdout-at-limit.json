@@ -1,0 +1,11 @@
+{
+  "about": "Exactly 65,536 bytes of stdout is within the limit (section 6).",
+  "rfc": "4-6",
+  "program": "#!/bin/sh\nhead -c 65536 /dev/zero | tr '\\0' 'a'\nexit 0\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "exit",
+    "exit": 0,
+    "stdout_bytes": 65536
+  }
+}

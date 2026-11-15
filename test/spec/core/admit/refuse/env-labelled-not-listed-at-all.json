@@ -1,0 +1,28 @@
+{
+  "about": "The operator labelled TOKEN secret and the plugin does not list it anywhere.",
+  "rfc": "3.5",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ]
+  },
+  "labels": {
+    "env": [
+      "TOKEN"
+    ],
+    "fields": [],
+    "delegated": []
+  },
+  "marked_fields": [],
+  "pinned": true,
+  "mode": "long-running",
+  "flows": {
+    "returns_secret": false,
+    "authorizes": false
+  },
+  "expect": {
+    "admit": false,
+    "reason": "label-not-accepted"
+  }
+}

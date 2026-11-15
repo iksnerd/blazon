@@ -1,0 +1,12 @@
+{
+  "about": "An answer resets the count of exit 2: exit 2, exit 2, answer, exit 2, exit 2 stays closed.",
+  "rfc": "7",
+  "sequence": [
+    "exit-2",
+    "exit-2",
+    "answer",
+    "exit-2",
+    "exit-2"
+  ],
+  "opens_after_index": null
+}

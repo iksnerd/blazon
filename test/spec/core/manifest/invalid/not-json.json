@@ -1,0 +1,6 @@
+{
+  "about": "Output that is not JSON is not a manifest.",
+  "rfc": "3.8",
+  "raw": "this is not json",
+  "refuse": true
+}

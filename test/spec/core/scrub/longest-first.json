@@ -1,0 +1,20 @@
+{
+  "about": "When one secret starts another, the longer one goes whole: no tail of it is left behind.",
+  "rfc": "3.5",
+  "secrets": [
+    "abc",
+    "abcdef"
+  ],
+  "text": "x abcdef y",
+  "expect": {
+    "absent": [
+      "abc",
+      "abcdef",
+      "def"
+    ],
+    "present": [
+      "x ",
+      " y"
+    ]
+  }
+}

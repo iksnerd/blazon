@@ -1,0 +1,18 @@
+{
+  "about": "A value with multi-byte characters is removed, and so is its base64 form.",
+  "rfc": "3.5",
+  "secrets": [
+    "pässwörd-ü"
+  ],
+  "text": "p=pässwörd-ü b=cMOkc3N3w7ZyZC3DvA",
+  "expect": {
+    "absent": [
+      "pässwörd-ü",
+      "cMOkc3N3w7ZyZC3DvA"
+    ],
+    "present": [
+      "p=",
+      "b="
+    ]
+  }
+}

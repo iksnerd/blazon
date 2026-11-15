@@ -1,0 +1,646 @@
+{
+  "$schema": "brand.schema.json",
+  "format": "blazon-brand",
+  "version": 1,
+  "brand": {
+    "title": "Conformance Fixture",
+    "description": "A fictional brand book that exercises approvals, font metadata and logo initiatives for the conformance tests"
+  },
+  "theme": {
+    "roles": {
+      "background": "#FAF7F2",
+      "canvas": "#FAF7F2",
+      "text": "#14213D",
+      "muted": "#14213D",
+      "border": "#14213D",
+      "accent": "#E4572E",
+      "accentText": "#FAF7F2",
+      "inverse": "#14213D",
+      "inverseText": "#FAF7F2",
+      "fontDisplay": "'Example Display', sans-serif",
+      "fontBody": "'Example Text', sans-serif"
+    },
+    "tokens": {
+      "background": "color.surface",
+      "canvas": "color.surface",
+      "text": "color.ink",
+      "muted": "color.ink",
+      "border": "color.ink",
+      "accent": "color.accent",
+      "accentText": "color.surface",
+      "inverse": "color.ink",
+      "inverseText": "color.surface",
+      "fontDisplay": "font.family.display",
+      "fontBody": "font.family.body"
+    },
+    "fonts": [
+      "https://fonts.example.invalid/css2?family=Example+Display&family=Example+Text"
+    ],
+    "shadcn": {
+      "variables": {
+        "background": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "background"
+        },
+        "foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "text"
+        },
+        "card": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "background"
+        },
+        "card-foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "text"
+        },
+        "popover": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "background"
+        },
+        "popover-foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "text"
+        },
+        "primary": {
+          "token": "color.accent",
+          "value": "#E4572E",
+          "from": "theme",
+          "role": "accent"
+        },
+        "primary-foreground": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "accentText"
+        },
+        "secondary": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "canvas"
+        },
+        "secondary-foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "text"
+        },
+        "muted": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "canvas"
+        },
+        "muted-foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "muted"
+        },
+        "accent": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "canvas"
+        },
+        "accent-foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "text"
+        },
+        "border": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "border"
+        },
+        "input": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "border"
+        },
+        "ring": {
+          "token": "color.accent",
+          "value": "#E4572E",
+          "from": "theme",
+          "role": "accent"
+        },
+        "sidebar": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "background"
+        },
+        "sidebar-foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "text"
+        },
+        "sidebar-primary": {
+          "token": "color.accent",
+          "value": "#E4572E",
+          "from": "theme",
+          "role": "accent"
+        },
+        "sidebar-primary-foreground": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "accentText"
+        },
+        "sidebar-accent": {
+          "token": "color.surface",
+          "value": "#FAF7F2",
+          "from": "theme",
+          "role": "canvas"
+        },
+        "sidebar-accent-foreground": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "text"
+        },
+        "sidebar-border": {
+          "token": "color.ink",
+          "value": "#14213D",
+          "from": "theme",
+          "role": "border"
+        },
+        "sidebar-ring": {
+          "token": "color.accent",
+          "value": "#E4572E",
+          "from": "theme",
+          "role": "accent"
+        }
+      },
+      "unsupplied": [
+        "destructive",
+        "chart-1",
+        "chart-2",
+        "chart-3",
+        "chart-4",
+        "chart-5",
+        "radius"
+      ]
+    }
+  },
+  "logo": {
+    "onLight": "brand-assets/logos/example-ink.svg"
+  },
+  "vocabulary": {
+    "lockups": [
+      "horizontal",
+      "stacked",
+      "mark",
+      "wordmark"
+    ],
+    "usageRoles": [
+      "text",
+      "background",
+      "border",
+      "icon",
+      "illustration",
+      "accent",
+      "interactive"
+    ]
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Introduction",
+      "standard": true
+    },
+    {
+      "id": "logo",
+      "title": "Logo",
+      "standard": true
+    },
+    {
+      "id": "color",
+      "title": "Color",
+      "standard": true
+    },
+    {
+      "id": "typography",
+      "title": "Typography",
+      "standard": true
+    },
+    {
+      "id": "icons",
+      "title": "Icons",
+      "standard": true
+    },
+    {
+      "id": "illustration",
+      "title": "Illustration",
+      "standard": true
+    },
+    {
+      "id": "photography",
+      "title": "Photography",
+      "standard": true
+    },
+    {
+      "id": "patterns",
+      "title": "Patterns",
+      "standard": true
+    },
+    {
+      "id": "3d",
+      "title": "3D graphics",
+      "standard": true
+    },
+    {
+      "id": "diagrams",
+      "title": "Diagrams",
+      "standard": true
+    },
+    {
+      "id": "motion",
+      "title": "Motion",
+      "standard": true
+    },
+    {
+      "id": "layout",
+      "title": "Layout",
+      "standard": true
+    },
+    {
+      "id": "social",
+      "title": "Social",
+      "standard": true
+    },
+    {
+      "id": "applications",
+      "title": "Applications",
+      "standard": true
+    }
+  ],
+  "tokens": [
+    {
+      "path": "color.ink",
+      "type": "color",
+      "value": "#14213D",
+      "resolvedValue": "#14213D",
+      "rawValue": "#14213D",
+      "description": "Approved, and the fingerprint matches: no finding (the value is filled in below)",
+      "cssVariable": "--color-ink",
+      "sourceFile": "tokens/colors.json",
+      "extensions": {
+        "dev.blazon": {
+          "review": {
+            "status": "ok",
+            "by": "Example Approver",
+            "at": "2026-01-15",
+            "value": "cb387c4533ef",
+            "note": "Fictional approval for the conformance fixture"
+          }
+        }
+      },
+      "blazon": {
+        "tier": "primitive",
+        "review": {
+          "status": "ok",
+          "by": "Example Approver",
+          "at": "2026-01-15",
+          "value": "cb387c4533ef",
+          "note": "Fictional approval for the conformance fixture"
+        }
+      }
+    },
+    {
+      "path": "color.accent",
+      "type": "color",
+      "value": "#E4572E",
+      "resolvedValue": "#E4572E",
+      "rawValue": "#E4572E",
+      "description": "Approved against an older value: approval-stale",
+      "cssVariable": "--color-accent",
+      "sourceFile": "tokens/colors.json",
+      "extensions": {
+        "dev.blazon": {
+          "review": {
+            "status": "ok",
+            "by": "Example Approver",
+            "at": "2026-01-15",
+            "value": "000000000000"
+          }
+        }
+      },
+      "blazon": {
+        "tier": "primitive",
+        "review": {
+          "status": "ok",
+          "by": "Example Approver",
+          "at": "2026-01-15",
+          "value": "000000000000"
+        }
+      }
+    },
+    {
+      "path": "color.surface",
+      "type": "color",
+      "value": "#FAF7F2",
+      "resolvedValue": "#FAF7F2",
+      "rawValue": "#FAF7F2",
+      "description": "Approved with no fingerprint: never stale",
+      "cssVariable": "--color-surface",
+      "sourceFile": "tokens/colors.json",
+      "extensions": {
+        "dev.blazon": {
+          "review": {
+            "status": "ok",
+            "by": "Example Approver",
+            "at": "2026-01-15"
+          }
+        }
+      },
+      "blazon": {
+        "tier": "primitive",
+        "review": {
+          "status": "ok",
+          "by": "Example Approver",
+          "at": "2026-01-15"
+        }
+      }
+    },
+    {
+      "path": "font.family.display",
+      "type": "fontFamily",
+      "value": "'Example Display', sans-serif",
+      "resolvedValue": [
+        "Example Display",
+        "sans-serif"
+      ],
+      "rawValue": [
+        "Example Display",
+        "sans-serif"
+      ],
+      "description": "A listed SPDX id, with a source and a license page: no finding",
+      "cssVariable": "--font-family-display",
+      "sourceFile": "tokens/typography.json",
+      "extensions": {
+        "dev.blazon": {
+          "font": {
+            "source": "https://fonts.example.invalid/example-display",
+            "license": "OFL-1.1",
+            "licenseUrl": "https://openfontlicense.org/"
+          }
+        }
+      },
+      "blazon": {
+        "tier": "primitive",
+        "font": {
+          "source": "https://fonts.example.invalid/example-display",
+          "license": "OFL-1.1",
+          "licenseUrl": "https://openfontlicense.org/"
+        }
+      }
+    },
+    {
+      "path": "font.family.body",
+      "type": "fontFamily",
+      "value": "'Example Text', sans-serif",
+      "resolvedValue": [
+        "Example Text",
+        "sans-serif"
+      ],
+      "rawValue": [
+        "Example Text",
+        "sans-serif"
+      ],
+      "description": "A license that looks like an SPDX id and is not one: font-license-unknown",
+      "cssVariable": "--font-family-body",
+      "sourceFile": "tokens/typography.json",
+      "extensions": {
+        "dev.blazon": {
+          "font": {
+            "source": "Example Foundry",
+            "license": "OFL-1.2"
+          }
+        }
+      },
+      "blazon": {
+        "tier": "primitive",
+        "font": {
+          "source": "Example Foundry",
+          "license": "OFL-1.2"
+        }
+      }
+    }
+  ],
+  "groups": [
+    {
+      "path": "color",
+      "blazon": {
+        "tier": "primitive"
+      }
+    },
+    {
+      "path": "font.family",
+      "blazon": {
+        "tier": "primitive"
+      }
+    }
+  ],
+  "modifiers": [],
+  "contexts": [],
+  "pages": [
+    {
+      "slug": "intro",
+      "sourceFile": "01-intro.md",
+      "title": "Conformance Fixture",
+      "order": 1,
+      "meta": {
+        "title": "Conformance Fixture",
+        "section": "intro"
+      },
+      "sections": [
+        "intro"
+      ],
+      "markdown": "\n# Conformance fixture\n\nA fictional brand book. It is not a brand: it is the input of `test/core/tokens/conformance.test.ts` for the parts of\nRFC 0001 that the starter does not reach. Every approver, source and license in it is invented.\n",
+      "directives": []
+    },
+    {
+      "slug": "logo",
+      "sourceFile": "02-logo.md",
+      "title": "Logo",
+      "order": 2,
+      "meta": {
+        "title": "Logo",
+        "section": "logo"
+      },
+      "sections": [
+        "logo"
+      ],
+      "markdown": "\nThe fictional logo with the mark of a fictional program.\n\n<!-- blazon:logo-initiative logos/example-ink -->\n",
+      "directives": [
+        {
+          "name": "logo-initiative",
+          "args": [
+            "logos/example-ink"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "color",
+      "sourceFile": "03-color.md",
+      "title": "Color",
+      "order": 3,
+      "meta": {
+        "title": "Color",
+        "section": "color"
+      },
+      "sections": [
+        "color"
+      ],
+      "markdown": "\nThree fictional colors, each approved by an invented approver.\n",
+      "directives": []
+    },
+    {
+      "slug": "type",
+      "sourceFile": "04-type.md",
+      "title": "Typography",
+      "order": 4,
+      "meta": {
+        "title": "Typography",
+        "section": "typography"
+      },
+      "sections": [
+        "typography"
+      ],
+      "markdown": "\nTwo fictional typefaces with their source and license.\n",
+      "directives": []
+    },
+    {
+      "slug": "explorations",
+      "sourceFile": "05-explorations.md",
+      "title": "Explorations",
+      "order": 5,
+      "meta": {
+        "title": "Explorations"
+      },
+      "sections": [],
+      "markdown": "\nDirections that were tried and are not the identity. The category is marked `experimental`, so its `needs-review` sidecar raises no warning here.\n\n<!-- blazon:assets experiments -->\n",
+      "directives": [
+        {
+          "name": "assets",
+          "args": [
+            "experiments"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "experiments/example-sketch",
+      "name": "example-sketch",
+      "category": "experiments",
+      "file": "brand-assets/experiments/example-sketch.svg",
+      "format": "svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 154,
+      "width": 80,
+      "height": 80,
+      "meta": {
+        "description": "A fictional logo exploration",
+        "background": "light",
+        "review": {
+          "status": "needs-review",
+          "note": "An experiment, not the company's logo. Needs a designer's judgment and the brand owner's approval."
+        }
+      }
+    },
+    {
+      "id": "logos/example-ink",
+      "name": "example-ink",
+      "category": "logos",
+      "file": "brand-assets/logos/example-ink.svg",
+      "format": "svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 196,
+      "width": 240,
+      "height": 80,
+      "meta": {
+        "unit": {
+          "value": 20,
+          "unit": "px"
+        },
+        "description": "The fictional logo, with a program (initiative) that sits beside it",
+        "background": "light",
+        "initiative": {
+          "name": "Example Lab",
+          "mark": "logos/example-lab-mark",
+          "gap": {
+            "units": 1
+          },
+          "position": "beside"
+        }
+      }
+    },
+    {
+      "id": "logos/example-lab-mark",
+      "name": "example-lab-mark",
+      "category": "logos",
+      "file": "brand-assets/logos/example-lab-mark.svg",
+      "format": "svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 137,
+      "width": 80,
+      "height": 80,
+      "meta": {
+        "description": "The artwork of the fictional Example Lab program",
+        "background": "light"
+      }
+    }
+  ],
+  "categories": [
+    {
+      "category": "logos",
+      "label": "Logos"
+    },
+    {
+      "category": "experiments",
+      "label": "Experiments",
+      "description": "Logo directions that were tried. Not the identity.",
+      "experimental": true
+    }
+  ],
+  "iconSets": [],
+  "findings": [
+    {
+      "code": "approval-stale",
+      "severity": "warning",
+      "path": "color.accent",
+      "message": "The value changed after review.status was set to ok by Example Approver on 2026-01-15 (fingerprint 000000000000, now c5266dc6f2dc): confirm it again, then set review.value to c5266dc6f2dc",
+      "file": "tokens/colors.json",
+      "line": 10
+    },
+    {
+      "code": "font-license-unknown",
+      "severity": "info",
+      "path": "font.family.body",
+      "message": "font.license \"OFL-1.2\" is not an SPDX license identifier (SPDX license list of <date>); did you mean OFL-1.0, OFL-1.1 or OFL-1.0-RFN? A plain name is fine; an SPDX id is what a tool can read",
+      "file": "tokens/typography.json",
+      "line": 13
+    }
+  ]
+}

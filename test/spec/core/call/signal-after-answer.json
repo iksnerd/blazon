@@ -1,0 +1,9 @@
+{
+  "about": "The plugin prints an answer and is killed by a signal before it exits: a break, not the answer.",
+  "rfc": "5",
+  "program": "#!/bin/sh\nprintf '{\"ok\":true}'\nkill -9 $$\n",
+  "timeout_s": 5.0,
+  "expect": {
+    "outcome": "break"
+  }
+}

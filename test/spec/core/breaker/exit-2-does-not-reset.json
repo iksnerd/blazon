@@ -1,0 +1,10 @@
+{
+  "about": "Exit 2 does not reset the count: break, break, exit 2 opens it.",
+  "rfc": "7",
+  "sequence": [
+    "break",
+    "break",
+    "exit-2"
+  ],
+  "opens_after_index": 2
+}

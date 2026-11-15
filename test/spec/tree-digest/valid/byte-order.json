@@ -1,0 +1,47 @@
+{
+  "about": "Entries sort by the bytes of their relative path, not by a locale: B, _x, a, a-b, a.c, a/b, then the UTF-8 name. A locale sort puts a before B and ignores the punctuation.",
+  "kind": "tree",
+  "entries": [
+    {
+      "path": "B",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    },
+    {
+      "path": "_x",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    },
+    {
+      "path": "a",
+      "type": "dir"
+    },
+    {
+      "path": "a/b",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    },
+    {
+      "path": "a-b",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    },
+    {
+      "path": "a.c",
+      "type": "file",
+      "exec": false,
+      "content": ""
+    },
+    {
+      "path": "\u00e9.txt",
+      "type": "file",
+      "exec": false,
+      "content": "accent\n"
+    }
+  ],
+  "digest": "t1:a98d65db39936ebdff6442a759dab8ff51e733c7adcc526297827838d03d2ceb"
+}

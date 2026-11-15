@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""A reference blazon plugin: a `check` whose rules a brand writes in CUE.
+
+`cue` does not speak blazon's plugin protocol, so this short program does. It writes the rules and the brand to a private
+directory, runs `cue export rules.cue brand.cue -e out`, and turns each item of the list `out` into a finding:
+
+  out: [ for t in tokens if ... { rule: "raw-color", severity: "warning", path: t.path, message: "..." } ]
+
+The brand's own fields (`tokens`, `brand`, `pages`, ...) are in scope in the rules: the plugin puts the rules and the brand in
+one CUE package. Do not write a `package` line in the rules; the plugin adds it, and `import` lines may follow it.
+`rule` is lowercase words and dashes; the finding's code is `blazon.cue-rules/<rule>`. `severity` is error, warning or info.
+
+  blazon-blazon.cue-rules --blazon-manifest   prints the manifest, and exits 0
+  blazon-blazon.cue-rules                    reads one request (JSON) on standard input and prints its answer
+
+The request is {"v": 1, "type": "check", "options": {"rules": "<CUE text>"}, "brand": <brand.json>}. A check gets no file
+path, so the rules come as text: read the file in blazon.config.ts (see the README). Exit 2 means "I cannot judge", with the
+reason as the first line of standard output: a brand that is not a version 1 blazon brand, bad rules, no `cue`, a `cue` of another version. Never exit 0 for that.
+
+Where `cue` is: the file named by BLAZON_CUE if the host has that variable set, else `cue` on the PATH blazon gives a pinned
+script (the directories it trusts). It must be cue 0.17.1, the version this program and its tests were written against.
+"""
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+NAME = "blazon.cue-rules"
+CUE_VERSION = "0.17.1"
+SEVERITIES = ("error", "warning", "info")
+RULE = re.compile(r"[a-z0-9][a-z0-9-]*")
+PACKAGE = "brand"
+IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+# How long `cue` may take. Blazon ends the whole call at the manifest's timeout, which is longer.
+CUE_SECONDS = 20
+
+
+class CannotJudge(Exception):
+    """The reason is the first line of what the plugin prints, and the plugin exits 2."""
+
+
+def find_cue():
+    named = os.environ.get("BLAZON_CUE")
+    found = named if named and os.access(named, os.X_OK) and os.path.isfile(named) else (None if named else shutil.which("cue"))
+    if not found:
+        where = f"BLAZON_CUE names {named}, which is not an executable file" if named else "cue is not on the PATH"
+        raise CannotJudge(f"cue was not found: {where}. Install cue {CUE_VERSION} and set BLAZON_CUE to its path")
+    return found
+
+
+def cue(cue_path, args, cwd):
+    try:
+        return subprocess.run([cue_path, *args], cwd=cwd, capture_output=True, text=True, timeout=CUE_SECONDS)
+    except subprocess.TimeoutExpired:
+        raise CannotJudge(f"cue did not finish in {CUE_SECONDS} seconds: the rules take too long")
+    except OSError as err:
+        raise CannotJudge(f"cue could not be started: {err.strerror or err}")
+
+
+def first_lines(text, count=6):
+    lines = [line.rstrip() for line in text.strip().splitlines() if line.strip()]
+    return " | ".join(lines[:count])[:1500]
+
+
+def check_version(cue_path, cwd):
+    result = cue(cue_path, ["version"], cwd)
+    match = re.search(r"^cue version v(\S+)", result.stdout, re.M)
+    have = match.group(1) if match else None
+    if have != CUE_VERSION:
+        raise CannotJudge(f"cue {CUE_VERSION} is required, found {have or 'something that is not cue'}")
+
+
+def finding(item, position):
+    """One finding from one item of `out`, or a CannotJudge that says which field is wrong."""
+    where = f"out[{position}]"
+    if not isinstance(item, dict):
+        raise CannotJudge(f"{where} must be an object with rule, severity, path and message")
+    rule = item.get("rule")
+    if not isinstance(rule, str) or not RULE.fullmatch(rule):
+        raise CannotJudge(f"{where}.rule must be lowercase words and dashes, such as raw-color")
+    if item.get("severity") not in SEVERITIES:
+        raise CannotJudge(f"{where}.severity must be one of {', '.join(SEVERITIES)}")
+    for field in ("path", "message"):
+        if not isinstance(item.get(field), str):
+            raise CannotJudge(f"{where}.{field} must be text")
+    return {"code": f"{NAME}/{rule}", "severity": item["severity"], "path": item["path"], "message": item["message"]}
+
+
+def check_brand(brand):
+    """Refuse a brand that is not a version 1 blazon brand: brand.json says what it is and which version."""
+    if not isinstance(brand, dict):
+        raise CannotJudge('the brand in the request is not a blazon brand: its format is nothing, not "blazon-brand"')
+    if brand.get("format") != "blazon-brand":
+        shown = json.dumps(brand["format"]) if "format" in brand else "nothing"
+        raise CannotJudge(f'the brand in the request is not a blazon brand: its format is {shown}, not "blazon-brand"')
+    if brand.get("version") != 1:
+        shown = json.dumps(brand["version"]) if "version" in brand else "nothing"
+        raise CannotJudge(f"the brand in the request is version {shown}; this reader understands version 1")
+
+
+def judge(request):
+    check_brand(request.get("brand"))
+    rules = (request.get("options") or {}).get("rules")
+    if not isinstance(rules, str) or not rules.strip():
+        raise CannotJudge("options.rules is required: the CUE text of the rules, which must define `out`")
+    cue_path = find_cue()
+    with tempfile.TemporaryDirectory(prefix="blazon-cue-rules") as directory:
+        check_version(cue_path, directory)
+        # Both files are in one package, so that the brand's top-level fields are in the scope of the rules (a .json file,
+        # or a file without a package clause, would not be). Each value is written as JSON, which is also CUE and escapes
+        # every quote and backslash, so no text in the brand can end its string and add a rule.
+        brand = request["brand"]
+        with open(os.path.join(directory, "rules.cue"), "w", encoding="utf-8") as handle:
+            handle.write(f"package {PACKAGE}\n{rules}")
+        with open(os.path.join(directory, "brand.cue"), "w", encoding="utf-8") as handle:
+            handle.write(f"package {PACKAGE}\n")
+            for key, value in brand.items():
+                label = key if IDENTIFIER.fullmatch(key) else json.dumps(key)
+                handle.write(f"{label}: {json.dumps(value)}\n")
+        result = cue(cue_path, ["export", "rules.cue", "brand.cue", "-e", "out"], directory)
+    if result.returncode != 0:
+        message = first_lines(result.stderr)
+        if re.search(r"reference \"out\" not found|undefined field: out", message):
+            raise CannotJudge("the rules must define `out`, a list of findings")
+        raise CannotJudge(f"cue could not read the rules: {message}")
+    try:
+        out = json.loads(result.stdout)
+    except ValueError:
+        raise CannotJudge("cue printed something that is not JSON")
+    if not isinstance(out, list):
+        raise CannotJudge("out must be a list of findings")
+    return [finding(item, position) for position, item in enumerate(out)]
+
+
+def main(argv):
+    if len(argv) > 1 and argv[1] == "--blazon-manifest":
+        print(json.dumps({"v": 2, "roles": ["check"], "title": "Rules in CUE", "version": "1.0.0", "timeout_ms": 30000, "env": ["BLAZON_CUE"]}))
+        return 0
+    try:
+        request = json.load(sys.stdin)
+    except ValueError:
+        print("the request is not JSON")
+        return 2
+    if not isinstance(request, dict) or request.get("v") != 1:
+        print("this plugin speaks version 1 of the request")
+        return 2
+    if request.get("type") != "check":
+        print("this plugin fills the check role")
+        return 2
+    try:
+        findings = judge(request)
+    except CannotJudge as reason:
+        print(reason)
+        return 2
+    print(json.dumps({"findings": findings}))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -1,0 +1,14 @@
+{
+  "about": "A name cannot start with a digit.",
+  "rfc": "3.8",
+  "manifest": {
+    "v": 2,
+    "roles": [
+      "$role"
+    ],
+    "env": [
+      "1A"
+    ]
+  },
+  "refuse": true
+}
