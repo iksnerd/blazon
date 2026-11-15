@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll } from 'vitest';
 import { runInit } from '../../src/cli/commands/init.js';
+import { setApprovedDirs } from '../../src/core/confine.js';
 
 // Temporary folders for tests. Every folder made here is removed after the test file that made it, so a test writes no
 // cleanup of its own: the module is loaded once for each test file, and this registers the removal with that file.
@@ -23,6 +24,15 @@ export function tempDir(prefix = 'blazon-test-'): string {
   const folder = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
   made.add(folder);
   return folder;
+}
+
+/**
+ * What the person running blazon approves, for a test that reads an `assets.<key>.dir` outside its project: every temporary folder. The
+ * approval lasts for the test file (a process-wide list, core/confine.ts) and is cleared after it.
+ */
+export function approveTempDirs(): void {
+  setApprovedDirs([fs.realpathSync(os.tmpdir())]);
+  afterAll(() => setApprovedDirs([]));
 }
 
 /** A temporary project with these files at project-relative paths: objects are written as JSON, text as it is. */

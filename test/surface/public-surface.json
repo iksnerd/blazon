@@ -23,6 +23,7 @@
       "tokens [dir]"
     ],
     "options": [
+      "--allow-dir <folder>",
       "--base <url-prefix>",
       "--brand <dir>",
       "--check",

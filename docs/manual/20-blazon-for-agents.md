@@ -106,6 +106,10 @@ The server also offers two resources, `blazon://rules` (every rule of the brand)
 
 The blazon repository holds an Agent Skill, `skills/blazon/SKILL.md`, that teaches an agent the working loop on a brand book: `blazon check`, `blazon can` for contrast, the tools above and when to use each, where tokens live, what never to edit, how to read a finding and how to add a token or a page. It points at this manual instead of repeating it. To install it, copy the `skills/blazon` folder into the agent's skills directory (for Claude Code, `.claude/skills/` in the project or `~/.claude/skills/` for every project). It works with or without the MCP server.
 
+## A folder outside the brand
+
+A category's `dir` outside the brand folder is read only when you approve it. The server passes `BLAZON_*` variables from its own environment to blazon, so set `BLAZON_ALLOW_DIRS` in the `env` of the server's entry in your client's config, with absolute folders (blazon runs in the brand folder): `"env": { "BLAZON_ALLOW_DIRS": "/path/to/shared" }`. The server's environment is yours, not the brand's and not the agent's: nothing the agent or the brand sends can add a folder. See [An extra folder](06-assets-and-icons.md#an-extra-folder).
+
 ## Limits
 
 A blazon command is stopped after 30 seconds and its output is capped at 16 MB. At most 2 run at once. An answer is reused for 2 seconds for the same arguments. On SIGTERM, SIGINT or when the client closes standard input, the server kills the commands in flight and exits.

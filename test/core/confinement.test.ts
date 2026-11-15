@@ -4,6 +4,7 @@ import path from 'node:path';
 import { starterProject, tempDir } from '../support/project';
 import { loadConfig } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';
+import { setApprovedDirs } from '../../src/core/confine.js';
 import { buildSite } from '../../src/builder/site-builder.js';
 import { runBuild } from '../../src/cli/commands/build.js';
 
@@ -111,12 +112,16 @@ describe('paths that leave the project folder', () => {
     expect(hasCanary(data)).toBe(false);
   });
 
-  it('keeps a category dir outside the project, which the manual documents', async () => {
+  it('reads a category dir outside the project only when the operator approved it', async () => {
     fs.mkdirSync(path.join(outside, 'shared'), { recursive: true });
     fs.writeFileSync(path.join(outside, 'shared', 'mark.svg'), SVG.replace(CANARY, 'shared'));
-    const data = await compile({ assets: { shared: { dir: path.join(outside, 'shared') } } });
+    const assets = { shared: { dir: path.join(outside, 'shared') } };
+    expect(refusals(await compile({ assets }))).toHaveLength(1);
+    setApprovedDirs([outside]);
+    const data = await compile({ assets });
     expect(refusals(data)).toHaveLength(0);
     expect(data.assets.all.some((a) => a.id === 'shared/mark')).toBe(true);
+    setApprovedDirs([]);
   });
 
   it.each(['outDir', 'tokensOutDir'])('refuses %s in blazon.json outside the project and writes nothing there', async (key) => {

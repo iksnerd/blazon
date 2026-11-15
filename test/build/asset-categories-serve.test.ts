@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { initStarter, tempDir } from '../support/project';
+import { approveTempDirs, initStarter, tempDir } from '../support/project';
 import { DEFAULT_CONFIG } from '../../src/core/config/index.js';
 import { buildSite } from '../../src/builder/site-builder.js';
 import { startDevServer } from '../../src/server/dev-server.js';
 import { loadConfig } from '../../src/core/config/index.js';
+
+approveTempDirs();
 
 // An asset category may be scanned from a folder outside assets/ (RFC 0001 §11). The dev server serves its
 // files and the build copies them, at the URL every asset has: brand-assets/<key>/<path>.

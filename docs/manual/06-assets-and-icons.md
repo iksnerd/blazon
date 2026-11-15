@@ -39,7 +39,7 @@ A category is a folder of `assets/`. To label it, order it, describe it, scan an
 | `label` | The name in the sidebar and the page title. The folder name, capitalized, when absent |
 | `order` | Where the category sits in the sidebar, lowest first. Categories with an `order` come first, then `logos`, then `icons`, then the rest by name |
 | `description` | One line under the page title |
-| `dir` | An extra folder whose images join this category. A path relative to the project or an absolute one, and it may sit outside the project, such as a shared folder in a monorepo |
+| `dir` | An extra folder whose images join this category. A path relative to the project or an absolute one. It may sit outside the project, such as a shared folder in a monorepo, only when you approve that folder when you run blazon, see [An extra folder](#an-extra-folder) |
 | `rules` | What every file in the category must follow, below |
 | `notSpecified` | What the guidelines leave open, as short plain statements: `['Shot sizes', 'Retouching']`. [`blazon:section`](05-pages.md#sections) lists them under the category |
 | `source` | Where the guidelines say it, as `{ "doc": "brand-guidelines", "locator": "slide 61" }`, the shape a sidecar's `source` has |
@@ -92,6 +92,21 @@ The difference is what the book says. The brand book labels the category "Refere
 ### An extra folder
 
 Every image under a `dir` joins the category, in folders at any depth, with sidecars beside them as usual. Its files get the same ids and addresses as files in `assets/<key>/`: a file `deep/panel.png` in the folder is `illustrations/panel`, shown at `brand-assets/illustrations/deep/panel.png`. If `assets/<key>/` also exists, both are scanned. A key with a `dir` is a URL segment, so it is lowercase letters, digits and hyphens.
+
+**A folder outside the project needs your approval.** A `dir` inside the project is read as it is. One outside it, by `../`, an absolute path or a link, is refused with the `config-path-outside` error (on `assets.<key>.dir`) and the category is left out, until the person running blazon approves the folder. The brand cannot do that for itself, because everything in `blazon.json` comes from the brand: there is no key for it, and a key that tries is an unknown field. Approve a folder on the command line, once for each folder:
+
+```sh
+blazon dev --allow-dir ../shared
+blazon build --allow-dir ../shared --allow-dir /srv/brand-media
+```
+
+or in the environment, with the folders separated as a `PATH` is (`:` on macOS and Linux, `;` on Windows):
+
+```sh
+BLAZON_ALLOW_DIRS=../shared:/srv/brand-media blazon check
+```
+
+A monorepo puts the option in the script that runs blazon: `"dev": "blazon dev --allow-dir ../shared"` in the brand's `package.json`. A relative folder is relative to the folder you start blazon in (before `--cwd` moves it). An approved folder covers the folders under it. Blazon compares where folders really are, links followed: a `dir` that is a link out of the approved folder, or a `..` that leaves it, is refused. The refusal reads the same whether or not the folder exists, so a brand cannot use it to look around your disk. The dev server serves, and the build copies, only image files in an approved folder, and plugins are never given `BLAZON_ALLOW_DIRS`. The MCP server reads an outside folder only if its own environment sets it, see [chapter 20](20-blazon-for-agents.md#a-folder-outside-the-brand).
 
 The dev server serves only image files from the folder, and never a link that points out of it. `blazon build` copies only the images it cataloged. Local paths never reach the page.
 

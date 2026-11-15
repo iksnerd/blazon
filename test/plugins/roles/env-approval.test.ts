@@ -35,6 +35,13 @@ describe('the environment of a plugin', () => {
     expect(found!.message).toBe('seen:ACME_FONT_DIR,HOME,');
   });
 
+  it('never carries BLAZON_ALLOW_DIRS: the folders the operator approved are not a plugin\'s, even when it lists the name and the config approves it', async () => {
+    const seen = script({ v: 2, roles: ['check'], env: ['BLAZON_ALLOW_DIRS', 'ACME_FONT_DIR'] }, `printf '{"findings":[{"code":"acme.a/env","severity":"info","path":"p","message":"seen:%s|%s"}]}' "\${BLAZON_ALLOW_DIRS-unset}" "$ACME_FONT_DIR"`);
+    const installed = install({ 'acme.a': { script: seen, approve: ['BLAZON_ALLOW_DIRS', 'ACME_FONT_DIR'] } });
+    const [found] = await new PluginRun(installed.config, installed.cwd, { env: { ...HOST, BLAZON_ALLOW_DIRS: '/operator/folder' } }).check(BRAND);
+    expect(found!.message).toBe('seen:unset|/fonts');
+  });
+
   it('refuses a listed variable that is set and not approved, names the variable and the config key, and does not start the plugin', async () => {
     const ran = marker();
     const installed = install({ 'acme.a': { script: reporting(['ACME_FONT_DIR', 'HOME'], ran), approve: ['HOME'] } });

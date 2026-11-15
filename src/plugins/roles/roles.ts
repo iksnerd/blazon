@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { inputsWithin } from '../../core/outputs.js';
 import { closest } from '../../core/suggest.js';
+import { ALLOW_DIRS_ENV } from '../../core/confine.js';
 import type { Finding, BlazonConfig } from '../../types/index.js';
 import { admit, LABEL_NOT_ACCEPTED, LONG_RUNNING, ONE_SHOT_NAMED, UNPINNED_MUST_PIN } from '../host/admit.js';
 import { run, type Call, type Result } from '../host/call.js';
@@ -22,6 +23,9 @@ import { COULD_NOT_FIX, CONFIG_FIX, MANIFEST_EXIT_FIX, OUT_DIR_FIX, PROTOCOL_FIX
 // findings. A plugin that cannot answer is a finding about the plugin, never a pass.
 
 export type Role = 'check' | 'build';
+
+/** The folders the operator approved for reading are the operator's alone: no manifest asks for them and no config approves them for a plugin. */
+const OPERATOR_ONLY_ENV: readonly string[] = [ALLOW_DIRS_ENV];
 
 /** Labelled secret without the operator's help: the profile's prefix (the profile's `secret_env_prefixes`). */
 const SECRET_PREFIXES: readonly string[] = BLAZON_PROFILE.secret_env_prefixes;
@@ -332,7 +336,7 @@ export class PluginRun {
 
     // Object capability (RFC 0002 section 2): a variable reaches the plugin only when the manifest asks for it and the config grants it. A name the
     // manifest lists, that is set here and that the config does not approve, stops the plugin: running it without the variable would hide the refusal
-    const present = manifest.env.filter((variable) => this.env[variable] !== undefined);
+    const present = manifest.env.filter((variable) => this.env[variable] !== undefined && !OPERATOR_ONLY_ENV.includes(variable));
     const unapproved = present.filter((variable) => !target.approved.includes(variable));
     if (unapproved.length > 0) {
       const key = target.envKey ?? `an entry for ${name} in plugins, with its "env"`;

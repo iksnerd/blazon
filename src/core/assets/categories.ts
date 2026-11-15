@@ -5,6 +5,7 @@ import { isObject, isSource, isStringList, listMessage, SOURCE_MESSAGE } from '.
 import { artworkSize } from './measure.js';
 import { finding } from '../checker/catalogue.js';
 import { compareText } from '../order.js';
+import { inProjectOrApproved, notApprovedMessage } from '../confine.js';
 
 // The `assets` block of blazon.json (RFC 0001 §11): settings for asset categories. A category is still
 // a folder of `assets/`; the block adds a label, an order, a description, an extra folder and rules.
@@ -35,9 +36,10 @@ export interface ResolvedCategories {
 
 /**
  * Reads and checks the `assets` block. Each problem is a finding on its key. The folders are resolved
- * against the project and may sit outside it, which is the one path of the config that may leave the project (a shared
- * folder in a monorepo): blazon.json is plain JSON and is never run, and only image files inside the folder are ever served or
- * copied, never through a link that leaves it.
+ * against the project and may sit outside it (a shared folder in a monorepo) only when the person running blazon approved that folder
+ * (`--allow-dir`, BLAZON_ALLOW_DIRS; confine.ts); the config cannot approve it. This is the one place that decides: the scanner, the
+ * builder, the dev server and the MCP tools all get their folders through it (categoryDirs). Only image files inside the folder are ever
+ * served or copied, never through a link that leaves it.
  */
 export function resolveCategories(block: Record<string, unknown> | undefined, cwd: string): ResolvedCategories {
   const result: ResolvedCategories = { configs: Object.create(null), roots: Object.create(null), problems: [] };
@@ -63,19 +65,24 @@ export function resolveCategories(block: Record<string, unknown> | undefined, cw
     if (raw.experimental === true && raw.reference === true) errors.push('a category cannot be both experimental and reference');
 
     let root: CategoryRoot | undefined;
+    let refused = false;
     if (raw.dir !== undefined) {
       if (typeof raw.dir !== 'string' || raw.dir.trim() === '') {
         errors.push('dir must be a path');
       } else {
         if (!SLUG.test(key)) errors.push(`key "${key}" has a dir, so it must be lowercase letters, digits and hyphens: it is a URL segment`);
         const full = path.resolve(cwd, raw.dir);
-        if (!fs.existsSync(full)) errors.push(`dir ${raw.dir} does not exist`);
+        // Decided before the disk is asked anything, so that the refusal cannot say whether the folder is there
+        if (!inProjectOrApproved(cwd, full)) {
+          result.problems.push(finding('config-path-outside', { path: `assets.${key}.dir`, message: notApprovedMessage(`assets.${key}.dir`, raw.dir) }));
+          refused = true;
+        } else if (!fs.existsSync(full)) errors.push(`dir ${raw.dir} does not exist`);
         else if (!fs.statSync(full).isDirectory()) errors.push(`dir ${raw.dir} is not a folder`);
         else root = { dir: fs.realpathSync(full), label: raw.dir };
       }
     }
 
-    if (errors.length > 0) {
+    if (refused || errors.length > 0) {
       for (const message of errors) result.problems.push(finding('asset-config-invalid', { path: key, message }));
       continue;
     }

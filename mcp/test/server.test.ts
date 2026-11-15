@@ -566,6 +566,24 @@ describe('blazon-mcp settings', () => {
     expect(env.NODE_AUTH_TOKEN).toBeUndefined();
   });
 
+  it('hands the blazon child BLAZON_ALLOW_DIRS exactly as the operator set it in the server environment, and nothing when they did not', async () => {
+    const dir = tempDir('blazon-mcp-allow-');
+    const log = path.join(dir, 'seen');
+    const bin = fakeBlazon(`printf '%s' "\${BLAZON_ALLOW_DIRS-unset}" > "${log}"\necho '{"kind":"brand","path":""}'`);
+    const before = process.env.BLAZON_ALLOW_DIRS;
+    try {
+      process.env.BLAZON_ALLOW_DIRS = `/shared/a${path.delimiter}/shared/b`;
+      await new BlazonRunner({ bin, brand: process.cwd(), cacheMs: 0 }).run(['get', 'x']);
+      expect(fs.readFileSync(log, 'utf8')).toBe(`/shared/a${path.delimiter}/shared/b`);
+      delete process.env.BLAZON_ALLOW_DIRS;
+      await new BlazonRunner({ bin, brand: process.cwd(), cacheMs: 0 }).run(['get', 'x']);
+      expect(fs.readFileSync(log, 'utf8')).toBe('unset');
+    } finally {
+      if (before === undefined) delete process.env.BLAZON_ALLOW_DIRS;
+      else process.env.BLAZON_ALLOW_DIRS = before;
+    }
+  });
+
   it('keeps at most CACHE_MAX answers, the oldest out first', async () => {
     const log = path.join(tempDir('blazon-mcp-cache-'), 'runs');
     const runner = new BlazonRunner({ bin: fakeBlazon(`echo run >> "${log}"\necho '{"kind":"brand","path":""}'`), brand: process.cwd(), cacheMs: 600_000, maxParallel: 4 });

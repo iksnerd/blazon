@@ -4,7 +4,9 @@ import path from 'node:path';
 import { DEFAULT_CONFIG } from '../../../src/core/config/index.js';
 import { compileBlazonData } from '../../../src/core/index.js';
 import type { AssetCategoryConfig } from '../../../src/types/index.js';
-import { tempDir } from '../../support/project';
+import { approveTempDirs, tempDir } from '../../support/project';
+
+approveTempDirs();
 
 // The `assets` block of blazon.json (RFC 0001 §11): a label, an order and a description for each asset
 // category, an extra folder to scan, and the findings that keep a library honest.

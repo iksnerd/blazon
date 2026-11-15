@@ -4,7 +4,9 @@ import path from 'node:path';
 import { DEFAULT_CONFIG } from '../../../src/core/config/index.js';
 import { compileBlazonData } from '../../../src/core/index.js';
 import type { AssetCategoryConfig } from '../../../src/types/index.js';
-import { tempDir } from '../../support/project';
+import { approveTempDirs, tempDir } from '../../support/project';
+
+approveTempDirs();
 
 // Category rules (RFC 0001 §11): what a brand requires of every file in an asset category. `blazon check`
 // tests each file against them, as it tests tokens against their rules.

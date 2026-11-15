@@ -10,7 +10,7 @@ import { runPlugin } from './commands/plugin.js';
 import { runPin } from './commands/pin.js';
 import { runDrift } from './commands/drift.js';
 import { runApprovals } from './commands/approvals.js';
-import { applyCwd } from './commands/cwd.js';
+import { applyAllowDirs, applyCwd } from './commands/cwd.js';
 import { runDoctor } from './commands/doctor.js';
 import { JSON_COMMANDS, registerOperations } from './operations.js';
 import { runMcp } from './commands/mcp.js';
@@ -55,7 +55,7 @@ function severityOf(command: string, value: unknown, json: unknown): SeverityOpt
 
 /** The first word typed after `blazon`, when it is a command whose output `--json` can ask for. */
 const jsonCommandOf = (argv: string[]): string | undefined => {
-  const [first, second] = argv.slice(2).filter((arg, i, all) => !arg.startsWith('-') && all[i - 1] !== '--cwd');
+  const [first, second] = argv.slice(2).filter((arg, i, all) => !arg.startsWith('-') && all[i - 1] !== '--cwd' && all[i - 1] !== '--allow-dir');
   if (!argv.includes('--json') || first === undefined) return undefined;
   if (first === 'plugin') return second === 'check' ? 'plugin check' : undefined;
   return ['check', 'build', 'tokens', 'init', 'drift', 'approvals', 'pin', 'explain', 'doctor', ...JSON_COMMANDS, 'mcp'].includes(first) ? first : undefined;
@@ -74,6 +74,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
   jsonErrors(jsonCommandOf(argv));
   const cli = cac('blazon');
   cli.option('--debug', 'Show the stack of an error');
+  cli.option('--allow-dir <folder>', 'Approve a folder outside the project for an asset category dir (repeat for more; or BLAZON_ALLOW_DIRS)');
   cli.option('--cwd <dir>', 'Work from this folder, as if blazon were run there; a folder argument is then relative to it');
 
   cli
@@ -326,6 +327,8 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     cli.parse(argv, { run: false });
     restoreOptionText(cli, argv);
     try {
+      // Before --cwd moves the process: a relative folder is relative to where blazon was started
+      applyAllowDirs(cli.options.allowDir);
       applyCwd(cli.options.cwd);
     } catch (err) {
       failed(cli.matchedCommand?.name ?? '', err, debug);
