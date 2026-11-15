@@ -25,7 +25,7 @@ describe('the check role', () => {
     const copy = path.join(os.tmpdir(), `blazon-request-${process.pid}-${Date.now()}`);
     dirs.push(copy);
     const installed = install({
-      'acme.a': { script: script({ v: 2, roles: ['check'], env: ['REQUEST_COPY'] }, answer([])), options: { headingFont: 'Inter' } },
+      'acme.a': { script: script({ v: 2, roles: ['check'], env: ['REQUEST_COPY'] }, answer([])), options: { headingFont: 'Inter' }, approve: ['REQUEST_COPY'] },
     });
     process.env.REQUEST_COPY = copy;
     try {
@@ -39,7 +39,7 @@ describe('the check role', () => {
   it('passes options as an empty object when the config has none', async () => {
     const copy = path.join(os.tmpdir(), `blazon-request-${process.pid}-${Date.now()}-b`);
     dirs.push(copy);
-    const installed = install({ 'acme.a': { script: script({ v: 2, roles: ['check'], env: ['REQUEST_COPY'] }, answer([])) } });
+    const installed = install({ 'acme.a': { script: script({ v: 2, roles: ['check'], env: ['REQUEST_COPY'] }, answer([])), approve: ['REQUEST_COPY'] } });
     process.env.REQUEST_COPY = copy;
     try {
       await make(installed).check(BRAND);
@@ -312,7 +312,7 @@ describe('the check role', () => {
 
   describe('secrets', () => {
     const SECRET = 'sk_live_Zm9v+/bar=baz';
-    const withSecret = (body: string, manifest: object) => install({ 'acme.a': { script: script({ v: 2, roles: ['check'], ...manifest }, body) } });
+    const withSecret = (body: string, manifest: object, approve: string[] = ['BLAZON_SECRET_TOKEN', 'NOT_LISTED']) => install({ 'acme.a': { script: script({ v: 2, roles: ['check'], ...manifest }, body), approve } });
     const run = async (installed: Installed) => {
       process.env.BLAZON_SECRET_TOKEN = SECRET;
       process.env.NOT_LISTED = 'plain';
@@ -415,7 +415,7 @@ describe('the build role', () => {
   it('writes into its own out_dir, which blazon creates empty, and gets the site and out directories in the request', async () => {
     const copy = path.join(os.tmpdir(), `blazon-build-${process.pid}-${Date.now()}`);
     dirs.push(copy);
-    const installed = install({ 'acme.deck': { script: BUILD('printf deck > "$(sed -n \'s/.*"out_dir":"\\([^"]*\\)".*/\\1/p\' "$REQUEST_COPY")/deck.txt"', { env: ['REQUEST_COPY'] }), pinned: true } });
+    const installed = install({ 'acme.deck': { script: BUILD('printf deck > "$(sed -n \'s/.*"out_dir":"\\([^"]*\\)".*/\\1/p\' "$REQUEST_COPY")/deck.txt"', { env: ['REQUEST_COPY'] }), pinned: true, approve: ['REQUEST_COPY'] } });
     const siteDir = path.join(installed.cwd, 'dist', 'site');
     fs.mkdirSync(siteDir, { recursive: true });
     process.env.REQUEST_COPY = copy;
@@ -477,7 +477,7 @@ describe('the build role', () => {
 // Plugin instances (RFC 0014): one plugin listed more than once, each entry with an id of its own. The pin follows the plugin's
 // name; the output folder, the breaker and the name in a finding follow the id.
 describe('plugin instances', () => {
-  const book = (ids: string[], options: (id: string) => Record<string, unknown> = () => ({})) => ids.map((id) => ({ name: 'acme.book', as: id, options: options(id) }));
+  const book = (ids: string[], options: (id: string) => Record<string, unknown> = () => ({})) => ids.map((id) => ({ name: 'acme.book', as: id, options: options(id), env: ['REQUEST_COPY'] }));
   const IDS = ['acme.book-a', 'acme.book-b', 'acme.book-c', 'acme.book-d'];
   // A build plugin that writes the same file name in whatever folder it is given, and logs the request it got
   const writer = (log: string) =>
@@ -556,7 +556,7 @@ describe('plugin instances', () => {
 
     it('refuses a program named with --plugin whose id is the "as" of a config entry, so the two never share a folder or a breaker', async () => {
       const log = logged('collide');
-      const installed = install({ 'acme.a': { script: marking('a', log) }, 'acme.b': { script: marking('b', log), pinned: false } }, { plugins: [{ name: 'acme.a', as: 'acme.b' }] });
+      const installed = install({ 'acme.a': { script: marking('a', log) }, 'acme.b': { script: marking('b', log), pinned: false } }, { plugins: [{ name: 'acme.a', as: 'acme.b', env: ['REQUEST_COPY'] }] });
       const siteDir = path.join(installed.cwd, 'dist', 'site');
       fs.mkdirSync(siteDir, { recursive: true });
       const found = await withRequest(`${log}.request`, () => make(installed, { named: [path.join(installed.cwd, '.blazon', 'plugins', 'blazon-acme.b')] }).build(BRAND, siteDir));
@@ -586,7 +586,7 @@ describe('plugin instances', () => {
     it('is the instance\'s: three breaks of one instance do not rest another instance of the same plugin', async () => {
       const marker = logged('marker');
       const installed = install({ 'acme.book': { script: script({ v: 2, roles: ['check'], env: ['REQUEST_COPY'] }, `echo x >> ${marker}\nif grep -q '"fail":true' "$REQUEST_COPY"; then exit 3; fi\n${answer([])}`) } }, {
-        plugins: [{ name: 'acme.book', as: 'acme.book-a', options: { fail: true } }, { name: 'acme.book', as: 'acme.book-b', options: { fail: false } }],
+        plugins: [{ name: 'acme.book', as: 'acme.book-a', options: { fail: true }, env: ['REQUEST_COPY'] }, { name: 'acme.book', as: 'acme.book-b', options: { fail: false }, env: ['REQUEST_COPY'] }],
       });
       const run = make(installed);
       await withRequest(`${marker}.request`, async () => {

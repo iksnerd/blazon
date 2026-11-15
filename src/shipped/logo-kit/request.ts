@@ -10,7 +10,7 @@ export const MANIFEST = {
   description: "Draws the brand's partnership lockups and clear-space sheets from the rules in the logo sidecars, as SVG and PNG.",
   version: '1.0.0',
   timeout_ms: 60000,
-  env: ['BLAZON_CHROME'],
+  env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'],
 };
 
 export { Cannot };

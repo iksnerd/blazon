@@ -57,6 +57,10 @@ interface Target {
   /** Whether a person needs the id to tell this use from another: the plugin is listed more than once, or the id is not its name (section 6.1) */
   shown: boolean;
   options: Record<string, unknown>;
+  /** The variables the config approves for this plugin (`plugins[n].env`) */
+  approved: readonly string[];
+  /** The config key that approves them, or undefined when the target is not an entry of `plugins` */
+  envKey?: string;
   /** The program the operator named on the command line, when there is one */
   named?: string;
   /** Where the id came from, for a person: `plugins[0].as`, `plugins[1].name` or `--plugin <program>` */
@@ -166,18 +170,18 @@ export class PluginRun {
       const file = path.basename(program);
       const name = pluginNameOfEntry(file) ?? file.replace(/^blazon-/, '');
       const first = named.get(name);
-      if (!isPluginName(name)) refused.push({ name: path.basename(program), id: path.basename(program), from: `--plugin ${program}`, shown: false, options: {}, problem: NOT_A_PROGRAM });
+      if (!isPluginName(name)) refused.push({ name: path.basename(program), id: path.basename(program), from: `--plugin ${program}`, shown: false, options: {}, approved: [], problem: NOT_A_PROGRAM });
       else if (first !== undefined && first !== program)
-        refused.push({ name, id: name, from: `--plugin ${program}`, shown: false, options: {}, problem: `--plugin ${program} names the plugin ${name}, which --plugin ${first} names already: one run takes one program for a plugin` });
+        refused.push({ name, id: name, from: `--plugin ${program}`, shown: false, options: {}, approved: [], problem: `--plugin ${program} names the plugin ${name}, which --plugin ${first} names already: one run takes one program for a plugin` });
       else named.set(name, program);
     }
     const entries = this.config.plugins ?? [];
     const targets: Target[] = entries.map((entry, index) => {
       const id = entry.as ?? entry.name;
       const from = `plugins[${index}]${entry.as === undefined ? '.name' : '.as'}`;
-      return { name: entry.name, id, from, shown: id !== entry.name || entries.filter((other) => other.name === entry.name).length > 1, options: entry.options ?? {}, ...(named.has(entry.name) && { named: named.get(entry.name) }) };
+      return { name: entry.name, id, from, shown: id !== entry.name || entries.filter((other) => other.name === entry.name).length > 1, options: entry.options ?? {}, approved: entry.env ?? [], envKey: `plugins[${index}].env`, ...(named.has(entry.name) && { named: named.get(entry.name) }) };
     });
-    for (const [name, program] of named) if (!targets.some((target) => target.name === name)) targets.push({ name, id: name, from: `--plugin ${program}`, shown: false, options: {}, named: program });
+    for (const [name, program] of named) if (!targets.some((target) => target.name === name)) targets.push({ name, id: name, from: `--plugin ${program}`, shown: false, options: {}, approved: [], named: program });
     const owners = new Map<string, Target>();
     const checked = targets.map((target): Target => {
       const long = instanceIdTooLong(target.id);
@@ -326,7 +330,15 @@ export class PluginRun {
     const body = Buffer.from(JSON.stringify(request));
     if (body.length > BLAZON_PROFILE.request_cap_bytes) return [failed(`the request is ${body.length} bytes, over the cap of ${BLAZON_PROFILE.request_cap_bytes}`)];
 
-    const env = Object.fromEntries(manifest.env.flatMap((variable) => (this.env[variable] === undefined ? [] : [[variable, this.env[variable]!]])));
+    // Object capability (RFC 0002 section 2): a variable reaches the plugin only when the manifest asks for it and the config grants it. A name the
+    // manifest lists, that is set here and that the config does not approve, stops the plugin: running it without the variable would hide the refusal
+    const present = manifest.env.filter((variable) => this.env[variable] !== undefined);
+    const unapproved = present.filter((variable) => !target.approved.includes(variable));
+    if (unapproved.length > 0) {
+      const key = target.envKey ?? `an entry for ${name} in plugins, with its "env"`;
+      return [failed(`its manifest lists ${unapproved.join(', ')}, which ${unapproved.length === 1 ? 'is' : 'are'} set here and not approved, so it is not started`, `Add ${unapproved.map((variable) => JSON.stringify(variable)).join(', ')} to ${key} in the config, or unset ${unapproved.length === 1 ? 'it' : 'them'}.`)];
+    }
+    const env = Object.fromEntries(present.map((variable) => [variable, this.env[variable]!]));
     const secrets = labelled.flatMap((variable) => (env[variable] ? [env[variable]] : []));
     const result = await run(this.callFor(located, { stdin: body, env, timeout: manifestTimeout(manifest, BLAZON_CORE_PROFILE), stdoutLimit: runtime.stdoutLimit, answers: runtime.answers }));
 

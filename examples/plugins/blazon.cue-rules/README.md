@@ -22,11 +22,11 @@ jq -Rs '{rules: .}' rules.cue
 
 ```json
 {
-  "plugins": [ { "name": "blazon.cue-rules", "options": { "rules": "out: [\n  ...\n]\n" } } ]
+  "plugins": [ { "name": "blazon.cue-rules", "env": ["BLAZON_CUE"], "options": { "rules": "out: [\n  ...\n]\n" } } ]
 }
 ```
 
-Blazon starts a plugin with an empty environment, so say where `cue` is: set `BLAZON_CUE` to its path in the shell that runs blazon (`export BLAZON_CUE=$(which cue)`). Without it the plugin looks for `cue` on the `PATH` blazon gives a pinned script, which is `/usr/local/bin`, `/usr/bin` and `/bin`.
+Blazon starts a plugin with an empty environment, so say where `cue` is: set `BLAZON_CUE` to its path in the shell that runs blazon (`export BLAZON_CUE=$(which cue)`), and approve it in the entry's `env`, as above: blazon does not start the plugin while `BLAZON_CUE` is set and not approved. Without it the plugin looks for `cue` on the `PATH` blazon gives a pinned script, which is `/usr/local/bin`, `/usr/bin` and `/bin`.
 
 ## Writing rules
 

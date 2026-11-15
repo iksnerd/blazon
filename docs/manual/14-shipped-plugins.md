@@ -4,6 +4,8 @@
 
 Blazon's package carries plugins of its own. To use one, allow it by name in `blazon.json`; how blazon finds and trusts a shipped plugin is in [Plugins](12-plugins.md#plugins-that-ship-with-blazon). This chapter says what each one writes and how to configure it.
 
+**Variables.** A shipped plugin starts with an empty environment like any other, and the config approves each variable its manifest lists, in the `env` of its entry ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The seven plugins that draw in Chrome (`blazon.brand-deck`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards`) list `BLAZON_CHROME`, `HOME` and `TMPDIR`, and `blazon.brand-deck` also `BLAZON_DECK_FONTS`. `blazon.copy`, `blazon.office-template` and `blazon.platform-tokens` list none. The snippets below leave `env` out to stay short; without it a set `HOME` stops the plugin with a message that says what to add.
+
 ## The plugins
 
 ### blazon.brand-deck
@@ -13,8 +15,8 @@ Blazon's package carries plugins of its own. To use one, allow it by name in `bl
 ```json
 {
   "plugins": [
-    { "name": "blazon.favicons" },
-    { "name": "blazon.brand-deck", "options": { "skip": [ "favicons-supplied" ] } }
+    { "name": "blazon.favicons", "env": ["BLAZON_CHROME", "HOME", "TMPDIR"] },
+    { "name": "blazon.brand-deck", "env": ["BLAZON_CHROME", "BLAZON_DECK_FONTS", "HOME", "TMPDIR"], "options": { "skip": [ "favicons-supplied" ] } }
   ]
 }
 ```

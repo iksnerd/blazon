@@ -10,7 +10,7 @@ export const MANIFEST = {
   description: "Draws marketing images (PNG) from the brand's tokens, logo and a background you already have, and checks the text and the logo on each.",
   version: '1.0.0',
   timeout_ms: 60000,
-  env: ['BLAZON_CHROME'],
+  env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'],
 };
 
 /** The plugin cannot do what it was asked; the message is the reason blazon shows. It is the shared class, so the shared browser launch throws it too. */

@@ -32,7 +32,7 @@ Only you decide which plugins may run. Name them in `blazon.json`:
 }
 ```
 
-A name is dotted lowercase words, such as `acme.house-style`, and its program is called `blazon-<name>`: `blazon-acme.house-style`. The dot keeps a plugin apart from anything blazon has built in. `options` is a JSON object that blazon passes the plugin in every request. The config holds no path and no command, and a field that names one (`command`, `path`, `digest`) is an error: a copied config must not be able to run a program you did not put there.
+A name is dotted lowercase words, such as `acme.house-style`, and its program is called `blazon-<name>`: `blazon-acme.house-style`. The dot keeps a plugin apart from anything blazon has built in. `options` is a JSON object that blazon passes the plugin in every request. `env` lists the environment variables you let the plugin have: a plugin starts with an empty environment and gets a variable only when its manifest lists the name and `env` approves it ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The config holds no path and no command, and a field that names one (`command`, `path`, `digest`) is an error: a copied config must not be able to run a program you did not put there.
 
 Blazon runs plugins in the order of the list, one at a time.
 
@@ -111,11 +111,11 @@ Blazon warns, `acme.house-style runs unpinned because it was named on the comman
 
 ## Plugins that ship with blazon
 
-Blazon's package carries ten plugins of its own: `blazon.brand-deck`, `blazon.copy`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.press-kit`, `blazon.print-book` and `blazon.social-cards`. The table below says where each is described. To use one, allow it by name and do nothing else:
+Blazon's package carries ten plugins of its own: `blazon.brand-deck`, `blazon.copy`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.press-kit`, `blazon.print-book` and `blazon.social-cards`. The table below says where each is described. To use one, allow it by name. A plugin that draws in a browser also needs its variables approved in `env`, because no plugin gets one unasked (`['BLAZON_CHROME', 'HOME', 'TMPDIR']`; `blazon.brand-deck` adds `BLAZON_DECK_FONTS`):
 
 ```json
 {
-  "plugins": [ { "name": "blazon.print-book" } ]
+  "plugins": [ { "name": "blazon.print-book", "env": ["BLAZON_CHROME", "HOME", "TMPDIR"] } ]
 }
 ```
 

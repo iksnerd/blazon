@@ -142,7 +142,7 @@ Blazon starts the program with the single argument `--blazon-manifest`. Standard
 | `v` | yes | The integer `2`. Blazon MUST refuse a manifest of another version |
 | `roles` | yes | One or more of `check` and `build`, each once. A plugin is called only for a role it lists, and a manifest that names a role blazon does not define is refused |
 | `timeout_ms` | no | A positive integer written without a fraction. Default 5000, capped at 60000. `5000.0` is refused |
-| `env` | no | Variable names (`^[A-Z_][A-Z0-9_]*$`) the plugin needs beside the base set |
+| `env` | no | Variable names (`^[A-Z_][A-Z0-9_]*$`) the plugin asks for beside `PATH`. The host gives one only when its operator approves it |
 | `secret_env` | no | The subset of `env` the plugin accepts as secret (section 3.5). A name here that is not in `env` is invalid |
 | `secret_fields` | no | Empty or absent for every blazon role (section 3.5) |
 | `title`, `description`, `version`, `homepage` | no | For people. Blazon MUST NOT use them to run the plugin. One that is present must be valid: no control or format character, a `title` of at most 60 grapheme clusters, a `description` of at most 160, a `version` of 1 to 32 letters, digits, dots, plus signs and minus signs, and a `homepage` of at most 200 characters that is an `http` or `https` address with a host and no credentials |
@@ -157,7 +157,7 @@ Blazon ignores a field it does not know, so a manifest written for a newer blazo
 | a request | none |
 
 - **Standard input** is a regular file made for the call in a directory of mode 0700, created exclusively at mode 0600, so no other user can open it, and removed afterwards. It holds one JSON object (a request) or nothing (the manifest). A plugin MUST NOT assume it ends in a newline.
-- **Environment** is empty plus `PATH`, `HOME`, `LANG` and `TMPDIR`, those of them that are set, plus the names the manifest's `env` lists. For a pinned plugin `PATH` is not the operator's own: it is the list of trusted directories of section 3.4. Blazon's own environment never reaches a plugin.
+- **Environment** is empty plus `PATH` if it is set, plus the names the manifest's `env` lists that the host's operator has approved for this plugin and that are set. A host MUST NOT give a plugin a variable on the manifest's word alone. How the operator approves a name is the host's (blazon: `env` on the plugin's config entry, RFC 0002 section 2). For a pinned plugin `PATH` is not the operator's own: it is the list of trusted directories of section 3.4. Blazon's own environment never reaches a plugin.
 - **Working directory** is the plugin's own directory for a pinned plugin. For an unpinned one it is not defined, and a plugin MUST NOT depend on it.
 - **Processes.** One process for each call, in its own process group, killed as a group when the call's time runs out and again after it exits. Blazon sends the group SIGTERM first and kills what is left 2 seconds later, so a plugin that started a program of its own (a browser, say) can stop it; the grace is blazon's, not the protocol's. A plugin MUST be safe to run concurrently with itself. The mechanism needs a POSIX system, and blazon does not run plugins on Windows.
 - **Standard error** goes to blazon, which scrubs it (section 3.5) and bounds what it keeps. A plugin MUST NOT print a secret to it.
@@ -216,6 +216,8 @@ Case 4 is a test, not a proof: a plugin that encodes the value passes it. The ch
 `blazon plugin check <program> --core` runs only the core cases above, with no case 6 to 9 and no layout line (section 3.6); the exit status is the same, and `--json` adds `core: true`.
 
 After the core cases, `blazon plugin check` runs blazon's own cases, 6 to 9, for each role the manifest declares: the exit code, the output limit, the shape of the answer, and for `build` a warning when the plugin writes in `tokens_dir` outside `out_dir`. They are blazon's, not the protocol's: the shared corpus holds only the core cases of section 9 of the family's protocol specification. Each is derived when the check runs from blazon's profile (`BLAZON_PROFILE` in `src/plugins/wire/profile.ts`, which `blazon plugin profile` prints) and from the answer blazon's roles accept, so this RFC does not restate them. [Writing a plugin](../manual/13-writing-a-plugin.md#write-and-check-a-plugin) describes each one.
+
+Blazon adds case 10, outside any role, when the working folder holds a project whose config lists the plugin: it fails when an entry of the plugin does not approve a name the manifest lists in `env` (section 4), because blazon would not start the plugin there. It is skipped for a manifest with no `env`, for a plugin the config does not list and outside a project.
 
 Blazon's own tests include a broken plugin for each core case, so that the check is known able to fail. For a pinned plugin they also show that bytes changed after pinning are refused, that a changed file in a pinned tree is refused, and that a pinned path replaced by a symbolic link is refused. The core's cases are also kept as a corpus of files that need no code to read (`test/spec/`), and blazon's host agrees with every one.
 

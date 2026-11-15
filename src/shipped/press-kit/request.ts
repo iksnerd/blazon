@@ -10,7 +10,7 @@ export const MANIFEST = {
   description: "Packs the brand's logos, colors, fonts and boilerplate for outsiders into one folder and one zip, with an optional one-page PDF.",
   version: '1.0.0',
   timeout_ms: 60000,
-  env: ['BLAZON_CHROME'],
+  env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'],
 };
 
 export { Cannot };

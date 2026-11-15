@@ -25,7 +25,7 @@ describe('the `plugins` key', () => {
   });
 
   it.each<[string, unknown, string, string]>([
-    ['plugins that is not a list', 'acme.house-style', 'plugins', 'plugins must be a list of {"name": plugin name, "options"?: object}'],
+    ['plugins that is not a list', 'acme.house-style', 'plugins', 'plugins must be a list of {"name": plugin name, "options"?: object, "env"?: [variable names]}'],
     ['a name that is not a plugin name', [{ name: 'house-style' }], 'plugins[0]', 'plugins[0].name must be a plugin name: dotted lowercase words such as acme.house-style'],
     ['an uppercase name', [{ name: 'Acme.Style' }], 'plugins[0]', 'plugins[0].name must be a plugin name: dotted lowercase words such as acme.house-style'],
     ['a name that is a path', [{ name: '../acme.style' }], 'plugins[0]', 'plugins[0].name must be a plugin name: dotted lowercase words such as acme.house-style'],
@@ -43,11 +43,13 @@ describe('the `plugins` key', () => {
     ['an instance id that is a token output file', [{ name: 'acme.a', as: 'tokens.json' }], 'plugins[0]', 'plugins[0].as "tokens.json" is a file blazon writes in tokensOutDir, where the instance\'s output folder would go. Give it another "as"'],
     ['an instance id that is the css token output', [{ name: 'acme.a', as: 'theme.css' }], 'plugins[0]', 'plugins[0].as "theme.css" is a file blazon writes in tokensOutDir, where the instance\'s output folder would go. Give it another "as"'],
     ['an instance id that is a context token output', [{ name: 'acme.a', as: 'tokens.theme.dark.json' }], 'plugins[0]', 'plugins[0].as "tokens.theme.dark.json" is a file blazon writes in tokensOutDir, where the instance\'s output folder would go. Give it another "as"'],
+    ['an env that is not a list', [{ name: 'acme.a', env: 'HOME' }], 'plugins[0]', 'plugins[0].env must be a list of variable names (capital letters, digits and underscores), the ones this plugin may be given'],
+    ['an env with a name that is not a variable name', [{ name: 'acme.a', env: ['home'] }], 'plugins[0]', 'plugins[0].env must be a list of variable names (capital letters, digits and underscores), the ones this plugin may be given'],
     ['options that are not an object', [{ name: 'acme.a', options: ['x'] }], 'plugins[0]', 'plugins[0].options must be an object'],
     ['a command', [{ name: 'acme.a', command: ['python3', 'x.py'] }], 'plugins[0]', 'plugins[0] has "command", which does not belong in the config: a plugin is found by its name or pinned with `blazon plugin pin`, and the config holds no path and no command'],
     ['a path', [{ name: 'acme.a', path: './plugins/a' }], 'plugins[0]', 'plugins[0] has "path", which does not belong in the config: a plugin is found by its name or pinned with `blazon plugin pin`, and the config holds no path and no command'],
     ['a digest', [{ name: 'acme.a', digest: 'sha256:00' }], 'plugins[0]', 'plugins[0] has "digest", which does not belong in the config: a plugin is found by its name or pinned with `blazon plugin pin`, and the config holds no path and no command'],
-    ['an unknown field', [{ name: 'acme.a', order: 1 }], 'plugins[0]', 'plugins[0] has unknown field "order"; known: name, as, options'],
+    ['an unknown field', [{ name: 'acme.a', order: 1 }], 'plugins[0]', 'plugins[0] has unknown field "order"; known: name, as, options, env'],
   ])('refuses %s, as config-invalid on the place it is', async (_name, plugins, where, message) => {
     const found = await invalid(plugins);
     expect(found.map((f) => [f.path, f.message])).toEqual([[where, message]]);

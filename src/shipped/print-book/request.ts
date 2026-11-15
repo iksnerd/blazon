@@ -12,7 +12,7 @@ export const MANIFEST = {
   description: 'Prints the built brand book to a PDF and a PowerPoint file of 16:9 slides: in full, the essentials, the token reference, or chosen pages.',
   version: '2.0.0',
   timeout_ms: 60000,
-  env: ['BLAZON_CHROME'],
+  env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'],
 };
 
 /** What one build request asks: the site to print, where to write, the viewer hash to print, and the files' name. */

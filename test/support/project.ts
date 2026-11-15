@@ -37,7 +37,7 @@ export function tempProject(files: Record<string, unknown> = {}): string {
 }
 
 /** A plugin a test allows by name, with its options as data. */
-export type PluginEntry = string | { name: string; options?: unknown };
+export type PluginEntry = string | { name: string; options?: unknown; env?: string[] };
 
 /**
  * The plugins a test wants in a new project: `'none'` (the default) allows no plugin, `'starter'` keeps the list the starter was made with
@@ -47,7 +47,7 @@ export type StarterPlugins = 'none' | 'starter' | PluginEntry[];
 
 const entryValue = (entry: PluginEntry): Record<string, unknown> => {
   if (typeof entry === 'string') return { name: entry };
-  return { name: entry.name, ...(entry.options === undefined ? {} : { options: entry.options }) };
+  return { name: entry.name, ...(entry.options === undefined ? {} : { options: entry.options }), ...(entry.env === undefined ? {} : { env: entry.env }) };
 };
 
 /**

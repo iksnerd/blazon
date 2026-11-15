@@ -231,7 +231,7 @@ async function project(rules: string): Promise<string> {
   expect(pin.status, output(pin)).toBe(0);
   const config = path.join(root, 'blazon.json');
   const brand = JSON.parse(fs.readFileSync(config, 'utf-8')) as Record<string, unknown>;
-  fs.writeFileSync(config, `${JSON.stringify({ ...brand, plugins: [{ name: NAME, options: { rules } }] }, null, 2)}\n`);
+  fs.writeFileSync(config, `${JSON.stringify({ ...brand, plugins: [{ name: NAME, env: ['BLAZON_CUE'], options: { rules } }] }, null, 2)}\n`);
   return root;
 }
 

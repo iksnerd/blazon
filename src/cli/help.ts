@@ -24,7 +24,8 @@ const PLUGIN_ACTIONS: Record<string, string> = {
   check: `blazon plugin check <program> [--core] [--json]
 
 Starts the program the way blazon does and runs the protocol's core cases against it, then blazon's own cases for each role it declares and, for a shipped plugin's layout, the file name rule. Prints one line for each case: ok, skip or FAIL.
-With --core, only the core cases (1 to 5) run: no role cases and no layout line. Use it to check a plugin against the protocol alone.
+In a project whose config lists the plugin, case 10 also fails when the entry's env does not approve a variable the manifest lists.
+With --core, only the core cases (1 to 5) run: no role cases, no case 10 and no layout line. Use it to check a plugin against the protocol alone.
 
 Exit status:
   0  every case passed

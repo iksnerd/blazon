@@ -10,7 +10,7 @@ export const MANIFEST = {
   description: "Measures each logo's symmetry, balance and grid, checks the axes a brand requires, and draws the construction figure.",
   version: '1.0.0',
   timeout_ms: 60000,
-  env: ['BLAZON_CHROME'],
+  env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'],
 };
 
 export { Cannot };

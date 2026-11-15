@@ -102,6 +102,11 @@
     },
     {
       "name": "blazon.favicons",
+      "env": [
+        "BLAZON_CHROME",
+        "HOME",
+        "TMPDIR"
+      ],
       "options": {
         "ground": "color.ink.graphite",
         "ink": "#F2F0EB",
@@ -113,13 +118,29 @@
       }
     },
     {
-      "name": "blazon.logo-kit"
+      "name": "blazon.logo-kit",
+      "env": [
+        "BLAZON_CHROME",
+        "HOME",
+        "TMPDIR"
+      ]
     },
     {
-      "name": "blazon.brand-deck"
+      "name": "blazon.brand-deck",
+      "env": [
+        "BLAZON_CHROME",
+        "BLAZON_DECK_FONTS",
+        "HOME",
+        "TMPDIR"
+      ]
     },
     {
       "name": "blazon.social-cards",
+      "env": [
+        "BLAZON_CHROME",
+        "HOME",
+        "TMPDIR"
+      ],
       "options": {
         "cards": [
           {
@@ -141,7 +162,12 @@
       }
     },
     {
-      "name": "blazon.press-kit"
+      "name": "blazon.press-kit",
+      "env": [
+        "BLAZON_CHROME",
+        "HOME",
+        "TMPDIR"
+      ]
     },
     {
       "name": "blazon.platform-tokens"

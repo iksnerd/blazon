@@ -7,7 +7,7 @@ import { loadConfig } from '../../../src/core/config/index.js';
 import { LOCK_FILE, recordPin } from '../../../src/plugins/pins/lock.js';
 import { createBlazonVitePlugin } from '../../../src/server/plugin.js';
 import type { Finding } from '../../../src/types/index.js';
-import { answer, cleanup, dirs, install, script } from '../support/fixtures.js';
+import { TEST_VARIABLES, answer, cleanup, dirs, install, script } from '../support/fixtures.js';
 import { initStarter } from '../../support/project';
 
 // blazon dev runs the check plugins (RFC 0002 of blazon, section 2). The viewer gets the core's findings at once, as it
@@ -66,7 +66,7 @@ interface Dev {
 async function dev(plugins: Parameters<typeof install>[0]): Promise<Dev> {
   const installed = install(plugins);
   const root = installed.cwd;
-  await initStarter(root, { plugins: Object.entries(plugins).map(([name, plugin]) => ({ name, options: plugin.options })) });
+  await initStarter(root, { plugins: Object.entries(plugins).map(([name, plugin]) => ({ name, options: plugin.options, env: plugin.approve ?? TEST_VARIABLES })) });
   const viewer = path.join(root, 'viewer');
   fs.mkdirSync(viewer);
   fs.writeFileSync(path.join(viewer, 'index.html'), '<!DOCTYPE html><html><head><title>x</title></head><body></body></html>');

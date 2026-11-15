@@ -14,7 +14,7 @@ export const MANIFEST = {
   description: 'Draws the favicon and app-icon set and three preview views from the brand symbol, and warns when it is too small, too faint or outside a safe zone.',
   version: '1.2.0',
   timeout_ms: 60000,
-  env: ['BLAZON_CHROME'],
+  env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'],
 };
 
 /** What a request holds: the role, the options, the brand, and for a build the two folders. */

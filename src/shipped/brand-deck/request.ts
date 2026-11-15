@@ -11,7 +11,7 @@ export const MANIFEST = {
   description: "Draws the brand as a 16:9 PDF deck: logos with their rules, colors, type, the brand book's guideline pages and the favicon set.",
   version: '1.1.0',
   timeout_ms: 60000,
-  env: ['BLAZON_CHROME', 'BLAZON_DECK_FONTS'],
+  env: ['BLAZON_CHROME', 'BLAZON_DECK_FONTS', 'HOME', 'TMPDIR'],
 };
 
 /** The plugin cannot do what it was asked; the message is the reason blazon shows. It is the shared class, so the shared browser launch throws it too. */

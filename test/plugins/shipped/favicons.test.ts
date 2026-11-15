@@ -349,7 +349,7 @@ describe('the favicons plugin, as blazon starts it', () => {
   });
 
   it('declares both roles, a version and the one variable it reads', () => {
-    expect(MANIFEST).toEqual({ v: 2, roles: ['check', 'build'], title: 'Favicons', description: expect.any(String), version: '1.2.0', timeout_ms: 60000, env: ['BLAZON_CHROME'] });
+    expect(MANIFEST).toEqual({ v: 2, roles: ['check', 'build'], title: 'Favicons', description: expect.any(String), version: '1.2.0', timeout_ms: 60000, env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'] });
     expect(MANIFEST.description.length).toBeLessThanOrEqual(160);
     const ran = run('', {}, ['--blazon-manifest']);
     expect(ran.status, ran.err).toBe(0);

@@ -84,7 +84,7 @@ function install(source = FIXTURE, entryName = `bin/blazon-${NAME}.🔌`, name =
   fs.chmodSync(entry, 0o755);
   writeLock(shipped, { [name]: { path: name, entry: entryName, digest: treeDigest(folder) } });
   const cwd = tempDir();
-  const config = { ...DEFAULT_CONFIG, plugins: [{ name }] } as BlazonConfig;
+  const config = { ...DEFAULT_CONFIG, plugins: [{ name, env: ['REQUEST_COPY'] }] } as BlazonConfig;
   return { shipped, cwd, config, folder, entry, options: { shipped } };
 }
 function writeLock(shipped: string, plugins: Record<string, { path: string; entry: string; digest: string }>): void {
@@ -348,7 +348,7 @@ describe('running a shipped plugin', () => {
       const names = report(found).env;
       expect(names).toContain('REQUEST_COPY');
       expect(names).not.toContain('OTHER_SECRET');
-      expect(names.filter((name) => !['PATH', 'HOME', 'LANG', 'TMPDIR', 'REQUEST_COPY'].includes(name))).toEqual([]);
+      expect(names.filter((name) => !['PATH', 'REQUEST_COPY'].includes(name))).toEqual([]);
     } finally {
       delete process.env.OTHER_SECRET;
       delete process.env.REQUEST_COPY;

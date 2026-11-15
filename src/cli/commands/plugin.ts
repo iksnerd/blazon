@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import pc from '../../core/colors.js';
 import { UsageError } from '../errors.js';
-import { shippedLayoutProblem } from '../../core/plugin-name.js';
+import { loadProject } from '../project.js';
+import { pluginNameOfEntry, shippedLayoutProblem } from '../../core/plugin-name.js';
 import { check, type CheckResult } from '../../plugins/host/check.js';
 import { LOCK_FILE, recordPin } from '../../plugins/pins/lock.js';
 import { Refused, fileDigest, treeDigest } from '../../plugins/pins/pin.js';
@@ -47,6 +48,7 @@ export async function runPluginCheck(program?: string, options: { json?: boolean
     if (core) console.log('core cases only (1 to 5): no role cases, no layout line');
   }
   const results = await check({
+    ...(core ? {} : { approvals: await approvalsFor(program) }),
     host: BLAZON_PROFILE.host,
     profile: BLAZON_CORE_PROFILE,
     program,
@@ -76,6 +78,19 @@ export async function runPluginCheck(program?: string, options: { json?: boolean
         : pc.green(`\nPassed${warnings > 0 ? `, with ${warnings} warning${warnings === 1 ? '' : 's'}` : ''}`),
     );
   return failed.length === 0 && !layout ? 0 : 1;
+}
+
+/** What the config of the project in the working folder approves for the plugin `program` is, one item for each of its entries; undefined when there is no config to read. */
+async function approvalsFor(program: string): Promise<{ key: string; approved: string[] }[] | undefined> {
+  let plugins;
+  try {
+    plugins = (await loadProject(process.cwd())).plugins ?? [];
+  } catch {
+    return undefined; // not in a project: nothing approves or refuses anything
+  }
+  const file = path.basename(program);
+  const name = pluginNameOfEntry(file) ?? file.replace(/^blazon-/, '');
+  return plugins.flatMap((entry, index) => (entry.name === name ? [{ key: `plugins[${index}].env`, approved: entry.env ?? [] }] : []));
 }
 
 /**
