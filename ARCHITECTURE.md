@@ -7,7 +7,7 @@ A map of the code for someone about to change it. [README](README.md) says what 
 One compile reads a brand's folder and produces one value, `BlazonData` (`compileBlazonData`, `src/core/index.ts`): the token tree with aliases resolved, the pages, the assets and the findings. Everything else is a consumer of that value.
 
 ```text
-tokens/ docs/ assets/ blazon.config.ts
+tokens/ docs/ assets/ blazon.json
         │
         ▼
   compileBlazonData ──► BlazonData ──┬─► blazon check   (prints the findings)

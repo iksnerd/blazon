@@ -61,7 +61,7 @@ export function cleanStarterColors(input: CleanInput): void {
   for (const file of filesUnder(path.join(destDir, 'tokens'), ['.json'])) {
     if (path.basename(file) !== 'colors.json') for (const a of aliasesIn(readJson(file))) used.add(a);
   }
-  const text = [path.join(destDir, 'blazon.config.ts'), ...filesUnder(path.join(destDir, 'docs'), ['.md', '.mdx'])]
+  const text = [path.join(destDir, 'blazon.json'), ...filesUnder(path.join(destDir, 'docs'), ['.md', '.mdx'])]
     .filter((f) => fs.existsSync(f))
     .map((f) => fs.readFileSync(f, 'utf-8'))
     .join('\n');

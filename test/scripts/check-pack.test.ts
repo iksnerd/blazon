@@ -30,7 +30,7 @@ const check = (dir: string) => spawnSync(process.execPath, [SCRIPT, '--dir', dir
 describe('which files the package must hold', () => {
   it('names the viewer, the license, the starter, the lock and one program per plugin', () => {
     const required = requiredFiles(['acme.one', 'acme.two']);
-    for (const file of ['dist/index.js', 'dist/ui/assets/geist-OFL.txt', 'template/blazon.config.ts', 'plugins/shipped.lock', 'plugins/acme.two/bin/blazon-acme.two.🔌']) {
+    for (const file of ['dist/index.js', 'dist/ui/assets/geist-OFL.txt', 'template/blazon.json', 'plugins/shipped.lock', 'plugins/acme.two/bin/blazon-acme.two.🔌']) {
       expect(required).toContain(file);
     }
   });

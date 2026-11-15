@@ -42,7 +42,7 @@ function logoForbidden(data: BlazonData, role: ThemeRole, variant: string): bool
 
 /** Logo usage tiles for the `<!-- blazon:logo-usage -->` directive: each variant on the background it is made for. */
 function logoUsage(data: BlazonData): string {
-  if (!data.logo) return '<p class="text-[13px] text-muted-foreground">No logo is configured (blazon.config.ts → logo).</p>';
+  if (!data.logo) return '<p class="text-[13px] text-muted-foreground">No logo is configured (blazon.json → logo).</p>';
   const accent = logoOn(data, data.theme.accent, isDarkBackground(data.theme.accent, data.theme.accentText), false);
   // A surface the brand forbids this logo on is not shown with it: the rule says so on the token, and the page says it in words
   const forbidden = (role: ThemeRole, variant: string): boolean => logoForbidden(data, role, variant);

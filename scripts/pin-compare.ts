@@ -248,8 +248,8 @@ function main(argv: string[]): number {
     console.error("usage: tsx scripts/pin-compare.ts <brand> <blazon-a> <blazon-b> [--ignore '*.pdf'] [--no-plugins] [--json]");
     return 2;
   }
-  if (!fs.existsSync(path.join(brand, 'blazon.config.ts')) && !fs.existsSync(path.join(brand, 'tokens'))) {
-    console.error(`pin-compare: ${brand} is not a brand (it has no blazon.config.ts and no tokens/)`);
+  if (!fs.existsSync(path.join(brand, 'blazon.json')) && !fs.existsSync(path.join(brand, 'tokens'))) {
+    console.error(`pin-compare: ${brand} is not a brand (it has no blazon.json and no tokens/)`);
     return 2;
   }
   try {

@@ -12,19 +12,25 @@ Show assets in a page with [`blazon:assets`](05-pages.md#directives).
 
 ## Asset categories
 
-A category is a folder of `assets/`. To label it, order it, describe it, scan another folder as part of it, or state rules its files must follow, add an entry for it to the `assets` block of `blazon.config.ts`. The key is the folder's name:
+A category is a folder of `assets/`. To label it, order it, describe it, scan another folder as part of it, or state rules its files must follow, add an entry for it to the `assets` block of `blazon.json`. The key is the folder's name:
 
-```ts
-assets: {
-  photography: {
-    label: 'Imagery',
-    order: 1,
-    description: 'People, product and campaign photos.',
-    rules: { formats: ['webp', 'jpg'], minPixels: { width: 1600 }, aspectRatios: ['16:9', '1:1'] },
-    notSpecified: ['Shot sizes', 'Retouching'],
-    source: { doc: 'brand-guidelines', locator: 'slide 61' },
-  },
-  illustrations: { dir: '../shared/illustrations' },
+```json
+{
+  "assets": {
+    "photography": {
+      "label": "Imagery",
+      "order": 1,
+      "description": "People, product and campaign photos.",
+      "rules": {
+        "formats": [ "webp", "jpg" ],
+        "minPixels": { "width": 1600 },
+        "aspectRatios": [ "16:9", "1:1" ]
+      },
+      "notSpecified": [ "Shot sizes", "Retouching" ],
+      "source": { "doc": "brand-guidelines", "locator": "slide 61" }
+    },
+    "illustrations": { "dir": "../shared/illustrations" }
+  }
 }
 ```
 
@@ -47,10 +53,10 @@ A key that has no folder and no `dir` is a warning (`asset-config-unused`), beca
 
 Some images may not be shared: a brand's guidelines can forbid passing its logos on, or the files are made from a document you keep out of the repository. Commit the sidecars and the pages, keep the images out with `.gitignore`, and mark the category `local`:
 
-```ts
-assets: {
-  logos: { local: 'Run render-art.py with your copy of the guidelines PDF.' },
-},
+```json
+{
+  "assets": { "logos": { "local": "Run render-art.py with your copy of the guidelines PDF." } }
+}
 ```
 
 In a checkout without the images, `blazon check` gives one note per category (`asset-local-missing`) instead of an error for every sidecar, logo and directive that needs them, and the brand book leaves them out. When one image of the category is there, everything is checked as usual, so images made only in part still show. `brand.json` keeps `local` on the category, so a tool that reads it knows not to pass those images on.
@@ -59,10 +65,10 @@ In a checkout without the images, `blazon check` gives one note per category (`a
 
 A category of explorations does not gate the book. Mark it `experimental`:
 
-```ts
-assets: {
-  experiments: { label: 'Experiments', experimental: true },
-},
+```json
+{
+  "assets": { "experiments": { "label": "Experiments", "experimental": true } }
+}
 ```
 
 An asset in it can say `review: needs-review` for as long as it likes: `blazon check` reports no `review-pending`, no `asset-review-missing`, and no `page-review-pending` for a page that draws it, so `--strict` can pass. A page that draws experimental and ordinary assets together still reports the ordinary ones that are flagged. The `review` stays in the sidecar and in `brand.json`, and every other check applies as usual.
@@ -73,10 +79,10 @@ The brand book labels the category "Experiment" on its page and on every asset a
 
 Some material is neither a live asset nor an exploration: the card faces extracted unedited from the guidelines so that your own masters can be compared with them, or a favicon set that someone else supplied and you keep as a record. Mark the category `reference`:
 
-```ts
-assets: {
-  'cards-reference': { label: 'Card faces from the guidelines', reference: true },
-},
+```json
+{
+  "assets": { "cards-reference": { "label": "Card faces from the guidelines", "reference": true } }
+}
 ```
 
 A reference category does not gate the book, as an experimental one does not: `blazon check` reports no `review-pending`, no `asset-review-missing`, and no `page-review-pending` for a page that draws one of its assets. A page that draws both reference and ordinary assets still reports the ordinary ones that are flagged. Every other check applies as usual. A category cannot be both `experimental` and `reference`: setting both to `true` is an `asset-config-invalid` error.
@@ -159,17 +165,23 @@ A sidecar that is not valid JSON, has an unknown or malformed field, or is a sym
 
 ## Icon sets
 
-An icon set previews an icon package, such as Lucide or Tabler, instead of copying its files into `assets/`. Install the package, then name it in `blazon.config.ts`:
+An icon set previews an icon package, such as Lucide or Tabler, instead of copying its files into `assets/`. Install the package, then name it in `blazon.json`:
 
 ```bash
 npm install lucide-static
 ```
 
-```ts
-iconSets: [
-  { name: 'lucide', package: 'lucide-static', categories: { Navigation: ['arrow-left', 'house'] } },
-  { name: 'tabler', package: '@tabler/icons' },
-]
+```json
+{
+  "iconSets": [
+    {
+      "name": "lucide",
+      "package": "lucide-static",
+      "categories": { "Navigation": [ "arrow-left", "house" ] }
+    },
+    { "name": "tabler", "package": "@tabler/icons" }
+  ]
+}
 ```
 
 Each entry is `{ name, package, dir?, categories? }`:

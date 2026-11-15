@@ -78,7 +78,7 @@ export function EmailSignature({ data }: { data: BlazonData; args: string[] }) {
   }, [config]);
 
   const style = useMemo(() => ({ text: data.theme.text ?? '#111111', muted: data.theme.muted ?? '#555555', font: data.theme.fontBody }), [data.theme]);
-  if (!config) return <p className="text-[13px] text-destructive">No email signature is configured (blazon.config.ts → emailSignature).</p>;
+  if (!config) return <p className="text-[13px] text-destructive">No email signature is configured (blazon.json → emailSignature).</p>;
 
   const problems = fieldProblems(config, fields);
   const ready = Object.keys(problems).length === 0;
@@ -168,7 +168,7 @@ export function EmailSignature({ data }: { data: BlazonData; args: string[] }) {
             <p className="mt-2 max-w-[46em]">
               A mail app draws the logo when someone opens the email, so it fetches the image from the address in the signature. A file on your computer does not exist for the
               reader, and most mail apps do not show SVG, so the signature needs a public https link to a PNG. The preview above uses the book’s own copy so you can see the result;
-              the address is <code>emailSignature.logoUrl</code> in <code>blazon.config.ts</code>.
+              the address is <code>emailSignature.logoUrl</code> in <code>blazon.json</code>.
             </p>
           </details>
         </figure>

@@ -18,11 +18,11 @@ const blazon = (...args: string[]) =>
 
 const COMMANDS = ['check', 'tokens', 'build', 'dev'];
 
-describe('a blazon.config.ts with a syntax error', () => {
+describe('a blazon.json with a syntax error', () => {
   it('says so in plain text: the parser colors its message, and blazon does not pass that on', () => {
     const dir = tempDir('blazon-badconfig-');
     fs.mkdirSync(path.join(dir, 'tokens'));
-    fs.writeFileSync(path.join(dir, 'blazon.config.ts'), 'export default {\n  title: "x",\n');
+    fs.writeFileSync(path.join(dir, 'blazon.json'), '{\n  "title": "x",\n');
     const ran = spawnSync(process.execPath, ['--import', 'tsx', path.join(REPO, 'scripts/blazon-src.ts'), 'check', dir], {
       encoding: 'utf-8',
       cwd: REPO,
@@ -30,7 +30,7 @@ describe('a blazon.config.ts with a syntax error', () => {
       input: '',
     });
     expect(ran.status).toBe(1);
-    expect(ran.stderr).toContain('Could not load blazon.config.ts');
+    expect(ran.stderr).toContain('Could not load blazon.json');
     expect(ran.stderr).not.toContain('\x1b');
   });
 });
@@ -50,14 +50,14 @@ describe('a command pointed at a folder with no brand book', () => {
     expect(ran.status, ran.stdout + ran.stderr).toBe(2);
     expect(ran.stderr.split('\n').slice(0, 2)).toEqual([
       `blazon ${command}: no tokens folder (tokens) in "${empty}"`,
-      `  Run blazon init ${empty} to start a brand book there, or set tokensDir in blazon.config.ts.`,
+      `  Run blazon init ${empty} to start a brand book there, or set tokensDir in blazon.json.`,
     ]);
     expect(fs.readdirSync(empty)).toEqual([]);
   });
 
   it('names the tokens folder the config sets, when that is the one missing', () => {
     const dir = tempDir('blazon-config-');
-    fs.writeFileSync(path.join(dir, 'blazon.config.ts'), "export default { tokensDir: './design/tokens' };\n");
+    fs.writeFileSync(path.join(dir, 'blazon.json'), '{"tokensDir": "./design/tokens"}\n');
     const ran = blazon('check', dir);
     expect(ran.status).toBe(2);
     expect(ran.stderr.split('\n')[0]).toContain('no tokens folder (design/tokens) in');

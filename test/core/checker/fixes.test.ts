@@ -11,7 +11,7 @@ describe('fixFor', () => {
     ['token-value-invalid', '$type'],
     ['contrast-insufficient', 'colors'],
     ['directive-invalid', 'directive'],
-    ['config-invalid', 'blazon.config.ts'],
+    ['config-invalid', 'blazon.json'],
     ['page-frontmatter-invalid', 'YAML'],
     ['plugin-failed', 'manual'],
   ])('gives %s a one-sentence fix that mentions %s', (code, word) => {

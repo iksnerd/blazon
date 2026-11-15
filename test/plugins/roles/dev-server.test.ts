@@ -215,7 +215,7 @@ describe('blazon dev with check plugins', () => {
     d.change();
     await new Promise((resolve) => setTimeout(resolve, 300));
     // The project stops allowing the plugin while its check is still running
-    const config = path.join(d.root, 'blazon.config.ts');
+    const config = path.join(d.root, 'blazon.json');
     fs.writeFileSync(config, fs.readFileSync(config, 'utf-8').replace(/\n {2}plugins: \[[^\n]*\],/, ''));
     await until(() => d.updates.length >= 2, 'the updates for the change and for the new config');
     await quiet(d.updates, 2000);
@@ -236,7 +236,7 @@ describe('blazon dev with check plugins', () => {
     expect(err.mock.calls.filter(([line]) => String(line).includes('could not answer: no rules'))).toHaveLength(1);
   }, 60_000);
 
-  it('picks up a change to the plugin\'s options in blazon.config.ts without a restart', async () => {
+  it('picks up a change to the plugin\'s options in blazon.json without a restart', async () => {
     const copy = path.join(os.tmpdir(), `blazon-dev-options-${process.pid}-${Date.now()}`);
     dirs.push(copy);
     process.env.REQUEST_COPY = copy;
@@ -251,7 +251,7 @@ describe('blazon dev with check plugins', () => {
         }
       };
       await until(() => font() === 'Inter', 'the first request');
-      const configFile = path.join(d.root, 'blazon.config.ts');
+      const configFile = path.join(d.root, 'blazon.json');
       fs.writeFileSync(configFile, fs.readFileSync(configFile, 'utf-8').replace('Inter', 'Lora'));
       await until(() => font() === 'Lora', 'a request with the new options');
     } finally {

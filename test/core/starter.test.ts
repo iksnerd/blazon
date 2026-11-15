@@ -27,7 +27,7 @@ describe('the one copy', () => {
 
   it('lists every file of the example and nothing that a build or an install leaves', () => {
     const files = starterFiles();
-    expect(files).toContain('blazon.config.ts');
+    expect(files).toContain('blazon.json');
     expect(files).toContain('assets/logos/blazon-graphite.svg');
     expect(files).toContain('docs/01-principles.md');
     expect(files.filter((f) => /(^|\/)(dist|node_modules|\.blazon)\//.test(f))).toEqual([]);
@@ -35,28 +35,25 @@ describe('the one copy', () => {
 });
 
 describe("the starter's config", () => {
-  it('comments out the Chrome-dependent plugins of the example, so they are there to uncomment', () => {
-    const example = read(path.join(EXAMPLE, 'blazon.config.ts'));
-    expect(example).toMatch(/^\s*plugins: \[/m);
-    const starter = starterConfig(example);
-    // the list stays, with blazon.copy (Node only) live and the plugins that draw in Chrome commented inside it
-    expect(starter).toMatch(/^\s*plugins: \[/m);
-    expect(starter).toMatch(/^\s*name: 'blazon\.copy',/m);
-    expect(starter).not.toMatch(/^\s*name: 'blazon\.social-cards',/m);
-    expect(starter).not.toMatch(/^\s*\{ name: 'blazon\.brand-deck' \},/m);
-    expect(starter).toMatch(/\/\/\s+name: 'blazon\.social-cards',/);
-    expect(starter).toMatch(/\/\/\s+\{ name: 'blazon\.brand-deck' \},/);
-    expect(starter).not.toContain('starter:omit');
-    expect(starter).toContain('Google Chrome');
-    expect(starter).toMatch(/^ {4}\/\/ These plugins draw in Google Chrome/m); // at the indent of the entries it explains
+  it('leaves the Chrome-dependent plugins of the example out, so a first build needs no browser', () => {
+    const example = JSON.parse(read(path.join(EXAMPLE, 'blazon.json'))) as { plugins: { name: string }[]; theme: Record<string, string>; logo: { onLight: string } };
+    expect(example.plugins.map((plugin) => plugin.name)).toContain('blazon.social-cards');
+    const starter = JSON.parse(starterConfig(read(path.join(EXAMPLE, 'blazon.json')))) as typeof example;
+    // blazon.copy (Node only) stays; the plugins that draw in Chrome or write kits are not listed
+    expect(starter.plugins.map((plugin) => plugin.name)).toEqual(['blazon.copy']);
     // everything else is the example's: the theme, the logo, the fonts
-    expect(starter).toContain("accent: 'interactive.primary'");
-    expect(starter).toContain('onLight: ');
-    expect(starter.trimEnd().endsWith('});')).toBe(true);
+    expect(starter.theme).toEqual(example.theme);
+    expect(starter.logo).toEqual(example.logo);
   });
 
-  it('is unchanged when it has no markers, so the packaged copy can pass through it again', () => {
-    const once = starterConfig(read(path.join(EXAMPLE, 'blazon.config.ts')));
+  it('is plain JSON, with a final newline', () => {
+    const text = starterConfig(read(path.join(EXAMPLE, 'blazon.json')));
+    expect(() => JSON.parse(text)).not.toThrow();
+    expect(text.endsWith('}\n')).toBe(true);
+  });
+
+  it('is unchanged when its plugins are already cut, so the packaged copy can pass through it again', () => {
+    const once = starterConfig(read(path.join(EXAMPLE, 'blazon.json')));
     expect(starterConfig(once)).toBe(once);
   });
 
@@ -225,7 +222,7 @@ describe('copying', () => {
     expect(read(path.join(dest, 'tokens/colors.json'))).toBe('{}\n');
     expect(written.length).toBe(starterFiles().length - 1);
     for (const rel of starterFiles()) {
-      if (rel === 'blazon.config.ts' || rel === 'tokens/colors.json') continue;
+      if (rel === 'blazon.json' || rel === 'tokens/colors.json') continue;
       expect(fs.readFileSync(path.join(dest, rel)).equals(fs.readFileSync(path.join(EXAMPLE, rel))), rel).toBe(true);
     }
   });
@@ -248,10 +245,10 @@ describe("blazon's package", () => {
   it('gets template/ from the example: the same files, the same bytes, the config without the plugins', () => {
     expect(starterFiles(TEMPLATE)).toEqual(starterFiles(EXAMPLE));
     for (const rel of starterFiles(EXAMPLE)) {
-      if (rel === 'blazon.config.ts') continue;
+      if (rel === 'blazon.json') continue;
       expect(fs.readFileSync(path.join(TEMPLATE, rel)).equals(fs.readFileSync(path.join(EXAMPLE, rel))), rel).toBe(true);
     }
-    expect(read(path.join(TEMPLATE, 'blazon.config.ts'))).toBe(starterConfig(read(path.join(EXAMPLE, 'blazon.config.ts'))));
+    expect(read(path.join(TEMPLATE, 'blazon.json'))).toBe(starterConfig(read(path.join(EXAMPLE, 'blazon.json'))));
   });
 
   it('packs the starter: every file of it is in `npm pack`, and the examples are not', () => {

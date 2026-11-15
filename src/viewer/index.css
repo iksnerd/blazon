@@ -51,7 +51,7 @@
 
 /*
  * The brand book wears the brand. applyTheme() writes the brand's roles to --blazon-* on <html>
- * (blazon.config.ts theme); the values here are only the fallback for a brand without one.
+ * (blazon.json theme); the values here are only the fallback for a brand without one.
  * shadcn's variables are derived from them, so every component follows the brand in both modes.
  * blazon's accent is the brand color, which is shadcn's --primary; shadcn's --accent is a hover tint.
  */

@@ -46,7 +46,7 @@ export { assertCanWrite, writeBlockers, type WriteOptions } from './preflight.js
 
 /** The sentences of outputDirProblems (outputs.ts) as findings, one error each. */
 function outputDirFindings(config: BlazonConfig, cwd: string): Finding[] {
-  return outputDirProblems(config, cwd).map((message) => finding('output-dirs-overlap', { path: 'blazon.config.ts', message }));
+  return outputDirProblems(config, cwd).map((message) => finding('output-dirs-overlap', { path: 'blazon.json', message }));
 }
 
 /**

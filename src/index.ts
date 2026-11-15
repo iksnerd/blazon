@@ -8,7 +8,7 @@
 export * from './types/index.js';
 
 // Configuration
-export { DEFAULT_CONFIG, defineConfig, loadConfig, resolveConfig, ConfigError, CONFIG_KEYS } from './core/config/index.js';
+export { DEFAULT_CONFIG, loadConfig, resolveConfig, ConfigError, CONFIG_KEYS } from './core/config/index.js';
 
 // Core compilation pipeline
 export { compileBlazonData, emitTokenOutputs } from './core/index.js';

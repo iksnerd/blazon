@@ -4,6 +4,7 @@ import pc from '../../core/colors.js';
 import { copyStarter, getTemplateDir } from '../../core/starter.js';
 import { applyFromSite, type FromSiteResult } from '../../core/init/from-site/index.js';
 import { applyAnswers, parseColor, parseDescription, parseFont, parseLogo, parseName, type Answers } from '../../core/init/answers.js';
+import { readJson, writeJson } from '../../core/init/vocabulary.js';
 import { clackPrompter, PromptCancelled, type Prompter } from '../../core/init/prompts.js';
 import { runGuided, type Plan } from '../init-flow.js';
 import { lookFor, type Look } from '../init-ui.js';
@@ -118,7 +119,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
 
   if (!guided) console.log(pc.cyan(`\n✨ Initializing Blazon Brand Book in ${pc.bold(destDir)}...\n`));
 
-  const configPath = path.join(destDir, 'blazon.config.ts');
+  const configPath = path.join(destDir, 'blazon.json');
   const hadConfig = fs.existsSync(configPath);
   const copied = copyStarter(destDir, templateDir);
   const kept = copied.kept;
@@ -128,14 +129,9 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
 
   // A new config is named after the project folder: "acme-brand" -> "Acme Brand Book".
   if (!hadConfig && fs.existsSync(configPath)) {
-    const config = fs.readFileSync(configPath, 'utf-8');
+    const config = readJson(configPath);
     // The description is blazon's own: a new book says what it is until its owner writes it
-    fs.writeFileSync(
-      configPath,
-      config
-        .replace("title: 'Blazon Brand Book'", `title: ${JSON.stringify(brandTitle(destDir))}`)
-        .replace(/^(\s*)description: .*,$/m, (_m, indent: string) => `${indent}description: "Brand guidelines, built from design tokens",`),
-    );
+    writeJson(configPath, { ...config, title: brandTitle(destDir), description: 'Brand guidelines, built from design tokens' });
   }
 
   const created_lines: string[] = [];
@@ -146,7 +142,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     );
     if (what) created_lines.push(`${folder}/ (${what})`);
   }
-  if (written.includes('blazon.config.ts')) created_lines.push('blazon.config.ts');
+  if (written.includes('blazon.json')) created_lines.push('blazon.json');
   if (written.includes('blazon.resolver.json')) created_lines.push('blazon.resolver.json');
 
   let plan: Plan = { answers };
@@ -224,7 +220,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     nextSteps.splice(
       1,
       0,
-      `Add your logo: the book still shows blazon's own. Put it in ${em(inDir(dir, 'assets/logos/'))} and point ${em('logo')} in ${em(inDir(dir, 'blazon.config.ts'))} at it`,
+      `Add your logo: the book still shows blazon's own. Put it in ${em(inDir(dir, 'assets/logos/'))} and point ${em('logo')} in ${em(inDir(dir, 'blazon.json'))} at it`,
     );
   // The colors step says what is already done: --color set the primary, a site wrote the palette
   const colors = em(inDir(dir, 'tokens/colors.json'));

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from '../../support/spawn';
-import { DEFAULT_CONFIG, configEntry, loadConfig } from '../../../src/core/config/index.js';
+import { DEFAULT_CONFIG, OLD_CONFIG_FILE_NAMES, loadConfig } from '../../../src/core/config/index.js';
 import { CONFIG_KEYS, ConfigError } from '../../../src/core/config/validate.js';
 import { compileBlazonData } from '../../../src/core/index.js';
 import { runCheck } from '../../../src/cli/commands/check.js';
@@ -10,13 +10,13 @@ import type { BlazonConfig } from '../../../src/types/index.js';
 import { ROOT, interfaceKeys } from '../../support/spec-helpers.js';
 import { tempDir } from '../../support/project';
 
-// blazon.config.ts is the one input that is code, so it is checked like data (RFC 0001 §14): an unknown key or a
+// blazon.json is plain JSON written by hand, so it is checked (RFC 0001 §14): an unknown key or a
 // value of the wrong type is an error, and a config that cannot be loaded stops the run instead of falling back
 // to defaults, which builds a brand book with the wrong title and no theme or logo and looks fine.
 
 function project(config?: string): string {
   const root = tempDir();
-  if (config !== undefined) fs.writeFileSync(path.join(root, 'blazon.config.ts'), config);
+  if (config !== undefined) fs.writeFileSync(path.join(root, 'blazon.json'), config);
   return root;
 }
 
@@ -127,72 +127,58 @@ describe('loadConfig stops on a config that is wrong', () => {
   });
 
   it('merges a valid config over the defaults and applies overrides', async () => {
-    const root = project(`export default { title: 'Acme', port: 4000 };\n`);
+    const root = project(`{"title": "Acme", "port": 4000}\n`);
     expect(await loadConfig(root, { port: 5000 })).toMatchObject({ title: 'Acme', port: 5000, tokensDir: './tokens' });
   });
 
-  it('rejects a file that cannot be run, naming the file and the cause', async () => {
-    const error = await loadConfig(project(`export default {\n`)).catch((e: unknown) => e);
+  it('rejects a file that is not JSON, naming the file and the cause', async () => {
+    const error = await loadConfig(project(`{\n`)).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain('Could not load blazon.config.ts');
+    expect((error as Error).message).toContain('Could not load blazon.json');
+    expect((error as Error).message).toContain('plain JSON');
   });
 
-  it.each(['folio', '@iksnerd/folio'])('says the package was renamed when a config still imports it as %s', async (old) => {
-    const error = await loadConfig(project(`import { defineConfig } from '${old}';\nexport default defineConfig({ title: 'Old' });\n`)).catch((e: unknown) => e);
-    expect((error as Error).message).toContain('Could not load blazon.config.ts');
-    expect((error as Error).message).toContain(
-      "blazon replaces folio, and `@iksnerd/folio` is now `@iksnerd/blazon`: change the import in blazon.config.ts to `import { defineConfig } from '@iksnerd/blazon'`",
-    );
+  it('rejects a comment: JSON has none', async () => {
+    await expect(loadConfig(project(`{ // the title\n "title": "Acme" }\n`))).rejects.toThrow(/Could not load blazon\.json/);
   });
 
-  it('does not blame the rename for another module that cannot be found', async () => {
-    const error = await loadConfig(project(`import x from 'no-such-module-here';\nexport default { title: String(x) };\n`)).catch((e: unknown) => e);
-    expect((error as Error).message).toContain('Could not load blazon.config.ts');
-    expect((error as Error).message).not.toContain('renamed');
+  it('rejects JSON that is not an object', async () => {
+    await expect(loadConfig(project(`[]\n`))).rejects.toThrow(/blazon\.json must be a JSON object/);
   });
 
-  it('rejects a file that exports nothing, and says how to export', async () => {
-    await expect(loadConfig(project(`const config = { title: 'Acme' };\n`))).rejects.toThrow(
-      /blazon\.config\.ts has no default export; write `export default defineConfig\(\{ \.\.\. \}\)`/,
-    );
+  it.each(OLD_CONFIG_FILE_NAMES)('refuses %s, names it, and names blazon.json as the file to use', async (name) => {
+    const root = project();
+    fs.writeFileSync(path.join(root, name), "export default { title: 'Old' };\n");
+    const error = await loadConfig(root).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ConfigError);
+    expect((error as ConfigError).findings.map((f) => [f.code, f.path])).toEqual([['config-invalid', name]]);
+    expect((error as ConfigError).message).toContain(`${name} is not read any more: blazon reads plain JSON from blazon.json`);
+  });
+
+  it('refuses an old config even when a blazon.json sits beside it, so the old file is not left to look live', async () => {
+    const root = project(`{"title": "New"}\n`);
+    fs.writeFileSync(path.join(root, 'blazon.config.ts'), "export default { title: 'Old' };\n");
+    await expect(loadConfig(root)).rejects.toThrow(/blazon\.config\.ts is not read any more/);
   });
 
   it('rejects a config with an unknown key or a wrong type, listing every problem', async () => {
-    const error = await loadConfig(project(`export default { asset: {}, port: 'x', title: 'Acme' };\n`)).catch((e: unknown) => e);
+    const error = await loadConfig(project(`{"asset": {}, "port": "x", "title": "Acme"}\n`)).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ConfigError);
     const message = (error as ConfigError).message;
-    expect(message).toContain('blazon.config.ts is invalid');
+    expect(message).toContain('blazon.json is invalid');
     expect(message).toContain('asset: unknown key "asset"');
     expect(message).toContain('port: port must be a whole number from 0 to 65535');
     expect((error as ConfigError).findings.map((f) => f.path).sort()).toEqual(['asset', 'port']);
-  });
-
-  it('keeps accepting `export const config`', async () => {
-    expect((await loadConfig(project(`export const config = { title: 'Acme' };\n`))).title).toBe('Acme');
-  });
-});
-
-describe('the module a config imports from "@iksnerd/blazon"', () => {
-  it('is this file from source', () => {
-    expect(configEntry('file:///work/blazon/src/core/config/index.ts')).toBe('/work/blazon/src/core/config/index.ts');
-  });
-
-  it("is the package's config entry from a build, where the code sits in a chunk whose export names are mangled", () => {
-    expect(configEntry('file:///pkg/dist/chunks/config-CizTd-n9.js')).toBe('/pkg/dist/config/index.js');
-  });
-
-  it('is the entry itself when the build does not use a chunk', () => {
-    expect(configEntry('file:///pkg/dist/config/index.js')).toBe('/pkg/dist/config/index.js');
   });
 });
 
 describe('the command line', () => {
   it('blazon check fails on a config that is wrong, and the message names the key', async () => {
-    await expect(runCheck(project(`export default { asset: {} };\n`))).rejects.toThrow(/asset: unknown key "asset"/);
+    await expect(runCheck(project(`{"asset": {}}\n`))).rejects.toThrow(/asset: unknown key "asset"/);
   });
 
   it('exits 1 from the real command, and says why on stderr', () => {
-    const root = project(`export default { asset: {} };\n`);
+    const root = project(`{"asset": {}}\n`);
     const result = spawnSync(process.execPath, ['--import', 'tsx', path.join(ROOT, 'scripts/blazon-src.ts'), 'check', root], { encoding: 'utf-8', cwd: ROOT });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('unknown key "asset"');

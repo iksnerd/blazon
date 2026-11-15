@@ -9,7 +9,7 @@ import { categoryDirs as categoryDirsOf } from '../core/assets/categories.js';
 import { formatBrandJson } from '../core/brand/export.js';
 import { BRAND_SCHEMA_FILE, formatBrandSchema } from '../core/brand/schema.js';
 import { DATA_SCRIPT_ID, serializeBlazonData } from './data-script.js';
-import { CONFIG_FILE_NAMES, loadConfig } from '../core/config/index.js';
+import { CONFIG_FILE, loadConfig } from '../core/config/index.js';
 import { DevChecks } from '../plugins/roles/dev.js';
 import { coalesce } from './coalesce.js';
 import { ErrorReporter } from './error-reporter.js';
@@ -62,7 +62,7 @@ export function createBlazonVitePlugin(initialConfig: BlazonConfig, cwd: string 
       // What is watched is what a compile reads (core/inputs.ts), as the config is now: a reload may move any of it
       const watchedDirs = () => projectInputs(config, cwd).flatMap((input) => (input.folder && !input.holdsOnly && !input.unwatched ? [input.path] : []));
 
-      const configFiles = CONFIG_FILE_NAMES.map((name) => path.resolve(cwd, name));
+      const configFiles = [path.resolve(cwd, CONFIG_FILE)];
       const lockFile = path.resolve(cwd, LOCK_FILE);
       const pinFile = path.resolve(cwd, BLAZON_LOCK);
 

@@ -74,7 +74,7 @@ describe('the brand book stylesheet', () => {
 describe('theme.shadcn in brand.json', () => {
   it('states the variables of a starter, the mapping, and what is left', async () => {
     const root = await starterProject();
-    const file = path.join(root, 'blazon.config.ts');
+    const file = path.join(root, 'blazon.json');
     // the starter supplies destructive and the five chart colors itself; this run swaps two of them for colors of its own
     const source = fs.readFileSync(file, 'utf-8');
     const edited = source.replace("destructive: 'text.primary'", "destructive: 'color.signal.hazard'").replace("'chart-1': 'text.primary'", "'chart-1': 'color.signal.orange'");
@@ -140,7 +140,7 @@ describe('theme.shadcn in brand.json', () => {
 
   it('reports a shadcn variable that points at a missing token, as a theme token does', async () => {
     const root = await starterProject();
-    const file = path.join(root, 'blazon.config.ts');
+    const file = path.join(root, 'blazon.json');
     const source = fs.readFileSync(file, 'utf-8');
     const edited = source.replace("destructive: 'text.primary'", "destructive: 'color.missing'");
     expect(edited).not.toBe(source);

@@ -84,7 +84,7 @@ it('makes a project', () => {
 describe('starterProject', () => {
   it('is what `blazon init` writes, and a config blazon can load', async () => {
     const root = await starterProject();
-    for (const name of ['blazon.config.ts', 'tokens', 'docs']) expect(fs.existsSync(path.join(root, name)), name).toBe(true);
+    for (const name of ['blazon.json', 'tokens', 'docs']) expect(fs.existsSync(path.join(root, name)), name).toBe(true);
     const config = await loadConfig(root);
     expect(config.tokensDir).toBeTruthy();
   }, 30_000);
@@ -93,7 +93,7 @@ describe('starterProject', () => {
 describe('copyProject', () => {
   it('copies a project without dist, node_modules and .blazon, at any depth, and leaves the source alone', () => {
     const source = tempProject({
-      'blazon.config.ts': 'export default {};\n',
+      'blazon.json': '{}\n',
       'tokens/colors.json': {},
       'dist/site/index.html': 'built',
       'node_modules/x/index.js': 'x',
@@ -103,7 +103,7 @@ describe('copyProject', () => {
     });
     const copy = copyProject(source);
     expect(copy).not.toBe(source);
-    expect(fs.readdirSync(copy).sort()).toEqual(['assets', 'blazon.config.ts', 'tokens']);
+    expect(fs.readdirSync(copy).sort()).toEqual(['assets', 'blazon.json', 'tokens']);
     expect(fs.readdirSync(path.join(copy, 'assets')).sort()).toEqual(['logos']);
     expect(fs.existsSync(path.join(source, 'dist/site/index.html'))).toBe(true);
   });
@@ -125,7 +125,7 @@ describe('exampleProject', () => {
   for (const name of EXAMPLES) {
     it.skipIf(!hasExample(name))(`copies ${name} with its config, tokens and docs and none of what a build writes`, () => {
       const copy = exampleProject(name);
-      for (const entry of ['blazon.config.ts', 'tokens', 'docs']) expect(fs.existsSync(path.join(copy, entry)), entry).toBe(true);
+      for (const entry of ['blazon.json', 'tokens', 'docs']) expect(fs.existsSync(path.join(copy, entry)), entry).toBe(true);
       for (const entry of ['dist', 'node_modules', '.blazon']) expect(fs.existsSync(path.join(copy, entry)), entry).toBe(false);
     });
   }
@@ -208,15 +208,15 @@ describe('starterProject: the plugins a test wants', () => {
   it('allows no plugin by default, though the starter was made with one', async () => {
     const root = await starterProject();
     expect(await names(root)).toEqual([]);
-    expect(fs.readFileSync(path.join(root, 'blazon.config.ts'), 'utf-8')).not.toContain('blazon.copy');
+    expect(fs.readFileSync(path.join(root, 'blazon.json'), 'utf-8')).not.toContain('blazon.copy');
   });
 
   it("keeps the starter's own list when the test says so", async () => {
     expect(await names(await starterProject({ plugins: 'starter' }))).toEqual(['blazon.copy']);
   });
 
-  it('allows exactly the plugins it names, as names, with options as data, and with options as source when they need code', async () => {
-    const root = await starterProject({ plugins: ['acme.a', { name: 'acme.b', options: { x: 1 } }, { name: 'acme.c', optionsSource: '{ y: 1 + 1 }' }] });
+  it('allows exactly the plugins it names, as names, with options as data', async () => {
+    const root = await starterProject({ plugins: ['acme.a', { name: 'acme.b', options: { x: 1 } }, { name: 'acme.c', options: { y: 2 } }] });
     const config = await loadConfig(root);
     expect(config.plugins).toEqual([{ name: 'acme.a' }, { name: 'acme.b', options: { x: 1 } }, { name: 'acme.c', options: { y: 2 } }]);
     // The starter's own blazon.copy is not left behind to win over them
@@ -228,7 +228,7 @@ describe('starterProject: the plugins a test wants', () => {
   });
 
   it('refuses a config it cannot put the plugins into, and says which', () => {
-    const root = tempProject({ 'blazon.config.ts': 'export default {};\n' });
-    expect(() => setPlugins(root, ['acme.a'])).toThrow(/has no "export default defineConfig\(\{" line/);
+    const root = tempProject({ 'blazon.json': '[]\n' });
+    expect(() => setPlugins(root, ['acme.a'])).toThrow(/must be a JSON object/);
   });
 });

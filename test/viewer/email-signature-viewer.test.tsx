@@ -142,6 +142,6 @@ describe('the email signature form', () => {
 
   it('says so when the config has no emailSignature block', () => {
     render(<EmailSignature data={data(false)} args={[]} />);
-    expect(screen.getByText('No email signature is configured (blazon.config.ts → emailSignature).')).toBeTruthy();
+    expect(screen.getByText('No email signature is configured (blazon.json → emailSignature).')).toBeTruthy();
   });
 });

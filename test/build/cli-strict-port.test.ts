@@ -51,10 +51,9 @@ async function builtProject(): Promise<string> {
   const root = await starterProject();
   fs.mkdirSync(path.join(root, 'dist/site'), { recursive: true });
   fs.writeFileSync(path.join(root, 'dist/site/index.html'), '<!doctype html><title>x</title>');
-  const config = path.join(root, 'blazon.config.ts');
+  const config = path.join(root, 'blazon.json');
   const text = fs.readFileSync(config, 'utf-8');
-  expect(text).toContain('export default defineConfig({');
-  fs.writeFileSync(config, text.replace('export default defineConfig({', "export default defineConfig({\n  outDir: 'dist/site',"));
+  fs.writeFileSync(config, `${JSON.stringify({ ...JSON.parse(text), outDir: 'dist/site' }, null, 2)}\n`);
   return root;
 }
 

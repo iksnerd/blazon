@@ -214,7 +214,7 @@ describe('blazon check on the directive', () => {
   });
 
   it('needs the block, and takes no arguments', () => {
-    expect(messages('<!-- blazon:email-signature -->', false)).toEqual(['<!-- blazon:email-signature -->: needs an email signature (blazon.config.ts → emailSignature)']);
+    expect(messages('<!-- blazon:email-signature -->', false)).toEqual(['<!-- blazon:email-signature -->: needs an email signature (blazon.json → emailSignature)']);
     expect(messages('<!-- blazon:email-signature extra -->', true)).toEqual(['<!-- blazon:email-signature extra -->: takes no arguments']);
   });
 });

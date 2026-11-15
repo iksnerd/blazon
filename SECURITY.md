@@ -18,6 +18,6 @@ Expect an acknowledgement within a few days, best effort and not a guarantee. A 
 
 ## What counts
 
-Blazon runs a brand's `blazon.config.ts` as code, and starts plugins as child processes with the permissions of whoever runs blazon. Running blazon on a project you do not trust is outside the threat model. See [RFC 0002](docs/rfc/0002-extension-model.md) for what plugin pinning does and does not defend against.
+Blazon reads a brand's `blazon.json` as data and never runs it, but it starts the plugins that file names as child processes with the permissions of whoever runs blazon. Running blazon on a project you do not trust is outside the threat model. See [RFC 0002](docs/rfc/0002-extension-model.md) for what plugin pinning does and does not defend against.
 
 In scope: a way for untrusted input to make blazon do more than that model allows, for example a token file, Markdown page, asset or plugin answer that writes outside the output folder, runs a program that was not configured, or bypasses a pin. A bug in a plugin you wrote or installed is for that plugin's author.

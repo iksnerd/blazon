@@ -54,7 +54,7 @@ A plugin name is dotted lowercase words, `^[a-z0-9][a-z0-9_-]*(\.[a-z0-9][a-z0-9
 
 ### 3.2 Who allows a plugin
 
-Only the operator, in the `plugins` key of `blazon.config.ts` (RFC 0001 section 14), a list of `{ name, as?, options? }`, where `as` is an instance id (RFC 0002 section 2): one plugin may be listed more than once, and the pin below is for the plugin's name, not the instance's. Data a plugin could influence (a token, a page, a sidecar, a request) never names a plugin, never holds a path and never holds a command. A config key that does (`command`, `path`, `digest`) is an error. A name that is not allowed is not run.
+Only the operator, in the `plugins` key of `blazon.json` (RFC 0001 section 14), a list of `{ name, as?, options? }`, where `as` is an instance id (RFC 0002 section 2): one plugin may be listed more than once, and the pin below is for the plugin's name, not the instance's. Data a plugin could influence (a token, a page, a sidecar, a request) never names a plugin, never holds a path and never holds a command. A config key that does (`command`, `path`, `digest`) is an error. A name that is not allowed is not run.
 
 ### 3.3 Finding the program
 

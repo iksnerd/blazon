@@ -18,7 +18,7 @@ function project(tokens: Tokens): string {
   const dir = tempDir();
   fs.mkdirSync(path.join(dir, 'tokens'));
   fs.writeFileSync(path.join(dir, 'tokens/all.json'), JSON.stringify(tokens));
-  fs.writeFileSync(path.join(dir, 'blazon.config.ts'), "export default { logo: './logo.svg' };\n");
+  fs.writeFileSync(path.join(dir, 'blazon.json'), '{"logo": "./logo.svg"}\n');
   logoConfig(dir);
   return dir;
 }
@@ -56,7 +56,7 @@ describe('theme without a theme block', () => {
     expect(finding).toMatchObject({ severity: 'info', path: 'theme' });
     expect(finding!.message).toMatch(/accent = \{interactive\.primary\}/);
     expect(finding!.message).toMatch(/text = \{text\.primary\}/);
-    expect(finding!.message).toMatch(/Set theme in blazon\.config\.ts/);
+    expect(finding!.message).toMatch(/Set theme in blazon\.json/);
   });
 
   it('names the token behind each role, so a context that changes the token can change the role', async () => {

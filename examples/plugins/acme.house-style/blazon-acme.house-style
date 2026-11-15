@@ -11,7 +11,7 @@ The request is {"v": 1, "type": "check", "options": {...}, "brand": <brand.json>
 judge", with the reason as the first line of standard output: here, a request of a version this plugin does not speak,
 a brand that is not a version 1 blazon brand, and an `options.headingFont` that is missing. Never exit 0 for what you could not judge.
 
-Options (blazon.config.ts):  plugins: [{ name: 'acme.house-style', options: { headingFont: 'Inter' } }]
+Options (blazon.json):  "plugins": [{ "name": "acme.house-style", "options": { "headingFont": "Inter" } }]
 """
 import json
 import re

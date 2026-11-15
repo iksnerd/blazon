@@ -222,16 +222,16 @@ const blazon = (cwd: string, ...args: string[]) =>
   spawnSync(process.execPath, ['--import', TSX, path.join(ROOT_DIR, 'scripts/blazon-src.ts'), ...args], { encoding: 'utf-8', cwd, env: { ...process.env, BLAZON_CUE: CUE } });
 const output = (result: { stdout: string; stderr: string }) => result.stdout + result.stderr;
 
-/** The starter, with the plugin copied in and pinned, and the rules in a `rules.cue` of the project that the config reads. */
+/** The starter, with the plugin copied in and pinned, and the rules in the plugin's `rules` option. */
 async function project(rules: string): Promise<string> {
   const root = await starterProject();
   fs.cpSync(PLUGIN, path.join(root, 'plugins/blazon.cue-rules'), { recursive: true });
   fs.writeFileSync(path.join(root, 'rules.cue'), rules);
   const pin = blazon(root, 'plugin', 'pin', 'plugins/blazon.cue-rules', '--name', NAME);
   expect(pin.status, output(pin)).toBe(0);
-  const config = path.join(root, 'blazon.config.ts');
-  const text = fs.readFileSync(config, 'utf-8').replace('export default defineConfig({', `export default defineConfig({\n  plugins: [{ name: '${NAME}', options: { rules: readFileSync('rules.cue', 'utf-8') } }],`);
-  fs.writeFileSync(config, `import { readFileSync } from 'node:fs';\n${text}`);
+  const config = path.join(root, 'blazon.json');
+  const brand = JSON.parse(fs.readFileSync(config, 'utf-8')) as Record<string, unknown>;
+  fs.writeFileSync(config, `${JSON.stringify({ ...brand, plugins: [{ name: NAME, options: { rules } }] }, null, 2)}\n`);
   return root;
 }
 

@@ -66,19 +66,28 @@ A profile is JSON, so a plugin in any language can ship one:
 
 ### 2. Where the profile comes from
 
-In the plugin's `options`, in `blazon.config.ts`:
+In the plugin's `options`, in `blazon.json`:
 
-```ts
-plugins: [
-  {
-    name: 'blazon.recommend',
-    options: {
-      profile: 'generic',
-      add: [{ id: 'color.ral', section: 'color', ask: 'State RAL values for signage colors', topics: ['ral'] }],
-      skip: ['logo.pair'],
-    },
-  },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.recommend",
+      "options": {
+        "profile": "generic",
+        "add": [
+          {
+            "id": "color.ral",
+            "section": "color",
+            "ask": "State RAL values for signage colors",
+            "topics": [ "ral" ]
+          }
+        ],
+        "skip": [ "logo.pair" ]
+      }
+    }
+  ]
+}
 ```
 
 - `profile` names a profile the plugin ships, or is a path to a profile file in the project. The default is `generic`.

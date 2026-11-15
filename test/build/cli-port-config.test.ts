@@ -6,7 +6,7 @@ import path from 'node:path';
 import { REPO } from '../support/paths';
 import { starterProject } from '../support/project';
 
-// The port of `blazon dev` and `blazon preview` is the `port` in blazon.config.ts, else 3000, and `-p` wins over both. The option
+// The port of `blazon dev` and `blazon preview` is the `port` in blazon.json, else 3000, and `-p` wins over both. The option
 // once carried a default of 3000 of its own, so a port passed on the command line always won and the config's was never read.
 
 const children: ChildProcess[] = [];
@@ -48,11 +48,11 @@ async function projectOnPort(port: number): Promise<string> {
   const root = await starterProject();
   fs.mkdirSync(path.join(root, 'dist/site'), { recursive: true });
   fs.writeFileSync(path.join(root, 'dist/site/index.html'), '<!doctype html><title>x</title>');
-  fs.writeFileSync(path.join(root, 'blazon.config.ts'), `export default { title: 'T', outDir: 'dist/site', port: ${port} };\n`);
+  fs.writeFileSync(path.join(root, 'blazon.json'), `${JSON.stringify({ title: 'T', outDir: 'dist/site', port })}\n`);
   return root;
 }
 
-describe.each(['dev', 'preview'] as const)('blazon %s and the port in blazon.config.ts', (command) => {
+describe.each(['dev', 'preview'] as const)('blazon %s and the port in blazon.json', (command) => {
   it('listens on the config port when -p is not given', { timeout: 60_000 }, async () => {
     const configPort = await freePort();
     const root = await projectOnPort(configPort);

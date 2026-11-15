@@ -42,7 +42,7 @@ function inferredTheme(tokens: ParsedTokens): ResolvedTheme {
   const roles = Object.entries(from).map(([role, tokenPath]) => `${role} = {${tokenPath}}`);
   const message =
     roles.length > 0
-      ? `No theme in blazon.config.ts, so the brand book took ${roles.join(', ')}. Set theme in blazon.config.ts to choose roles yourself.`
-      : "No theme in blazon.config.ts and no token has a conventional name (surface.background, text.primary, interactive.primary, ...), so the brand book uses blazon's neutral colors. Set theme in blazon.config.ts to map its roles to your tokens.";
+      ? `No theme in blazon.json, so the brand book took ${roles.join(', ')}. Set theme in blazon.json to choose roles yourself.`
+      : "No theme in blazon.json and no token has a conventional name (surface.background, text.primary, interactive.primary, ...), so the brand book uses blazon's neutral colors. Set theme in blazon.json to map its roles to your tokens.";
   return { values, tokens: from, problems: [finding(roles.length > 0 ? 'theme-inferred' : 'theme-missing', { path: 'theme', message })] };
 }

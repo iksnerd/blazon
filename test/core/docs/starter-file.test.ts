@@ -20,7 +20,7 @@ async function notes(root: string): Promise<string[]> {
 }
 
 // The config, the resolver document and the agent notes are not scanned: docs/, tokens/, assets/ and fonts/ are
-const NOT_SCANNED = new Set(['blazon.config.ts', 'blazon.resolver.json', 'AGENTS.md', 'CLAUDE.md']);
+const NOT_SCANNED = new Set(['blazon.json', 'blazon.resolver.json', 'AGENTS.md', 'CLAUDE.md']);
 const starterFiles = (): string[] => allStarterFiles().filter((f) => !NOT_SCANNED.has(f));
 
 describe('starter-logo-unchanged', () => {
@@ -41,7 +41,7 @@ describe('starter-file-unchanged', () => {
     const found = await notes(root);
     expect(found).toEqual(starterFiles());
     expect(found).toContain('docs/01-principles.md');
-    expect(found).not.toContain('blazon.config.ts');
+    expect(found).not.toContain('blazon.json');
   });
 
   it("flags everything of blazon's identity until it is edited: the logos, the type scale and fonts, the pages about blazon", async () => {

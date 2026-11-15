@@ -22,7 +22,7 @@ describe('a brand with no tokens in it', () => {
     fs.mkdirSync(path.join(root, 'tokens'));
     fs.writeFileSync(path.join(root, 'tokens/x.json'), '{}\n');
     fs.writeFileSync(path.join(root, 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>');
-    fs.writeFileSync(path.join(root, 'blazon.config.ts'), "export default { logo: './logo.svg' };\n");
+    fs.writeFileSync(path.join(root, 'blazon.json'), '{"logo": "./logo.svg"}\n');
     return root;
   };
 

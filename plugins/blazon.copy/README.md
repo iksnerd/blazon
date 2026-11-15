@@ -2,7 +2,7 @@
 
 The plugin blazon ships to hold a brand book's text to the brand's copy rules: the terms it avoids, the case of its headings and the length of its sentences. It fills the `check` role, reads `brand.json` only (the pages' Markdown and the assets' sidecar text), writes nothing and needs only Node.
 
-The source is `src/shipped/copy/`, and `npm run build` (`npm run build:plugins`) bundles it, with the blazon code it uses, into `bin/blazon-blazon.copy.🔌`, the one file that holds the plugin's code and that `plugins/shipped.lock` pins. It loads nothing from `node_modules`, so the pin covers all the code it runs, apart from Node itself. Name it in `blazon.config.ts` and give it the rules:
+The source is `src/shipped/copy/`, and `npm run build` (`npm run build:plugins`) bundles it, with the blazon code it uses, into `bin/blazon-blazon.copy.🔌`, the one file that holds the plugin's code and that `plugins/shipped.lock` pins. It loads nothing from `node_modules`, so the pin covers all the code it runs, apart from Node itself. Name it in `blazon.json` and give it the rules:
 
 ```ts
 plugins: [

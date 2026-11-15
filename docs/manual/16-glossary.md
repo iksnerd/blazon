@@ -10,7 +10,7 @@ Every word blazon uses for a thing, in alphabetical order, with the chapter that
 | Answer | What a plugin prints on standard output for one call: a JSON object with its `findings`. Exit status `0` is an answer, and `2` means the plugin cannot answer, with the reason on the first line | [13](13-writing-a-plugin.md) |
 | Approval | A person's confirmation that a value is right: `review.status: ok`, with who confirmed it (`by`), when (`at`) and a fingerprint of the value (`value`). `blazon approvals` lists them, and `approval-stale` says a value changed after it was approved | [2](02-tokens.md) |
 | Asset | An image file in `assets/`: SVG, PNG, JPEG, GIF, WebP or AVIF. Its category is the folder it is in | [6](06-assets-and-icons.md) |
-| Asset category | A folder of assets that the brand book shows as a page. The `assets` block of `blazon.config.ts` gives it a label, an order, a description and the rules its files must meet | [6](06-assets-and-icons.md) |
+| Asset category | A folder of assets that the brand book shows as a page. The `assets` block of `blazon.json` gives it a label, an order, a description and the rules its files must meet | [6](06-assets-and-icons.md) |
 | Brand book | The static site blazon builds. It looks like the brand it documents | [7](07-theme-and-config.md) |
 | `brand.json` | The whole brand in one versioned file, which `blazon build` writes beside the site: tokens with their rules, pages, assets, categories and findings. It is for tools in any language, and a `check` plugin receives it | [11](11-brand-json.md) |
 | Breaker | The host's guard against a plugin that keeps failing: after repeated failures it stops calling that plugin for the rest of one blazon command. The dev server uses a cooldown instead | [12](12-plugins.md) |
@@ -20,7 +20,7 @@ Every word blazon uses for a thing, in alphabetical order, with the chapter that
 | Check role | The plugin role that adds findings. It receives `brand.json` and no files, and runs in `blazon check`, `blazon tokens`, `blazon build` and `blazon dev` | [13](13-writing-a-plugin.md) |
 | Context | One value of a modifier in the resolver document, such as `locale` = `ja`. It replaces some token values and is compiled to its own CSS block | [4](04-contexts.md) |
 | Contrast pair | A foreground and a background token with the lowest contrast the brand accepts between them (`AA`, `AA-large` or `AAA`), stated in `pairs` on a group. `blazon check` tests it | [2](02-tokens.md) |
-| Custom section | A section a brand adds with `customSections` in `blazon.config.ts`, beside the standard ones: a voice and tone page, for example | [5](05-pages.md) |
+| Custom section | A section a brand adds with `customSections` in `blazon.json`, beside the standard ones: a voice and tone page, for example | [5](05-pages.md) |
 | Deny | A usage rule: `usage.deny` lists the roles a color must not be used for, such as `text`. `blazon check` reports a token that breaks it | [2](02-tokens.md) |
 | `dev.blazon` | The extension in `$extensions` where a token or group states brand rules DTCG has no field for: usage, tier, print values, review, logo rules, proportion | [2](02-tokens.md) |
 | Directive | An HTML comment in a page, such as `<!-- blazon:tokens color.primary -->`, that blazon replaces with live content | [5](05-pages.md) |

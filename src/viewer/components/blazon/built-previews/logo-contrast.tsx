@@ -17,7 +17,7 @@ import { Missing, paints } from './shared';
  */
 export function LogoContrast({ data, args }: { data: BlazonData; args: string[] }) {
   const logo = data.logo;
-  if (!logo) return <Missing>No logo is configured (blazon.config.ts → logo).</Missing>;
+  if (!logo) return <Missing>No logo is configured (blazon.json → logo).</Missing>;
   const variants = logoCandidates(data);
   return (
     <div className="not-prose my-4 grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2.5">

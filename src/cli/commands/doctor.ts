@@ -120,10 +120,10 @@ function nodeCheck(env: DoctorEnv): DoctorCheck {
 async function brandCheck(cwd: string): Promise<{ check: DoctorCheck; config?: BlazonConfig }> {
   try {
     const config = await loadProject(cwd);
-    return { check: { id: 'brand', status: 'ok', message: `brand folder found: tokens in ${config.tokensDir}, blazon.config.ts loads` }, config };
+    return { check: { id: 'brand', status: 'ok', message: `brand folder found: tokens in ${config.tokensDir}, blazon.json loads` }, config };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const fix = err instanceof BlazonError && err.fix ? err.fix : 'Fix the error in blazon.config.ts, then run blazon doctor again.';
+    const fix = err instanceof BlazonError && err.fix ? err.fix : 'Fix the error in blazon.json, then run blazon doctor again.';
     return { check: { id: 'brand', status: 'fail', message, fix } };
   }
 }
@@ -144,7 +144,7 @@ function chromeCheck(env: DoctorEnv, config: BlazonConfig | undefined): DoctorCh
     id: 'chrome',
     status: 'fail',
     message: `no Google Chrome found, and ${drawing.join(', ')} draw${drawing.length === 1 ? 's' : ''} in one`,
-    fix: 'Install Google Chrome, or set BLAZON_CHROME to a Chrome or Chromium program; or take the plugin out of blazon.config.ts.',
+    fix: 'Install Google Chrome, or set BLAZON_CHROME to a Chrome or Chromium program; or take the plugin out of blazon.json.',
   };
 }
 

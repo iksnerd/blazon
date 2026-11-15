@@ -146,7 +146,7 @@ describe('the pre-push hook', () => {
   it('is where a broad change meets the whole suite: the commit does not run it, the push runs it once', () => {
     const counter = counterFile();
     const { dir } = clone(counter);
-    write(dir, { 'examples/x/blazon.config.ts': '// broad\n' });
+    write(dir, { 'examples/x/blazon.json': '// broad\n' });
     git(dir, ['add', '-A']);
     const made = git(dir, ['commit', '-q', '-m', 'broad']);
     expect(made.status, made.stdout + made.stderr).toBe(0);
@@ -213,7 +213,7 @@ describe('the pre-push hook', () => {
       it('are left out of the whole suite when no hook, script, test of theirs or dependency changed', () => {
         const counter = counterFile();
         const { dir } = seeded(counter);
-        commit(dir, { 'examples/x/blazon.config.ts': '// a brand\n' });
+        commit(dir, { 'examples/x/blazon.json': '// a brand\n' });
         const result = push(dir);
         expect(result.status, result.out).toBe(0);
         expect(result.out).toContain('✓ tests: full suite');
@@ -221,10 +221,10 @@ describe('the pre-push hook', () => {
       }, 120_000);
 
       it.each([
-        ['a hook', { 'examples/x/blazon.config.ts': '// a brand\n', '.githooks/note.sh': '#!/bin/sh\necho hi\n' }],
-        ['the install script', { 'examples/x/blazon.config.ts': '// a brand\n', 'scripts/install-hooks.mjs': '// install\n' }],
-        ['a test of the hooks', { 'examples/x/blazon.config.ts': '// a brand\n', 'test/hooks/x.test.ts': '// t\n' }],
-        ['package.json, which can change the tools they run', { 'examples/x/blazon.config.ts': '// a brand\n', 'package-lock.json': '{}\n' }],
+        ['a hook', { 'examples/x/blazon.json': '// a brand\n', '.githooks/note.sh': '#!/bin/sh\necho hi\n' }],
+        ['the install script', { 'examples/x/blazon.json': '// a brand\n', 'scripts/install-hooks.mjs': '// install\n' }],
+        ['a test of the hooks', { 'examples/x/blazon.json': '// a brand\n', 'test/hooks/x.test.ts': '// t\n' }],
+        ['package.json, which can change the tools they run', { 'examples/x/blazon.json': '// a brand\n', 'package-lock.json': '{}\n' }],
       ])(
         'are in the whole suite when %s changed',
         (_what, files) => {
@@ -252,7 +252,7 @@ describe('the pre-push hook', () => {
     it('runs the whole suite when a changed file asks for it', () => {
       const counter = counterFile();
       const { dir } = seeded(counter);
-      commit(dir, { 'examples/x/blazon.config.ts': '// a brand\n' });
+      commit(dir, { 'examples/x/blazon.json': '// a brand\n' });
       const result = push(dir);
       expect(result.status, result.out).toBe(0);
       expect(result.out).toContain('the whole suite runs: a changed file asks for it');

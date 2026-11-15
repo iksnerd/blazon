@@ -21,7 +21,7 @@ export function requiredFiles(pluginNames) {
     'dist/cli/index.js',
     'dist/ui/index.html',
     'dist/ui/assets/geist-OFL.txt',
-    'template/blazon.config.ts',
+    'template/blazon.json',
     'THIRD-PARTY-NOTICES.md',
     'plugins/shipped.lock',
     ...pluginNames.map((name) => `plugins/${name}/bin/blazon-${name}.🔌`),

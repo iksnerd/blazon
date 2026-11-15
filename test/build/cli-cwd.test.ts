@@ -57,7 +57,7 @@ describe('blazon --cwd', () => {
 
   it('a file is not a folder', async () => {
     const root = await starterProject();
-    const ran = blazon('--cwd', path.join(root, 'blazon.config.ts'), 'check');
+    const ran = blazon('--cwd', path.join(root, 'blazon.json'), 'check');
     expect(ran.status).toBe(2);
     expect(fs.existsSync(path.join(root, 'dist'))).toBe(false);
   });

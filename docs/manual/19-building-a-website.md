@@ -62,7 +62,7 @@ A second trap is in `tailwind-merge`, which shadcn/ui's `cn()` runs. It reads an
 
 ## Fonts
 
-The fonts a brand loads are in the `fonts` key of `blazon.config.ts` ([chapter 7](07-theme-and-config.md#logo-and-fonts)), and `brand.json` carries them as `theme.fonts`. Run `blazon fonts` (or `blazon fonts --json`) for the stylesheet addresses and font files to load, and for each family the tokens name, whether the brand loads it. Load the same stylesheets or files. Do not type a font URL again by hand: it would drift from the brand.
+The fonts a brand loads are in the `fonts` key of `blazon.json` ([chapter 7](07-theme-and-config.md#logo-and-fonts)), and `brand.json` carries them as `theme.fonts`. Run `blazon fonts` (or `blazon fonts --json`) for the stylesheet addresses and font files to load, and for each family the tokens name, whether the brand loads it. Load the same stylesheets or files. Do not type a font URL again by hand: it would drift from the brand.
 
 For a font file the site serves itself, do not write the `@font-face` by hand either. Copy the brand's font files to the site's public folder (here `public/fonts/`) and print the rules:
 
@@ -104,7 +104,7 @@ A shadcn/ui project reads its colors from semantic CSS variables: `--background`
 }
 ```
 
-(Shortened: a real file lists every variable blazon supplies. `unsupplied` lists the variables nothing supplies: it is empty here because the starter maps `destructive` and `chart-1` to `chart-5` itself, and a brand that does not would list them.) Variable names have no leading dashes. `value` is the token's value in the default context. `from` says where the pick came from: `theme` for a [theme role](07-theme-and-config.md#theme-roles) (named in `role`), `config` for the `shadcn` key of `blazon.config.ts`.
+(Shortened: a real file lists every variable blazon supplies. `unsupplied` lists the variables nothing supplies: it is empty here because the starter maps `destructive` and `chart-1` to `chart-5` itself, and a brand that does not would list them.) Variable names have no leading dashes. `value` is the token's value in the default context. `from` says where the pick came from: `theme` for a [theme role](07-theme-and-config.md#theme-roles) (named in `role`), `config` for the `shadcn` key of `blazon.json`.
 
 What blazon supplies from the theme roles, with no setup beyond `theme`:
 
@@ -121,10 +121,12 @@ What blazon supplies from the theme roles, with no setup beyond `theme`:
 
 These are the same picks the brand book's own components use. A role the theme does not set leaves its variables out. A brand can override a pick: blazon's own starter sets `ring` and `sidebar-ring` to `text.primary` in its config, because the role pick for `ring` is the primary action color, which is 2.74:1 on the page background, below the 3:1 a focus outline needs.
 
-What the brand has to map itself: `destructive` and `chart-1` to `chart-5` have no role. The starter maps them in its config: `destructive` to `text.primary` (it has no red) and `chart-1` to `chart-5` to `text.primary`, `text.muted`, `surface.canvas`, `rule.default` and `rule.quiet`, in that order. A brand that wants them, or wants a different token for any variable above, says so in `blazon.config.ts`:
+What the brand has to map itself: `destructive` and `chart-1` to `chart-5` have no role. The starter maps them in its config: `destructive` to `text.primary` (it has no red) and `chart-1` to `chart-5` to `text.primary`, `text.muted`, `surface.canvas`, `rule.default` and `rule.quiet`, in that order. A brand that wants them, or wants a different token for any variable above, says so in `blazon.json`:
 
-```ts
-shadcn: { destructive: 'color.signal.hazard', 'chart-1': 'color.signal.orange', ring: 'text.primary' },
+```json
+{
+  "shadcn": { "destructive": "color.signal.hazard", "chart-1": "color.signal.orange", "ring": "text.primary" }
+}
 ```
 
 A path that is not a token is a `theme-unresolved` error. Every variable in `unsupplied` is a question for the brand owner: do not pick a color for it. A shadcn project falls back to its own default for a variable you leave out, which is not the brand's.

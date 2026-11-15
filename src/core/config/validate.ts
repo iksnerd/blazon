@@ -8,7 +8,7 @@ import { isFamilyName } from '../fonts.js';
 import { DEFAULT_CONFIG } from './defaults.js';
 import { finding } from '../checker/catalogue.js';
 
-// blazon.config.ts is the one input that is code, so it is checked like data (RFC 0001 §14): an unknown key and a
+// blazon.json is plain JSON written by hand, so it is checked (RFC 0001 §14): an unknown key and a
 // value of the wrong type are errors, and the value is left out so the rest of the compile does not crash on it.
 
 /** Every key of `BlazonConfig`. A test holds this list to the interface. */

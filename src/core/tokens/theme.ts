@@ -1,7 +1,7 @@
 import type { BrandTheme, ParsedTokens, ThemeRole, TokenType } from '../../types/index.js';
 
 /**
- * The token names a brand book looks for, per viewer role, when `blazon.config.ts` has no `theme`: the
+ * The token names a brand book looks for, per viewer role, when `blazon.json` has no `theme`: the
  * first that exists with the right type wins. They follow the conventions of the brand guidelines blazon was first tested against.
  */
 export const CONVENTIONAL_ROLES: Record<ThemeRole, { types: TokenType[]; paths: string[] }> = {

@@ -296,7 +296,7 @@ describe('the text', () => {
   it('writes the name and description as the boilerplate, and a plain line with a finding when there is no description', () => {
     expect(aboutText({ title: 'Acme Co', named: true, description: 'Acme makes anvils.' }).text).toBe('Acme Co\n\nAcme makes anvils.\n');
     const none = aboutText({ title: 'Acme Co', named: true });
-    expect(none.text).toBe('Acme Co\n\nNo description is set in blazon.config.ts.\n');
+    expect(none.text).toBe('Acme Co\n\nNo description is set in blazon.json.\n');
     expect(none.findings.map((f) => f.code)).toEqual([`${NAME}/about-no-description`]);
   });
 
@@ -452,7 +452,7 @@ describe('the entry', () => {
     expect(ran.status, ran.out + ran.err).toBe(0);
     expect(findingsOf(ran.out).map((f) => f.code)).toEqual([`${NAME}/logo-none`, `${NAME}/color-none`, `${NAME}/font-none`, `${NAME}/about-no-description`]);
     expect(walk(path.join(made.outDir, 'press-kit'))).toEqual(['README.txt', 'about.txt']);
-    expect(fs.readFileSync(path.join(made.outDir, 'press-kit/about.txt'), 'utf-8')).toBe('Bare\n\nNo description is set in blazon.config.ts.\n');
+    expect(fs.readFileSync(path.join(made.outDir, 'press-kit/about.txt'), 'utf-8')).toBe('Bare\n\nNo description is set in blazon.json.\n');
   });
 });
 

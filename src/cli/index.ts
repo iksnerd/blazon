@@ -78,7 +78,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
 
   cli
     .command('dev [dir]', 'Start interactive Brand Book dev server with HMR')
-    .option('-p, --port <port>', 'Port number to listen on (default: the port in blazon.config.ts, else 3000)')
+    .option('-p, --port <port>', 'Port number to listen on (default: the port in blazon.json, else 3000)')
     .option('--strict-port', 'Exit 2 when the port is in use, instead of taking the next free one')
     .option('--host [address]', 'Listen on this address, or on every network interface with no address (default: localhost only)')
     .action(async (dir?: string, options?: { port?: number; strictPort?: boolean; host?: string | boolean }) => {
@@ -151,7 +151,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
   cli
     .command('mcp', 'Set up blazon-mcp, the MCP server for coding agents: --print-config prints what registers it in a client, --check tests that it works; neither writes a file')
     .option('--print-config', 'Print the config that registers blazon-mcp (stdio) in a client')
-    .option('--check', 'Test that the server is built, finds blazon, answers a real MCP handshake and is registered in the client; runs the brand config as code')
+    .option('--check', 'Test that the server is built, finds blazon, answers a real MCP handshake and is registered in the client; runs the plugins the brand config names')
     .option('--client <client>', 'With --print-config or --check: claude-code (default), claude-desktop, cursor or vscode')
     .option('--brand <dir>', 'The brand folder: with --print-config, written into the config as an absolute path; with --check, the folder the server starts on')
     .option('--json', 'Print the config or the check as JSON on standard output')
@@ -278,7 +278,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
 
   cli
     .command('preview [dir]', 'Preview the static production brand book build')
-    .option('-p, --port <port>', 'Port number to listen on (default: the port in blazon.config.ts, else 3000)')
+    .option('-p, --port <port>', 'Port number to listen on (default: the port in blazon.json, else 3000)')
     .option('--strict-port', 'Exit 2 when the port is in use, instead of taking the next free one')
     .option('--host [address]', 'Listen on this address, or on every network interface with no address (default: localhost only)')
     .action(async (dir?: string, options?: { port?: number; strictPort?: boolean; host?: string | boolean }) => {

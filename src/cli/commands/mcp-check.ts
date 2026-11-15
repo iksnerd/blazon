@@ -11,9 +11,9 @@ import { printJson } from '../read.js';
 /** The longest the whole handshake may take before the server is killed. */
 export const HANDSHAKE_TIMEOUT_MS = 30_000;
 
-/** What the check says before anything else: the server compiles the brand, and a brand's config is code. */
+/** What the check says before anything else: the server compiles the brand, and a compile runs the plugins the brand's config names. */
 export const TRUST_NOTICE =
-  'This check starts blazon-mcp on the brand folder, and reading a brand runs its blazon.config as code with your permissions. Check only a brand folder you trust.';
+  'This check starts blazon-mcp on the brand folder, and compiling a brand runs the plugins its blazon.json names, with your permissions. Check only a brand folder you trust.';
 
 /** One line of the answer. `advisory` marks a finding that does not make the check fail. */
 export interface McpCheck {

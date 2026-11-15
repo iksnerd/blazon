@@ -54,7 +54,7 @@ export interface ShadcnEntry {
   token: string;
   /** Its value in the default context, as CSS */
   value: string;
-  /** `theme`: derived from a theme role (named in `role`). `config`: set by `shadcn` in blazon.config.ts */
+  /** `theme`: derived from a theme role (named in `role`). `config`: set by `shadcn` in blazon.json */
   from: 'theme' | 'config';
   role?: ThemeRole;
 }

@@ -29,7 +29,7 @@ describe('CLI & End-to-End Workflow', () => {
     for (const page of ['02-logo', '04-type', '05-form', '06-layout', '07-icons', '09-social']) {
       expect(fs.existsSync(path.join(tempDir, `docs/${page}.md`))).toBe(true);
     }
-    expect(fs.existsSync(path.join(tempDir, 'blazon.config.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(tempDir, 'blazon.json'))).toBe(true);
   });
 
   it('names the brand book after the project folder', async () => {
@@ -55,11 +55,11 @@ describe('CLI & End-to-End Workflow', () => {
   it('keeps an existing config as it is', async () => {
     const dir = path.join(tempDir, 'kept-brand');
     fs.mkdirSync(dir);
-    const own = "export default { title: 'Blazon Brand Book' };\n";
-    fs.writeFileSync(path.join(dir, 'blazon.config.ts'), own);
+    const own = '{"title": "Blazon Brand Book"}\n';
+    fs.writeFileSync(path.join(dir, 'blazon.json'), own);
     await runInit(dir);
 
-    expect(fs.readFileSync(path.join(dir, 'blazon.config.ts'), 'utf-8')).toBe(own);
+    expect(fs.readFileSync(path.join(dir, 'blazon.json'), 'utf-8')).toBe(own);
   });
 
   it('should compile tokens and emit theme.css and tokens.ts', async () => {

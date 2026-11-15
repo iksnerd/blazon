@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { BONE, contrast, GRAPHITE } from './palette.js';
 
 // The token names `blazon init` writes: the starter is blazon's own brand book, so they are blazon's (surface.*, text.*,
@@ -87,20 +88,17 @@ export function setLabelInk(tree: Json, hex: string, ref: string, pairAlways = f
   return { hints, label: useBone ? 'bone' : 'graphite' };
 }
 
-/** The config's `logo:` entry, one line or a block. */
-export const LOGO_ENTRY = /^(\s*)logo: (?:\{[^}]*\}|[^{\n]*),$/m;
-/** The config's `fonts:` list, one line or several. */
-export const FONTS_ENTRY = /^(\s*)fonts: \[[^\]]*\],$/m;
+/** Reads a JSON file as an object. */
+export const readJson = (file: string): Json => JSON.parse(fs.readFileSync(file, 'utf-8')) as Json;
+/** Writes an object as JSON the way every file blazon writes is: two-space indent, a final newline. */
+export const writeJson = (file: string, value: unknown): void => fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 
 /**
- * The config's `fonts:` list with these stylesheets, and the starter's own font files (`{ family, file }` entries) kept: a brand that sets
+ * The config's `fonts` list with these stylesheets first, and the starter's own font files (`{ family, file }` entries) kept: a brand that sets
  * its display and body fonts has not set the mono one, and the file in `fonts/` is the font that token names.
  */
-export function withFontStylesheets(config: string, urls: string[]): string {
-  return config.replace(FONTS_ENTRY, (match, indent: string) => {
-    const files = match.match(/\{[^}]*\}/g) ?? [];
-    return `${indent}fonts: [${[...urls.map((url) => JSON.stringify(url)), ...files].join(', ')}],`;
-  });
+export function withFontStylesheets(fonts: unknown, urls: string[]): unknown[] {
+  return [...urls, ...(Array.isArray(fonts) ? fonts.filter((entry) => typeof entry === 'object' && entry !== null) : [])];
 }
 
 /** The files of blazon's own logo, which a brand's logo replaces: the sidecar of the first holds the rules the starter has. */

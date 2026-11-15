@@ -6,7 +6,7 @@ import { artworkSize } from './measure.js';
 import { finding } from '../checker/catalogue.js';
 import { compareText } from '../order.js';
 
-// The `assets` block of blazon.config.ts (RFC 0001 §11): settings for asset categories. A category is still
+// The `assets` block of blazon.json (RFC 0001 §11): settings for asset categories. A category is still
 // a folder of `assets/`; the block adds a label, an order, a description, an extra folder and rules.
 
 const FIELDS = ['label', 'order', 'description', 'dir', 'rules', 'notSpecified', 'source', 'local', 'experimental', 'reference'];

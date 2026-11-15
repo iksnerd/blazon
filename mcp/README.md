@@ -6,7 +6,7 @@ The tools are read-only. None of them writes a file or builds the brand. The man
 
 ## Trust
 
-`--brand` must be a folder you trust. Reading a brand loads its `blazon.config.ts` (or `.js`, `.mjs`) as code: blazon imports it with Vite's `runnerImport` (`src/core/config/index.ts`), so a brand folder can run any code as your user. The server gives the blazon child only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `NODE_*`, `BLAZON_*`, `NO_COLOR`, `SystemRoot`, `windir`, `COMSPEC`, `PATHEXT`), so tokens and cloud keys in the client's environment do not reach that code. That limits the damage; it does not make an untrusted brand safe.
+`--brand` must be a folder you trust. Reading a brand reads its `blazon.json` as data, but compiling one starts the plugins that file names, as child processes with your permissions, so a brand folder can run code as your user. The server gives the blazon child only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `BLAZON_*`, `NO_COLOR`, `SystemRoot`, `windir`, `COMSPEC`, `PATHEXT`), so tokens and cloud keys in the client's environment do not reach those plugins. That limits the damage; it does not make an untrusted brand safe.
 
 ## Tools
 

@@ -18,7 +18,7 @@ export function getTemplateDir(): string {
   for (;;) {
     // The example first: a `template/` left in a checkout by `npm pack` must not shadow the source
     for (const candidate of [path.join(dir, 'examples', 'blazon'), path.join(dir, 'template')]) {
-      if (fs.existsSync(path.join(candidate, 'blazon.config.ts'))) return candidate;
+      if (fs.existsSync(path.join(candidate, 'blazon.json'))) return candidate;
     }
     const parent = path.dirname(dir);
     if (parent === dir) return path.resolve(process.cwd(), 'examples', 'blazon');
@@ -26,23 +26,18 @@ export function getTemplateDir(): string {
   }
 }
 
-const OMIT = /^[ \t]*\/\/ starter:omit-start.*\n([\s\S]*?)^[ \t]*\/\/ starter:omit-end[ \t]*\n/m;
+/** The plugins a new book enables: the ones that need Node only. The example lists more, and a new book adds them by name. */
+const STARTER_PLUGINS = ['blazon.copy'];
 
 /**
- * The example's config as a new book's: the block between `starter:omit-start` and `starter:omit-end` is the plugins that
- * draw with Google Chrome. It is kept as a comment, so a first `blazon build` does not need a browser and the lines to
- * uncomment are there. A config without the markers (the package's already-made one) comes back as it is.
+ * The example's config as a new book's: its `plugins` list cut to the ones in `STARTER_PLUGINS`. The others draw in Google Chrome or
+ * write kits a new book has no use for yet, so a first `blazon build` does not need a browser; JSON has no comments, so they are
+ * left out, and the manual (chapter 12) says how to add one. A config already cut comes back as it is.
  */
 export function starterConfig(source: string): string {
-  return source.replace(OMIT, (_all, block: string) => {
-    const commented = block
-      .split('\n')
-      .map((line) => (line.trim() === '' || /^\s*\/\//.test(line) ? line : line.replace(/^(\s*)/, '$1// ')))
-      .join('\n');
-    // The note sits at the block's own indent, which is the array's when the block is inside the plugins list
-    const indent = /^[ \t]*/.exec(block)![0] || '  ';
-    return `${indent}// These plugins draw in Google Chrome or write kits a new book has no use for yet, so it does not enable them. With Chrome installed (or BLAZON_CHROME set),\n${indent}// uncomment the entries you want.\n${commented}`;
-  });
+  const config = JSON.parse(source) as { plugins?: { name: string }[] };
+  if (Array.isArray(config.plugins)) config.plugins = config.plugins.filter((entry) => STARTER_PLUGINS.includes(entry.name));
+  return `${JSON.stringify(config, null, 2)}\n`;
 }
 
 /** The starter's files, as paths relative to its folder. */
@@ -63,7 +58,7 @@ export function copyStarter(dest: string, template: string = getTemplateDir()): 
       continue;
     }
     fs.mkdirSync(path.dirname(to), { recursive: true });
-    if (rel === 'blazon.config.ts') fs.writeFileSync(to, starterConfig(fs.readFileSync(path.join(template, rel), 'utf-8')));
+    if (rel === 'blazon.json') fs.writeFileSync(to, starterConfig(fs.readFileSync(path.join(template, rel), 'utf-8')));
     else fs.copyFileSync(path.join(template, rel), to);
     written.push(to);
   }
