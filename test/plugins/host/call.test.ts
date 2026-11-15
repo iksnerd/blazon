@@ -223,17 +223,18 @@ describe('the environment', () => {
     }
   });
 
-  it('is only what the host has set of PATH, HOME, LANG and TMPDIR, plus what the manifest lists', async () => {
+  it('is only PATH, plus the variables the host passes on', async () => {
     process.env.PATH = '/usr/bin:/bin';
     process.env.HOME = '/home/someone';
     delete process.env.LANG;
     process.env.OTHER = 'leaks';
-    const result = await run({ program: program(tempDir(), '#!/bin/sh\n/usr/bin/env\n'), timeout: 5 });
+    const result = await run({ program: program(tempDir(), '#!/bin/sh\n/usr/bin/env\n'), timeout: 5, env: { GRANTED: 'yes' } });
     const lines = result.stdout.toString().split('\n');
     expect(result.answered).toBe(true);
     expect(lines).toContain('PATH=/usr/bin:/bin');
-    expect(lines).toContain('HOME=/home/someone');
-    expect(lines.some((line) => line.startsWith('LANG=') || line.startsWith('OTHER='))).toBe(false);
+    expect(lines).toContain('GRANTED=yes');
+    // HOME is set in this process and is not the host's to give: a plugin that needs it asks, and the operator approves
+    expect(lines.some((line) => line.startsWith('HOME=') || line.startsWith('LANG=') || line.startsWith('OTHER='))).toBe(false);
   });
 });
 

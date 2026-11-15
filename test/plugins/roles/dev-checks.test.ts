@@ -244,7 +244,7 @@ describe('DevChecks', () => {
       const checks = new DevChecks(installed.cwd, { env: { ...process.env, REQUEST_COPY: copy } });
       await checks.check(data, installed.config);
       expect(JSON.parse(fs.readFileSync(copy, 'utf-8')).options).toEqual({ headingFont: 'Inter' });
-      await checks.check(data, { ...installed.config, plugins: [{ name: 'acme.a', options: { headingFont: 'Lora' } }] });
+      await checks.check(data, { ...installed.config, plugins: [{ name: 'acme.a', options: { headingFont: 'Lora' }, env: ['REQUEST_COPY'] }] });
       expect(JSON.parse(fs.readFileSync(copy, 'utf-8')).options).toEqual({ headingFont: 'Lora' });
     });
 

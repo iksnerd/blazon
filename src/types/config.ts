@@ -8,6 +8,8 @@ export interface PluginConfig {
   /** The instance id (RFC 0014): what this entry is called when the plugin is listed more than once. Default: `name`. Unique in the list; names the entry's output folder and its breaker */
   as?: string;
   options?: Record<string, unknown>;
+  /** The environment variables the operator lets this plugin have. A plugin starts with an empty environment; it gets a variable only when its manifest lists the name in `env` and this list approves it (RFC 0002 section 2) */
+  env?: string[];
 }
 
 export interface BlazonConfig {

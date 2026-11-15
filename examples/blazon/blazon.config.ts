@@ -70,18 +70,20 @@ export default defineConfig({
         skip: ['11-voice.md'],
       },
     },
+    // A plugin starts with an empty environment. `env` approves the variables its manifest lists: without it, blazon refuses to start a plugin whose listed variable is set.
     // starter:omit-start Mostly needs Google Chrome, and these are kits a new book has no use for yet, so `blazon init` leaves them commented out.
     // Favicons and app icons from the folded-page mark (logos/blazon-mark, lockup "mark"), with previews and a Favicons page. Listed before the deck so the deck has a Favicons part.
-    { name: 'blazon.favicons', options: { ground: 'color.ink.graphite', ink: '#F2F0EB', favicon: '#FF5A1F', share: { app: 0.43, favicon: 0.88 } } },
+    { name: 'blazon.favicons', env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'], options: { ground: 'color.ink.graphite', ink: '#F2F0EB', favicon: '#FF5A1F', share: { app: 0.43, favicon: 0.88 } } },
     // Logo files from the logo rules: a clear-space sheet (SVG and PNG) for each logo that states a clearSpace.
-    { name: 'blazon.logo-kit' },
+    { name: 'blazon.logo-kit', env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'] },
     // The deck: `blazon build` writes dist/tokens/blazon.brand-deck/brand-deck.pdf, drawn in Google Chrome (or the browser
     // BLAZON_CHROME names) by the plugin blazon ships, found by its name alone.
-    { name: 'blazon.brand-deck' },
+    { name: 'blazon.brand-deck', env: ['BLAZON_CHROME', 'BLAZON_DECK_FONTS', 'HOME', 'TMPDIR'] },
     // Social cards: `blazon build` writes dist/tokens/blazon.social-cards/launch.png and post.png (1200x630 and 1080x1080,
     // the formats in tokens/social.json), from the brand's type, colors and logo and the aurora background.
     {
       name: 'blazon.social-cards',
+      env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'],
       options: {
         cards: [
           { id: 'launch', format: 'horizontal', background: 'backgrounds/aurora', headline: 'Say it in one line.', subline: 'A brand book that checks itself.' },
@@ -90,7 +92,7 @@ export default defineConfig({
       },
     },
     // The outside kit: one folder and one zip for a journalist, partner or agency (logos, colors, fonts, the one-page PDF).
-    { name: 'blazon.press-kit' },
+    { name: 'blazon.press-kit', env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'] },
     // Native token files for apps: Android resources, an iOS Swift file with an asset catalog and Jetpack Compose Kotlin. Node only.
     { name: 'blazon.platform-tokens' },
     // An editable PowerPoint template: the brand's theme, a slide master and five layouts, with the logo placed as its sidecar says. Node only.

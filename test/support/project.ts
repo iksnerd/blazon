@@ -37,7 +37,7 @@ export function tempProject(files: Record<string, unknown> = {}): string {
 }
 
 /** A plugin a test allows by name, with its options as data (written as JSON) or as TypeScript source (`optionsSource`) when they need code. */
-export type PluginEntry = string | { name: string; options?: unknown; optionsSource?: string };
+export type PluginEntry = string | { name: string; options?: unknown; optionsSource?: string; env?: string[] };
 
 /**
  * The plugins a test wants in a new project: `'none'` (the default) allows no plugin, `'starter'` keeps the list the starter was made with
@@ -48,7 +48,7 @@ export type StarterPlugins = 'none' | 'starter' | PluginEntry[];
 const entrySource = (entry: PluginEntry): string => {
   if (typeof entry === 'string') return `{ name: '${entry}' }`;
   const options = entry.optionsSource ?? (entry.options === undefined ? undefined : JSON.stringify(entry.options));
-  return `{ name: '${entry.name}'${options === undefined ? '' : `, options: ${options}`} }`;
+  return `{ name: '${entry.name}'${options === undefined ? '' : `, options: ${options}`}${entry.env === undefined ? '' : `, env: ${JSON.stringify(entry.env)}`} }`;
 };
 
 /**

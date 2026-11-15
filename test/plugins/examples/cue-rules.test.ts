@@ -230,7 +230,7 @@ async function project(rules: string): Promise<string> {
   const pin = blazon(root, 'plugin', 'pin', 'plugins/blazon.cue-rules', '--name', NAME);
   expect(pin.status, output(pin)).toBe(0);
   const config = path.join(root, 'blazon.config.ts');
-  const text = fs.readFileSync(config, 'utf-8').replace('export default defineConfig({', `export default defineConfig({\n  plugins: [{ name: '${NAME}', options: { rules: readFileSync('rules.cue', 'utf-8') } }],`);
+  const text = fs.readFileSync(config, 'utf-8').replace('export default defineConfig({', `export default defineConfig({\n  plugins: [{ name: '${NAME}', env: ['BLAZON_CUE'], options: { rules: readFileSync('rules.cue', 'utf-8') } }],`);
   fs.writeFileSync(config, `import { readFileSync } from 'node:fs';\n${text}`);
   return root;
 }

@@ -74,7 +74,7 @@ describe('the request', () => {
   });
 
   it('declares the build role, a version and the one variable it reads', () => {
-    expect(MANIFEST).toEqual({ v: 2, roles: ['build'], title: 'Social cards', description: expect.any(String), version: '1.0.0', timeout_ms: 60000, env: ['BLAZON_CHROME'] });
+    expect(MANIFEST).toEqual({ v: 2, roles: ['build'], title: 'Social cards', description: expect.any(String), version: '1.0.0', timeout_ms: 60000, env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'] });
     expect(MANIFEST.description.length).toBeLessThanOrEqual(160);
   });
 });

@@ -17,13 +17,13 @@ describe('the example brands draw a deck', () => {
   for (const name of EXAMPLES) {
     it.skipIf(!has(name))(`${name} lists blazon.brand-deck among its plugins`, async () => {
       const config = await loadConfig(exampleDir(name));
-      expect(config.plugins).toContainEqual({ name: 'blazon.brand-deck' });
+      expect(config.plugins).toContainEqual(expect.objectContaining({ name: 'blazon.brand-deck' }));
     });
   }
 
   it.skipIf(!has('auth0'))('auth0 also prints its brand book, as a PDF and a PowerPoint file, with blazon.print-book', async () => {
     const config = await loadConfig(exampleDir('auth0'));
-    expect(config.plugins).toEqual([{ name: 'blazon.brand-deck' }, { name: 'blazon.print-book' }]);
+    expect(config.plugins).toEqual([expect.objectContaining({ name: 'blazon.brand-deck' }), expect.objectContaining({ name: 'blazon.print-book' })]);
     // by name alone, as a company would: blazon ships it, so the example has no link to it in .blazon/plugins
     expect(fs.existsSync(path.join(exampleDir('auth0'), '.blazon/plugins/blazon-blazon.print-book'))).toBe(false);
     const shipped = findShipped(shippedDirectory(), 'blazon.print-book');

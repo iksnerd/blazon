@@ -43,9 +43,9 @@ describe("the starter's config", () => {
     expect(starter).toMatch(/^\s*plugins: \[/m);
     expect(starter).toMatch(/^\s*name: 'blazon\.copy',/m);
     expect(starter).not.toMatch(/^\s*name: 'blazon\.social-cards',/m);
-    expect(starter).not.toMatch(/^\s*\{ name: 'blazon\.brand-deck' \},/m);
+    expect(starter).not.toMatch(/^\s*\{ name: 'blazon\.brand-deck',/m);
     expect(starter).toMatch(/\/\/\s+name: 'blazon\.social-cards',/);
-    expect(starter).toMatch(/\/\/\s+\{ name: 'blazon\.brand-deck' \},/);
+    expect(starter).toMatch(/\/\/\s+\{ name: 'blazon\.brand-deck',/);
     expect(starter).not.toContain('starter:omit');
     expect(starter).toContain('Google Chrome');
     expect(starter).toMatch(/^ {4}\/\/ These plugins draw in Google Chrome/m); // at the indent of the entries it explains

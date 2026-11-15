@@ -4,6 +4,8 @@
 
 Blazon's package carries plugins of its own. To use one, allow it by name in `blazon.config.ts`; how blazon finds and trusts a shipped plugin is in [Plugins](12-plugins.md#plugins-that-ship-with-blazon). This chapter says what each one writes and how to configure it.
 
+**Variables.** A shipped plugin starts with an empty environment like any other, and the config approves each variable its manifest lists, in the `env` of its entry ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The seven plugins that draw in Chrome (`blazon.brand-deck`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards`) list `BLAZON_CHROME`, `HOME` and `TMPDIR`, and `blazon.brand-deck` also `BLAZON_DECK_FONTS`. `blazon.copy`, `blazon.office-template` and `blazon.platform-tokens` list none. The snippets below leave `env` out to stay short; without it a set `HOME` stops the plugin with a message that says what to add.
+
 ## The plugins
 
 ### blazon.brand-deck
@@ -11,7 +13,7 @@ Blazon's package carries plugins of its own. To use one, allow it by name in `bl
 `blazon.brand-deck` draws the brand as a PDF deck of 16:9 slides, `brand-deck.pdf` in its `out_dir`: the cover and contents, each logo with its clear space and rules, the palette with its print values, the gradients, the typefaces and type scale, the brand book's pages with the asset slides and figure grids their directives list, and the Favicons part. It has the `build` role. Drawing needs Google Chrome on the computer (or `BLAZON_CHROME`), as `blazon.print-book` does. It is TypeScript on blazon's own npm dependencies, so it needs no Python, no uv and no network, and it runs offline on a page made in memory. Chapter 11 says what each slide shows and how the deck fits an asset's text to its slide ([Drawing a deck](11-brand-json.md#drawing-a-deck)).
 
 ```ts
-plugins: [{ name: 'blazon.favicons' }, { name: 'blazon.brand-deck', options: { skip: ['favicons-supplied'] } }],
+plugins: [{ name: 'blazon.favicons', env: ['BLAZON_CHROME', 'HOME', 'TMPDIR'] }, { name: 'blazon.brand-deck', env: ['BLAZON_CHROME', 'BLAZON_DECK_FONTS', 'HOME', 'TMPDIR'], options: { skip: ['favicons-supplied'] } }],
 ```
 
 | Option | Value |

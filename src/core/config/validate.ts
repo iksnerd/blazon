@@ -123,7 +123,8 @@ function customSections(value: unknown): { kept: unknown[]; mistakes: Mistake[] 
   return { kept, mistakes };
 }
 
-const PLUGIN_FIELDS = ['name', 'as', 'options'];
+const PLUGIN_FIELDS = ['name', 'as', 'options', 'env'];
+const ENV_NAME = /^[A-Z_][A-Z0-9_]*$/;
 /** Fields that name where a plugin is. The operator's allowlist never does: a plugin is found by its name or pinned in the lock file. */
 const PLUGIN_LOCATIONS = ['command', 'path', 'program', 'digest', 'pin', 'entry', 'url'];
 const PLUGIN_NAME_MESSAGE = 'must be a plugin name: dotted lowercase words such as acme.house-style';
@@ -142,7 +143,7 @@ function notAnObject(where: string, entry: unknown): string {
 
 /** The entries of `plugins` that are valid, and one mistake for each that is not. */
 function plugins(value: unknown): { kept: unknown[]; mistakes: Mistake[] } {
-  if (!Array.isArray(value)) return { kept: [], mistakes: [{ message: 'plugins must be a list of {"name": plugin name, "options"?: object}' }] };
+  if (!Array.isArray(value)) return { kept: [], mistakes: [{ message: 'plugins must be a list of {"name": plugin name, "options"?: object, "env"?: [variable names]}' }] };
   const kept: unknown[] = [];
   const mistakes: Mistake[] = [];
   const seen = new Set<string>();
@@ -177,6 +178,8 @@ function plugins(value: unknown): { kept: unknown[]; mistakes: Mistake[] } {
       );
     if (seen.has(id)) return wrong(entry.as === undefined ? `${where}.name "${id}" is used twice` : `${where}.as "${id}" is used twice`);
     if (entry.options !== undefined && !isObject(entry.options)) return wrong(`${where}.options must be an object`);
+    if (entry.env !== undefined && (!Array.isArray(entry.env) || entry.env.some((name) => typeof name !== 'string' || !ENV_NAME.test(name))))
+      return wrong(`${where}.env must be a list of variable names (capital letters, digits and underscores), the ones this plugin may be given`);
     seen.add(id);
     kept.push(entry);
   });

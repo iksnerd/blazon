@@ -24,6 +24,11 @@ export interface CheckConfig {
   validate?: boolean;
   /** Values for the variables the manifest lists, besides the secret ones, which get a random value of their own */
   env?: Readonly<Record<string, string>>;
+  /**
+   * What the project's config approves for this plugin, one item for each of its entries (`key` names it, such as `plugins[0].env`). Absent when
+   * there is no project to ask. Case 10 fails for a name the manifest lists that an entry does not approve, since blazon would not start the plugin
+   */
+  approvals?: readonly { key: string; approved: readonly string[] }[];
   /** A valid request for each role. Case 4 sends it with the canary set; without one it sends only the inputs that fail */
   requests?: Readonly<Record<string, Uint8Array | string>>;
   /**
@@ -110,6 +115,7 @@ export async function check(cfg: CheckConfig): Promise<CheckResult[]> {
     else results.push(result(5, '--validate with input that is not JSON exits 2', role, { skipped: true, detail: 'the role has no validation' }));
   }
 
+  if (cfg.approvals) results.push(approval(cfg.approvals, manifest));
   results.push(...(await noninterference(cfg, manifest, env, canaries)));
   if (cfg.roleCases) {
     const call: RoleCall = (stdin, stdoutLimit) => run({ program: cfg.program, stdin, env, timeout: timeout(cfg, manifest), stdoutLimit, stderrKeep: CHECK_STDERR_KEEP });
@@ -219,6 +225,18 @@ async function dataCanary(cfg: CheckConfig, manifest: Manifest, env: Record<stri
     if (answer.stderr.includes(form)) leaks.push('request data is in stderr');
   }
   return leaks.length > 0 ? result(4, name, role, { detail: [...new Set(leaks)].join('; ') }) : result(4, name, role, { passed: true });
+}
+
+/** Case 10: every variable the manifest lists is approved in each config entry of the plugin. */
+function approval(approvals: NonNullable<CheckConfig['approvals']>, manifest: Manifest): CheckResult {
+  const name = 'every variable the manifest lists is approved in the project config';
+  if (manifest.env.length === 0) return result(10, name, '', { skipped: true, detail: 'the manifest lists no variable' });
+  if (approvals.length === 0) return result(10, name, '', { skipped: true, detail: 'the plugin is not in the plugins list of this project' });
+  const missing = approvals.flatMap(({ key, approved }) => {
+    const names = manifest.env.filter((variable) => !approved.includes(variable));
+    return names.length > 0 ? [`${key} does not approve ${names.join(', ')}`] : [];
+  });
+  return missing.length > 0 ? result(10, name, '', { detail: `${missing.join('; ')}; blazon does not start the plugin while a listed variable is set and unapproved` }) : result(10, name, '', { passed: true });
 }
 
 function checkEnv(manifest: Manifest, given: Readonly<Record<string, string>>, canaries: Readonly<Record<string, string>>): Record<string, string> {
