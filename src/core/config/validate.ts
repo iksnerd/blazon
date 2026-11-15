@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { instanceIdTooLong, isPluginName } from '../plugin-name.js';
+import { instanceIdTooLong, isPluginName, isTokenOutputName } from '../plugin-name.js';
 import { shippedNames } from '../shipped-names.js';
 import { closest } from '../suggest.js';
 import { SHADCN_VARIABLES, STANDARD_LOGO_LOCKUPS, STANDARD_SECTION_IDS, STANDARD_USAGE_ROLES, type Finding, type BlazonConfig } from '../../types/index.js';
@@ -171,6 +171,10 @@ function plugins(value: unknown): { kept: unknown[]; mistakes: Mistake[] } {
       if (long) return wrong(`${where}.name ${long}, so give the entry a shorter "as"`);
     }
     const id = entry.as ?? entry.name;
+    if (isTokenOutputName(id))
+      return wrong(
+        `${where}.${entry.as === undefined ? 'name' : 'as'} "${id}" is a file blazon writes in tokensOutDir, where the instance's output folder would go. Give it another "as"`,
+      );
     if (seen.has(id)) return wrong(entry.as === undefined ? `${where}.name "${id}" is used twice` : `${where}.as "${id}" is used twice`);
     if (entry.options !== undefined && !isObject(entry.options)) return wrong(`${where}.options must be an object`);
     seen.add(id);

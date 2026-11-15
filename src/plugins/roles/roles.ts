@@ -9,7 +9,7 @@ import { RunBreakers, type Gate } from './gate.js';
 import { MANIFEST_TIMEOUT } from '../wire/limits.js';
 import { LOCK_FILE, pinFor, readLock, type Lock } from '../pins/lock.js';
 import { ManifestError, decodeManifest, manifestTimeout, type Manifest } from '../wire/manifest.js';
-import { instanceIdTooLong, isPluginName } from '../../core/plugin-name.js';
+import { instanceIdTooLong, isPluginName, isTokenOutputName, pluginNameOfEntry } from '../../core/plugin-name.js';
 import { BLAZON_CORE_PROFILE, BLAZON_PROFILE, roleRuntime } from '../wire/profile.js';
 import { scrub, scrubPlain } from '../host/scrub.js';
 import { findShipped, shippedDirectory, type Shipped } from '../pins/shipped.js';
@@ -162,7 +162,9 @@ export class PluginRun {
     const refused: Target[] = [];
     for (const given of this.options.named ?? []) {
       const program = path.resolve(this.cwd, given);
-      const name = path.basename(program).replace(/^blazon-/, '');
+      // `blazon-<name>` or `blazon-<name>.🔌`: the name is what lies between `blazon-` and the final extension (RFC 0005 section 3.6)
+      const file = path.basename(program);
+      const name = pluginNameOfEntry(file) ?? file.replace(/^blazon-/, '');
       const first = named.get(name);
       if (!isPluginName(name)) refused.push({ name: path.basename(program), id: path.basename(program), from: `--plugin ${program}`, shown: false, options: {}, problem: NOT_A_PROGRAM });
       else if (first !== undefined && first !== program)
@@ -180,6 +182,7 @@ export class PluginRun {
     const checked = targets.map((target): Target => {
       const long = instanceIdTooLong(target.id);
       if (long) return { ...target, problem: `the id ${long}` };
+      if (isTokenOutputName(target.id)) return { ...target, problem: `the id ${target.id} of ${target.from} is a file blazon writes in tokensOutDir, where the instance's output folder would go. Give it another "as"` };
       const owner = owners.get(target.id);
       if (owner)
         return { ...target, problem: `the id ${target.id} of ${target.from} is already the id of ${owner.from} (an instance of ${owner.name}): two instances with one id would share the output folder and the breaker. Give one of them another "as"` };
@@ -271,8 +274,14 @@ export class PluginRun {
 
     // The manifest call: what the plugin is, before anything else is asked of it.
     const manifestAnswer = await run(this.callFor(located, { args: [`--${BLAZON_PROFILE.host}-manifest`], timeout: MANIFEST_TIMEOUT }));
-    // A manifest call that broke counts as a break; one that answered says nothing, so it does not reset a count
-    if (runtime.breaker && !manifestAnswer.answered) this.gate.record(id, 'break');
+    // A manifest call is a call like any other (RFC 0002 section 2): one that broke, exited 1 or printed a manifest blazon cannot load is a
+    // break; exit 2 is the plugin saying it cannot answer, which counts for a run's breaker and not for the dev cooldown. One that answered
+    // with a manifest says nothing, so it does not reset a count.
+    const ended = (how: 'break' | 'exit-2') => {
+      if (runtime.breaker) this.gate.record(id, how);
+    };
+    if (!manifestAnswer.answered || manifestAnswer.code === 1) ended('break');
+    else if (manifestAnswer.code === 2) ended('exit-2');
     // The manifest call is given no variables, so no labelled value can be in its stderr; scrub every one this process holds all the same
     const held = Object.entries(this.env).flatMap(([variable, value]) => (value && SECRET_PREFIXES.some((prefix) => variable.startsWith(prefix)) ? [value] : []));
     if (!manifestAnswer.answered) return [failed(`the manifest call did not exit 0 (${manifestAnswer.breakReason})${tailOf(manifestAnswer, held)}`, breakFix(manifestAnswer.cause, name, pinPath))];
@@ -281,6 +290,7 @@ export class PluginRun {
     try {
       manifest = decodeManifest(manifestAnswer.stdout, BLAZON_CORE_PROFILE);
     } catch (err) {
+      ended('break');
       return [failed(`its manifest is not one blazon loads: ${err instanceof ManifestError ? err.message : String(err)}`, PROTOCOL_FIX)];
     }
     if (!manifest.roles.includes(role)) return [];

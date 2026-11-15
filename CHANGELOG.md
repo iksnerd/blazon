@@ -99,6 +99,9 @@ Pre-release. Not yet published to npm.
 
 ### Fixed
 
+- A plugin whose manifest call exits 1 or 2, or prints a manifest blazon cannot load, now counts toward the breaker (three in a row stop it for the run) and, for exit 1 and a bad manifest, starts the dev server's cooldown; before, it was reported every time and never stopped.
+- `--plugin ./bin/blazon-acme.x.🔌` is accepted: the plugin's name is what lies between `blazon-` and the final `.🔌`.
+- A plugin instance id that is a file blazon writes in `tokensOutDir` (`tokens.json`, `theme.css`, `tokens.<modifier>.<context>.json` and the rest) is refused as `config-invalid`; it would have replaced the file with a folder.
 - A plugin's standard error is kept from its end (the last 8 KB), not its start, so the "last lines of standard error" a failed plugin shows are the last lines it wrote, and a secret that crossed byte 8192 is no longer cut before it is scrubbed.
 - Scrubbing also removes a secret in lowercase percent-encoding, inside the base64 of a longer string (such as Basic auth, at any of the three alignments) and as a JSON string escape (`\uXXXX`, `\"`, Go's `<`).
 - A plugin that runs out of time, or prints too much, is sent SIGTERM and killed 2 seconds later instead of at once, so one that started Chrome can close it.
