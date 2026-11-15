@@ -35,8 +35,9 @@ export interface ResolvedCategories {
 
 /**
  * Reads and checks the `assets` block. Each problem is a finding on its key. The folders are resolved
- * against the project and may sit outside it: the config is trusted code, and only image files inside a
- * folder are ever served or copied.
+ * against the project and may sit outside it, which is the one path of the config that may leave the project (a shared
+ * folder in a monorepo): blazon.json is plain JSON and is never run, and only image files inside the folder are ever served or
+ * copied, never through a link that leaves it.
  */
 export function resolveCategories(block: Record<string, unknown> | undefined, cwd: string): ResolvedCategories {
   const result: ResolvedCategories = { configs: Object.create(null), roots: Object.create(null), problems: [] };

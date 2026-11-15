@@ -10,6 +10,7 @@ import { directiveFindings } from './docs/directives.js';
 import { fontMetaFindings } from './checker/font-meta.js';
 import { CONFIGURED_LOGO_VARIANTS, logoRuleFindings } from './checker/logo-rules.js';
 import { outputDirProblems } from './outputs.js';
+import { outsideProject } from './inputs.js';
 import { resolveConfig } from './config/validate.js';
 import { resolveVocabulary } from './config/vocabulary.js';
 import { configuredSections, missingSections } from './docs/sections.js';
@@ -55,6 +56,9 @@ function outputDirFindings(config: BlazonConfig, cwd: string): Finding[] {
 export async function compileBlazonData(input: BlazonConfig, cwd: string = process.cwd()): Promise<BlazonData> {
   // A key that is wrong is reported and left out, so the rest of the compile never sees it
   const { config, problems: configProblems } = resolveConfig(input as unknown as Record<string, unknown>);
+  // A folder or resolver outside the project is reported and not read: nothing in it reaches the data
+  const outside = outsideProject(config, cwd);
+  const refused = (key: string) => outside.some((f) => f.path === key);
   const tokensDirPath = path.resolve(cwd, config.tokensDir);
   const docsDirPath = path.resolve(cwd, config.docsDir);
   const assetsDirPath = path.resolve(cwd, config.assetsDir);
@@ -62,9 +66,12 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
   // 1. Tokens: through the DTCG resolver document when there is one, else every file in tokensDir
   const resolverPath = path.resolve(cwd, config.resolver ?? DEFAULT_RESOLVER_FILE);
   const resolverExists = fs.existsSync(resolverPath);
-  const compiled = resolverExists
-    ? compileWithResolver(resolverPath, cwd, config.cssPrefix, config.contextSelectors)
-    : { tokens: resolveTokenTree(loadTokenTree(tokensDirPath, cwd), config.cssPrefix), resolved: [] };
+  const emptyTree = { tokens: [], groupMeta: [], problems: [] };
+  const compiled = refused('resolver')
+    ? { tokens: resolveTokenTree(emptyTree, config.cssPrefix), resolved: [] }
+    : resolverExists
+      ? compileWithResolver(resolverPath, cwd, config.cssPrefix, config.contextSelectors)
+      : { tokens: resolveTokenTree(refused('tokensDir') ? emptyTree : loadTokenTree(tokensDirPath, cwd), config.cssPrefix), resolved: [] };
   const resolvedTokens = compiled.tokens;
   const missingResolver: Finding[] =
     config.resolver && !resolverExists ? [finding('resolver-invalid', { path: config.resolver, message: `resolver ${config.resolver} does not exist` })] : [];
@@ -73,13 +80,18 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
   const { vocabulary, sections } = resolveVocabulary(config);
   const validSections = sections.map((section) => section.id);
   const docProblems: Finding[] = [];
-  const docs = parseDocs(docsDirPath, docProblems, validSections);
+  const docs = refused('docsDir') ? [] : parseDocs(docsDirPath, docProblems, validSections, cwd);
   docProblems.push(...missingSections(docs, configuredSections(config.sections, validSections, docProblems), validSections));
 
   // 3. Assets
   const assetProblems: Finding[] = [];
   const categories = resolveCategories(config.assets, cwd);
-  const assets = scanAssets(assetsDirPath, { tokens: resolvedTokens, problems: assetProblems, extraRoots: categories.roots, lockups: vocabulary.lockups });
+  const assets = scanAssets(refused('assetsDir') ? path.join(cwd, '\0') : assetsDirPath, {
+    tokens: resolvedTokens,
+    problems: assetProblems,
+    extraRoots: categories.roots,
+    lockups: vocabulary.lockups,
+  });
   // An experimental category holds explorations and a reference category holds material kept for comparison: a sidecar's review is data there, and its warnings do not gate the book
   const ungated = ungatedAssetIds(assets, categories.configs);
   assetProblems.splice(0, assetProblems.length, ...assetProblems.filter((f) => !((f.code === 'review-pending' || f.code === 'asset-review-missing') && ungated.has(f.path))));
@@ -152,6 +164,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
     findings: withoutCascade(
       [
         ...configProblems,
+        ...outside,
         ...noTokens,
         ...outputDirFindings(config, cwd),
         ...contextFindings(resolvedTokens, compiled.resolved, vocabulary, [...CONFIGURED_LOGO_VARIANTS, ...assets.logos.map((a) => a.id)]),

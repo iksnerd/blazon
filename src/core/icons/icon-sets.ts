@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { Finding, IconCategory, IconSet, IconSetConfig } from '../../types/index.js';
 import { finding } from '../checker/catalogue.js';
 import { compareText } from '../order.js';
+import { inProject } from '../confine.js';
 
 /** The folder of SVGs and the metadata file for packages blazon knows; any other package states `dir`. */
 const KNOWN_PACKAGES: { match: RegExp; dir: string; categories?: 'tabler' | 'mdi' }[] = [
@@ -67,7 +68,7 @@ function brandCategories(set: IconSetConfig, cwd: string): { map?: Record<string
   if (raw === undefined) return {};
   if (typeof raw === 'string') {
     const file = path.resolve(cwd, raw);
-    if (!isInside(path.resolve(cwd), file)) return { error: `categories ${raw} is outside the project` };
+    if (!inProject(cwd, file)) return { error: `categories ${raw} is outside the project` };
     try {
       raw = JSON.parse(fs.readFileSync(file, 'utf-8'));
     } catch (err) {

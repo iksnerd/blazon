@@ -223,6 +223,7 @@ A new command, which also runs at the start of `blazon build`:
 | `asset-sidecar-orphaned` | warning | A sidecar has no image of the same name beside it. |
 | `asset-unreadable` | error | An asset file cannot be read, so it is left out of the book. |
 | `config-invalid` | error | A key or value in blazon.json is not valid. |
+| `config-path-outside` | error | A path in blazon.json, or a file linked from a brand folder, leads outside the project folder. |
 | `contrast-insufficient` | error | A color pair has less contrast than its level asks for. |
 | `contrast-pair-invalid` | error | A contrast pair names no color tokens or has an unknown level. |
 | `contrast-unknown` | warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
@@ -509,7 +510,7 @@ assets?: Record<string, {
 
 **Reference categories.** `reference: true` says a category holds material that follows the guidelines but is kept for comparison, or was supplied by someone else: card faces extracted unedited from the guidelines, or a favicon set that a third party supplied. It is neither a live asset nor an exploration. `reference` MUST be a boolean, and a category MUST NOT set `experimental` and `reference` to `true` together; either mistake is an `asset-config-invalid` error. For an asset in such a category blazon does not report `review-pending`, `asset-review-missing` or `page-review-pending` (section 4), exactly as for an experimental one, and nothing else about the category changes. `reference` is carried into `BlazonData.assetCategories` and `brand.json` (`categories[].reference`, present only when `true`). The brand book labels the category "Reference" on its page and on every asset a directive draws from it, in every place it labels an experimental one, and lists it, with its file count and apart from the findings, in a Reference section of the Review page. The brand deck skips every reference category. Another deliverable decides for itself; the press kit and the logo kit draw only the `logos` and `partners` categories.
 
-**Extra folders.** `dir` is relative to the project or absolute, and MAY point outside the project: the config is trusted code. Every image under it joins the category, with sidecars beside them, and gets the id `key/name` and the address `brand-assets/<key>/<path inside dir>`, as a file in `assets/<key>/` does. Both are scanned when both exist. The dev server serves, and `blazon build` copies, only image files inside the folder, never through a link that leaves it. The roots are resolved from the config where they are used and are not part of `BlazonData`, so no local path reaches the page.
+**Extra folders.** `dir` is relative to the project or absolute, and MAY point outside the project: it is the one path of the config that may, and only image files inside it are read. Every image under it joins the category, with sidecars beside them, and gets the id `key/name` and the address `brand-assets/<key>/<path inside dir>`, as a file in `assets/<key>/` does. Both are scanned when both exist. The dev server serves, and `blazon build` copies, only image files inside the folder, never through a link that leaves it. The roots are resolved from the config where they are used and are not part of `BlazonData`, so no local path reaches the page.
 
 **Ids.** Two files with one id from different directories are an error (`asset-id-duplicate`): the id would name both. This also catches the case where a file in a subfolder takes its first folder's category and loses the subfolder from its id. One name in two formats in one directory is one asset with one sidecar, and is allowed. Sub-groups for subfolders are left for later; they will need ids to stay stable, which this rule protects.
 
@@ -706,7 +707,7 @@ There is no published version, so there are no external users. Inside the repo:
 
 ## Security considerations
 
-Token and resolver files are local and trusted as much as the repo is. Two points still apply:
+A brand is data that blazon reads, and `blazon.json` names paths. The paths stay inside the project folder (`config-path-outside`, section 4): `tokensDir`, `docsDir`, `assetsDir`, `resolver`, the `logo` files, and `outDir` and `tokensOutDir` in the config file are refused when they, or a link on the way, leave it, and a token file, a page or an icon set's categories file that is a link out is not read. An asset category's `dir` is the one path that may sit outside, and only image files inside it are read. The command line is the operator's: `blazon build -o` may name any folder. Three points still apply:
 
 - Resolver `$ref`s and asset sidecars MUST resolve inside the project root. A `$ref` to `../../` or an absolute path is an error.
 - `blazon.json` is read as JSON and never executed. What can run a program is the `plugins` allowlist it holds (RFC 0002 section 2).

@@ -7,12 +7,13 @@ import { withoutFences } from './directives.js';
 import { pageSections } from './sections.js';
 import { finding } from '../checker/catalogue.js';
 import { compareText } from '../order.js';
+import { inProject, outsideMessage } from '../confine.js';
 
 /**
  * Reads every Markdown page in `docsDir`. A page whose front matter is not valid YAML is left out
  * and reported in `problems`, so `blazon check` fails instead of the page silently losing its metadata.
  */
-export function parseDocs(docsDir: string, problems: Finding[] = [], validSections: readonly SectionId[] = STANDARD_SECTION_IDS): DocItem[] {
+export function parseDocs(docsDir: string, problems: Finding[] = [], validSections: readonly SectionId[] = STANDARD_SECTION_IDS, root: string = path.dirname(docsDir)): DocItem[] {
   if (!fs.existsSync(docsDir)) {
     return [];
   }
@@ -26,6 +27,11 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
 
   for (const file of files) {
     const filePath = path.join(docsDir, file);
+    // A page that is a link to somewhere outside the project is not read
+    if (!inProject(root, filePath)) {
+      problems.push(finding('config-path-outside', { path: file, message: outsideMessage('the page', file) }));
+      continue;
+    }
     try {
       const rawContent = fs.readFileSync(filePath, 'utf-8');
       let parsed: matter.GrayMatterFile<string>;

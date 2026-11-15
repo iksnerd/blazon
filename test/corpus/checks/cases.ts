@@ -242,6 +242,10 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
     fail: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { review: { status: 'needs-review' } }, 'docs/a.md': doc('<!-- blazon:assets logos -->') } },
     near: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { review: { status: 'ok' } }, 'docs/a.md': doc('<!-- blazon:assets logos -->') } },
   },
+  'config-path-outside': {
+    fail: { files: tokens(), config: { docsDir: '../docs-elsewhere' } },
+    near: { files: tokens(), config: { docsDir: './docs' } },
+  },
   'output-dirs-overlap': {
     fail: { files: tokens(), config: { outDir: './tokens' } },
     near: { files: tokens(), config: { outDir: './dist/site' } },

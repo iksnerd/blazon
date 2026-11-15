@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { AssetCatalog, Finding, BlazonConfig, LogoSet } from '../types/index.js';
 import { assetSourcePath, categoryDirs } from './assets/categories.js';
 import { finding } from './checker/catalogue.js';
+import { inProject, outsideMessage } from './confine.js';
 
 const IMAGE_TYPES: Record<string, string> = {
   '.svg': 'image/svg+xml',
@@ -28,6 +29,11 @@ export function loadLogo(config: BlazonConfig, cwd: string, inAbsentLocal: (file
   const read = (file: string | undefined): string | undefined => {
     if (!file) return undefined;
     const full = path.resolve(cwd, file);
+    // Before the file is looked at, so that a path outside the project says nothing about what is there
+    if (!inProject(cwd, full)) {
+      problems.push(finding('config-path-outside', { path: file, message: outsideMessage('the logo', file) }));
+      return undefined;
+    }
     const type = IMAGE_TYPES[path.extname(full).toLowerCase()];
     if (!type || !fs.existsSync(full)) {
       if (!inAbsentLocal(file)) problems.push(finding('logo-missing', { path: file, message: `Logo ${file} is not an image file in the project` }));

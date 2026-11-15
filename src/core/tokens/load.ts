@@ -5,6 +5,7 @@ import { loadTokenDocuments, type TokenDocument } from './merge.js';
 import type { TokenTree } from './walk.js';
 import { jsonErrorLine, stripBom } from './key-lines.js';
 import { finding } from '../checker/catalogue.js';
+import { inProject, outsideMessage } from '../confine.js';
 
 /** Parses a JSON token file into a document, or records why it could not. */
 export function readTokenFile(fullPath: string, name: string, problems: Finding[], shown: string = name): TokenDocument | undefined {
@@ -42,6 +43,11 @@ export function loadTokenTree(tokensDir: string, root: string = path.dirname(tok
     .flatMap((file) => {
       // A document is named by its file's path from the project root, as a resolver source is, so every token says where it is the same way
       const name = path.relative(root, path.join(tokensDir, file)).split(path.sep).join('/');
+      // A file that is a link to somewhere outside the project is not read
+      if (!inProject(root, path.join(tokensDir, file))) {
+        problems.push(finding('config-path-outside', { path: name, file: name, message: outsideMessage('the token file', name) }));
+        return [];
+      }
       return readTokenFile(path.join(tokensDir, file), name, problems) ?? [];
     });
 

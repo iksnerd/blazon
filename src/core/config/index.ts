@@ -5,6 +5,7 @@ import type { BlazonConfig, UserBlazonConfig } from '../../types/index.js';
 import { finding } from '../checker/catalogue.js';
 import { DEFAULT_CONFIG } from './defaults.js';
 import { ConfigError, configName, resolveConfig } from './validate.js';
+import { inProject, outsideMessage } from '../confine.js';
 
 export { DEFAULT_CONFIG };
 export { ConfigError, CONFIG_KEYS, resolveConfig } from './validate.js';
@@ -54,6 +55,14 @@ export async function loadConfig(cwd: string = process.cwd(), overrides?: UserBl
   }
   const configPath = path.resolve(cwd, CONFIG_FILE);
   if (fs.existsSync(configPath)) userConfig = readConfigFile(configPath);
+
+  // blazon empties outDir and writes into both, so a brand's file may not point them outside its folder. What the person running blazon types
+  // (`build -o`, an override) is theirs and is not asked
+  const outputs = (['outDir', 'tokensOutDir'] as const).flatMap((key) => {
+    const as = userConfig[key];
+    return typeof as === 'string' && as !== '' && !inProject(cwd, path.resolve(cwd, as)) ? [finding('config-path-outside', { path: key, message: outsideMessage(key, as) })] : [];
+  });
+  if (outputs.length > 0) throw new ConfigError(configName(configPath), outputs);
 
   // Also check if package.json has a "name" to default the title
   let defaultTitle = DEFAULT_CONFIG.title;

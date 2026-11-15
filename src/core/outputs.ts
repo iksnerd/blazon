@@ -1,37 +1,14 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import type { BlazonConfig } from '../types/index.js';
 import { projectInputs, type Input } from './inputs.js';
+import { canonical, isWithin } from './confine.js';
 
 // Where blazon writes (outDir for the site, tokensOutDir for the code) against where it reads. `blazon build` empties outDir, so an outDir
 // that is or holds an input would delete the brand. An output inside an input folder is read back by the next build as if it were part of
 // the brand. Both are refused before anything is written, by `blazon check` as a finding and by buildSite and emitTokenOutputs as an error,
 // so the command and the public functions give the same guarantee.
 
-/** Whether `child` is `parent` or inside it, by path and not by spelling: `docs/` and `./docs` are one folder, `docs-site` is not inside `docs`. */
-export function isWithin(parent: string, child: string): boolean {
-  const relative = path.relative(parent, child);
-  return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
-}
-
-/**
- * The folder or file a path really is: the existing part of it with its links followed, and the rest as written. A link to an input, or a
- * folder reached through one, is that input, whatever it is called. A path that does not exist yet is compared by the deepest part that does.
- */
-export function canonical(target: string): string {
-  const rest: string[] = [];
-  let current = path.resolve(target);
-  for (;;) {
-    try {
-      return path.join(fs.realpathSync.native(current), ...rest);
-    } catch {
-      const parent = path.dirname(current);
-      if (parent === current) return path.resolve(target);
-      rest.unshift(path.basename(current));
-      current = parent;
-    }
-  }
-}
+export { canonical, isWithin };
 
 const quoted = (name: string, as: string) => `${name} ("${as}")`;
 

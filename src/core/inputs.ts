@@ -1,5 +1,7 @@
 import path from 'node:path';
-import type { BlazonConfig } from '../types/index.js';
+import type { BlazonConfig, Finding } from '../types/index.js';
+import { finding } from './checker/catalogue.js';
+import { inProject, outsideMessage } from './confine.js';
 import { categoryDirs } from './assets/categories.js';
 import { packageDir } from './icons/icon-sets.js';
 import { logoFiles } from './logo.js';
@@ -57,3 +59,15 @@ export const inputFiles = (config: BlazonConfig, cwd: string): string[] =>
   projectInputs(config, cwd)
     .filter((input) => !input.folder)
     .map((input) => input.path);
+
+/**
+ * The folders and the resolver document the config names that lie outside the project folder, by where they really are (a link that leaves
+ * the folder counts), one error each. Asked before a compile reads them, which leaves each one out. A category's own `dir` is not here: it
+ * may name a shared folder (RFC 0001 section 11), and only image files in it are read.
+ */
+export function outsideProject(config: BlazonConfig, cwd: string): Finding[] {
+  const named: [string, unknown][] = [...(['tokensDir', 'docsDir', 'assetsDir'] as const).map((key): [string, unknown] => [key, config[key]]), ['resolver', config.resolver]];
+  return named.flatMap(([key, as]) =>
+    typeof as === 'string' && as !== '' && !inProject(cwd, path.resolve(cwd, as)) ? [finding('config-path-outside', { path: key, message: outsideMessage(key, as) })] : [],
+  );
+}

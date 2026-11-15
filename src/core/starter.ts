@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { inProject } from './confine.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Finding } from '../types/index.js';
@@ -102,7 +103,7 @@ export function starterLogoFindings(cwd: string, logoFiles: string[], template: 
   const starters = filesUnder(path.join(template, 'assets', 'logos')).map((file) => fs.readFileSync(file));
   return logoFiles.flatMap((file) => {
     const full = path.resolve(cwd, file);
-    if (!fs.existsSync(full) || !fs.statSync(full).isFile()) return [];
+    if (!inProject(cwd, full) || !fs.existsSync(full) || !fs.statSync(full).isFile()) return [];
     const bytes = fs.readFileSync(full);
     if (!starters.some((starter) => starter.equals(bytes))) return [];
     const shown = path.relative(cwd, full).split(path.sep).join('/');
