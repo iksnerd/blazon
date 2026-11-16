@@ -4,6 +4,10 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Fixed
+
+- `npm run release` regenerates `docs/stats.json` and runs the docs tests before it commits, and stops without a commit or tag if they fail. The release commit used to keep the old version in `docs/stats.json`, which failed `test/docs/stats.test.ts` at the pre-push hook and in CI on the tag.
+
 ## 0.1.1 (2026-11-16)
 
 ### Added

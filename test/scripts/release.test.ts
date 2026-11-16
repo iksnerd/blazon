@@ -13,8 +13,12 @@ const SCRIPT = path.join(ROOT_DIR, 'scripts/release.mjs');
 
 const git = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, encoding: 'utf-8' });
 
-/** A repository on `branch` with one commit: a package at 0.1.0 whose check script is `check`, and a changelog with notes. */
-function repo(options: { branch?: string; check?: string } = {}): string {
+/**
+ * A repository on `branch` with one commit: a package at 0.1.0 whose check script is `check`, a changelog with notes and a docs/stats.json
+ * that records the version. The `docs:stats` script rewrites that file from package.json and `test:docs` (the script `testDocs` when given)
+ * fails when the file's version is not the package's, as the real ones do.
+ */
+function repo(options: { branch?: string; check?: string; testDocs?: string } = {}): string {
   const dir = tempDir('blazon-release-');
   const run = (...args: string[]) => {
     const result = git(dir, ...args);
@@ -25,7 +29,15 @@ function repo(options: { branch?: string; check?: string } = {}): string {
   run('config', 'user.name', 'Test');
   run('config', 'commit.gpgsign', 'false');
   run('config', 'tag.gpgsign', 'false');
-  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.1.0', scripts: { check: options.check ?? 'true' } }, null, 2) + '\n');
+  const statsJs = "const fs=require('fs');const v=require('./package.json').version;";
+  const scripts = {
+    check: options.check ?? 'true',
+    'docs:stats': `node -e "${statsJs}fs.writeFileSync('docs/stats.json',JSON.stringify({version:v})+'\\n')"`,
+    'test:docs': options.testDocs ?? `node -e "${statsJs}if(require('./docs/stats.json').version!==v){console.error('stale');process.exit(1)}"`,
+  };
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.1.0', scripts }, null, 2) + '\n');
+  fs.mkdirSync(path.join(dir, 'docs'));
+  fs.writeFileSync(path.join(dir, 'docs/stats.json'), '{"version":"0.1.0"}\n');
   fs.writeFileSync(path.join(dir, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n### Added\n\n- a thing\n');
   run('add', '.');
   run('commit', '-q', '-m', 'start');
@@ -105,6 +117,28 @@ describe('refusing to release', () => {
     expect(git(dir, 'tag', '--list').stdout).toBe('');
     expect(JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).version).toBe('0.1.0');
   });
+});
+
+describe('the docs stats', () => {
+  it('are regenerated and recorded in the release commit', () => {
+    const dir = repo();
+    const result = release(dir, '0.2.0');
+    expect(result.status, result.stderr).toBe(0);
+    const files = git(dir, 'show', '--name-only', '--format=', 'HEAD').stdout.split('\n').filter(Boolean).sort();
+    expect(files).toEqual(['CHANGELOG.md', 'docs/stats.json', 'package.json']);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, 'docs/stats.json'), 'utf-8')).version).toBe('0.2.0');
+    expect(git(dir, 'status', '--porcelain').stdout).toBe('');
+  }, 60_000);
+
+  it('stop the release, with no commit and no tag, when the docs tests fail', () => {
+    const dir = repo({ testDocs: 'false' });
+    const before = git(dir, 'rev-parse', 'HEAD').stdout;
+    const result = release(dir, '0.2.0');
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('docs tests failed');
+    expect(git(dir, 'rev-parse', 'HEAD').stdout).toBe(before);
+    expect(git(dir, 'tag', '--list').stdout).toBe('');
+  }, 60_000);
 });
 
 describe('releasing', () => {

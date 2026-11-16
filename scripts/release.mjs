@@ -1,8 +1,10 @@
 // Cuts a release locally: `npm run release -- <version>` (CONTRIBUTING, "Cutting a release").
 // It refuses unless the tree is clean, the branch is main, the version is a semantic version greater than the current one and
 // the tag does not exist. Then it runs `npm run check`, sets the version in package.json and the lockfile, turns the CHANGELOG's
-// "Unreleased" heading into "<version> (<date>)" under a fresh empty "Unreleased", commits `release v<version>` and creates the
-// annotated tag `v<version>`. It never pushes: it prints the command. Pushing the tag is what starts CI (ci.yml), and the tag
+// "Unreleased" heading into "<version> (<date>)" under a fresh empty "Unreleased", regenerates docs/stats.json (`npm run docs:stats`,
+// it records the version) and runs the docs tests (`npm run test:docs`). Only if they pass does it commit `release v<version>`, which
+// holds package.json, the lockfile, CHANGELOG.md and docs/stats.json, and create the annotated tag `v<version>`. If the docs tests
+// fail it commits and tags nothing and leaves the tree as written, so a commit that would fail the pre-push or the tag's CI is never made. It never pushes: it prints the command. Pushing the tag is what starts CI (ci.yml), and the tag
 // is the only thing that does.
 // It works in the git repository of the current folder, so a test can run it in a throwaway one. mcp/ is private and has its own
 // version, so it is not bumped.
@@ -78,9 +80,16 @@ export function release(version, cwd = process.cwd(), now = new Date()) {
   // --workspaces=false: the root only. mcp/ is private and keeps its own version.
   run('npm', ['version', version, '--no-git-tag-version', '--workspaces=false'], cwd);
   fs.writeFileSync(changelog, notes);
-  const files = ['package.json', 'CHANGELOG.md', ...(fs.existsSync(path.join(cwd, 'package-lock.json')) ? ['package-lock.json'] : [])];
+  console.log('release: regenerating docs/stats.json and running the docs tests');
+  execFileSync('npm', ['run', 'docs:stats'], { cwd, stdio: 'inherit' });
+  try {
+    execFileSync('npm', ['run', 'test:docs'], { cwd, stdio: 'inherit' });
+  } catch {
+    refuse('the docs tests failed, so nothing is committed or tagged. The tree holds the release edits as written; fix the cause, then `git restore .` and run the release again');
+  }
+  const files = ['package.json', 'CHANGELOG.md', 'docs/stats.json', ...(fs.existsSync(path.join(cwd, 'package-lock.json')) ? ['package-lock.json'] : [])];
   git('add', '--', ...files);
-  // --no-verify: the same check just ran on this tree, and the change is a version, a lockfile line and a changelog heading.
+  // --no-verify: the same check just ran on this tree, and the change is a version, a lockfile line, a changelog heading and the stats file, and the docs tests just passed on it.
   git('commit', '--no-verify', '-m', `release v${version}`);
   git('tag', '-a', `v${version}`, '-m', `blazon ${version}`);
 
