@@ -173,6 +173,9 @@
       "name": "blazon.platform-tokens"
     },
     {
+      "name": "blazon.tailwind"
+    },
+    {
       "name": "blazon.office-template"
     }
   ]

@@ -26,20 +26,20 @@ Pick the output by what you are styling:
 
 | You are setting | Use |
 |---|---|
-| Color, spacing, radius, font family in a Tailwind project | The Tailwind utilities that `tailwind.css` gives: `bg-surface-canvas`, `p-4`, `rounded-hairline` |
+| Color, spacing, radius, font family in a Tailwind project | The Tailwind utilities that `tailwind.css` (written by `blazon.tailwind`) gives: `bg-surface-canvas`, `p-4`, `rounded-hairline` |
 | Text | The `.type-*` classes of `typography.css`, one per text style |
 | A value with no Tailwind namespace, such as a border or a transition composite | `var(--path)` from `theme.css` |
 | Logic in code, such as a chart color | `tokens.ts`: `getToken('color.signal.orange')` |
 
 The two CSS files name the same token differently, so do not mix the names. `theme.css` uses the token's path: `--text-primary`, `--space-4`, `--font-family-display`. `tailwind.css` uses a Tailwind namespace: `--color-text-primary`, `--spacing-4`, `--font-display`. The names above are from blazon's own brand; the rule for yours is in [chapter 8](08-using-the-outputs.md#tailwind).
 
-`blazon get <path>` gives both names for one token, so there is no rule to remember: `names.theme.variable` is the `theme.css` name and `names.tailwind.variable` the `tailwind.css` name (null when the token has no Tailwind namespace, so use `var(--path)`).
+`blazon get <path>` gives the `theme.css` name (`names.theme.variable`); the Tailwind name is the rule in chapter 8's table, and `tailwind.css` itself lists every variable it writes.
 
 ### The utilities blazon generates
 
-Do not write a utility by hand from `var(--...)` when `tailwind.css` has one. Shadows, easings, font weights, font sizes and radii are in it, so a plate is `shadow-plate`, an easing is `ease-mechanical`, a weight is `font-heavy` and a card corner is `rounded-card`. The list of what maps is the table in [chapter 8](08-using-the-outputs.md#tailwind); `blazon get <path>` says whether one token has a Tailwind name.
+Do not write a utility by hand from `var(--...)` when `tailwind.css` has one. Shadows, easings, font weights, font sizes and radii are in it, so a plate is `shadow-plate`, an easing is `ease-mechanical`, a weight is `font-heavy` and a card corner is `rounded-card`. The list of what maps is the table in [chapter 8](08-using-the-outputs.md#tailwind); `tailwind.css` lists every token that has one.
 
-To make the brand the only theme, import `tailwind-reset.css` before `tailwind.css`, as [chapter 8](08-using-the-outputs.md#closing-tailwinds-defaults) shows. After that `rounded-xl`, `p-5` and `bg-blue-500` generate nothing, so a utility that compiles is one the brand defines. Font weights follow the same rule: once the brand has `fontWeight` tokens, `font-bold` generates nothing unless the brand defines a `bold` weight, while `--font-*: initial` alone does not remove it.
+To make the brand the only theme, import `tailwind-reset.css` before `tailwind.css`, both from `dist/tokens/blazon.tailwind/`, as [chapter 8](08-using-the-outputs.md#closing-tailwinds-defaults) shows. After that `rounded-xl`, `p-5` and `bg-blue-500` generate nothing, so a utility that compiles is one the brand defines. Font weights follow the same rule: once the brand has `fontWeight` tokens, `font-bold` generates nothing unless the brand defines a `bold` weight, while `--font-*: initial` alone does not remove it.
 
 To check that nothing is hard-coded, search the site's source for `#`, for `px` and for the font names in `tokens/typography.json`.
 

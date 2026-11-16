@@ -9,11 +9,11 @@ export function isPluginName(name: string): boolean {
 
 /**
  * Whether `id` is the name of a file `blazon build` writes in `tokensOutDir` (`planTokenOutputs`, `src/core/emit.ts`): `theme.css`,
- * `tokens.ts`, `tokens.json`, `typography.css`, `tailwind.css`, `tailwind-reset.css` and `tokens.<modifier>.<context>.json`. Each has the form of a
+ * `tokens.ts`, `tokens.json`, `typography.css` and `tokens.<modifier>.<context>.json`. Each has the form of a
  * plugin name, and an instance's id names a folder in the same place, which is emptied before its call: a folder there would replace the file.
  */
 export function isTokenOutputName(id: string): boolean {
-  return ['theme.css', 'tokens.ts', 'tokens.json', 'typography.css', 'tailwind.css', 'tailwind-reset.css'].includes(id) || /^tokens\.[^./\\]+\.[^./\\]+\.json$/.test(id);
+  return ['theme.css', 'tokens.ts', 'tokens.json', 'typography.css'].includes(id) || /^tokens\.[^./\\]+\.[^./\\]+\.json$/.test(id);
 }
 
 /** The longest an instance id may be (RFC 0014 section 3.1): every id, whether it is an `as` or a plugin's name. */

@@ -4,7 +4,7 @@
 
 Blazon's package carries plugins of its own. To use one, allow it by name in `blazon.json`; how blazon finds and trusts a shipped plugin is in [Plugins](12-plugins.md#plugins-that-ship-with-blazon). This chapter says what each one writes and how to configure it.
 
-**Variables.** A shipped plugin starts with an empty environment like any other, and the config approves each variable its manifest lists, in the `env` of its entry ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The seven plugins that draw in Chrome (`blazon.brand-deck`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards`) list `BLAZON_CHROME`, `HOME` and `TMPDIR`, and `blazon.brand-deck` also `BLAZON_DECK_FONTS`. `blazon.copy`, `blazon.office-template` and `blazon.platform-tokens` list none. The snippets below leave `env` out to stay short; without it a set `HOME` stops the plugin with a message that says what to add.
+**Variables.** A shipped plugin starts with an empty environment like any other, and the config approves each variable its manifest lists, in the `env` of its entry ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The seven plugins that draw in Chrome (`blazon.brand-deck`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards`) list `BLAZON_CHROME`, `HOME` and `TMPDIR`, and `blazon.brand-deck` also `BLAZON_DECK_FONTS`. `blazon.copy`, `blazon.office-template`, `blazon.platform-tokens` and `blazon.tailwind` list none. The snippets below leave `env` out to stay short; without it a set `HOME` stops the plugin with a message that says what to add.
 
 ## The plugins
 
@@ -327,7 +327,7 @@ Writes the brand's color and dimension tokens as native files for apps: Android 
 }
 ```
 
-`blazon build` writes into `dist/tokens/blazon.platform-tokens/` only the files of the platforms you ask for (all three by default):
+`blazon build` and `blazon tokens` write into `dist/tokens/blazon.platform-tokens/` only the files of the platforms you ask for (all three by default):
 
 - `android/values/colors.xml`: `<color name="color_brand_primary">#FF5A1F</color>`, with `#AARRGGBB` where the color has alpha. `android/values-night/colors.xml` holds the colors the dark context changes (see below). `android/values/dimens.xml`: `<dimen>` in dp. A px token is 1 dp and a rem token is 16 dp to the rem; the file says so in a comment.
 - `ios/BlazonTokens.swift`: `public enum BlazonColors` with a SwiftUI `Color` for each color, and `public enum BlazonDimensions` with a `CGFloat` for each dimension. A color the dark context changes is a `Color` that follows the system appearance, through a small helper the file defines for iOS 13 and macOS 10.15 and later. `ios/Colors.xcassets`: a colorset for each color, named as in the Swift file, with a dark appearance where the dark context changes it.
@@ -606,3 +606,25 @@ Add `keepClear: ['avatar']` to the same card and the plugin tells you when the h
 ```
 
 With `logoCorner` and no `anchor`, the text takes the edge opposite the logo's corner, as it always did. With `anchor` and no `logoCorner`, the logo moves to the opposite edge, as it always did.
+
+### blazon.tailwind
+
+Writes the brand's tokens as a Tailwind v4 theme. It reads `brand.json` and nothing else, so `blazon tokens` runs it as well as `blazon build`, and it needs only Node, no browser.
+
+```json
+{
+  "plugins": [ { "name": "blazon.tailwind" } ]
+}
+```
+
+It writes into `dist/tokens/blazon.tailwind/`:
+
+- `tailwind.css`: an `@theme` block with a variable for each token that fills a Tailwind theme namespace. [Chapter 8](08-using-the-outputs.md#tailwind) has the table of what maps and how the names are made.
+- `tailwind-reset.css`: an `@theme` block that sets `initial` on each namespace the brand fills, so only the brand's values remain ([Closing Tailwind's defaults](08-using-the-outputs.md#closing-tailwinds-defaults)).
+
+A brand with no token in any namespace gets neither file. The plugin has no option. The same brand gives the same bytes.
+
+| Finding | Severity | Means |
+|---|---|---|
+| `blazon.tailwind/variable-duplicate` | error | Two tokens with different values write one Tailwind variable (`color.brand` and `colors.brand` are both `--color-brand`); `tailwind.css` keeps the first. Rename one of them. Two tokens with one value, such as a semantic alias and its primitive, are not reported |
+| `blazon.tailwind/option-invalid` | error | The entry has an `options` key, which this plugin does not take |

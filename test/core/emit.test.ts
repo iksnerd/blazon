@@ -6,7 +6,7 @@ import type { BlazonConfig } from '../../src/types/index.js';
 import { writeProject, TEST_CONFIG } from '../support/helpers.js';
 
 // A token build leaves the output folder holding what the tokens say now. A file an earlier run wrote for something the tokens no
-// longer have (typography, a Tailwind theme, a context) would keep a consumer using definitions that are gone.
+// longer have (typography, a context) would keep a consumer using definitions that are gone.
 
 const TYPOGRAPHY = {
   font: { $type: 'fontFamily', body: { $value: ['Inter', 'sans-serif'] } },
@@ -23,16 +23,14 @@ const emit = async (root: string) => emitTokenOutputs(await compileBlazonData(co
 const files = (root: string) => fs.readdirSync(path.join(root, 'out')).sort();
 
 describe('emitTokenOutputs: files an earlier run wrote', () => {
-  it('removes typography.css and tailwind.css when the tokens no longer ask for them', async () => {
+  it('removes typography.css when the tokens no longer ask for it', async () => {
     const root = writeProject({ 'tokens/a.json': TYPOGRAPHY });
     await emit(root);
-    expect(files(root)).toEqual(expect.arrayContaining(['typography.css', 'tailwind.css', 'tailwind-reset.css']));
+    expect(files(root)).toEqual(expect.arrayContaining(['typography.css']));
 
     fs.writeFileSync(path.join(root, 'tokens/a.json'), JSON.stringify(NO_STYLE));
     const again = await emit(root);
     expect(again.typographyPath).toBeUndefined();
-    expect(again.tailwindPath).toBeUndefined();
-    expect(again.tailwindResetPath).toBeUndefined();
     expect(files(root)).toEqual(['theme.css', 'tokens.json', 'tokens.ts']);
   });
 

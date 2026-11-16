@@ -1,7 +1,6 @@
 import type { Finding, ParsedTokens, TokenItem } from '../../types/index.js';
 import { finding } from './catalogue.js';
 import { tokenVariables } from '../tokens/formatters/css.js';
-import { tailwindVariable } from '../tokens/formatters/tailwind.js';
 
 /**
  * Walks the tokens in order, each with the variables it writes into one output block. A later token that writes a
@@ -42,22 +41,13 @@ function collide(
 
 /**
  * Two tokens whose names reduce to one CSS custom property (`foo-bar` and `foo.bar`) overwrite each other, and the
- * stylesheet keeps the last. Checks theme.css (the tokens and the parts of composites), each resolver context's block
- * and tailwind.css; the same name in two blocks is by design. typography.css writes no variables of its own.
+ * stylesheet keeps the last. Checks theme.css (the tokens and the parts of composites) and each resolver context's block; the same name
+ * in two blocks is by design. typography.css writes no variables of its own. A file a plugin writes is that plugin's to check.
  */
 export function variableFindings(tokens: Pick<ParsedTokens, 'items' | 'contexts'>): Finding[] {
-  const theme = new Set<string>();
-  const findings = collide(tokens.items, tokenVariables, '', undefined, theme);
+  const findings = collide(tokens.items, tokenVariables, '', undefined, new Set());
   for (const context of tokens.contexts ?? []) {
     findings.push(...collide(context.tokens, tokenVariables, '', `${context.modifier}=${context.context}`, new Set()));
   }
-  const tailwind = (token: TokenItem) => {
-    const variable = tailwindVariable(token);
-    return variable ? [variable] : [];
-  };
-  // tailwind.css names drop the group word, so a semantic alias (`brand.primary`) and its primitive (`color.brand.primary`)
-  // share a name there by design; with one value, keeping the first loses nothing. A pair already found in theme.css is not repeated.
-  const sameValue = (token: TokenItem, first: TokenItem) => String(token.value) === String(first.value);
-  findings.push(...collide(tokens.items, tailwind, ' in tailwind.css', undefined, theme, sameValue));
   return findings;
 }

@@ -52,19 +52,9 @@ describe('css-variable-duplicate', () => {
     expect(collisions(checkTokens(data).errors).map((f) => f.path)).toEqual(['type-h1-letter-spacing']);
   });
 
-  it('names tailwind.css when only the Tailwind names collide', async () => {
+  it('leaves a name that only a plugin writes to that plugin: two tokens whose theme.css names differ are not a collision here', async () => {
     const data = await compileTokens({
       'a.json': { color: { $type: 'color', brand: { $value: '#111111' } }, colors: { $type: 'color', brand: { $value: '#222222' } } },
-    });
-    const found = collisions(checkTokens(data).errors);
-
-    expect(found.map((f) => f.path)).toEqual(['colors.brand']);
-    expect(found[0]!.message).toBe('colors.brand and color.brand both write the CSS variable --color-brand in tailwind.css; rename one');
-  });
-
-  it('lets a semantic alias share its primitive tailwind.css name, since both hold one value', async () => {
-    const data = await compileTokens({
-      'a.json': { color: { $type: 'color', brand: { primary: { $value: '#111111' } } }, brand: { $type: 'color', primary: { $value: '{color.brand.primary}' } } },
     });
 
     expect(collisions(checkTokens(data).all)).toEqual([]);

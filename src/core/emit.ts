@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { BlazonConfig, BlazonData } from '../types/index.js';
 import { formatCssTokens, formatTypographyCss } from './tokens/formatters/css.js';
-import { formatTailwindReset, formatTailwindTheme } from './tokens/formatters/tailwind.js';
 import { formatTsTokens } from './tokens/formatters/ts.js';
 import { formatJsonTokens } from './tokens/formatters/json.js';
 import { contextItems } from './tokens/contexts.js';
@@ -29,10 +28,6 @@ export function planTokenOutputs(data: BlazonData, config: BlazonConfig, cwd: st
   }
   const typographyCss = formatTypographyCss(data.tokens);
   if (typographyCss) files.set('typography.css', typographyCss);
-  const tailwind = formatTailwindTheme(data.tokens);
-  if (tailwind) files.set('tailwind.css', tailwind);
-  const tailwindReset = formatTailwindReset(data.tokens);
-  if (tailwindReset) files.set('tailwind-reset.css', tailwindReset);
 
   // A file of the project's own that has the name of one of these is not ours to overwrite: refuse before writing any of them
   for (const name of files.keys()) {
@@ -47,23 +42,23 @@ export function planTokenOutputs(data: BlazonData, config: BlazonConfig, cwd: st
 }
 
 /**
- * Writes token output artifacts (theme.css, typography.css, tailwind.css, tailwind-reset.css, tokens.ts, tokens.json)
+ * Writes token output artifacts (theme.css, typography.css, tokens.ts, tokens.json and one tokens.<modifier>.<context>.json for each context)
  */
 export async function emitTokenOutputs(
   data: BlazonData,
   config: BlazonConfig,
   cwd: string = process.cwd(),
   options: WriteOptions = {},
-): Promise<{ cssPath: string; tsPath: string; jsonPath: string; typographyPath?: string; tailwindPath?: string; tailwindResetPath?: string }> {
+): Promise<{ cssPath: string; tsPath: string; jsonPath: string; typographyPath?: string }> {
   const { outDir, files } = planTokenOutputs(data, config, cwd, options);
   fs.mkdirSync(outDir, { recursive: true });
   for (const [name, text] of files) fs.writeFileSync(path.join(outDir, name), text, 'utf-8');
 
-  // What an earlier run wrote and this one has no reason to: a file for typography or a Tailwind theme the tokens no longer have, and the
+  // What an earlier run wrote and this one has no reason to: a file for typography the tokens no longer have, and the
   // document of a context that is gone. Only the names blazon writes here are touched, and not one of them that the brand reads as an input
   // (a plugin's own folder, or a file of the project's, stays).
   for (const entry of fs.readdirSync(outDir)) {
-    const ours = entry === 'typography.css' || entry === 'tailwind.css' || entry === 'tailwind-reset.css' || /^tokens\.[^./\\]+\.[^./\\]+\.json$/.test(entry);
+    const ours = entry === 'typography.css' || /^tokens\.[^./\\]+\.[^./\\]+\.json$/.test(entry);
     if (ours && !files.has(entry) && !isInput(config, cwd, path.join(outDir, entry))) fs.rmSync(path.join(outDir, entry), { force: true });
   }
   const at = (name: string) => (files.has(name) ? path.join(outDir, name) : undefined);
@@ -72,7 +67,5 @@ export async function emitTokenOutputs(
     tsPath: path.join(outDir, 'tokens.ts'),
     jsonPath: path.join(outDir, 'tokens.json'),
     typographyPath: at('typography.css'),
-    tailwindPath: at('tailwind.css'),
-    tailwindResetPath: at('tailwind-reset.css'),
   };
 }

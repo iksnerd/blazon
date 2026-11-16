@@ -250,7 +250,7 @@ Implemented on `main` as of 2026-11-15, except what the last paragraph names.
 | The environment of a plugin (section 2, Environment): empty but for `PATH`; a variable reaches a plugin only when its manifest lists it and `plugins[n].env` approves it; a listed, set, unapproved name stops the plugin with a `plugin-failed` that names the variable and the key; `blazon plugin check` case 10. The shipped plugins that draw in a browser list `BLAZON_CHROME`, `HOME` and `TMPDIR` in their manifests | `src/plugins/wire/environment.ts`, `src/plugins/roles/roles.ts`, `src/plugins/host/check.ts`, `src/core/config/validate.ts` | `test/plugins/roles/env-approval.test.ts`, `test/plugins/host/call.test.ts`, `test/plugins/host/check.test.ts` |
 | Reference plugins: `acme.house-style` (Python, no dependency) and `blazon.cue-rules` (rules in CUE over `brand.json`, passed as `options.rules`; needs `cue` 0.17.1) | `examples/plugins/` | `test/plugins/examples/cue-rules.test.ts`, skipped with a notice when `cue` is missing |
 
-Ten plugins ship, one entry each in `plugins/shipped.lock`. Nine fill the `build` role, and `blazon.favicons` fills `check` too. `blazon.copy` fills `check` only. Each is TypeScript under `src/shipped/<name>/`, built into the one file `plugins/blazon.<name>/bin/blazon-blazon.<name>.🔌`, which holds the plugin's code. Each bounds its findings to the 64 KB answer limit (`src/shipped/shared/bound.ts`). The options and the files each writes are in the manual's chapter 14.
+Eleven plugins ship, one entry each in `plugins/shipped.lock`. Ten fill the `build` role, and `blazon.favicons` fills `check` too. `blazon.copy` fills `check` only. Each is TypeScript under `src/shipped/<name>/`, built into the one file `plugins/blazon.<name>/bin/blazon-blazon.<name>.🔌`, which holds the plugin's code. Each bounds its findings to the 64 KB answer limit (`src/shipped/shared/bound.ts`). The options and the files each writes are in the manual's chapter 14.
 
 | Plugin | Does | Notes |
 |---|---|---|
@@ -264,6 +264,7 @@ Ten plugins ship, one entry each in `plugins/shipped.lock`. Nine fill the `build
 | `blazon.office-template` | An editable PowerPoint template: theme, master and five layouts | PowerPoint has not opened the file; Keynote renders it and python-pptx parses it |
 | `blazon.copy` | Findings for pages and sidecar text that break the brand's word rules (RFC 0006) | Needs Node only. Heuristics, so warnings |
 | `blazon.platform-tokens` | Color and dimension tokens as Android XML, Swift with an asset catalog, and Kotlin for Compose | Swift and the catalog are compiled in tests (`swiftc`, `actool`); Kotlin is not |
+| `blazon.tailwind` | `tailwind.css` and `tailwind-reset.css`, a Tailwind v4 theme from the tokens | Needs Node only. Runs in `blazon tokens` as well as `blazon build`. As of 2026-11-16 the core writes no Tailwind file |
 
 Not built, and named so that nobody assumes them: long-lived plugins, the page role, the owner check of the lock and of `.blazon/plugins/`, and any platform but POSIX. The protocol is stated in RFC 0005, and blazon's host is tested against its conformance corpus in `test/spec/`. The profile is a draft that can change, and so can the blazon profile that follows it.
 

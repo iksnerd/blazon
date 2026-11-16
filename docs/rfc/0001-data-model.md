@@ -296,7 +296,7 @@ What each code means:
 - `config-invalid`: `blazon.json` has an unknown key or a value of the wrong type (section 14)
 - `contrast-insufficient`: A `pairs` contrast pair is below its WCAG level
 - `contrast-unknown`: A pair has a value that is not a CSS color (a gradient, a `var()`), so it cannot be measured
-- `css-variable-duplicate`: Two tokens write one CSS custom property in the same output block (`theme.css`, a resolver context's block, or `tailwind.css`); reported at the later token, the first keeps the variable
+- `css-variable-duplicate`: Two tokens write one CSS custom property in the same output block (`theme.css` or a resolver context's block); reported at the later token, the first keeps the variable
 - `alias-deprecated`: A token aliases one marked `$deprecated`
 - `directive-deprecated`: A page has `<!-- folio:name -->`, the old spelling, which blazon does not read; reported at its page and line
 - `directive-invalid`: A page directive has the wrong arguments, or names a token, asset, category or icon set that does not exist
@@ -629,7 +629,7 @@ Not in it, on purpose: a section id is not a page address (the slug is), and a s
 | `docsDir` | path | `./docs` | Where the guideline pages are (section 6) |
 | `assetsDir` | path | `./assets` | Where the assets and their sidecars are (section 7) |
 | `outDir` | path | `./dist/site` | Where `blazon build` writes the site and `brand.json` (section 12) |
-| `tokensOutDir` | path | `./dist/tokens` | Where `blazon tokens` and `blazon build` write `theme.css`, `typography.css`, `tokens.ts`, `tokens.json` and, when a token maps to a Tailwind theme variable, `tailwind.css` and `tailwind-reset.css` (section 5) |
+| `tokensOutDir` | path | `./dist/tokens` | Where `blazon tokens` and `blazon build` write `theme.css`, `typography.css`, `tokens.ts`, `tokens.json` and one `tokens.<modifier>.<context>.json` for each context; a build plugin writes into its own folder under it (section 5) |
 | `cssPrefix` | string | `--` | The prefix of every CSS variable |
 | `cssSelector` | string | `:root` | The selector the default context's variables are written under |
 | `port` | whole number, 0 to 65535 | `3000` | The dev server and preview port |
@@ -728,7 +728,7 @@ Implemented on `main` as of 2026-11-16. The sections of this RFC are all built; 
 | 2. The `dev.blazon` extension | `src/core/tokens/`, `src/core/checker/`. Usage, contrast, tier, duplicate and review checks; `review` with `by`, `at` and `value`; `font` facts; `source.cssVar` |
 | 3. Contexts | Resolver contexts, with locale variants in the third-party fixture (Japanese: Kinto; German and French: H1 56/64) |
 | 4. `blazon check` | `src/core/checker/`, run before `blazon tokens` and `blazon build`. The finding codes, with severity and summary, are in the catalogue, `src/core/checker/catalogue.ts`; the code table in this section is written from it. Findings are sorted by `compareFindings` (`src/core/order.ts`), the order the section states |
-| 5. Outputs | `theme.css`, `typography.css`, `tailwind.css`, `tailwind-reset.css`, `tokens.ts`, `tokens.json`. `blazon drift` (`src/core/drift/`, `src/cli/commands/drift.ts`) compares `source.cssVar` with a live site |
+| 5. Outputs | `theme.css`, `typography.css`, `tokens.ts`, `tokens.json`. `blazon.tailwind` writes `tailwind.css` and `tailwind-reset.css` into its own folder (RFC 0002). `blazon drift` (`src/core/drift/`, `src/cli/commands/drift.ts`) compares `source.cssVar` with a live site |
 | 6. The brand book wears the brand | `theme`, `fonts`, `logo`, `group` and `cover` frontmatter, findings in the viewer. Page directives are validated against one table, `src/core/docs/directives.ts`, which the viewer also renders from |
 | 7. Assets | `src/core/assets/` catalogs SVG and raster files (PNG, JPEG, GIF, WebP, AVIF) and reads their size from the file header. The dev server streams them (`src/server/assets.ts`); `blazon build` copies them to `brand-assets/` |
 | 8. Layout groups | Social formats and patterns, drawn by `blazon:formats` and `blazon:patterns` |

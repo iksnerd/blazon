@@ -138,6 +138,16 @@ rm "$request"
     expect(fs.existsSync(path.join(root, 'dist/site'))).toBe(false);
   }, 120_000);
 
+  it('runs the shipped blazon.tailwind, which writes tailwind.css and tailwind-reset.css into its own folder and none beside the token files', async () => {
+    const root = await starterProject({ plugins: ['blazon.tailwind'] });
+    const result = blazon(root, 'tokens');
+    expect(result.status, output(result)).toBe(0);
+    const out = path.join(root, 'dist/tokens/blazon.tailwind');
+    expect(fs.readFileSync(path.join(out, 'tailwind.css'), 'utf-8')).toContain('@theme {');
+    expect(fs.readFileSync(path.join(out, 'tailwind-reset.css'), 'utf-8')).toContain('--color-*: initial;');
+    expect(fs.existsSync(path.join(root, 'dist/tokens/tailwind.css'))).toBe(false);
+  }, 120_000);
+
   it('exits 1 when a build plugin reports an error, after the token files are written', async () => {
     const root = await project({ 'acme.deck': { script: plugin(['build'], answer([{ code: 'acme.deck/failed', severity: 'error', path: 'deck', message: 'The deck could not be drawn' }])) } });
     const result = blazon(root, 'tokens');

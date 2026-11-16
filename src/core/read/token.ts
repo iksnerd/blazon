@@ -1,11 +1,10 @@
 import type { BlazonData, TokenItem, TokenType } from '../../types/index.js';
 import { tokenVariables } from '../tokens/formatters/css.js';
-import { tailwindVariable } from '../tokens/formatters/tailwind.js';
 import { typographyClassName } from '../tokens/names.js';
 import { findToken } from './lookup.js';
 import { tokenRules, type TokenRules } from './rules.js';
 
-/** The names a token has in the two CSS files `blazon tokens` writes. */
+/** The names a token has in the CSS files `blazon tokens` writes. */
 export interface TokenNames {
   theme: {
     /** In theme.css, from the token's path */
@@ -13,20 +12,14 @@ export interface TokenNames {
     /** A composite token also writes one variable for each part: `{ fontSize: '--type-h1-font-size' }` */
     parts?: Record<string, string>;
   };
-  /** In tailwind.css, from Tailwind's namespace. Null when the token maps to none (only colors, font families, radii and spacing do) */
-  tailwind: { variable: string; shadowedBy?: string } | null;
   /** In typography.css, for a typography token */
   typographyClass?: string;
 }
 
 export function tokenNames(data: BlazonData, item: TokenItem): TokenNames {
   const [variable, ...partVariables] = tokenVariables(item);
-  const variableOfTailwind = tailwindVariable(item);
-  // tailwind.css writes a variable once, for the first token that maps to it
-  const first = variableOfTailwind ? data.tokens.items.find((t) => tailwindVariable(t) === variableOfTailwind) : undefined;
   return {
     theme: { variable: variable!, ...(item.parts && { parts: Object.fromEntries(Object.keys(item.parts).map((part, i) => [part, partVariables[i]!])) }) },
-    tailwind: variableOfTailwind ? { variable: variableOfTailwind, ...(first && first.path !== item.path && { shadowedBy: first.path }) } : null,
     ...(item.type === 'typography' && { typographyClass: typographyClassName(item.path) }),
   };
 }

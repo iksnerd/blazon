@@ -51,7 +51,7 @@ The short list is below. [The glossary](16-glossary.md) has every word the manua
 5. [Pages](05-pages.md): writing guideline pages and placing live content.
 6. [Assets and icons](06-assets-and-icons.md): images, their sidecars, and icon sets.
 7. [Theme and configuration](07-theme-and-config.md): `blazon.json` and how the book gets its look.
-8. [Using the outputs](08-using-the-outputs.md): the CSS (including a Tailwind theme), TypeScript and JSON blazon writes.
+8. [Using the outputs](08-using-the-outputs.md): the CSS, TypeScript and JSON blazon writes, and the Tailwind theme its plugin writes.
 9. [Derive your own brand](09-derive-your-own.md): a worked scenario, from a company's guidelines deck to a brand book.
 10. [Troubleshooting](10-troubleshooting.md): what you see and what it means.
 11. [brand.json for other tools](11-brand-json.md): the whole brand in one file, for tools in any language.

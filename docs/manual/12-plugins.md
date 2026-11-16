@@ -111,7 +111,7 @@ Blazon warns, `acme.house-style runs unpinned because it was named on the comman
 
 ## Plugins that ship with blazon
 
-Blazon's package carries ten plugins of its own: `blazon.brand-deck`, `blazon.copy`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.press-kit`, `blazon.print-book` and `blazon.social-cards`. The table below says where each is described. To use one, allow it by name. A plugin that draws in a browser also needs its variables approved in `env`, because no plugin gets one unasked (`['BLAZON_CHROME', 'HOME', 'TMPDIR']`; `blazon.brand-deck` adds `BLAZON_DECK_FONTS`):
+Blazon's package carries eleven plugins of its own: `blazon.brand-deck`, `blazon.copy`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards` and `blazon.tailwind`. The table below says where each is described. To use one, allow it by name. A plugin that draws in a browser also needs its variables approved in `env`, because no plugin gets one unasked (`['BLAZON_CHROME', 'HOME', 'TMPDIR']`; `blazon.brand-deck` adds `BLAZON_DECK_FONTS`):
 
 ```json
 {

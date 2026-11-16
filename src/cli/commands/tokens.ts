@@ -9,8 +9,8 @@ import { shownDir } from '../where.js';
 import { assertTokensPass, CheckFailed, namedPlugins, pluginsOff, printFindings, type PluginOptions } from './check.js';
 
 /**
- * Writes the token files, then runs the build plugins with no site: a plugin that derives its files from the brand (blazon.platform-tokens
- * and the plugins for a CSS framework) writes them to `<tokensOutDir>/<name>/`, and one that needs the built site says so and writes nothing.
+ * Writes the token files, then runs the build plugins with no site: a plugin that derives its files from the brand (blazon.platform-tokens,
+ * blazon.tailwind, blazon.shadcn) writes them to `<tokensOutDir>/<name>/`, and one that needs the built site says so and writes nothing.
  */
 export async function runTokens(cwd: string = process.cwd(), options?: PluginOptions) {
   const config = await loadProject(cwd);
@@ -23,7 +23,7 @@ export async function runTokens(cwd: string = process.cwd(), options?: PluginOpt
   assertTokensPass(data, cwd);
   const emitted = await emitTokenOutputs(data, config, cwd);
 
-  for (const file of [emitted.cssPath, emitted.typographyPath, emitted.tailwindPath, emitted.tailwindResetPath, emitted.tsPath, emitted.jsonPath]) {
+  for (const file of [emitted.cssPath, emitted.typographyPath, emitted.tsPath, emitted.jsonPath]) {
     if (file) console.log(`  ${pc.green('✔')} Emitted ${pc.bold(file)}`);
   }
   console.log();

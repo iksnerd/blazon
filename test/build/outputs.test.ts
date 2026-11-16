@@ -62,43 +62,6 @@ describe('emitTokenOutputs (RFC 0001 §5)', () => {
     expect(css).toContain('--type-h1-line-height: 1.125;');
   });
 
-  it('writes tailwind.css, a Tailwind v4 @theme over the colors, font families, font weights, radii and spacing', async () => {
-    const root = writeTokenProject({
-      'a.json': {
-        color: { $type: 'color', indigo: { $value: '#635DFF' } },
-        text: { $type: 'color', brand: { $value: '{color.indigo}' } },
-        font: { family: { $type: 'fontFamily', sans: { $value: ['Inter', 'sans-serif'] } } },
-        radius: { $type: 'dimension', card: { $value: { value: 8, unit: 'px' } } },
-        spacing: { $type: 'dimension', '3': { $value: { value: 12, unit: 'px' } } },
-        size: { $type: 'dimension', icon: { $value: { value: 24, unit: 'px' } } },
-        weight: { $type: 'fontWeight', bold: { $value: 700 } },
-      },
-    });
-    const config = { ...TEST_CONFIG };
-    const paths = await emitTokenOutputs(await compileBlazonData(config, root), config, root);
-    const css = fs.readFileSync(paths.tailwindPath!, 'utf-8');
-
-    expect(path.basename(paths.tailwindPath!)).toBe('tailwind.css');
-    expect(css).toContain('@theme {');
-    expect(css).toContain('--color-indigo: #635DFF;');
-    expect(css).toContain('--color-text-brand: #635DFF;');
-    expect(css).toContain('--font-sans: Inter, sans-serif;');
-    expect(css).toContain('--radius-card: 8px;');
-    expect(css).toContain('--spacing-3: 12px;');
-    expect(css).toContain('--font-weight-bold: 700;');
-    // a dimension outside radius, spacing and font sizes maps to no namespace
-    expect(css).not.toContain('icon');
-  });
-
-  it('writes no tailwind.css when no token maps to a Tailwind namespace', async () => {
-    const { paths } = await emit();
-    expect(paths.tailwindPath).toBeDefined(); // the shared project has colors
-    const root = writeTokenProject({ 'a.json': { z: { $type: 'number', base: { $value: 1 } } } });
-    const config = { ...TEST_CONFIG };
-    const only = await emitTokenOutputs(await compileBlazonData(config, root), config, root);
-    expect(only.tailwindPath).toBeUndefined();
-  });
-
   it('writes typography.css with one class per typography token', async () => {
     const { paths, read } = await emit();
 

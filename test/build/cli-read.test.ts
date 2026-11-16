@@ -82,11 +82,10 @@ describe('blazon get, without a token path', () => {
 });
 
 describe('blazon get', () => {
-  it('prints the token and both CSS names, as text and as JSON', () => {
+  it('prints the token and its CSS name, as text and as JSON', () => {
     const text = blazon('get', 'text.primary', root);
     expect(text.status, text.stderr).toBe(0);
     expect(text.stdout).toMatch(/theme\.css\s+--text-primary/);
-    expect(text.stdout).toMatch(/tailwind\.css\s+--color-text-primary/);
     const json = blazon('get', 'text.primary', root, '--json');
     expect(JSON.parse(json.stdout)).toMatchObject({
       command: 'get',
@@ -94,7 +93,7 @@ describe('blazon get', () => {
       token: {
         path: 'text.primary',
         type: 'color',
-        names: { theme: { variable: '--text-primary' }, tailwind: { variable: '--color-text-primary' } },
+        names: { theme: { variable: '--text-primary' } },
         sourceFile: 'tokens/colors.json',
       },
     });

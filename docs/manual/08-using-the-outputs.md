@@ -32,7 +32,7 @@ A [context](04-contexts.md) other than the default gets its own block in `theme.
 
 ## Tailwind
 
-`tailwind.css` is a Tailwind v4 `@theme` block. Each token that fills a Tailwind theme namespace becomes a variable in it; the other tokens are left out and stay `var(--path)` from `theme.css`.
+`tailwind.css` is a Tailwind v4 `@theme` block, written by the `blazon.tailwind` plugin ([chapter 14](14-shipped-plugins.md#blazontailwind)): add `{ "name": "blazon.tailwind" }` to `plugins` in `blazon.json`, and `blazon tokens` and `blazon build` write it, and `tailwind-reset.css`, to `dist/tokens/blazon.tailwind/`. Each token that fills a Tailwind theme namespace becomes a variable in it; the other tokens are left out and stay `var(--path)` from `theme.css`.
 
 | Token | Tailwind namespace | Example |
 |---|---|---|
@@ -55,7 +55,7 @@ The values are the default context's, resolved. Tailwind reads them at build tim
 ```css
 @import "tailwindcss";
 @import "./dist/tokens/theme.css";
-@import "./dist/tokens/tailwind.css";
+@import "./dist/tokens/blazon.tailwind/tailwind.css";
 ```
 
 ```html
@@ -73,8 +73,8 @@ Import it after `tailwindcss` and before `tailwind.css`. Tailwind applies `@them
 ```css
 @import "tailwindcss";
 @import "./dist/tokens/theme.css";
-@import "./dist/tokens/tailwind-reset.css";
-@import "./dist/tokens/tailwind.css";
+@import "./dist/tokens/blazon.tailwind/tailwind-reset.css";
+@import "./dist/tokens/blazon.tailwind/tailwind.css";
 ```
 
 ## TypeScript
