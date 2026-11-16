@@ -16,12 +16,20 @@ hook_log() {
     : > "$LOG"
 }
 
-# step LABEL COMMAND...: run it, say ✓ or ✗, and on a failure print what names the failure. Returns the command's status.
+# now_ds: the time in tenths of a second. macOS ships bash 3.2, which has neither EPOCHREALTIME nor a fractional SECONDS, so perl
+# (on macOS and every Linux image) reads the clock; with no perl it falls back to whole seconds.
+now_ds() {
+    if command -v perl >/dev/null 2>&1; then perl -MTime::HiRes=time -e 'printf "%d", time * 10'; else echo $(( $(date +%s) * 10 )); fi
+}
+
+# step LABEL COMMAND...: run it, say ✓ or ✗ and how long it took, and on a failure print what names the failure. Returns the command's status.
 step() {
     local label="$1"; shift
-    local out
+    local out t0 t1 took
+    t0="$(now_ds)"
     if ! out="$("$@" 2>&1)"; then
-        printf '  ✗ %s\n' "$label"
+        t1="$(now_ds)"; took=$(( t1 - t0 ))
+        printf '  ✗ %s %d.%ds\n' "$label" $(( took / 10 )) $(( took % 10 ))
         printf '=== %s ===\n%s\n' "$label" "$out" >> "$LOG"
         # What the person needs is the failing lines. A suite prints a banner first and a lot of noise in between (jsdom's "Not
         # implemented" lines), so the first lines are rarely it: show the lines that name a failure, or the end when there are none.
@@ -33,7 +41,8 @@ step() {
         fail=1
         return 1
     fi
-    printf '  ✓ %s\n' "$label"
+    t1="$(now_ds)"; took=$(( t1 - t0 ))
+    printf '  ✓ %s %d.%ds\n' "$label" $(( took / 10 )) $(( took % 10 ))
 }
 
 # --- trees that passed. A step that passed on a tree is not run again on the same tree: a reset and a second commit, or a push of
