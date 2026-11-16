@@ -15,7 +15,9 @@ if (!tarball || !fs.existsSync(tarball)) {
   process.exit(1);
 }
 
-const base = process.env.BLAZON_SMOKE_DIR ? path.resolve(process.env.BLAZON_SMOKE_DIR) : os.tmpdir();
+// Under the home folder, not os.tmpdir(): the plugin host refuses an install in a folder that group or others can write, and the
+// system temp folder is one on a CI runner, so the shipped plugins would fail to start there.
+const base = process.env.BLAZON_SMOKE_DIR ? path.resolve(process.env.BLAZON_SMOKE_DIR) : os.homedir();
 fs.mkdirSync(base, { recursive: true });
 const work = fs.realpathSync(fs.mkdtempSync(path.join(base, 'blazon-smoke-')));
 
