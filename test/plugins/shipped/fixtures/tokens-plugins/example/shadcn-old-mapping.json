@@ -1,0 +1,261 @@
+{
+  "variables": {
+    "background": {
+      "token": "surface.background",
+      "value": "#F2F0EB",
+      "from": "theme",
+      "role": "background"
+    },
+    "foreground": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "text"
+    },
+    "card": {
+      "token": "surface.background",
+      "value": "#F2F0EB",
+      "from": "theme",
+      "role": "background"
+    },
+    "card-foreground": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "text"
+    },
+    "popover": {
+      "token": "surface.background",
+      "value": "#F2F0EB",
+      "from": "theme",
+      "role": "background"
+    },
+    "popover-foreground": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "text"
+    },
+    "primary": {
+      "token": "interactive.primary",
+      "value": "#FF5A1F",
+      "from": "theme",
+      "role": "accent"
+    },
+    "primary-foreground": {
+      "token": "text.onSignal",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "accentText"
+    },
+    "secondary": {
+      "token": "surface.canvas",
+      "value": "#D9D6CF",
+      "from": "theme",
+      "role": "canvas"
+    },
+    "secondary-foreground": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "text"
+    },
+    "muted": {
+      "token": "surface.canvas",
+      "value": "#D9D6CF",
+      "from": "theme",
+      "role": "canvas"
+    },
+    "muted-foreground": {
+      "token": "text.muted",
+      "value": "#54585D",
+      "from": "theme",
+      "role": "muted"
+    },
+    "accent": {
+      "token": "surface.canvas",
+      "value": "#D9D6CF",
+      "from": "theme",
+      "role": "canvas"
+    },
+    "accent-foreground": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "text"
+    },
+    "destructive": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "config"
+    },
+    "border": {
+      "token": "rule.default",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "border"
+    },
+    "input": {
+      "token": "rule.default",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "border"
+    },
+    "ring": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "config"
+    },
+    "chart-1": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "config"
+    },
+    "chart-2": {
+      "token": "text.muted",
+      "value": "#54585D",
+      "from": "config"
+    },
+    "chart-3": {
+      "token": "surface.canvas",
+      "value": "#D9D6CF",
+      "from": "config"
+    },
+    "chart-4": {
+      "token": "rule.default",
+      "value": "#1E1F21",
+      "from": "config"
+    },
+    "chart-5": {
+      "token": "rule.quiet",
+      "value": "#54585D",
+      "from": "config"
+    },
+    "radius": {
+      "token": "radius.hairline",
+      "value": "2px",
+      "from": "theme",
+      "role": "radius"
+    },
+    "sidebar": {
+      "token": "surface.background",
+      "value": "#F2F0EB",
+      "from": "theme",
+      "role": "background"
+    },
+    "sidebar-foreground": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "text"
+    },
+    "sidebar-primary": {
+      "token": "interactive.primary",
+      "value": "#FF5A1F",
+      "from": "theme",
+      "role": "accent"
+    },
+    "sidebar-primary-foreground": {
+      "token": "text.onSignal",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "accentText"
+    },
+    "sidebar-accent": {
+      "token": "surface.canvas",
+      "value": "#D9D6CF",
+      "from": "theme",
+      "role": "canvas"
+    },
+    "sidebar-accent-foreground": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "text"
+    },
+    "sidebar-border": {
+      "token": "rule.default",
+      "value": "#1E1F21",
+      "from": "theme",
+      "role": "border"
+    },
+    "sidebar-ring": {
+      "token": "text.primary",
+      "value": "#1E1F21",
+      "from": "config"
+    }
+  },
+  "unsupplied": [],
+  "pairs": [
+    {
+      "background": "background",
+      "foreground": "foreground",
+      "backgroundToken": "surface.background",
+      "foregroundToken": "text.primary",
+      "declared": true
+    },
+    {
+      "background": "card",
+      "foreground": "card-foreground",
+      "backgroundToken": "surface.background",
+      "foregroundToken": "text.primary",
+      "declared": true
+    },
+    {
+      "background": "popover",
+      "foreground": "popover-foreground",
+      "backgroundToken": "surface.background",
+      "foregroundToken": "text.primary",
+      "declared": true
+    },
+    {
+      "background": "primary",
+      "foreground": "primary-foreground",
+      "backgroundToken": "interactive.primary",
+      "foregroundToken": "text.onSignal",
+      "declared": true
+    },
+    {
+      "background": "secondary",
+      "foreground": "secondary-foreground",
+      "backgroundToken": "surface.canvas",
+      "foregroundToken": "text.primary",
+      "declared": true
+    },
+    {
+      "background": "muted",
+      "foreground": "muted-foreground",
+      "backgroundToken": "surface.canvas",
+      "foregroundToken": "text.muted",
+      "declared": true
+    },
+    {
+      "background": "accent",
+      "foreground": "accent-foreground",
+      "backgroundToken": "surface.canvas",
+      "foregroundToken": "text.primary",
+      "declared": true
+    },
+    {
+      "background": "sidebar",
+      "foreground": "sidebar-foreground",
+      "backgroundToken": "surface.background",
+      "foregroundToken": "text.primary",
+      "declared": true
+    },
+    {
+      "background": "sidebar-primary",
+      "foreground": "sidebar-primary-foreground",
+      "backgroundToken": "interactive.primary",
+      "foregroundToken": "text.onSignal",
+      "declared": true
+    },
+    {
+      "background": "sidebar-accent",
+      "foreground": "sidebar-accent-foreground",
+      "backgroundToken": "surface.canvas",
+      "foregroundToken": "text.primary",
+      "declared": true
+    }
+  ]
+}

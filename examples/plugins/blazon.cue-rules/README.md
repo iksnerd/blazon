@@ -57,7 +57,7 @@ out: [
 
 ## What it does when it cannot judge
 
-It exits `2` with the reason, and blazon shows `plugin-failed`, never a pass: a brand that is not a version 1 blazon brand, no `options.rules`, rules CUE cannot read (the first lines of CUE's message are shown), no `out`, an item of `out` with a bad `rule`, `severity`, `path` or `message`, no `cue`, a `cue` of another version, or rules that take longer than 20 seconds.
+It exits `2` with the reason, and blazon shows `plugin-failed`, never a pass: a brand that is not a version 2 blazon brand, no `options.rules`, rules CUE cannot read (the first lines of CUE's message are shown), no `out`, an item of `out` with a bad `rule`, `severity`, `path` or `message`, no `cue`, a `cue` of another version, or rules that take longer than 20 seconds.
 
 The brand is data. It is written as JSON values, which escape every quote and backslash, so text in a token or a page cannot end a string and add a rule.
 

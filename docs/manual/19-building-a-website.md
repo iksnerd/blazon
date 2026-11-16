@@ -26,26 +26,26 @@ Pick the output by what you are styling:
 
 | You are setting | Use |
 |---|---|
-| Color, spacing, radius, font family in a Tailwind project | The Tailwind utilities that `tailwind.css` gives: `bg-surface-canvas`, `p-4`, `rounded-hairline` |
+| Color, spacing, radius, font family in a Tailwind project | The Tailwind utilities that `tailwind.css` (written by `blazon.tailwind`) gives: `bg-surface-canvas`, `p-4`, `rounded-hairline` |
 | Text | The `.type-*` classes of `typography.css`, one per text style |
 | A value with no Tailwind namespace, such as a border or a transition composite | `var(--path)` from `theme.css` |
 | Logic in code, such as a chart color | `tokens.ts`: `getToken('color.signal.orange')` |
 
 The two CSS files name the same token differently, so do not mix the names. `theme.css` uses the token's path: `--text-primary`, `--space-4`, `--font-family-display`. `tailwind.css` uses a Tailwind namespace: `--color-text-primary`, `--spacing-4`, `--font-display`. The names above are from blazon's own brand; the rule for yours is in [chapter 8](08-using-the-outputs.md#tailwind).
 
-`blazon get <path>` gives both names for one token, so there is no rule to remember: `names.theme.variable` is the `theme.css` name and `names.tailwind.variable` the `tailwind.css` name (null when the token has no Tailwind namespace, so use `var(--path)`).
+`blazon get <path>` gives the `theme.css` name (`names.theme.variable`); the Tailwind name is the rule in chapter 8's table, and `tailwind.css` itself lists every variable it writes.
 
 ### The utilities blazon generates
 
-Do not write a utility by hand from `var(--...)` when `tailwind.css` has one. Shadows, easings, font weights, font sizes and radii are in it, so a plate is `shadow-plate`, an easing is `ease-mechanical`, a weight is `font-heavy` and a card corner is `rounded-card`. The list of what maps is the table in [chapter 8](08-using-the-outputs.md#tailwind); `blazon get <path>` says whether one token has a Tailwind name.
+Do not write a utility by hand from `var(--...)` when `tailwind.css` has one. Shadows, easings, font weights, font sizes and radii are in it, so a plate is `shadow-plate`, an easing is `ease-mechanical`, a weight is `font-heavy` and a card corner is `rounded-card`. The list of what maps is the table in [chapter 8](08-using-the-outputs.md#tailwind); `tailwind.css` lists every token that has one.
 
-To make the brand the only theme, import `tailwind-reset.css` before `tailwind.css`, as [chapter 8](08-using-the-outputs.md#closing-tailwinds-defaults) shows. After that `rounded-xl`, `p-5` and `bg-blue-500` generate nothing, so a utility that compiles is one the brand defines. Font weights follow the same rule: once the brand has `fontWeight` tokens, `font-bold` generates nothing unless the brand defines a `bold` weight, while `--font-*: initial` alone does not remove it.
+To make the brand the only theme, import `tailwind-reset.css` before `tailwind.css`, both from `dist/tokens/blazon.tailwind/`, as [chapter 8](08-using-the-outputs.md#closing-tailwinds-defaults) shows. After that `rounded-xl`, `p-5` and `bg-blue-500` generate nothing, so a utility that compiles is one the brand defines. Font weights follow the same rule: once the brand has `fontWeight` tokens, `font-bold` generates nothing unless the brand defines a `bold` weight, while `--font-*: initial` alone does not remove it.
 
 To check that nothing is hard-coded, search the site's source for `#`, for `px` and for the font names in `tokens/typography.json`.
 
 ### Getting a value where CSS variables do not reach
 
-A theme color meta tag, a generated image and an email cannot read a CSS variable. Take the value from the data instead. `blazon get <path> --json` prints the token with its `value` in `token.value` (`"120ms"` for `motion.duration.snap`, a hex string for a color). `blazon brand --key theme.shadcn` prints the shadcn picks with their values (see the next section). `dist/tokens/tokens.json` has every token, for a script that needs many. Copy the value at build time, from one of these, so it follows the brand.
+A theme color meta tag, a generated image and an email cannot read a CSS variable. Take the value from the data instead. `blazon get <path> --json` prints the token with its `value` in `token.value` (`"120ms"` for `motion.duration.snap`, a hex string for a color). `dist/tokens/blazon.shadcn/shadcn.json` has the shadcn picks with their values (see the next section). `dist/tokens/tokens.json` has every token, for a script that needs many. Copy the value at build time, from one of these, so it follows the brand.
 
 ## Type classes beat utilities
 
@@ -90,10 +90,19 @@ A brand's Web page may state layout widths that have no token, such as a 640px b
 
 ## Using shadcn/ui
 
-A shadcn/ui project reads its colors from semantic CSS variables: `--background`, `--primary`, `--ring`, `--chart-1` and so on. Blazon writes no shadcn file. It states which token each variable should take, in `theme.shadcn` of `brand.json` ([chapter 11](11-brand-json.md)), and you write the CSS. Read it with `blazon brand --key theme.shadcn`: that compiles the brand now and prints the part, so it is never out of date the way a `brand.json` from an earlier build can be.
+A shadcn/ui project reads its colors from semantic CSS variables: `--background`, `--primary`, `--ring`, `--chart-1` and so on. The `blazon.shadcn` plugin says which token each variable should take, and writes the variables as CSS. Add it to `plugins` in `blazon.json`, and `blazon tokens` and `blazon build` write two files to `dist/tokens/blazon.shadcn/`:
 
 ```json
-"shadcn": {
+{
+  "plugins": [{ "name": "blazon.shadcn", "options": { "variables": { "ring": "text.primary" } } }]
+}
+```
+
+- `shadcn.css`: a `:root` block with each variable blazon supplies, in the default context's values, and a block under each other context's selector for the variables that context changes (a dark theme, say). Import it after the project's own `globals.css`.
+- `shadcn.json`: the mapping behind it, for a person or a tool that wants the reasons.
+
+```json
+{
   "variables": {
     "primary": { "token": "interactive.primary", "value": "#FF5A1F", "from": "theme", "role": "accent" },
     "primary-foreground": { "token": "text.onSignal", "value": "#1E1F21", "from": "theme", "role": "accentText" },
@@ -104,7 +113,7 @@ A shadcn/ui project reads its colors from semantic CSS variables: `--background`
 }
 ```
 
-(Shortened: a real file lists every variable blazon supplies. `unsupplied` lists the variables nothing supplies: it is empty here because the starter maps `destructive` and `chart-1` to `chart-5` itself, and a brand that does not would list them.) Variable names have no leading dashes. `value` is the token's value in the default context. `from` says where the pick came from: `theme` for a [theme role](07-theme-and-config.md#theme-roles) (named in `role`), `config` for the `shadcn` key of `blazon.json`.
+(Shortened: a real file lists every variable blazon supplies. `unsupplied` lists the variables nothing supplies: it is empty here because the starter maps `destructive` and `chart-1` to `chart-5` itself, and a brand that does not would list them.) Variable names have no leading dashes. `value` is the token's value in the default context. `from` says where the pick came from: `theme` for a [theme role](07-theme-and-config.md#theme-roles) (named in `role`), `config` for the `variables` option of the plugin. A pick that names no token is the error `blazon.shadcn/token-missing` and the variable falls back to its role. The plugin reads `brand.json` and nothing else, so `blazon tokens` runs it; a coding agent reads `shadcn.json` from the output folder, as it reads the other generated files.
 
 What blazon supplies from the theme roles, with no setup beyond `theme`:
 
@@ -119,9 +128,9 @@ What blazon supplies from the theme roles, with no setup beyond `theme`:
 | `border`, `input`, `sidebar-border` | `border` |
 | `radius` | `radius` |
 
-These are the same picks the brand book's own components use. A role the theme does not set leaves its variables out. A brand can override a pick: blazon's own starter sets `ring` and `sidebar-ring` to `text.primary` in its config, because the role pick for `ring` is the primary action color, which is 2.74:1 on the page background, below the 3:1 a focus outline needs.
+These are the same picks the brand book's own components use. A role the theme does not set leaves its variables out. A brand can override a pick: blazon's own starter sets `ring` and `sidebar-ring` to `text.primary` in that option, because the role pick for `ring` is the primary action color, which is 2.74:1 on the page background, below the 3:1 a focus outline needs.
 
-What the brand has to map itself: `destructive` and `chart-1` to `chart-5` have no role. The starter maps them in its config: `destructive` to `text.primary` (it has no red) and `chart-1` to `chart-5` to `text.primary`, `text.muted`, `surface.canvas`, `rule.default` and `rule.quiet`, in that order. A brand that wants them, or wants a different token for any variable above, says so in `blazon.json`:
+What the brand has to map itself: `destructive` and `chart-1` to `chart-5` have no role. The starter maps them in that option: `destructive` to `text.primary` (it has no red) and `chart-1` to `chart-5` to `text.primary`, `text.muted`, `surface.canvas`, `rule.default` and `rule.quiet`, in that order. A brand that wants them, or wants a different token for any variable above, says so in the `variables` option of `blazon.shadcn`:
 
 ```json
 {
@@ -153,7 +162,7 @@ The colors inside a logo file are part of the file. Changing a color token does 
 
 ## When a token changes
 
-Run `blazon tokens` in the brand folder and rebuild the site. `blazon tokens` writes the CSS, TypeScript and JSON outputs but not `dist/site/brand.json`, which only `blazon build` writes; for the shadcn values and the other data in it, run `blazon brand` (or `blazon brand --key theme.shadcn`), which compiles the brand again each time. If the site follows the tokens and nothing is hard-coded, no site file needs an edit.
+Run `blazon tokens` in the brand folder and rebuild the site. `blazon tokens` writes the CSS, TypeScript and JSON outputs but not `dist/site/brand.json`, which only `blazon build` writes; for the other data in it, run `blazon brand` (or `blazon brand --key theme.roles`), which compiles the brand again each time. The plugins' folders under `dist/tokens/` are rewritten by `blazon tokens` as well. If the site follows the tokens and nothing is hard-coded, no site file needs an edit.
 
 ## What the brand has to say, and you must not invent
 
@@ -172,4 +181,4 @@ A brand can write these in a page of its `docs/`, for example one called Web, so
 
 ## Ask blazon as tools
 
-A coding agent can call the read commands above as MCP tools instead of running them: `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo`, `get_shadcn` and `check_brand`. `list_tokens` is `blazon list`: it finds a token path. [Chapter 20](20-blazon-for-agents.md) says how to start the server.
+A coding agent can call the read commands above as MCP tools instead of running them: `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo` and `check_brand`. `list_tokens` is `blazon list`: it finds a token path. [Chapter 20](20-blazon-for-agents.md) says how to start the server.

@@ -15,7 +15,6 @@ import {
   type TokenItem,
   type Vocabulary,
 } from '../../types/index.js';
-import { deriveShadcn, type ShadcnMapping } from '../tokens/shadcn.js';
 import { BRAND_SCHEMA_FILE } from './schema.js';
 import { artworkSize } from '../assets/measure.js';
 import { assetSourcePath, categoryDirs } from '../assets/categories.js';
@@ -28,8 +27,8 @@ import { blazonIdentity, type BlazonIdentity } from '../blazon-pin.js';
 // duplicates, and changes with every viewer refactor.
 
 export const BRAND_FORMAT = 'blazon-brand';
-/** Changes only when a field is removed or changes meaning. Adding a field does not change it. */
-export const BRAND_VERSION = 1;
+/** Changes only when a field is removed or changes meaning. Adding a field does not change it. 2: a part of `theme` that version 1 held, a UI library's variable mapping, was removed (a plugin derives it). */
+export const BRAND_VERSION = 2;
 
 export interface BrandToken {
   path: string;
@@ -66,12 +65,6 @@ export interface BrandExport {
     roles: Partial<Record<ThemeRole, string>>;
     tokens: Partial<Record<ThemeRole, string>>;
     fonts: string[];
-    /**
-     * The shadcn/ui variables (names without the leading dashes): for each one blazon can supply, the token it comes from and its value in the
-     * default context; `unsupplied` lists the rest; `pairs` (only when the brand declares contrast `pairs`) says which shadcn text-on-surface
-     * pairs a rule covers. Blazon writes no shadcn file: the reader writes the CSS
-     */
-    shadcn: ShadcnMapping;
   };
   /** A path beside brand.json, or the file embedded as a data URI when it is not an asset. `onLightInk` and `onDarkInk`: the color a logo's sidecar declares for it, when it does; without one a reader judges the file as black on light or white on dark */
   logo: { onLight?: string; onDark?: string; onLightInk?: string; onDarkInk?: string };
@@ -172,13 +165,6 @@ export function buildBrandExport(data: BlazonData, config: BlazonConfig, cwd: st
       roles: data.theme,
       tokens: data.themeTokens ?? {},
       fonts: data.fonts,
-      shadcn: deriveShadcn(
-        data.theme,
-        data.themeTokens ?? {},
-        config.shadcn,
-        data.tokens.items,
-        data.tokens.groupMeta.flatMap((g) => g.blazon.pairs ?? []),
-      ),
     },
     logo: logoReferences(data, config, cwd),
     vocabulary: data.vocabulary,

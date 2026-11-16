@@ -44,16 +44,6 @@
     "fontBody": "font.family.body",
     "radius": "radius.hairline"
   },
-  "shadcn": {
-    "ring": "text.primary",
-    "sidebar-ring": "text.primary",
-    "destructive": "text.primary",
-    "chart-1": "text.primary",
-    "chart-2": "text.muted",
-    "chart-3": "surface.canvas",
-    "chart-4": "rule.default",
-    "chart-5": "rule.quiet"
-  },
   "fonts": [
     "https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=IBM+Plex+Sans:wght@400;600&display=swap",
     {
@@ -171,6 +161,24 @@
     },
     {
       "name": "blazon.platform-tokens"
+    },
+    {
+      "name": "blazon.tailwind"
+    },
+    {
+      "name": "blazon.shadcn",
+      "options": {
+        "variables": {
+          "ring": "text.primary",
+          "sidebar-ring": "text.primary",
+          "destructive": "text.primary",
+          "chart-1": "text.primary",
+          "chart-2": "text.muted",
+          "chart-3": "surface.canvas",
+          "chart-4": "rule.default",
+          "chart-5": "rule.quiet"
+        }
+      }
     },
     {
       "name": "blazon.office-template"

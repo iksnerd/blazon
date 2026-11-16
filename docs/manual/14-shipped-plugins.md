@@ -4,7 +4,7 @@
 
 Blazon's package carries plugins of its own. To use one, allow it by name in `blazon.json`; how blazon finds and trusts a shipped plugin is in [Plugins](12-plugins.md#plugins-that-ship-with-blazon). This chapter says what each one writes and how to configure it.
 
-**Variables.** A shipped plugin starts with an empty environment like any other, and the config approves each variable its manifest lists, in the `env` of its entry ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The seven plugins that draw in Chrome (`blazon.brand-deck`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards`) list `BLAZON_CHROME`, `HOME` and `TMPDIR`, and `blazon.brand-deck` also `BLAZON_DECK_FONTS`. `blazon.copy`, `blazon.office-template` and `blazon.platform-tokens` list none. The snippets below leave `env` out to stay short; without it a set `HOME` stops the plugin with a message that says what to add.
+**Variables.** A shipped plugin starts with an empty environment like any other, and the config approves each variable its manifest lists, in the `env` of its entry ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The seven plugins that draw in Chrome (`blazon.brand-deck`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards`) list `BLAZON_CHROME`, `HOME` and `TMPDIR`, and `blazon.brand-deck` also `BLAZON_DECK_FONTS`. `blazon.copy`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.shadcn` and `blazon.tailwind` list none. The snippets below leave `env` out to stay short; without it a set `HOME` stops the plugin with a message that says what to add.
 
 ## The plugins
 
@@ -327,7 +327,7 @@ Writes the brand's color and dimension tokens as native files for apps: Android 
 }
 ```
 
-`blazon build` writes into `dist/tokens/blazon.platform-tokens/` only the files of the platforms you ask for (all three by default):
+`blazon build` and `blazon tokens` write into `dist/tokens/blazon.platform-tokens/` only the files of the platforms you ask for (all three by default):
 
 - `android/values/colors.xml`: `<color name="color_brand_primary">#FF5A1F</color>`, with `#AARRGGBB` where the color has alpha. `android/values-night/colors.xml` holds the colors the dark context changes (see below). `android/values/dimens.xml`: `<dimen>` in dp. A px token is 1 dp and a rem token is 16 dp to the rem; the file says so in a comment.
 - `ios/BlazonTokens.swift`: `public enum BlazonColors` with a SwiftUI `Color` for each color, and `public enum BlazonDimensions` with a `CGFloat` for each dimension. A color the dark context changes is a `Color` that follows the system appearance, through a small helper the file defines for iOS 13 and macOS 10.15 and later. `ios/Colors.xcassets`: a colorset for each color, named as in the Swift file, with a dark appearance where the dark context changes it.
@@ -500,6 +500,34 @@ Two books of one brand, told apart by `title` and `subtitle`:
 
 A heading is never the last thing on a slide, and a paragraph that introduces a figure or a table goes with it. A table, a list or a grid of figures that is taller than a slide is split by its rows over as many slides as it takes, and each slide draws it at its own size. Text is set at slide size: a slide prints at 0.75 pt per px, so body text is 20 px, which is 15 pt, a table 16 px (12 pt), and the small type of captions and labels 12 px or more (9 pt). A slide the packer fills is never drawn at less than 0.9 of its size, so body text stays at 13.5 pt or more and a caption at 8 pt or more on paper. A table narrower than half a slide (two or three short columns, no merged cells, no footer or caption) is set, when it has to be split, in two groups of rows side by side with the header over each, read down the left group and then the right, and its slides are cut in even pieces; a grid of wide marks, which each take a whole row, is laid out in as many columns as fit when it has to be split, so that a slide holds several rows of marks and not two. A grid of tiles that are all the same height (colour swatches, say) is cut with the slack that guards a table's rows given back, and without counting the gap under a slide's last row, so a slide holds every whole row it can: a row that fits is not left for the next slide, at the cost of drawing the slide a few per cent smaller. A table or a grid that is not split is drawn as it was. The heading and the paragraph above a table or a grid stay with its first slide. A later slide of the same table or grid is a continued slide: it starts a slide of its own (a short last piece is not joined to the slide before it), it has no heading of its own but a label at the top, the nearest heading above the block and "(continued)", such as "Rates (continued)", in the book's muted text colour at 14 px on one line (a heading that is too long is cut with an ellipsis, the "(continued)" never), the label's height is taken off the room for rows, the first slide has no label, a table repeats its header row below the label, and a note under the table or grid is on the last one. A note or a small table with no heading of its own, a third of a slide or less, is never left alone on a slide: it joins the slide before it when the two fit (drawn at 0.9 at the smallest), else the slide after it, and a section still starts a slide of its own. One block that has no rows to cut at, such as a single tall figure or a long code block, is drawn smaller to fit, down to 0.5 of its size, so that none of it is lost (a wide picture shrinks with the text: its width is held while the slide is drawn smaller). Only a block that is taller than a slide even at 0.5 is cut off at the foot, and then the warning `blazon.print-book/slide-clipped` names the pages of the PDF that are cut off: shorten the block or split it in the page's Markdown. The cover is page 1 and the contents follow it, three columns of up to 10 lines. An entry is one line, and a title that does not fit a column of about 320 px wraps to a second line (or a third) and is never cut: the entry counts as the lines it takes, with its page number on the first line at the right. A book with more entries than the columns hold, more than 30 one-line chapters or fewer when some titles wrap, has more than one contents slide, each with an even share of the lines, and the first chapter starts after the last of them, so a page number in the contents, and a link to a page, is the page of the PDF. A code block has no Copy button in the book. A logo sample that states a minimum size, such as `Minimum width 150px`, is drawn at that many px of the 1280 px slide even when the slide is drawn smaller to fit; a slide prints at 0.75 pt per px, so the sample measures that many px at 96 dpi only when the PDF is printed at 100%. A PDF with a different number of pages than planned is a warning, `blazon.print-book/page-count`, and both files are still written. When a `blazon.favicons` folder with a `favicons.json` sits beside this plugin's but the site has no `favicons/` copy, the book has no Favicons chapter and the warning is `blazon.print-book/favicons-not-in-site`: list `blazon.favicons` before `blazon.print-book` in `plugins`, or delete the leftover folder. The plugin exits `2` with the reason, and writes nothing, when its options are wrong, when the site has no `index.html`, when it finds no browser, and when the page does not say it is ready in time. When `blazon.favicons` has drawn its set, the book gets a Favicons chapter: see [blazon.favicons](#blazonfavicons) for the order to list them in.
 
+### blazon.shadcn
+
+Writes which token each [shadcn/ui](https://ui.shadcn.com) variable takes, and those variables as CSS. It reads `brand.json` and nothing else, so `blazon tokens` runs it as well as `blazon build`, and it needs only Node, no browser.
+
+```json
+{
+  "plugins": [ { "name": "blazon.shadcn", "options": { "variables": { "destructive": "text.primary", "ring": "text.primary" } } } ]
+}
+```
+
+It writes into `dist/tokens/blazon.shadcn/`:
+
+- `shadcn.json`: for each variable blazon supplies, `{ "token", "value", "from", "role"? }` (`value` is the default context's; `from` is `theme` or `config`); `unsupplied`, the variables nothing supplies; and, when the brand declares contrast `pairs`, `pairs`, each shadcn text-on-surface pair with `declared`, whether a `pairs` rule covers its two tokens. [Chapter 19](19-building-a-website.md#using-shadcnui) says how to use it.
+- `shadcn.css`: a `:root` block with each supplied variable, and, for each other context, a block under that context's selector with the variables whose token it changes. A header names the variables nothing supplies, which keep shadcn's own value.
+
+A variable takes its value from the theme role it reads, or from the token the `variables` option names. `destructive` and `chart-1` to `chart-5` have no role, so only the option fills them.
+
+| Option | Default | Does |
+|---|---|---|
+| `variables` | none | An object of shadcn variable names (no leading dashes) to token paths. A pick wins over the role |
+
+This is what the `shadcn` key of `blazon.json` did before it became this option; a config that still has the key fails with `config-invalid`, and the message names this plugin.
+
+| Finding | Severity | Means |
+|---|---|---|
+| `blazon.shadcn/token-missing` | error | A pick in `variables` names a path that is not a token. The variable falls back to its role |
+| `blazon.shadcn/option-invalid` | error | An option other than `variables`, a `variables` that is not an object, a variable shadcn does not have, or a pick that is not a string |
+
 ### blazon.social-cards
 
 `blazon.social-cards` draws marketing images, one PNG for each card you list, from what the brand already has: its tokens, its logo and a background picture. It fills the `build` role, so `blazon build` writes the files to `<tokensOutDir>/blazon.social-cards/`. It needs Node and a Chrome, like `blazon.print-book` (`BLAZON_CHROME` names one; it never downloads a browser). It composes images you already have. It does not generate pictures.
@@ -606,3 +634,25 @@ Add `keepClear: ['avatar']` to the same card and the plugin tells you when the h
 ```
 
 With `logoCorner` and no `anchor`, the text takes the edge opposite the logo's corner, as it always did. With `anchor` and no `logoCorner`, the logo moves to the opposite edge, as it always did.
+
+### blazon.tailwind
+
+Writes the brand's tokens as a Tailwind v4 theme. It reads `brand.json` and nothing else, so `blazon tokens` runs it as well as `blazon build`, and it needs only Node, no browser.
+
+```json
+{
+  "plugins": [ { "name": "blazon.tailwind" } ]
+}
+```
+
+It writes into `dist/tokens/blazon.tailwind/`:
+
+- `tailwind.css`: an `@theme` block with a variable for each token that fills a Tailwind theme namespace. [Chapter 8](08-using-the-outputs.md#tailwind) has the table of what maps and how the names are made.
+- `tailwind-reset.css`: an `@theme` block that sets `initial` on each namespace the brand fills, so only the brand's values remain ([Closing Tailwind's defaults](08-using-the-outputs.md#closing-tailwinds-defaults)).
+
+A brand with no token in any namespace gets neither file. The plugin has no option. The same brand gives the same bytes.
+
+| Finding | Severity | Means |
+|---|---|---|
+| `blazon.tailwind/variable-duplicate` | error | Two tokens with different values write one Tailwind variable (`color.brand` and `colors.brand` are both `--color-brand`); `tailwind.css` keeps the first. Rename one of them. Two tokens with one value, such as a semantic alias and its primitive, are not reported |
+| `blazon.tailwind/option-invalid` | error | The entry has an `options` key, which this plugin does not take |

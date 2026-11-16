@@ -9,14 +9,14 @@ Blazon runs a plugin as a child process, once for each call, with a request on i
 | Role | When | What it does |
 |---|---|---|
 | `check` | After the brand compiles, in `blazon check`, `blazon tokens` and `blazon build` | Judges the brand and answers with findings, which show beside blazon's own and fail the check when they are errors |
-| `build` | After the site is written, in `blazon build` | Makes something from the brand and writes it into a folder of its own |
+| `build` | After the site is written, in `blazon build`; and after the token files are written, in `blazon tokens`, with no site | Makes something from the brand and writes it into a folder of its own |
 
 `blazon dev` runs `check` plugins too (see [Plugins in blazon dev](#plugins-in-blazon-dev)) and does not run `build` plugins.
 
 ## What a plugin can look at, and where it writes
 
-- **A rule that needs files is a build plugin.** A `check` plugin gets the brand and nothing else. A `build` plugin runs after the site is written and is given the built site (`site_dir`), so a check on the fonts, the images or the page output belongs there: an error from it fails `blazon build`. The cost is that it runs under `blazon build` only, not under `blazon check` or `blazon dev`.
-- **A plugin writes into its own folder.** `<tokensOutDir>/<id>/` (`dist/tokens/<id>/`) is emptied before each run, where the id is the plugin's name unless the entry gives an `as` (see [Use one plugin more than once](#use-one-plugin-more-than-once)). A plugin that works from the exported tokens reads them from `tokens_dir` (`dist/tokens/`), where `blazon build` has written them before the plugin runs.
+- **A rule that needs files is a build plugin.** A `check` plugin gets the brand and nothing else. A `build` plugin runs after the site is written and is given the built site (`site_dir`; `blazon tokens` runs it too, with no site), so a check on the fonts, the images or the page output belongs there: an error from it fails `blazon build`. The cost is that it runs under `blazon build` only, not under `blazon check` or `blazon dev`.
+- **A plugin writes into its own folder.** `<tokensOutDir>/<id>/` (`dist/tokens/<id>/`) is emptied before each run of `blazon build`, where the id is the plugin's name unless the entry gives an `as` (see [Use one plugin more than once](#use-one-plugin-more-than-once)). A plugin that works from the exported tokens reads them from `tokens_dir` (`dist/tokens/`), where `blazon build` has written them before the plugin runs. `blazon tokens` does not empty the folder: the plugin's files overwrite the old ones and nothing is removed, so a plugin that needs the site (it writes nothing there) leaves the last build's files alone, while a file a plugin no longer writes, such as a `tailwind.css` for a brand that lost its tokens, stays until the next `blazon build`.
 - **Nothing beside the folder.** Blazon empties only `<tokensOutDir>/<id>/`, so a file a plugin writes next to it, such as a cache it keeps between builds, is never cleaned and can collide with another plugin's folder. Blazon does not give a plugin a folder for its own state yet. `blazon plugin check` reports a file written beside `out_dir` as a warning (case 9 in [Writing a plugin](13-writing-a-plugin.md#write-and-check-a-plugin)), not as a failure.
 - **A book that shows generated files builds twice.** Build plugins run after the book's data is read, so a file a plugin makes cannot appear in the same build. Copy the files from the plugin's folder into `assets/`, then run `blazon build` again; a build script holds both steps.
 
@@ -111,7 +111,7 @@ Blazon warns, `acme.house-style runs unpinned because it was named on the comman
 
 ## Plugins that ship with blazon
 
-Blazon's package carries ten plugins of its own: `blazon.brand-deck`, `blazon.copy`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.press-kit`, `blazon.print-book` and `blazon.social-cards`. The table below says where each is described. To use one, allow it by name. A plugin that draws in a browser also needs its variables approved in `env`, because no plugin gets one unasked (`['BLAZON_CHROME', 'HOME', 'TMPDIR']`; `blazon.brand-deck` adds `BLAZON_DECK_FONTS`):
+Blazon's package carries twelve plugins of its own: `blazon.brand-deck`, `blazon.copy`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.press-kit`, `blazon.print-book`, `blazon.shadcn`, `blazon.social-cards` and `blazon.tailwind`. The table below says where each is described. To use one, allow it by name. A plugin that draws in a browser also needs its variables approved in `env`, because no plugin gets one unasked (`['BLAZON_CHROME', 'HOME', 'TMPDIR']`; `blazon.brand-deck` adds `BLAZON_DECK_FONTS`):
 
 ```json
 {

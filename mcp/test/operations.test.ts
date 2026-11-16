@@ -67,7 +67,6 @@ describe('the blazon command a tool runs', () => {
     ['can_use', { fg: 'a', bg: 'b', role: 'ui' }, ['can', 'a', 'b', '--role=ui'], { answers: [1] }],
     ['get_fonts', {}, ['fonts'], {}],
     ['get_logo', {}, ['logo'], {}],
-    ['get_shadcn', {}, ['brand', '--key', 'theme.shadcn'], { json: false }],
     ['check_brand', { severity: 'error', limit: 5 }, ['check', '--no-plugins', '--severity=error'], { answers: [1], stderr: 'ignore' }],
   ])('%s %j runs blazon %j', (name, args, argv, options) => {
     expect(commandFor(op(name), args)).toEqual({ argv, options });

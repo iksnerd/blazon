@@ -266,7 +266,7 @@ A new command, which also runs at the start of `blazon build`:
 | `starter-logo-unchanged` | warning | A configured logo is still blazon's own mark, byte for byte. |
 | `theme-inferred` | info | No theme is set, so blazon took the theme roles from token names. |
 | `theme-missing` | info | No theme is set and no token has a conventional name, so blazon uses neutral colors. |
-| `theme-unresolved` | error | A theme role or a shadcn variable points at a token that does not exist. |
+| `theme-unresolved` | error | A theme role points at a token that does not exist. |
 | `token-extension-deprecated` | warning | A token or group has a `dev.folio` extension key, the old name, which blazon ignores. |
 | `token-file-invalid` | error | A token file is not valid JSON or its top level is not an object. |
 | `token-invalid` | error | A token is a bare value instead of an object with $value, or a name contains ".", "{" or "}". |
@@ -296,7 +296,7 @@ What each code means:
 - `config-invalid`: `blazon.json` has an unknown key or a value of the wrong type (section 14)
 - `contrast-insufficient`: A `pairs` contrast pair is below its WCAG level
 - `contrast-unknown`: A pair has a value that is not a CSS color (a gradient, a `var()`), so it cannot be measured
-- `css-variable-duplicate`: Two tokens write one CSS custom property in the same output block (`theme.css`, a resolver context's block, or `tailwind.css`); reported at the later token, the first keeps the variable
+- `css-variable-duplicate`: Two tokens write one CSS custom property in the same output block (`theme.css` or a resolver context's block); reported at the later token, the first keeps the variable
 - `alias-deprecated`: A token aliases one marked `$deprecated`
 - `directive-deprecated`: A page has `<!-- folio:name -->`, the old spelling, which blazon does not read; reported at its page and line
 - `directive-invalid`: A page directive has the wrong arguments, or names a token, asset, category or icon set that does not exist
@@ -367,7 +367,6 @@ What each code means:
 A brand book that looks like the tool and not the brand fails its main job. Auth0 made this concrete: the deck's identity is its typefaces, its indigo and black section openers, and its logo rules. A generic dark dashboard showed none of it. So the viewer takes its presentation from the brand's own data:
 
 - `theme` in `blazon.json` maps viewer roles (`background`, `canvas`, `text`, `muted`, `border`, `accent`, `accentText`, `inverse`, `inverseText`, `fontDisplay`, `fontBody`, `radius`) to token paths. The compiler resolves them into `BlazonData.theme`.
-- `shadcn` in `blazon.json` maps a shadcn/ui variable name (`primary`, `destructive`, `chart-1`, `sidebar-ring`, ... without the leading dashes) to a token path, for the variables the theme roles do not supply or that the brand wants from another token. The derivation of shadcn variables from the roles, and from `shadcn`, is one function (`deriveShadcn`, `src/core/tokens/shadcn.ts`); `brand.json` states its result (section 12). A `shadcn` path that is not a token is `theme-unresolved`; a variable name shadcn does not have is a config error. Blazon writes no shadcn file.
 - `fonts` lists what the viewer loads: stylesheet URLs (Auth0: Google Fonts, per slide 27) and font files of the project, which blazon embeds as an `@font-face`.
 - `logo` is one file or `{ onLight, onDark }`, inlined as data URIs. The viewer follows the primary usage rule: the `onDark` artwork on inverse and accent backgrounds, and on the canvas in dark mode; `onLight` elsewhere.
 - Doc frontmatter `group` names the section (the deck's "Brand foundations", "System elements"), and `cover: accent | inverse | canvas` picks the section opener.
@@ -542,7 +541,7 @@ The Auth0 fixture states no `assets` block: the deck gives no sizes, ratios or f
 | `format`, `version` | `"blazon-brand"`, and an integer. `version` changes only when a field is removed or changes meaning; adding a field does not change it. A reader MUST check both and MUST ignore keys it does not know |
 | `generator` | Which blazon wrote the file: `{ name: "blazon", commit?, dirty? }`. `commit` is the 40-hex commit of the running blazon (the one `blazon pin` compares, from the build stamp or, when run from source, the checkout's HEAD) and `dirty` says its tree had uncommitted changes; both are left out when blazon cannot say its commit, never guessed. There is deliberately no timestamp and no host, so the file stays the same for the same inputs and the same blazon. A reader MUST NOT depend on what it says |
 | `brand` | `title`, `description` |
-| `theme` | `roles` (each viewer role's value), `tokens` (the token each came from), `fonts`, and `shadcn`: `variables` (each shadcn/ui variable blazon supplies, as `{ token, value, from, role? }`, where `value` is the default context's and `from` is `theme` or `config`), `unsupplied` (the variables nothing supplies) and, when the brand declares contrast `pairs`, `pairs` (each shadcn text-on-surface pair with `declared`: whether a `pairs` rule covers its two tokens). A reader MUST treat a file without `shadcn` as one from an earlier blazon |
+| `theme` | `roles` (each viewer role's value), `tokens` (the token each came from), and `fonts`. Version 1 also held `theme.shadcn`, the shadcn/ui mapping; version 2 does not, and a reader of version 2 MUST NOT look for it (`blazon.shadcn` derives the mapping from this file) |
 | `logo` | `onLight`, `onDark`: a path beside brand.json, or the file as a data URI when it is not an asset |
 | `vocabulary`, `sections` | The lockups and usage roles a value may name, and every section a page may declare with its title, each standard entry first and then the brand's own (sections 13 and 14). A reader learns a custom section's title from here |
 | `tokens` | Each token once: `path`, `type`, `value` (CSS-ready), `resolvedValue` (DTCG, aliases replaced), `rawValue`, `parts`, `aliasOf`, `description`, `deprecated`, `cssVariable`, `sourceFile`, `extensions` and `blazon` (its `dev.blazon`: print values, usage, source, review with its `by`, `at` and `value`) |
@@ -573,7 +572,6 @@ Not in it, on purpose: the pages' HTML, SVG markup (the files are beside it), th
 | `BlazonData.tokens` | `tokens`, `groups`, `contexts`, `modifiers` | the members of `ParsedTokens` below |
 | `BlazonData.findings` | `findings` | as is; the token load problems are already in it |
 | `BlazonData.theme`, `BlazonData.themeTokens` | `theme.roles`, `theme.tokens` | `themeTokens` is `{}` when absent |
-| `config.shadcn`, the theme roles, the default context's tokens, the groups' `pairs` | `theme.shadcn` | `deriveShadcn` (section 6) |
 | `BlazonData.fonts` | `theme.fonts` | as is |
 | `BlazonData.emailSignature` | left out | the settings of the `blazon:email-signature` generator (logo URL, domains, fixed lines); they are for the viewer's form and say nothing about the brand |
 | `BlazonData.logo` | `logo` | the members of `LogoSet` below; `{}` when there is no logo |
@@ -630,13 +628,12 @@ Not in it, on purpose: a section id is not a page address (the slug is), and a s
 | `docsDir` | path | `./docs` | Where the guideline pages are (section 6) |
 | `assetsDir` | path | `./assets` | Where the assets and their sidecars are (section 7) |
 | `outDir` | path | `./dist/site` | Where `blazon build` writes the site and `brand.json` (section 12) |
-| `tokensOutDir` | path | `./dist/tokens` | Where `blazon tokens` and `blazon build` write `theme.css`, `typography.css`, `tokens.ts`, `tokens.json` and, when a token maps to a Tailwind theme variable, `tailwind.css` and `tailwind-reset.css` (section 5) |
+| `tokensOutDir` | path | `./dist/tokens` | Where `blazon tokens` and `blazon build` write `theme.css`, `typography.css`, `tokens.ts`, `tokens.json` and one `tokens.<modifier>.<context>.json` for each context; a build plugin writes into its own folder under it (section 5) |
 | `cssPrefix` | string | `--` | The prefix of every CSS variable |
 | `cssSelector` | string | `:root` | The selector the default context's variables are written under |
 | `port` | whole number, 0 to 65535 | `3000` | The dev server and preview port |
 | `logo` | path, or `{ onLight, onDark? }` | none | The brand's logo files (section 6) |
 | `theme` | object of role to token path | inferred from token names | Which tokens the brand book wears (section 6) |
-| `shadcn` | object of shadcn variable name to token path | none | Tokens for the shadcn/ui variables the roles do not supply (section 6) |
 | `iconSets` | list | none | Icon packages to preview (section 9) |
 | `assets` | object keyed by category | none | Settings for asset categories (section 11) |
 | `sections` | list of section ids, standard or custom | all of them | The sections this brand expects a page for (section 13) |
@@ -729,7 +726,7 @@ Implemented on `main` as of 2026-11-16. The sections of this RFC are all built; 
 | 2. The `dev.blazon` extension | `src/core/tokens/`, `src/core/checker/`. Usage, contrast, tier, duplicate and review checks; `review` with `by`, `at` and `value`; `font` facts; `source.cssVar` |
 | 3. Contexts | Resolver contexts, with locale variants in the third-party fixture (Japanese: Kinto; German and French: H1 56/64) |
 | 4. `blazon check` | `src/core/checker/`, run before `blazon tokens` and `blazon build`. The finding codes, with severity and summary, are in the catalogue, `src/core/checker/catalogue.ts`; the code table in this section is written from it. Findings are sorted by `compareFindings` (`src/core/order.ts`), the order the section states |
-| 5. Outputs | `theme.css`, `typography.css`, `tailwind.css`, `tailwind-reset.css`, `tokens.ts`, `tokens.json`. `blazon drift` (`src/core/drift/`, `src/cli/commands/drift.ts`) compares `source.cssVar` with a live site |
+| 5. Outputs | `theme.css`, `typography.css`, `tokens.ts`, `tokens.json`. `blazon.tailwind` writes `tailwind.css` and `tailwind-reset.css` into its own folder (RFC 0002). `blazon drift` (`src/core/drift/`, `src/cli/commands/drift.ts`) compares `source.cssVar` with a live site |
 | 6. The brand book wears the brand | `theme`, `fonts`, `logo`, `group` and `cover` frontmatter, findings in the viewer. Page directives are validated against one table, `src/core/docs/directives.ts`, which the viewer also renders from |
 | 7. Assets | `src/core/assets/` catalogs SVG and raster files (PNG, JPEG, GIF, WebP, AVIF) and reads their size from the file header. The dev server streams them (`src/server/assets.ts`); `blazon build` copies them to `brand-assets/` |
 | 8. Layout groups | Social formats and patterns, drawn by `blazon:formats` and `blazon:patterns` |
@@ -738,7 +735,7 @@ Implemented on `main` as of 2026-11-16. The sections of this RFC are all built; 
 | 11. Asset categories | The operator's approval of a `dir` outside the project (`--allow-dir`, `BLAZON_ALLOW_DIRS`; `src/core/confine.ts`, `src/core/assets/categories.ts`). The `assets` block, including `experimental: true`, which shows an asset labelled "Experiment", and `reference: true`, which shows it labelled "Reference"; both exempt it from the review-gating findings |
 | 12. `brand.json` | `src/core/brand/`, with a JSON Schema beside it and a `generator` that records the blazon commit. Read by `scripts/read-brand.py` and drawn by `blazon.brand-deck` |
 | 13. Sections | `customSections`, `section-invalid`, `section-missing`, the `blazon:section` directive |
-| 14. Configuration | `blazon.json`, plain JSON, is the one form (`src/core/config/index.ts`); the older code spellings are refused by name with `config-invalid`. Unknown keys and wrong types are `config-invalid`; a config that cannot load stops the run. `customSections` and `vocabulary` are vocabulary as data (RFC 0002 section 1). `blazon pin` writes `blazon.lock` |
+| 14. Configuration | `blazon.json`, plain JSON, is the one form (`src/core/config/index.ts`); the older code spellings are refused by name with `config-invalid`. Unknown keys and wrong types are `config-invalid`; a config that cannot load stops the run. `customSections` and `vocabulary` are vocabulary as data (RFC 0002 section 1). `blazon pin` writes `blazon.lock`. As of 2026-11-16 the `shadcn` key is refused with `config-invalid`, naming the plugin `blazon.shadcn` and its `variables` option, because the mapping is written by that plugin |
 
 The brand book starter belongs to [RFC 0003](0003-adopting-blazon.md): `blazon init` copies `examples/blazon/`, and `template/` is built from it by `npm run build-starter` and not committed.
 

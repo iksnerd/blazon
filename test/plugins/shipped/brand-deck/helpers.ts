@@ -61,7 +61,7 @@ export function world(over: { fonts?: string[]; categories?: object[]; assets?: 
   });
   const brand = {
     format: 'blazon-brand',
-    version: 1,
+    version: 2,
     brand: { title: 'Acme Brand Book', description: 'How Acme looks.' },
     theme: { roles: { inverse: '#1E1F21', inverseText: '#F2F0EB', text: '#1E1F21', accent: '#FF5A1F', background: '#FFFFFF' }, tokens: {}, fonts: over.fonts ?? [] },
     logo: { onLight: 'brand-assets/logos/onlight.svg', onDark: 'brand-assets/logos/ondark.svg' },
@@ -97,7 +97,7 @@ export function world(over: { fonts?: string[]; categories?: object[]; assets?: 
 }
 
 export const run = (w: ReturnType<typeof world>, options: object = {}, env: Record<string, string> = browser, outDir = tempDir('blazon-deck-out-')) => {
-  const ran = plugin(JSON.stringify({ v: 1, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
+  const ran = plugin(JSON.stringify({ v: 2, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
   return { ran, outDir, findings: ran.status === 0 ? (JSON.parse(ran.out).findings as { code: string; severity: string; path: string; message: string }[]) : [] };
 };
 export const pdfOf = (outDir: string) => path.join(outDir, 'brand-deck.pdf');

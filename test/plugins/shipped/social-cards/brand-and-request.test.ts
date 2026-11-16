@@ -12,7 +12,7 @@ import { tempDir } from '../../../support/project';
 describe('the brand', () => {
   const brand = {
     format: 'blazon-brand',
-    version: 1,
+    version: 2,
     theme: { roles: { inverse: '#1E1F21', inverseText: '#F2F0EB', text: '#1E1F21', accent: '#FF5A1F', fontDisplay: "'Big', sans-serif", fontBody: 'Plex, sans-serif' }, tokens: {}, fonts: ['https://x.test/f.css'] },
     logo: { onLight: 'brand-assets/logos/a.svg', onDark: 'brand-assets/logos/b.svg' },
     tokens: [
@@ -45,7 +45,7 @@ describe('the brand', () => {
   });
 
   it('survives a brand with nothing in it', () => {
-    const read = readBrand({ format: 'blazon-brand', version: 1 });
+    const read = readBrand({ format: 'blazon-brand', version: 2 });
     expect(read.formats.size).toBe(0);
     expect(read.display.start).toBeGreaterThan(read.display.floor);
   });
@@ -57,19 +57,19 @@ describe('the request', () => {
     fs.writeFileSync(path.join(dir, 'index.html'), '<html></html>');
     return dir;
   };
-  const req = (extra: object = {}) => JSON.stringify({ v: 1, type: 'build', options: {}, brand: {}, site_dir: site(), out_dir: tempDir('blazon-cards-out-'), ...extra });
+  const req = (extra: object = {}) => JSON.stringify({ v: 2, type: 'build', options: {}, brand: {}, site_dir: site(), out_dir: tempDir('blazon-cards-out-'), ...extra });
 
   it.each([
     ['not JSON', '{ nope', 'the request is not JSON'],
     ['not an object', '[]', 'the request is not a JSON object'],
-    ['another version', JSON.stringify({ v: 2, type: 'build' }), 'the request is version 2; this plugin speaks version 1'],
+    ['another version', JSON.stringify({ v: 1, type: 'build' }), 'the request is version 1; this plugin speaks version 2'],
     ['another role', JSON.stringify({ v: 1, type: 'check' }), 'the request is for the check role; this plugin is a build plugin'],
   ])('refuses a request that is %s', (_, text, reason) => {
     expect(() => jobFor(text)).toThrow(reason);
   });
 
   it('refuses a site_dir with no brand.json assets served, or an out_dir that is not a folder', () => {
-    expect(() => jobFor(JSON.stringify({ v: 1, type: 'build', options: {}, site_dir: tempDir('e-'), out_dir: tempDir('o-') }))).toThrow('site_dir has no index.html');
+    expect(() => jobFor(JSON.stringify({ v: 2, type: 'build', options: {}, site_dir: tempDir('e-'), out_dir: tempDir('o-') }))).toThrow('site_dir has no index.html');
     expect(() => jobFor(req({ out_dir: '/nonexistent/out' }))).toThrow('out_dir is not a folder');
   });
 

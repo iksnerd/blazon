@@ -196,7 +196,7 @@ A plugin that keeps breaking stops being called for the rest of a unit of work. 
 
 ## 8. Versioning
 
-Versions belong to messages, not to the protocol as a whole. Every request record carries its own `v` (`1` today), and a plugin MUST refuse a record of a version it does not speak with exit `2`. Blazon MUST refuse a manifest whose `v` it does not speak.
+Versions belong to messages, not to the protocol as a whole. Every request record carries its own `v`, and a plugin MUST refuse a record of a version it does not speak with exit `2`. Today the `check` request is version `1` and the `build` request is version `2`: version 2 may carry no `site_dir`, because `blazon tokens` runs the build plugins before any site exists (RFC 0002), and its `brand` is `brand.json` version 2 (RFC 0001 section 12). Blazon sends one version of each request and no other, and a plugin written for build request version 1 is refused with a reason that names the version it was sent. Blazon MUST refuse a manifest whose `v` it does not speak.
 
 - Compatible, with no new `v`: a new optional field in a request, a manifest or an answer. A plugin MUST ignore request fields it does not know, and blazon MUST ignore manifest and answer fields it does not know.
 - Incompatible, with a new `v`: removing or renaming a field, a new required field, a changed type or meaning, a new meaning for an exit code, a tighter limit.
@@ -268,7 +268,7 @@ Recommendation: option 3, because it is the one where blazon can check what it r
 
 ## Compatibility
 
-The protocol is implemented as written, so nothing in this RFC breaks an existing plugin. `v` is `2` for the manifest and `1` for a request, and section 8 says what a new version needs. A plugin written for an earlier blazon loads, because blazon ignores a manifest field it does not know.
+The protocol is implemented as written, so nothing in this RFC breaks an existing plugin. `v` is `2` for the manifest, `1` for a `check` request and `2` for a `build` request, and section 8 says what a new version needs. As of 2026-11-16 a plugin written for build request version 1 breaks: blazon is 0.x and keeps no alias for it. A plugin written for an earlier blazon loads, because blazon ignores a manifest field it does not know.
 
 ## Status
 
@@ -277,7 +277,7 @@ Implemented, in `src/plugins/`:
 - Names, the manifest, limits, and the environment (`wire/`).
 - One call: a clean environment, a private request file, a process group, limits and exit codes, never a pass; scrubbing; admission; the check command (`host/`).
 - Pins: tree and file digests, `blazon.plugins.lock`, a verified copy, the interpreter of a pinned script, and the lock shipped with blazon's own plugins (`pins/`, `scripts/shipped-lock.mjs`), and the shipped plugins' programs, each one bundled file inside its pinned folder (`scripts/build-plugins.mjs`).
-- The breaker, the roles and the dev server's gate (`roles/`).
+- The breaker, the roles and the dev server's gate (`roles/`). As of 2026-11-16 the `build` request is version 2, with no `site_dir` when `blazon tokens` runs the role (`REQUEST_VERSIONS` in `src/plugins/wire/profile.ts`).
 - The commands `blazon plugin pin`, `check` and `profile` (`src/cli/commands/plugin.ts`). As of 2026-11-08, `check` also reports a program in the shipped layout whose file name is not `blazon-<name>.🔌` (`shippedLayoutProblem` in `src/core/plugin-name.ts`). As of 2026-11-15, `check --core` runs only the core cases of section 9 and leaves out cases 6 to 9 and the layout line.
 
 Not built: long-lived plugins, a role with a validation call, the owner check of the lock and of `.blazon/plugins/` (blazon refuses one that group or others can write and does not check the owner), checking the interpreter of a plugin that is not pinned, and any platform but POSIX.

@@ -241,7 +241,7 @@ Names blazon checks a value against.
 
 | Output | Where | Holds |
 |---|---|---|
-| CSS, TypeScript and JSON | `dist/tokens/` | `theme.css`, `typography.css`, `tailwind.css`, `tailwind-reset.css`, `tokens.ts`, `tokens.json`, and `tokens.<modifier>.<context>.json` for each context ([chapter 8](08-using-the-outputs.md)) |
+| CSS, TypeScript and JSON | `dist/tokens/` | `theme.css`, `typography.css`, `tokens.ts`, `tokens.json`, and `tokens.<modifier>.<context>.json` for each context, and the folders of the build plugins that write beside them ([chapter 8](08-using-the-outputs.md)) |
 | The brand book | `dist/site/` | The static site |
 | `brand.json` | `dist/site/` | The model as one versioned file, with `brand.schema.json` beside it |
 | Plugin files | `dist/tokens/<plugin>/` | What each build plugin writes |

@@ -17,7 +17,7 @@ describe('dev server: /brand.json', () => {
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toMatch(/application\/json/);
       const before = await res.json();
-      expect(before).toMatchObject({ format: 'blazon-brand', version: 1 });
+      expect(before).toMatchObject({ format: 'blazon-brand', version: 2 });
       expect(before.tokens.find((t: { path: string }) => t.path === 'interactive.primary').resolvedValue).toBeDefined();
 
       const file = path.join(root, 'tokens/colors.json');

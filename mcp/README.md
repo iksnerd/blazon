@@ -23,7 +23,6 @@ The server's instructions give the order: `check_brand` once per session, `list_
 | `can_use` | `fg`, `bg`, `role` | `blazon can` | ask whether one color may be text on another, or with `role: "ui"` a focus ring, border or icon stroke judged at 3:1 with no pairs. A denied answer is a result with `allowed: false`, not an error |
 | `get_fonts` | none | `blazon fonts` | find the stylesheets and files to load, and whether each family a token names is loaded |
 | `get_logo` | none | `blazon logo` | read the logo variants and their clear space, minimum size and forbidden backgrounds |
-| `get_shadcn` | none | `blazon brand --key theme.shadcn` | read the shadcn/ui variables the brand supplies, compiled now, so no build is needed |
 
 Every tool has a title, `readOnlyHint: true` and an input schema that refuses extra arguments. A number or boolean sent as a string (`"5"`, `"true"`) is accepted when it reads as one. A token path is dot-separated segments of ASCII letters, digits, `_` and `-`; a segment starts with a letter, digit or `_`. So `a..b`, `a.`, `-x` and `.x` are refused, and an argument can never become a flag.
 
@@ -44,7 +43,7 @@ The size cap is 40 000 characters, about 10 000 tokens, the point where Claude C
 |---|---|
 | `blazon://rules` | every rule of the brand (`blazon rules --json`), `application/json` |
 | `blazon://brand` | the compiled brand as `brand.json` holds it (`blazon brand`), `application/json` |
-| prompt `build_page` (argument `description`) | the workflow of the manual's chapter 19: check first, read the rules, fonts, logo and shadcn variables, find paths with `list_tokens`, never hard-code a value, `can_use` for each pair, and list the questions the brand does not answer |
+| prompt `build_page` (argument `description`) | the workflow of the manual's chapter 19: check first, read the rules, fonts and logo, find paths with `list_tokens`, never hard-code a value, `can_use` for each pair, and list the questions the brand does not answer |
 
 Resources are not cut to the size limit. A warning from blazon comes as a separate `text/plain` entry before the JSON entry.
 

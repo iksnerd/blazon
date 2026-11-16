@@ -23,7 +23,7 @@ case "$in" in
   '{'*) ;;
   *) echo 'the request is not JSON'; exit 2;;
 esac
-if printf '%s' "$in" | grep -Eq '"v" *: *1[,}]'; then
+if printf '%s' "$in" | grep -Eq '"v" *: *[12][,}]'; then
   out=$(printf '%s' "$in" | sed -n 's/.*"out_dir":"\\([^"]*\\)".*/\\1/p')
 ${valid}
 fi

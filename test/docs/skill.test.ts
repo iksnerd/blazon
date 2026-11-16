@@ -36,7 +36,7 @@ describe('skills/blazon/SKILL.md', () => {
   it('finds what it is checking', () => {
     expect(commands.size).toBeGreaterThanOrEqual(10);
     expect(flags.size).toBeGreaterThanOrEqual(10);
-    expect(tools.size).toBeGreaterThanOrEqual(8);
+    expect(tools.size).toBeGreaterThanOrEqual(7);
     expect(spans.filter((s) => s.startsWith('blazon ')).length).toBeGreaterThan(5);
   });
 

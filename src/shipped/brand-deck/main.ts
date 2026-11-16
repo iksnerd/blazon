@@ -6,6 +6,7 @@ import { readOptions, type Finding } from './checks.js';
 import { DeckError, readFavicons } from './favicons.js';
 import { FontTable, fontFolders } from './fonts.js';
 import { drawDeck, type Deck } from './render.js';
+import { skippedForNoSite, NeedsSite } from '../shared/plugin.js';
 import { Cannot, jobFor, MANIFEST, NAME } from './request.js';
 
 // blazon.brand-deck: blazon's build role. Reads one request on standard input, draws the brand as a PDF deck (brand-deck.pdf) in
@@ -148,6 +149,10 @@ async function main(argv: string[]): Promise<number> {
     process.stdout.write(`${JSON.stringify(await build(fs.readFileSync(0, 'utf-8')))}\n`);
     return 0;
   } catch (error) {
+    if (error instanceof NeedsSite) {
+      process.stdout.write(`${JSON.stringify(skippedForNoSite(NAME, error))}\n`);
+      return 0;
+    }
     const reason =
       error instanceof Cannot || error instanceof DeckError
         ? error.message

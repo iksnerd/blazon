@@ -27,12 +27,6 @@ function printToken(token: TokenDescription): void {
     ['tier', token.tier],
     ['about', token.description],
     ['theme.css', [names.theme.variable, ...Object.values(names.theme.parts ?? {})].join(', ')],
-    [
-      'tailwind.css',
-      names.tailwind
-        ? `${names.tailwind.variable}${names.tailwind.shadowedBy ? ` (taken by {${names.tailwind.shadowedBy}}, which is written first)` : ''}`
-        : 'none: no Tailwind namespace for this token',
-    ],
     ['typography.css', names.typographyClass && `.${names.typographyClass}`],
     ['written in', token.sourceFile],
   ]);

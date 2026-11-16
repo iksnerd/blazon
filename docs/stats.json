@@ -70,7 +70,7 @@
     {
       "name": "get",
       "usage": "blazon get [path] [dir]",
-      "summary": "Read one token: its value, type, CSS variable names in theme.css and tailwind.css, its usage, pairs and logo rules, and the file it is in. To find a path, use blazon list"
+      "summary": "Read one token: its value, type, CSS variable name in theme.css, its usage, pairs and logo rules, and the file it is in. To find a path, use blazon list"
     },
     {
       "name": "list",
@@ -144,11 +144,6 @@
       "name": "get_logo",
       "title": "Read the brand logo",
       "description": "Gets the brand logo variants for light and dark surfaces, their files, and the rules for each logo: clear space, minimum size, lockups, and the backgrounds that forbid it. Use it before placing a logo. For the brand's other rules use get_rules."
-    },
-    {
-      "name": "get_shadcn",
-      "title": "Read the shadcn/ui variables",
-      "description": "Gets the shadcn/ui variables the brand supplies (theme.shadcn): which token each variable takes, its value, and the variables nothing supplies. Use it when the site uses shadcn/ui. It compiles the brand when called, so it needs no build and is never out of date."
     }
   ],
   "chapters": [

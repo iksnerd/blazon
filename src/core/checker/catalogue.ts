@@ -540,8 +540,8 @@ export const CHECKS = {
   },
   'theme-unresolved': {
     severity: 'error',
-    summary: 'A theme role or a shadcn variable points at a token that does not exist.',
-    fix: 'Point that theme role or shadcn variable in blazon.json at a token that exists.',
+    summary: 'A theme role points at a token that does not exist.',
+    fix: 'Point that theme role in blazon.json at a token that exists.',
     appliesTo: ['config'],
     rfc: '1#4',
     manual: '03-checks',

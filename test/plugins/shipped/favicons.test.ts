@@ -51,7 +51,7 @@ const project = (files: Record<string, Buffer | string> = {}, assets: object[] =
   }
   const brand = {
     format: 'blazon-brand',
-    version: 1,
+    version: 2,
     brand: { title: 'Acme Brand Book' },
     theme,
     tokens: TOKENS,
@@ -60,7 +60,7 @@ const project = (files: Record<string, Buffer | string> = {}, assets: object[] =
   return { siteDir, brand };
 };
 const request = (type: 'check' | 'build', options: object, p = project(), outDir = tempDir('blazon-favicons-out-')) => ({
-  text: JSON.stringify({ v: 1, type, options, brand: p.brand, site_dir: p.siteDir, out_dir: outDir }),
+  text: JSON.stringify({ v: type === 'build' ? 2 : 1, type, options, brand: p.brand, site_dir: p.siteDir, out_dir: outDir }),
   outDir,
 });
 const plan = (options: object = {}, p = project()) => planFor(requestFrom(request('build', options, p).text));
@@ -373,7 +373,7 @@ describe('the favicons plugin, as blazon starts it', () => {
 
   it.each([
     ['not JSON', '{ nope', 'the request is not JSON'],
-    ['another version', JSON.stringify({ v: 2, type: 'build' }), 'the request is version 2'],
+    ['another version', JSON.stringify({ v: 1, type: 'build' }), 'the request is version 1'],
     ['another role', JSON.stringify({ v: 1, type: 'deploy' }), 'the request is for the deploy role'],
   ])('exits 2 with the reason on its first line when the request is %s', (_, text, reason) => cannot(run(text), reason));
 

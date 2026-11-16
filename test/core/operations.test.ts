@@ -23,7 +23,6 @@ import { REPO } from '../support/paths.js';
 /** The operations that are served on one surface only, and why. Adding to this table is a decision; a new operation with a missing surface fails. */
 const ONE_SIDED: Record<string, { missing: 'cli' | 'mcp'; because: string }> = {
   check_brand: { missing: 'cli', because: 'blazon check runs plugins and is not an operation yet; the tool runs it without plugins' },
-  get_shadcn: { missing: 'cli', because: 'a tool-only shortcut for blazon brand --key theme.shadcn' },
   get_brand: { missing: 'mcp', because: 'the whole document is too large for a tool; the resource blazon://brand carries it' },
 };
 
@@ -48,7 +47,7 @@ describe('the operations list', () => {
   });
 
   it('lists the tools in a fixed order and the commands by rank', () => {
-    expect(toolOperations(OPERATIONS).map((op) => op.name)).toEqual(['check_brand', 'list_tokens', 'get_token', 'get_rules', 'can_use', 'get_fonts', 'get_logo', 'get_shadcn']);
+    expect(toolOperations(OPERATIONS).map((op) => op.name)).toEqual(['check_brand', 'list_tokens', 'get_token', 'get_rules', 'can_use', 'get_fonts', 'get_logo']);
     expect(commandOperations(OPERATIONS).map((op) => (op.cli as { command: string[] }).command[0])).toEqual(['get', 'list', 'rules', 'can', 'fonts', 'logo', 'brand']);
   });
 

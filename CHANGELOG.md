@@ -4,6 +4,19 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Breaking
+
+- The core no longer writes `tailwind.css` and `tailwind-reset.css`. Add `{ "name": "blazon.tailwind" }` to `plugins` in `blazon.json`, import the files from `dist/tokens/blazon.tailwind/` instead of `dist/tokens/`, and delete the old copies in `dist/tokens/`, which blazon no longer touches. The names `tailwind.css` and `tailwind-reset.css` are no longer reserved in `tokensOutDir`.
+- The `shadcn` key of `blazon.json` is refused with `config-invalid`, and the message names the plugin. Move its map to `{ "name": "blazon.shadcn", "options": { "variables": { ... } } }` in `plugins`; the plugin reports a pick that names no token as `blazon.shadcn/token-missing`, which was `theme-unresolved`.
+- `brand.json` is version 2: `theme.shadcn` is gone. A reader that checks `version` (as RFC 0001 requires) refuses version 1 files and must be updated; `blazon.shadcn` derives the same mapping, in `shadcn.json`. The `get_shadcn` tool and `blazon brand --key theme.shadcn` are removed with it: read `dist/tokens/blazon.shadcn/shadcn.json`.
+- The `build` request of the plugin protocol is version 2 (`check` stays 1). It may carry no `site_dir`, which is how `blazon tokens` calls a plugin. A plugin written for version 1 of the build request is refused with exit 2 and the version named; change its check to 2, and answer a request with no `site_dir` (exit 2 with a reason, or an info finding and nothing written). A plugin that reads `brand.json` must accept version 2 of it. The reference plugins in `examples/plugins/` and `scripts/read-brand.py` do.
+- `blazon get` no longer prints a `tailwind.css` name, and the `names.tailwind` field of its `--json` is gone. The Tailwind variable collision is reported by `blazon.tailwind` (`blazon.tailwind/variable-duplicate`, an error) when the plugin runs, not by `blazon check` as `css-variable-duplicate`, which now covers `theme.css` and a context's block only.
+
+### Added
+
+- Two shipped build plugins, `blazon.tailwind` and `blazon.shadcn`. `blazon.tailwind` writes `tailwind.css` and `tailwind-reset.css`; `blazon.shadcn` writes `shadcn.json` (which token each shadcn/ui variable takes) and `shadcn.css` (the variables as CSS, with a block for each context that changes one). Both read `brand.json` only, need only Node and write to `<tokensOutDir>/<plugin name>/`.
+- `blazon tokens` runs the `build` plugins after it writes the token files. A plugin that needs the built site answers with the info finding `<name>/needs-site` and writes nothing, so `blazon build` is still the command for those. `blazon tokens` does not empty a plugin's folder: what the plugin writes overwrites the old file, and every other file stays, so the deck or press kit of the last `blazon build` survives. A file an earlier `blazon tokens` wrote and the plugin no longer writes also stays; `blazon build` empties the folder.
+
 ### Fixed
 
 - `npm run release` regenerates `docs/stats.json` and runs the docs tests before it commits, and stops without a commit or tag if they fail. The release commit used to keep the old version in `docs/stats.json`, which failed `test/docs/stats.test.ts` at the pre-push hook and in CI on the tag.

@@ -82,11 +82,10 @@ describe('blazon get, without a token path', () => {
 });
 
 describe('blazon get', () => {
-  it('prints the token and both CSS names, as text and as JSON', () => {
+  it('prints the token and its CSS name, as text and as JSON', () => {
     const text = blazon('get', 'text.primary', root);
     expect(text.status, text.stderr).toBe(0);
     expect(text.stdout).toMatch(/theme\.css\s+--text-primary/);
-    expect(text.stdout).toMatch(/tailwind\.css\s+--color-text-primary/);
     const json = blazon('get', 'text.primary', root, '--json');
     expect(JSON.parse(json.stdout)).toMatchObject({
       command: 'get',
@@ -94,7 +93,7 @@ describe('blazon get', () => {
       token: {
         path: 'text.primary',
         type: 'color',
-        names: { theme: { variable: '--text-primary' }, tailwind: { variable: '--color-text-primary' } },
+        names: { theme: { variable: '--text-primary' } },
         sourceFile: 'tokens/colors.json',
       },
     });
@@ -189,10 +188,10 @@ describe('blazon brand', () => {
   it('prints the compiled brand.json, or one part of it, and writes nothing', () => {
     const whole = blazon('brand', root);
     expect(whole.status, whole.stderr).toBe(0);
-    expect(JSON.parse(whole.stdout)).toMatchObject({ format: 'blazon-brand', version: 1 });
-    const part = blazon('brand', root, '--key', 'theme.shadcn');
+    expect(JSON.parse(whole.stdout)).toMatchObject({ format: 'blazon-brand', version: 2 });
+    const part = blazon('brand', root, '--key', 'theme.roles');
     expect(part.status, part.stderr).toBe(0);
-    expect(JSON.parse(part.stdout).variables.primary).toMatchObject({ token: 'interactive.primary', from: 'theme' });
+    expect(JSON.parse(part.stdout).accent).toBe('#FF5A1F');
     expect(fs.existsSync(path.join(root, 'dist'))).toBe(false);
   });
 

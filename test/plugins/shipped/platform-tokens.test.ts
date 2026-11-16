@@ -18,7 +18,7 @@ import { ROOT_DIR } from '../support/spec.js';
 import { tempDir } from '../../support/project';
 
 // A brand.json always carries its format and version (RFC 0001); a fixture that is only a piece of one gets them here
-const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 1, ...brand });
+const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 2, ...brand });
 
 // blazon.platform-tokens, the plugin blazon ships to write a brand's colors and dimensions as native files for Android, iOS and Jetpack
 // Compose. Seams: the pure parts (names, colors, dimensions, the options, which context is dark, what the plan holds, the text of each
@@ -33,7 +33,7 @@ const dim = (p: string, value: number, unit = 'px') => ({ path: p, type: 'dimens
 
 const brandOf = (over: object = {}) => ({
   format: 'blazon-brand',
-  version: 1,
+  version: 2,
   brand: { title: 'Acme' },
   tokens: [
     color('color.brand.primary', '#FF5A1F'),
@@ -440,9 +440,9 @@ describe('the entry', () => {
   const site = tempDir('blazon-platform-tokens-site-');
   fs.writeFileSync(path.join(site, 'index.html'), '<!doctype html>');
 
-  function run(options: object, brand: object = brandOf()) {
+  function run(options: object, brand: object = brandOf(), withSite = true) {
     const out = tempDir('blazon-platform-tokens-out-');
-    const input = JSON.stringify({ v: 1, type: 'build', site_dir: site, out_dir: out, brand, options });
+    const input = JSON.stringify({ v: 2, type: 'build', ...(withSite && { site_dir: site }), out_dir: out, brand, options });
     const ran = spawnSync(process.execPath, ['--import', TSX, ENTRY], { input, encoding: 'utf-8', env: { PATH: '/usr/bin:/bin', HOME: os.homedir() } });
     const files: Record<string, string> = {};
     const walk = (dir: string) => {
@@ -454,6 +454,20 @@ describe('the entry', () => {
     walk(out);
     return { status: ran.status, answer: ran.status === 0 ? JSON.parse(ran.stdout) : ran.stdout, files };
   }
+
+  it('needs no site_dir: it writes the same files without one, as blazon tokens asks', () => {
+    const without = run({}, brandOf(), false);
+    expect(without.status).toBe(0);
+    expect(without.files).toEqual(run({}).files);
+    expect(Object.keys(without.files).length).toBeGreaterThan(0);
+  });
+
+  it('refuses a build request of version 1', () => {
+    const out = tempDir('blazon-platform-tokens-out-');
+    const ran = spawnSync(process.execPath, ['--import', TSX, ENTRY], { input: JSON.stringify({ v: 1, type: 'build', out_dir: out, brand: brandOf(), options: {} }), encoding: 'utf-8', env: { PATH: '/usr/bin:/bin', HOME: os.homedir() } });
+    expect(ran.status).toBe(2);
+    expect(ran.stdout.split('\n')[0]).toBe('the request is version 1; this plugin speaks version 2');
+  });
 
   it('writes the three platforms and a README.txt that says where each goes', () => {
     const { status, answer, files } = run({});

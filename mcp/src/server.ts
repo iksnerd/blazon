@@ -52,7 +52,6 @@ const LOOKUPS: Record<string, Lookup> = {
   can_use: { hint: FIND_PATH, narrow: NARROW_NONE },
   get_fonts: { narrow: NARROW_NONE },
   get_logo: { narrow: NARROW_NONE },
-  get_shadcn: { narrow: NARROW_NONE },
 };
 
 /** A schema as `tools/list` sends it: the JSON Schema dialect named, as the protocol's own schema generator does. */

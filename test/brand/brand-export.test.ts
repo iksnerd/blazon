@@ -29,7 +29,7 @@ beforeAll(async () => {
 
 describe.skipIf(!PRESENT)('what brand.json holds, for the reference brand', () => {
   it('names its format and version', () => {
-    expect(brand).toMatchObject({ format: 'blazon-brand', version: 1, brand: { title: 'Auth0 Brand Book' } });
+    expect(brand).toMatchObject({ format: 'blazon-brand', version: 2, brand: { title: 'Auth0 Brand Book' } });
   });
 
   it('holds each token once, with its resolved value and its dev.blazon rules', () => {
@@ -165,7 +165,7 @@ describe('blazon build writes brand.json beside the site', () => {
   it('writes valid JSON in which every file it names exists beside it', async () => {
     const { siteOutDir, text } = await build();
     const out = JSON.parse(text);
-    expect(out).toMatchObject({ format: 'blazon-brand', version: 1 });
+    expect(out).toMatchObject({ format: 'blazon-brand', version: 2 });
     expect(out.assets.length).toBeGreaterThan(0);
     for (const asset of out.assets) expect(fs.existsSync(path.join(siteOutDir, asset.file)), asset.file).toBe(true);
     expect(out.logo.onLight).toMatch(/^brand-assets\//);

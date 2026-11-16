@@ -95,7 +95,7 @@ The same token is written as `--color-signal-orange: #FF5A1F;` in `theme.css` an
 ## When not to use blazon
 
 - **You need a stable interface.** Blazon is 0.x: a minor version may break a stable surface, and the CHANGELOG lists it under "Breaking". Pin the version you build with ([chapter 15](docs/manual/15-maintaining-a-brand-book.md#pin-the-blazon-you-build-with)).
-- **You need many output formats.** Blazon writes CSS, Tailwind v4, TypeScript and JSON, and the platform plugin writes Android, Swift and Kotlin for colors and dimensions only. [Style Dictionary](https://styledictionary.com) has a general system of custom transforms and formats.
+- **You need many output formats.** Blazon writes CSS, TypeScript and JSON, the Tailwind and shadcn/ui plugins write a Tailwind v4 theme and the shadcn/ui variables, and the platform plugin writes Android, Swift and Kotlin for colors and dimensions only. [Style Dictionary](https://styledictionary.com) has a general system of custom transforms and formats.
 - **You want rules enforced in a design tool.** Blazon reads token files in the repo and does not sync with Figma or Tokens Studio. A file exported from them works if it is DTCG 2025.10, but the `usage` roles and `tier` names are blazon's, so the editor will not enforce them.
 - **You are on Windows.** It is tested on macOS and Linux with Node 24; WSL is untried.
 
@@ -122,7 +122,7 @@ The same compile feeds the dev server, so a change to a token, a page or the con
 - **Holds the brand's rules, not only its values.** `$extensions["dev.blazon"]` carries where a token may be used, its role and tier, print specs (CMYK, PMS, RAL), contrast pairs, forbidden logo backgrounds and proportions.
 - **Varies them by context.** A [DTCG resolver document](https://www.designtokens.org/TR/2025.10/resolver/) declares modifiers such as `locale` or `theme`. Each context compiles to its own CSS block holding only what it changes, and the book gets a switcher. [Contexts](docs/manual/04-contexts.md)
 - **Checks them.** Bad aliases and types, a token used where its source denies it, contrast below its level, duplicate values, values still marked for review, malformed asset sidecars, page directives that name nothing, and more. [Every finding](docs/manual/03-checks.md)
-- **Writes code.** `theme.css`, `typography.css`, a Tailwind v4 `tailwind.css` with an optional `tailwind-reset.css` that closes Tailwind's defaults, a typed `tokens.ts` and a `tokens.json` with aliases resolved. [Using the outputs](docs/manual/08-using-the-outputs.md)
+- **Writes code.** `theme.css`, `typography.css`, a typed `tokens.ts` and a `tokens.json` with aliases resolved. [Using the outputs](docs/manual/08-using-the-outputs.md)
 - **Exports the whole brand.** `blazon build` also writes `brand.json`: the tokens with their rules, the pages, the assets and the findings, in one versioned file with a JSON Schema, readable from any language. [`brand.json`](docs/manual/11-brand-json.md)
 - **Builds a brand book that wears the brand.** The viewer takes its colors, typefaces and logo from your tokens. Pages place live content from them: swatches, the type scale, the logo on each background with its clear space, icons, patterns and social formats. It has search, a dark mode, and a Review page listing what `blazon check` found. [Pages](docs/manual/05-pages.md), [assets and icons](docs/manual/06-assets-and-icons.md)
 - **Compares them with a live site.** `blazon drift <url-or-css-file>` reports which tokens that name a `source.cssVar` have changed since.
@@ -131,7 +131,7 @@ The same compile feeds the dev server, so a change to a token, a page or the con
 
 ## Plugins
 
-A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships ten, so there is nothing to install: name one in `blazon.json` and run `blazon build`. A plugin starts with an empty environment and gets only the variables its manifest lists and you approve in its entry's `env`. The ones that draw in Chrome list `BLAZON_CHROME`, `HOME` and `TMPDIR`:
+A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships twelve, so there is nothing to install: name one in `blazon.json` and run `blazon build`. A plugin starts with an empty environment and gets only the variables its manifest lists and you approve in its entry's `env`. The ones that draw in Chrome list `BLAZON_CHROME`, `HOME` and `TMPDIR`:
 
 ```json
 {

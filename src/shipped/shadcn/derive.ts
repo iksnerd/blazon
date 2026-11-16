@@ -1,10 +1,49 @@
-import { SHADCN_VARIABLES, type BrandTheme, type ShadcnVariable, type ThemeRole, type TokenItem } from '../../types/index.js';
-import { matchingPairs } from '../checker/contrast.js';
+import type { BrandTheme, ThemeRole, TokenItem } from '../../types/index.js';
+import { matchingPairs } from '../../core/checker/contrast.js';
+import type { PairRead, TokenRead } from './brand.js';
+
+/** The semantic variables shadcn/ui components read (`--background`, `--chart-1`, ...), without the leading dashes, in shadcn's order. */
+export const SHADCN_VARIABLES = [
+  'background',
+  'foreground',
+  'card',
+  'card-foreground',
+  'popover',
+  'popover-foreground',
+  'primary',
+  'primary-foreground',
+  'secondary',
+  'secondary-foreground',
+  'muted',
+  'muted-foreground',
+  'accent',
+  'accent-foreground',
+  'destructive',
+  'border',
+  'input',
+  'ring',
+  'chart-1',
+  'chart-2',
+  'chart-3',
+  'chart-4',
+  'chart-5',
+  'radius',
+  'sidebar',
+  'sidebar-foreground',
+  'sidebar-primary',
+  'sidebar-primary-foreground',
+  'sidebar-accent',
+  'sidebar-accent-foreground',
+  'sidebar-border',
+  'sidebar-ring',
+] as const;
+
+export type ShadcnVariable = (typeof SHADCN_VARIABLES)[number];
 
 /**
- * The shadcn/ui variables the theme roles supply, and the role each one reads. The brand book's own
- * stylesheet (`src/viewer/index.css`) derives the same light-mode values with CSS, and a test holds the two
- * together. A variable not here (`destructive`, `chart-1` to `chart-5`) has no role: only `shadcn` in the config fills it.
+ * The shadcn/ui variables the theme roles supply, and the role each one reads. The brand book's own stylesheet (`src/viewer/index.css`)
+ * derives the same light-mode values with CSS, and a test holds the two together. A variable not here (`destructive`, `chart-1` to
+ * `chart-5`) has no role: only the plugin's `variables` option fills it.
  */
 export const SHADCN_FROM_ROLES: Partial<Record<ShadcnVariable, ThemeRole>> = {
   background: 'background',
@@ -54,7 +93,7 @@ export interface ShadcnEntry {
   token: string;
   /** Its value in the default context, as CSS */
   value: string;
-  /** `theme`: derived from a theme role (named in `role`). `config`: set by `shadcn` in blazon.json */
+  /** `theme`: derived from a theme role (named in `role`). `config`: chosen in the plugin's `variables` option */
   from: 'theme' | 'config';
   role?: ThemeRole;
 }
@@ -78,23 +117,23 @@ export interface ShadcnMapping {
 }
 
 /**
- * The one place shadcn variables are derived. A mapping entry wins over the role; a mapping that names a
- * token that does not exist is left out (the compile reports it, `theme-unresolved`).
+ * The one place shadcn variables are derived. A pick from the `variables` option wins over the role; a pick that names a token that does
+ * not exist is left out (the plugin reports it, `token-missing`).
  */
 export function deriveShadcn(
   roles: BrandTheme,
   roleTokens: Partial<Record<ThemeRole, string>>,
-  mapping: Partial<Record<ShadcnVariable, string>> | undefined,
-  items: TokenItem[],
-  declaredPairs: { fg: string; bg: string }[] = [],
+  picks: Partial<Record<ShadcnVariable, string>> | undefined,
+  items: readonly TokenRead[],
+  declaredPairs: readonly PairRead[] = [],
 ): ShadcnMapping {
   const byPath = new Map(items.map((item) => [item.path, item]));
   const variables: ShadcnMapping['variables'] = {};
   for (const name of SHADCN_VARIABLES) {
-    const mapped = mapping?.[name];
-    const token = mapped ? byPath.get(mapped) : undefined;
-    if (mapped && token) {
-      variables[name] = { token: token.path, value: String(token.value), from: 'config' };
+    const picked = picks?.[name];
+    const token = picked ? byPath.get(picked) : undefined;
+    if (picked && token) {
+      variables[name] = { token: token.path, value: token.value, from: 'config' };
       continue;
     }
     const role = SHADCN_FROM_ROLES[name];
@@ -105,7 +144,9 @@ export function deriveShadcn(
   const unsupplied = SHADCN_VARIABLES.filter((name) => !variables[name]);
   if (declaredPairs.length === 0) return { variables, unsupplied };
 
-  const covered = (fg: string, bg: string) => matchingPairs(items, declaredPairs, fg, bg).length > 0;
+  // The core's own rule, as `blazon check` and `blazon can` apply it: a pair written on a token that the foreground or background aliases counts
+  const asItems = items as unknown as TokenItem[];
+  const covered = (fg: string, bg: string) => matchingPairs(asItems, [...declaredPairs], fg, bg).length > 0;
   const pairs = SHADCN_PAIRS.flatMap(([background, foreground]): ShadcnPairNote[] => {
     const bg = variables[background];
     const fg = variables[foreground];

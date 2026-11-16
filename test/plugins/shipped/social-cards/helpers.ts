@@ -98,7 +98,7 @@ export const world = (over: { assets?: object[]; tokens?: object[]; logoMeta?: o
   write('brand-assets/logos/ondark.svg', LOGO('#F2F0EB'));
   const asset = (id: string, extra: object = {}) => ({ id, name: id.split('/')[1], category: id.split('/')[0], file: `brand-assets/${id}.svg`, format: 'svg', mediaType: 'image/svg+xml', bytes: 1, width: 1200, height: 630, ...extra });
   const brand = {
-    format: 'blazon-brand', version: 1,
+    format: 'blazon-brand', version: 2,
     theme: { roles: { inverse: '#1E1F21', inverseText: '#F2F0EB', text: '#1E1F21', accent: '#FF5A1F', fontDisplay: 'Georgia, serif', fontBody: 'Arial, sans-serif' }, tokens: {}, fonts: [] },
     logo: { onLight: 'brand-assets/logos/onlight.svg', onDark: 'brand-assets/logos/ondark.svg' },
     tokens: [
@@ -119,7 +119,7 @@ export const world = (over: { assets?: object[]; tokens?: object[]; logoMeta?: o
 };
 export const run = (w: ReturnType<typeof world>, options: object, env: Record<string, string> = browser) => {
   const outDir = tempDir('blazon-cards-out-');
-  const ran = plugin(JSON.stringify({ v: 1, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
+  const ran = plugin(JSON.stringify({ v: 2, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
   return { ran, outDir, findings: ran.status === 0 ? (JSON.parse(ran.out).findings as { code: string; severity: string; path: string; message: string }[]) : [] };
 };
 export const cardOf = (extra: object = {}) => ({ id: 'launch', format: 'horizontal', background: 'backgrounds/dark', headline: 'Say it in one line.', ...extra });

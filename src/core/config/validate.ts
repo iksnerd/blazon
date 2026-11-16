@@ -2,10 +2,11 @@ import path from 'node:path';
 import { instanceIdTooLong, isPluginName, isTokenOutputName } from '../plugin-name.js';
 import { shippedNames } from '../shipped-names.js';
 import { closest } from '../suggest.js';
-import { SHADCN_VARIABLES, STANDARD_LOGO_LOCKUPS, STANDARD_SECTION_IDS, STANDARD_USAGE_ROLES, type Finding, type BlazonConfig } from '../../types/index.js';
+import { STANDARD_LOGO_LOCKUPS, STANDARD_SECTION_IDS, STANDARD_USAGE_ROLES, type Finding, type BlazonConfig } from '../../types/index.js';
 import { CONVENTIONAL_ROLES } from '../tokens/theme.js';
 import { isFamilyName } from '../fonts.js';
 import { DEFAULT_CONFIG } from './defaults.js';
+import { REMOVED_KEYS } from './removed-keys.js';
 import { finding } from '../checker/catalogue.js';
 
 // blazon.json is plain JSON written by hand, so it is checked (RFC 0001 §14): an unknown key and a
@@ -25,7 +26,6 @@ export const CONFIG_KEYS = [
   'port',
   'logo',
   'theme',
-  'shadcn',
   'iconSets',
   'assets',
   'sections',
@@ -73,14 +73,6 @@ function theme(value: unknown): Mistake[] {
   return Object.entries(value).flatMap(([role, tokenPath]): Mistake[] => {
     if (!ROLES.includes(role)) return [{ message: `theme has unknown role "${role}"; known: ${ROLES.join(', ')}` }];
     return when(isText(tokenPath), `theme.${role} must be a token path (a string)`);
-  });
-}
-
-function shadcn(value: unknown): Mistake[] {
-  if (!isObject(value)) return [{ message: 'shadcn must be an object of shadcn variable names to token paths' }];
-  return Object.entries(value).flatMap(([name, tokenPath]): Mistake[] => {
-    if (!(SHADCN_VARIABLES as readonly string[]).includes(name)) return [{ message: `shadcn has unknown variable "${name}"; known: ${SHADCN_VARIABLES.join(', ')}` }];
-    return when(isText(tokenPath), `shadcn.${name} must be a token path (a string)`);
   });
 }
 
@@ -284,7 +276,6 @@ const CHECKS: Record<Exclude<ConfigKey, 'sections'>, (value: unknown) => Mistake
   port: (v) => when(Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 65535, 'port must be a whole number from 0 to 65535'),
   logo,
   theme,
-  shadcn,
   iconSets,
   customSections: (v) => customSections(v).mistakes,
   vocabulary: (v) => vocabulary(v).mistakes,
@@ -338,6 +329,9 @@ export function resolveConfig(input: Record<string, unknown>): ResolvedConfig {
   for (const [key, value] of Object.entries(input)) {
     if (value === undefined) {
       fallback(key);
+    } else if (key in REMOVED_KEYS) {
+      report(key, { message: REMOVED_KEYS[key]! });
+      delete config[key];
     } else if (!(CONFIG_KEYS as readonly string[]).includes(key)) {
       const guess = nearest(key);
       // A key with no close match is more likely a newer blazon's than a typo: say what to do about that
@@ -351,8 +345,6 @@ export function resolveConfig(input: Record<string, unknown>): ResolvedConfig {
       if (mistakes.length > 0) {
         mistakes.forEach((mistake) => report(key, mistake));
         if (key === 'theme' && isObject(value)) config.theme = Object.fromEntries(Object.entries(value).filter(([role, tokenPath]) => ROLES.includes(role) && isText(tokenPath)));
-        else if (key === 'shadcn' && isObject(value))
-          config.shadcn = Object.fromEntries(Object.entries(value).filter(([name, tokenPath]) => (SHADCN_VARIABLES as readonly string[]).includes(name) && isText(tokenPath)));
         else if (key === 'iconSets' && Array.isArray(value)) config.iconSets = value.filter((_, index) => !mistakes.some((m) => m.path === `iconSets[${index}]`));
         else if (key === 'customSections') config.customSections = customSections(value).kept;
         else if (key === 'vocabulary') config.vocabulary = vocabulary(value).kept;

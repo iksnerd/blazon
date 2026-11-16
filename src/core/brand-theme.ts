@@ -1,4 +1,4 @@
-import type { BrandTheme, Finding, BlazonConfig, ParsedTokens, ShadcnVariable, ThemeRole } from '../types/index.js';
+import type { BrandTheme, Finding, BlazonConfig, ParsedTokens, ThemeRole } from '../types/index.js';
 import { inferTheme } from './tokens/theme.js';
 import { finding } from './checker/catalogue.js';
 
@@ -6,13 +6,6 @@ import { finding } from './checker/catalogue.js';
  * Looks up each `config.theme` token path; a path with no token is reported, not thrown. With no
  * `theme` block at all, roles come from conventional token names and an `info` finding says which.
  */
-/** The `shadcn` entries whose token does not exist, as the same finding a missing theme token gets. */
-export function shadcnProblems(config: BlazonConfig, tokens: ParsedTokens): Finding[] {
-  return (Object.entries(config.shadcn ?? {}) as [ShadcnVariable, string][])
-    .filter(([, tokenPath]) => !tokens.byPath.has(tokenPath))
-    .map(([name, tokenPath]) => finding('theme-unresolved', { path: tokenPath, message: `shadcn.${name} points at {${tokenPath}}, which is not a token` }));
-}
-
 export function resolveTheme(config: BlazonConfig, tokens: ParsedTokens): ResolvedTheme {
   if (!config.theme || Object.keys(config.theme).length === 0) return inferredTheme(tokens);
   const values: BrandTheme = {};

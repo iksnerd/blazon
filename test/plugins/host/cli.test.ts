@@ -29,7 +29,7 @@ case "$in" in
   '{'*) ;;
   *) echo 'the request is not JSON'; exit 2;;
 esac
-if printf '%s' "$in" | grep -Eq '"v" *: *1[,}]'; then
+if printf '%s' "$in" | grep -Eq '"v" *: *[12][,}]'; then
   echo '{"findings":[]}'
   exit 0
 fi

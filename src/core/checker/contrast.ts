@@ -64,7 +64,7 @@ export function aliasChain(items: TokenItem[], path: string): string[] {
 
 /**
  * The listed pairs that name this foreground on this background. A pair written on a token that the foreground or the
- * background aliases counts, because the alias is the same color: `blazon check`, `blazon can` and the shadcn notes all use this one rule.
+ * background aliases counts, because the alias is the same color: `blazon check`, `blazon can` and the plugins that note a pair all use this one rule.
  */
 export function matchingPairs<T extends { fg: string; bg: string }>(items: TokenItem[], listed: T[], fgPath: string, bgPath: string): T[] {
   const fgChain = aliasChain(items, fgPath);

@@ -18,8 +18,11 @@ export async function applyCheckPlugins(data: BlazonData, config: BlazonConfig, 
   data.findings.push(...(await run.check(brandFor(data, config, cwd))));
 }
 
-/** Run the `build` role once the site is written. `data` is the brand the site holds, plugin findings included. */
-export async function applyBuildPlugins(data: BlazonData, config: BlazonConfig, cwd: string, run: PluginRun, siteDir: string): Promise<Finding[]> {
+/**
+ * Run the `build` role: once the site is written (`siteDir`), or, for `blazon tokens`, with no site. `data` is the brand the site holds,
+ * plugin findings included.
+ */
+export async function applyBuildPlugins(data: BlazonData, config: BlazonConfig, cwd: string, run: PluginRun, siteDir?: string): Promise<Finding[]> {
   if (!run.active) return [];
   return run.build(brandFor(data, config, cwd), siteDir);
 }

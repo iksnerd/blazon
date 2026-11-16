@@ -12,7 +12,7 @@ export function cleanup(): void {
   for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 }
 
-export const BRAND = { format: 'blazon-brand', version: 1, tokens: [] };
+export const BRAND = { format: 'blazon-brand', version: 2, tokens: [] };
 
 /** A fixture plugin: the manifest call answers with `manifest`, and a request runs `body` after its stdin is read. */
 export function script(manifest: object, body: string): string {

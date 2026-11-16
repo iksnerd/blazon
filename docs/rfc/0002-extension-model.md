@@ -101,7 +101,7 @@ Plugins are written in any language: RFC 0005 fixes JSON on standard streams, so
 **The `check` role.** A check plugin judges the brand and says what is wrong with it. Blazon calls it after the brand compiles and before anything is written, in `blazon check`, `blazon tokens`, `blazon build` and `blazon dev`.
 
 ```json
-{ "v": 1, "type": "check", "options": {}, "brand": { "format": "blazon-brand", "version": 1, "...": "the whole brand.json" } }
+{ "v": 1, "type": "check", "options": {}, "brand": { "format": "blazon-brand", "version": 2, "...": "the whole brand.json" } }
 ```
 
 ```json
@@ -111,19 +111,19 @@ Plugins are written in any language: RFC 0005 fixes JSON on standard streams, so
 - `brand` is the content of `brand.json` as RFC 0001 §12 and `brand.schema.json` define it. A plugin author needs nothing else from blazon. Its `findings` hold the core's findings, never another plugin's.
 - `options` is the JSON object the operator wrote for this plugin in the config, default `{}`.
 - A check call receives no file paths, so a check sees what `brand.json` states and cannot read the images. That keeps it cheap and repeatable.
-- A plugin MUST check that `brand.format` is `"blazon-brand"` and `brand.version` is `1` before it reads anything else, and MUST exit `2` with the reason when either is not. A check that cannot judge MUST NOT answer with an empty `findings` list.
+- A plugin MUST check that `brand.format` is `"blazon-brand"` and `brand.version` is `2` before it reads anything else, and MUST exit `2` with the reason when either is not. A check that cannot judge MUST NOT answer with an empty `findings` list.
 - Exit `0` is an answer, and stdout is the object above. Exit `2` is "cannot answer", with the reason as the first line. Exit `1` is not defined for this role, so it is a break.
 - A finding's `code` MUST start with the plugin's name and a `/`, followed by `[a-z0-9-]+`. `severity` is `error`, `warning` or `info`. `path` and `message` are plain text. More than 500 findings, or a finding that breaks these rules, is a break.
 - The role is behind the breaker. The unit of work is one run of a blazon command, and a call that exits `2` counts as a break for the breaker. The dev server has no such unit and uses a cooldown of 30 seconds instead, which a break starts and exit `2` does not.
 - The profile raises the stdout limit for this role to 1 MiB, so that 500 findings fit.
 
-**The `build` role.** A build plugin turns the brand into something else: a deck, Swift or Android constants, a design-tool file. Blazon calls it once the site and the token files exist, in `blazon build` only.
+**The `build` role.** A build plugin turns the brand into something else: a deck, Swift or Android constants, a design-tool file. Blazon calls it in `blazon build`, once the site and the token files exist, and in `blazon tokens`, once the token files exist and before any site does: the request then has no `site_dir`. A plugin that reads the site answers such a request with one `info` finding and writes nothing; the shipped ones that need the site do so under the code `<name>/needs-site`.
 
 ```json
-{ "v": 1, "type": "build", "options": {}, "brand": { "...": "the whole brand.json" }, "site_dir": "/abs/dist/site", "tokens_dir": "/abs/dist/tokens", "out_dir": "/abs/dist/tokens/acme.deck" }
+{ "v": 2, "type": "build", "options": {}, "brand": { "...": "the whole brand.json" }, "site_dir": "/abs/dist/site", "tokens_dir": "/abs/dist/tokens", "out_dir": "/abs/dist/tokens/acme.deck" }
 ```
 
-- `site_dir` holds the built site and `brand.json`, so the `file` paths in `brand` resolve against it. `tokens_dir` is `tokensOutDir`, which holds the token files that `blazon build` writes before the role runs; a plugin that works from the exported tokens reads them there. `out_dir` is `<tokensOutDir>/<id>/`, which blazon creates empty before the call. The plugin writes its files there. A plugin SHOULD write nowhere else; the shipped `blazon.favicons` is the one exception, and also writes `favicons/` in `site_dir` for the book to read at runtime (manual, chapters 12 to 14).
+- `site_dir` holds the built site and `brand.json`, so the `file` paths in `brand` resolve against it. It is absent when `blazon tokens` runs the role. `tokens_dir` is `tokensOutDir`, which holds the token files that `blazon build` writes before the role runs; a plugin that works from the exported tokens reads them there. `out_dir` is `<tokensOutDir>/<id>/`, which blazon creates empty before the call. The plugin writes its files there. A plugin SHOULD write nowhere else; the shipped `blazon.favicons` is the one exception, and also writes `favicons/` in `site_dir` for the book to read at runtime (manual, chapters 12 to 14).
 - Exit `0` is an answer. Its stdout is an object that MAY hold `findings`, as for `check`. Exit `2` is "cannot answer". Exit `1` is a break.
 - The role is behind the breaker, with the same unit and cooldown as `check`.
 - Blazon reads back nothing from `out_dir` except that it exists.
@@ -250,7 +250,7 @@ Implemented on `main` as of 2026-11-15, except what the last paragraph names.
 | The environment of a plugin (section 2, Environment): empty but for `PATH`; a variable reaches a plugin only when its manifest lists it and `plugins[n].env` approves it; a listed, set, unapproved name stops the plugin with a `plugin-failed` that names the variable and the key; `blazon plugin check` case 10. The shipped plugins that draw in a browser list `BLAZON_CHROME`, `HOME` and `TMPDIR` in their manifests | `src/plugins/wire/environment.ts`, `src/plugins/roles/roles.ts`, `src/plugins/host/check.ts`, `src/core/config/validate.ts` | `test/plugins/roles/env-approval.test.ts`, `test/plugins/host/call.test.ts`, `test/plugins/host/check.test.ts` |
 | Reference plugins: `acme.house-style` (Python, no dependency) and `blazon.cue-rules` (rules in CUE over `brand.json`, passed as `options.rules`; needs `cue` 0.17.1) | `examples/plugins/` | `test/plugins/examples/cue-rules.test.ts`, skipped with a notice when `cue` is missing |
 
-Ten plugins ship, one entry each in `plugins/shipped.lock`. Nine fill the `build` role, and `blazon.favicons` fills `check` too. `blazon.copy` fills `check` only. Each is TypeScript under `src/shipped/<name>/`, built into the one file `plugins/blazon.<name>/bin/blazon-blazon.<name>.🔌`, which holds the plugin's code. Each bounds its findings to the 64 KB answer limit (`src/shipped/shared/bound.ts`). The options and the files each writes are in the manual's chapter 14.
+Twelve plugins ship, one entry each in `plugins/shipped.lock`. Eleven fill the `build` role, and `blazon.favicons` fills `check` too. `blazon.copy` fills `check` only. Each is TypeScript under `src/shipped/<name>/`, built into the one file `plugins/blazon.<name>/bin/blazon-blazon.<name>.🔌`, which holds the plugin's code. Each bounds its findings to the 64 KB answer limit (`src/shipped/shared/bound.ts`). The options and the files each writes are in the manual's chapter 14.
 
 | Plugin | Does | Notes |
 |---|---|---|
@@ -264,6 +264,8 @@ Ten plugins ship, one entry each in `plugins/shipped.lock`. Nine fill the `build
 | `blazon.office-template` | An editable PowerPoint template: theme, master and five layouts | PowerPoint has not opened the file; Keynote renders it and python-pptx parses it |
 | `blazon.copy` | Findings for pages and sidecar text that break the brand's word rules (RFC 0006) | Needs Node only. Heuristics, so warnings |
 | `blazon.platform-tokens` | Color and dimension tokens as Android XML, Swift with an asset catalog, and Kotlin for Compose | Swift and the catalog are compiled in tests (`swiftc`, `actool`); Kotlin is not |
+| `blazon.tailwind` | `tailwind.css` and `tailwind-reset.css`, a Tailwind v4 theme from the tokens | Needs Node only. Runs in `blazon tokens` as well as `blazon build`. As of 2026-11-16 the core writes no Tailwind file |
+| `blazon.shadcn` | `shadcn.json`, the token each shadcn/ui variable takes, and `shadcn.css`, the variables as CSS with a block for each context that changes one | Needs Node only. Runs in `blazon tokens` as well as `blazon build`. Its `variables` option replaces the `shadcn` config key |
 
 Not built, and named so that nobody assumes them: long-lived plugins, the page role, the owner check of the lock and of `.blazon/plugins/`, and any platform but POSIX. The protocol is stated in RFC 0005, and blazon's host is tested against its conformance corpus in `test/spec/`. The profile is a draft that can change, and so can the blazon profile that follows it.
 

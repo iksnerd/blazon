@@ -32,7 +32,7 @@ Codes you meet first:
 
 ## The MCP server
 
-`blazon mcp` sets up blazon-mcp, a server that answers questions about this brand as Model Context Protocol tool calls: `check_brand`, `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo`, `get_shadcn`. It is not published yet, so it runs only from a blazon source checkout with the server built. Run `blazon mcp --check` to learn whether it is ready; each failed check names the `fix` to run. Without it, the commands above do the same work. Setup: the `blazon-for-agents` chapter.
+`blazon mcp` sets up blazon-mcp, a server that answers questions about this brand as Model Context Protocol tool calls: `check_brand`, `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo`. It is not published yet, so it runs only from a blazon source checkout with the server built. Run `blazon mcp --check` to learn whether it is ready; each failed check names the `fix` to run. Without it, the commands above do the same work. Setup: the `blazon-for-agents` chapter.
 
 ## Building a site from this brand
 

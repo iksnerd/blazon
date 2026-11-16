@@ -104,3 +104,27 @@ describe('the scan for imports', () => {
     ]);
   });
 });
+
+describe('the core knows no framework by name', () => {
+  // A CSS framework or a UI library is a build plugin's business (src/shipped/): the core writes no file for one, checks no name of one and
+  // imports nothing of one. The one place it names a plugin is the refusal of a config key that plugin took over (core/config/removed-keys.ts).
+  const FRAMEWORKS = /tailwind|shadcn/i;
+  const ALLOWED = new Set(['core/config/removed-keys.ts']);
+  const code = (file: string) =>
+    fs
+      .readFileSync(file, 'utf-8')
+      .replace(/\/\*[^]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+
+  it('names none in the code of src/core, src/types, src/plugins, src/builder, src/server or src/cli', () => {
+    const found = ['core', 'types', 'plugins', 'builder', 'server', 'cli']
+      .flatMap((folder) => sources(path.join(SRC, folder)))
+      .filter((file) => !ALLOWED.has(path.relative(SRC, file)) && FRAMEWORKS.test(code(file)))
+      .map((file) => path.relative(SRC, file));
+    expect(found).toEqual([]);
+  });
+
+  it('keeps the allowed file to the one refusal, so the allowance is not a way in', () => {
+    expect(fs.readFileSync(path.join(SRC, 'core/config/removed-keys.ts'), 'utf-8').match(/shadcn|tailwind/gi)).toHaveLength(4);
+  });
+});

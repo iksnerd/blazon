@@ -60,26 +60,22 @@ beforeAll(async () => {
 });
 
 describe('describeToken', () => {
-  it('gives the value, the type, the file and both CSS names', () => {
+  it('gives the value, the type, the file and the CSS name', () => {
     const t = describeToken(data, 'color.ink');
     expect(t).toMatchObject({ path: 'color.ink', type: 'color', value: '#111111', sourceFile: 'tokens/a.json' });
-    expect(t.names).toEqual({ theme: { variable: '--color-ink' }, tailwind: { variable: '--color-ink' } });
+    expect(t.names).toEqual({ theme: { variable: '--color-ink' } });
   });
 
-  it('names theme.css by path and tailwind.css by namespace, and says when there is none', () => {
+  it('names theme.css by path, and no CSS framework', () => {
     const body = describeToken(data, 'text.body');
     expect(body.names.theme.variable).toBe('--text-body');
-    expect(body.names.tailwind?.variable).toBe('--color-text-body');
-    expect(describeToken(data, 'font.display').names.tailwind?.variable).toBe('--font-display');
-    expect(describeToken(data, 'color.brand.blue').names.tailwind?.variable).toBe('--color-brand-blue');
-    expect(describeToken(data, 'space.4').names.tailwind?.variable).toBe('--spacing-4');
+    expect(Object.keys(body.names)).toEqual(['theme']);
   });
 
   it("names a composite token's part variables and its typography class", () => {
     const h1 = describeToken(data, 'type.h1');
     expect(h1.names.theme.parts).toMatchObject({ fontSize: '--type-h1-font-size' });
     expect(h1.names.typographyClass).toBe('type-h1');
-    expect(h1.names.tailwind).toBeNull();
   });
 
   it('resolves an alias to its value and says what it aliases', () => {

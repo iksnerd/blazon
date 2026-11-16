@@ -33,16 +33,33 @@ export const findingFor =
 
 export const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/** The version of brand.json this reader understands (RFC 0001 section 12): 2 since the shadcn mapping was removed from `theme`. */
+export const BRAND_VERSION = 2;
+
 /** The brand.json a plugin reads: the object when its format and version are the ones this reader understands, Cannot otherwise (RFC 0001: a reader checks both before it interprets anything). */
 export function requireBrand(raw: unknown): Record<string, unknown> {
   const shown = (value: unknown) => JSON.stringify(value) ?? 'nothing';
   if (!isObject(raw) || raw.format !== 'blazon-brand')
     throw new Cannot(`the brand in the request is not a blazon brand: its format is ${shown(isObject(raw) ? raw.format : undefined)}, not "blazon-brand"`);
-  if (raw.version !== 1) throw new Cannot(`the brand in the request is version ${shown(raw.version)}; this reader understands version 1`);
+  if (raw.version !== BRAND_VERSION) throw new Cannot(`the brand in the request is version ${shown(raw.version)}; this reader understands version ${BRAND_VERSION}`);
   return raw;
 }
 
-/** The request as an object of version 1, or Cannot with the reason. Its role and folders are for the plugin to check. */
+/** The version of each request a plugin may get (RFC 0005 section 8): a check request is 1, a build request is 2 and may carry no `site_dir`. */
+export const REQUEST_VERSIONS: Readonly<Record<string, number>> = { check: 1, build: 2 };
+
+/**
+ * The plugin needs the built site and this request has none: `blazon tokens` runs the build plugins before a site exists. The entry
+ * answers it as a skipped call (one info finding, nothing written), not as a plugin that could not answer.
+ */
+export class NeedsSite extends Cannot {}
+
+/** The answer to a call that needed the site and had none: one `info` finding, as the entry prints it, and nothing written. */
+export const skippedForNoSite = (name: string, error: NeedsSite): { findings: Finding[] } => ({
+  findings: [{ code: `${name}/needs-site`, severity: 'info', path: 'site_dir', message: `${error.message}. Nothing was written; blazon build runs it.` }],
+});
+
+/** The request as an object of the version its role speaks, or Cannot with the reason. Its role and folders are for the plugin to check. */
 export function readRequest(text: string): Record<string, unknown> {
   let request: unknown;
   try {
@@ -51,7 +68,9 @@ export function readRequest(text: string): Record<string, unknown> {
     throw new Cannot('the request is not JSON');
   }
   if (!isObject(request)) throw new Cannot('the request is not a JSON object');
-  if (request.v !== 1) throw new Cannot(`the request is version ${JSON.stringify(request.v)}; this plugin speaks version 1`);
+  // A role this table does not know is for the plugin to refuse; the version is then the check request's
+  const speaks = (typeof request.type === 'string' ? REQUEST_VERSIONS[request.type] : undefined) ?? 1;
+  if (request.v !== speaks) throw new Cannot(`the request is version ${JSON.stringify(request.v)}; this plugin speaks version ${speaks}`);
   return request;
 }
 
@@ -63,14 +82,31 @@ export interface BuildJob {
   options: unknown;
 }
 
-/** The build request in `text`, or Cannot with the reason: version 1, the build role, a site_dir with an index.html and an out_dir that is a folder. The brand and options are not checked here. */
-export function buildJob(text: string): BuildJob {
+/** What a build request carries for a plugin that works from the brand alone: no site. */
+export type TokensJob = Omit<BuildJob, 'siteDir'>;
+
+function buildRequest(text: string, site: 'needed' | 'unused'): Record<string, unknown> {
   const request = readRequest(text);
   if (request.type !== 'build') throw new Cannot(`the request is for the ${String(request.type)} role; this plugin is a build plugin`);
   const { site_dir: siteDir, out_dir: outDir } = request;
-  if (typeof siteDir !== 'string' || !fs.existsSync(path.join(siteDir, 'index.html'))) throw new Cannot('site_dir has no index.html');
+  if (site === 'needed') {
+    if (siteDir === undefined) throw new NeedsSite('site_dir is absent: this plugin reads the built site, which blazon tokens does not make');
+    if (typeof siteDir !== 'string' || !fs.existsSync(path.join(siteDir, 'index.html'))) throw new Cannot('site_dir has no index.html');
+  }
   if (typeof outDir !== 'string' || !fs.statSync(outDir, { throwIfNoEntry: false })?.isDirectory()) throw new Cannot('out_dir is not a folder');
-  return { siteDir, outDir, brand: request.brand ?? {}, options: request.options ?? {} };
+  return request;
+}
+
+/** The build request in `text`, or Cannot with the reason: version 2, the build role, a site_dir with an index.html and an out_dir that is a folder. With no site_dir (`blazon tokens`) it is NeedsSite. The brand and options are not checked here. */
+export function buildJob(text: string): BuildJob {
+  const request = buildRequest(text, 'needed');
+  return { siteDir: request.site_dir as string, outDir: request.out_dir as string, brand: request.brand ?? {}, options: request.options ?? {} };
+}
+
+/** The build request in `text` for a plugin that reads no site, or Cannot with the reason: version 2, the build role and an out_dir that is a folder. A site_dir, when there is one, is ignored. */
+export function tokensJob(text: string): TokensJob {
+  const request = buildRequest(text, 'unused');
+  return { outDir: request.out_dir as string, brand: request.brand ?? {}, options: request.options ?? {} };
 }
 
 /**
@@ -89,6 +125,10 @@ export async function runPlugin(argv: string[], manifest: object, build: (text: 
     process.stdout.write(`${JSON.stringify(bounded)}\n`);
     return 0;
   } catch (error) {
+    if (error instanceof NeedsSite) {
+      process.stdout.write(`${JSON.stringify(skippedForNoSite(name, error))}\n`);
+      return 0;
+    }
     const reason =
       error instanceof Cannot
         ? error.message

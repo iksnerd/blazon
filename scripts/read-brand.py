@@ -21,7 +21,7 @@ import sys
 import urllib.request
 
 FORMAT = "blazon-brand"
-VERSION = 1
+VERSION = 2
 REM_PX = 16
 
 

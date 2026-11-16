@@ -46,7 +46,7 @@ function print(siteDir: string): { findings: unknown[]; text: (page?: number) =>
   const outDir = path.join(tempDir('blazon-print-favicons-'), 'blazon.print-book');
   fs.mkdirSync(outDir);
   const brand = JSON.parse(fs.readFileSync(path.join(siteDir, 'brand.json'), 'utf-8'));
-  const input = JSON.stringify({ v: 1, type: 'build', options: {}, brand, site_dir: siteDir, out_dir: outDir });
+  const input = JSON.stringify({ v: 2, type: 'build', options: {}, brand, site_dir: siteDir, out_dir: outDir });
   const ran = spawnSync(process.execPath, ['--import', TSX, ENTRY], { input, encoding: 'utf-8', env: { PATH: '/usr/bin:/bin', HOME: os.homedir(), BLAZON_CHROME: CHROME } });
   expect(ran.status, ran.stdout + ran.stderr).toBe(0);
   const pdf = path.join(outDir, 'brand-book.pdf');

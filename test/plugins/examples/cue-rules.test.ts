@@ -56,7 +56,7 @@ const cannot = (ran: Ran, reason: RegExp | string): void => {
 
 const BRAND = {
   format: 'blazon-brand',
-  version: 1,
+  version: 2,
   tokens: [
     { path: 'color.blue', type: 'color', value: '#00f', blazon: { tier: 'primitive' } },
     { path: 'brand.primary', type: 'color', value: '#00f', aliasOf: 'color.blue', blazon: { tier: 'semantic' } },
@@ -146,9 +146,9 @@ describe.skipIf(!found.path || !python)('the program', () => {
       cannot(check(NOTHING, [] as unknown as object), 'the brand in the request is not a blazon brand');
     });
 
-    it('the brand in the request is not a version 1 blazon brand', () => {
+    it('the brand in the request is not a version 2 blazon brand', () => {
       cannot(check(NOTHING, { ...BRAND, format: 'nope' }), 'the brand in the request is not a blazon brand: its format is "nope", not "blazon-brand"');
-      cannot(check(NOTHING, { ...BRAND, version: 9 }), 'the brand in the request is version 9; this reader understands version 1');
+      cannot(check(NOTHING, { ...BRAND, version: 9 }), 'the brand in the request is version 9; this reader understands version 2');
       cannot(check(NOTHING, { tokens: [] }), 'its format is nothing');
     });
 

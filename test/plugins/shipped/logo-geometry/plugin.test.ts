@@ -34,7 +34,7 @@ const world = (files: Record<string, string | Buffer>, assets: object[], theme?:
     fs.mkdirSync(path.dirname(path.join(siteDir, file)), { recursive: true });
     fs.writeFileSync(path.join(siteDir, file), data);
   }
-  return { siteDir, brand: { format: 'blazon-brand', version: 1, assets, ...(theme && { theme }) } };
+  return { siteDir, brand: { format: 'blazon-brand', version: 2, assets, ...(theme && { theme }) } };
 };
 
 const plugin = (input: string, env: Record<string, string> = {}, args: string[] = []) => {
@@ -44,7 +44,7 @@ const plugin = (input: string, env: Record<string, string> = {}, args: string[] 
 
 const run = (w: ReturnType<typeof world>, options: object, env: Record<string, string> = {}) => {
   const outDir = tempDir('blazon-logo-geometry-out-');
-  const ran = plugin(JSON.stringify({ v: 1, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
+  const ran = plugin(JSON.stringify({ v: 2, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
   const findings = ran.status === 0 ? (JSON.parse(ran.out).findings as { code: string; severity: string; path: string; message: string }[]) : [];
   return { ran, outDir, findings, files: fs.readdirSync(outDir).sort() };
 };
@@ -156,7 +156,7 @@ describe('the entry, as blazon starts it', () => {
   it('answers a request that is not for a build, or has no site, with exit 2 and the reason first', () => {
     const outDir = tempDir('blazon-logo-geometry-out-');
     expect(plugin(JSON.stringify({ v: 1, type: 'check', brand: {} }))).toMatchObject({ status: 2, out: expect.stringMatching(/^the request is for the check role; this plugin is a build plugin/) });
-    expect(plugin(JSON.stringify({ v: 1, type: 'build', site_dir: '/nonexistent', out_dir: outDir }))).toMatchObject({ status: 2, out: 'site_dir has no index.html' });
+    expect(plugin(JSON.stringify({ v: 2, type: 'build', site_dir: '/nonexistent', out_dir: outDir }))).toMatchObject({ status: 2, out: 'site_dir has no index.html' });
     expect(fs.readdirSync(outDir)).toEqual([]);
   });
 });

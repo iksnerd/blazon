@@ -15,7 +15,7 @@ function valueAt(document: unknown, key: string): unknown {
 
 /**
  * `get_brand`, `blazon brand`: the brand as brand.json holds it, compiled now and printed to standard output, so nothing is written and
- * nothing is stale. `--key theme.shadcn` prints only that part. Always JSON; exits 2 for a key the document does not have.
+ * nothing is stale. `--key theme.roles` prints only that part. Always JSON; exits 2 for a key the document does not have.
  */
 export const getBrandHandler: Handler = async ({ key }, { dir }) => {
   const { config, data } = await readBrand(dir);

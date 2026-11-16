@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { Cannot, isObject, OptionError, readRequest, requireBrand } from '../shared/plugin.js';
+import { Cannot, isObject, NeedsSite, OptionError, readRequest, requireBrand } from '../shared/plugin.js';
 
 export { Cannot, isObject, OptionError };
 
@@ -34,6 +34,7 @@ export function requestFrom(text: string): Request {
   if (!isObject(options)) throw new OptionError('options must be an object');
   const { site_dir: siteDir, out_dir: outDir } = request;
   if (request.type === 'build') {
+    if (siteDir === undefined) throw new NeedsSite('site_dir is absent: this plugin reads the built site, which blazon tokens does not make');
     if (typeof siteDir !== 'string' || !fs.statSync(siteDir, { throwIfNoEntry: false })?.isDirectory()) throw new Cannot('site_dir is not a folder');
     if (typeof outDir !== 'string' || !fs.statSync(outDir, { throwIfNoEntry: false })?.isDirectory()) throw new Cannot('out_dir is not a folder');
   }

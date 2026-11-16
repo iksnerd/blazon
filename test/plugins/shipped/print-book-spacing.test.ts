@@ -43,7 +43,7 @@ afterAll(async () => {
 
 /** The full book, printed through the hash the plugin's own request builds, and what the page says it laid out. */
 async function laidOut(options: object): Promise<{ pages: number; layout: string; clipped: number[] }> {
-  const request = JSON.stringify({ v: 1, type: 'build', options, brand: {}, site_dir: siteRoot, out_dir: tempDir('o-') });
+  const request = JSON.stringify({ v: 2, type: 'build', options, brand: {}, site_dir: siteRoot, out_dir: tempDir('o-') });
   const page = await browser.newPage({ viewport: SLIDE });
   try {
     await page.emulateMedia({ media: 'print' });

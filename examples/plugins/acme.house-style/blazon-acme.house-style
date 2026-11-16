@@ -9,7 +9,7 @@ It speaks blazon's plugin protocol with Python's standard library alone, to show
 The request is {"v": 1, "type": "check", "options": {...}, "brand": <brand.json>}. The answer is
 {"findings": [...]}, each finding with a `code` that starts with this plugin's name and a slash. Exit 2 means "I cannot
 judge", with the reason as the first line of standard output: here, a request of a version this plugin does not speak,
-a brand that is not a version 1 blazon brand, and an `options.headingFont` that is missing. Never exit 0 for what you could not judge.
+a brand that is not a version 2 blazon brand, and an `options.headingFont` that is missing. Never exit 0 for what you could not judge.
 
 Options (blazon.json):  "plugins": [{ "name": "acme.house-style", "options": { "headingFont": "Inter" } }]
 """
@@ -31,9 +31,9 @@ def brand_problem(brand):
     if not isinstance(brand, dict) or brand.get("format") != "blazon-brand":
         shown = json.dumps(brand.get("format")) if isinstance(brand, dict) and "format" in brand else "nothing"
         return f'the brand in the request is not a blazon brand: its format is {shown}, not "blazon-brand"'
-    if brand.get("version") != 1:
+    if brand.get("version") != 2:
         shown = json.dumps(brand["version"]) if "version" in brand else "nothing"
-        return f"the brand in the request is version {shown}; this reader understands version 1"
+        return f"the brand in the request is version {shown}; this reader understands version 2"
     return None
 
 

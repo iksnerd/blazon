@@ -11,8 +11,8 @@ A stable surface changes only by the rule in the next section. An unstable one c
 | Surface | Tier | What it covers | Chapter |
 |---|---|---|---|
 | Token files | Stable | The DTCG 2025.10 format, the fields of `$extensions["dev.blazon"]` and the resolver document | [2](02-tokens.md), [4](04-contexts.md) |
-| `brand.json` | Stable | Format `blazon-brand`, version 1: its keys, and what each holds | [11](11-brand-json.md) |
-| The plugin protocol | Stable | Request version 1, manifest version 2, the `check` and `build` roles, the answer and the exit codes | [13](13-writing-a-plugin.md) |
+| `brand.json` | Stable | Format `blazon-brand`, version 2: its keys, and what each holds | [11](11-brand-json.md) |
+| The plugin protocol | Stable | Request version 1 for `check` and 2 for `build`, manifest version 2, the `check` and `build` roles, the answer and the exit codes | [13](13-writing-a-plugin.md) |
 | The command line | Stable | The commands and their flags, the exit statuses, and the `--json` documents | [1](01-getting-started.md), [3](03-checks.md) |
 | `blazon.json` | Stable | The file name and its plain JSON form, the keys, and the keys inside them (the `assets` block, a plugin entry, the e-mail signature) | [7](07-theme-and-config.md) |
 | Finding codes | Stable | The code of every finding blazon's own checks raise, because a tool that reads `--json` keys on it | [3](03-checks.md) |
@@ -25,9 +25,9 @@ A shipped plugin's options and findings follow the same rule, but the test below
 
 A test in the repository (`test/surface/`) records the stable surfaces as one list: the commands and flags, the config keys and the keys inside them, the fields of the token, sidecar and page formats, the finding codes and the severity of each, the keys and constants of `brand.json`, the plugin protocol's profile, the output file names and the shipped plugins. It fails when any of them changes, until the record is updated on purpose.
 
-## Planned before 1.0
+## Made before 1.0
 
-One change is planned that touches stable surfaces, and it is made before 1.0 so that it needs no alias. The Tailwind files (`tailwind.css`, `tailwind-reset.css`) and the shadcn mapping (`theme.shadcn` in `brand.json`, the `shadcn` config key and the `blazon brand --key theme.shadcn` command) are built into the core today. They are to become two shipped `build` plugins, and the core will then know no framework by name. That would move these files into the plugins' output folders, raise the `build` request to version 2 and `brand.json` to version 2, and remove the old key and command. It is proposed, not built, and blazon stays 0.x until it is decided and made.
+One change touched stable surfaces, and it was made before 1.0 so that it needs no alias (2026-11-16). The Tailwind files and the shadcn mapping had been built into the core. They are two shipped `build` plugins now, `blazon.tailwind` and `blazon.shadcn`, and the core knows no framework by name (`test/core/layers.test.ts` holds that). The files moved into the plugins' output folders (`dist/tokens/blazon.tailwind/`, `dist/tokens/blazon.shadcn/`); the `build` request is version 2, because `blazon tokens` runs the `build` plugins and sends no `site_dir`; `brand.json` is version 2, without `theme.shadcn`; and the `shadcn` config key and the `get_shadcn` tool are gone. The CHANGELOG lists what to do about each.
 
 ## How a breaking change is made
 

@@ -42,7 +42,7 @@ async function built(root: string): Promise<Site> {
 /** The deck as blazon's plugin draws it, read back as the text of each page */
 function deckOf(site: Site, brand: any = site.brand): { pages: string[]; file: string } {
   const outDir = tempDir('blazon-deck-real-out-');
-  const request = JSON.stringify({ v: 1, type: 'build', options: {}, brand, site_dir: site.siteDir, out_dir: outDir });
+  const request = JSON.stringify({ v: 2, type: 'build', options: {}, brand, site_dir: site.siteDir, out_dir: outDir });
   const ran = spawnSync(process.execPath, ['--import', TSX, ENTRY], {
     input: request,
     encoding: 'utf-8',

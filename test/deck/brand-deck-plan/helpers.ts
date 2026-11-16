@@ -20,7 +20,7 @@ export const color = (p: string, value: string, print?: J, alias?: string, descr
 
 const rawBrand = (tokens: J[] = [], assets: J[] = [], groups: J[] = [], title = 'Acme Brand Book', description?: string, logo?: J): J => ({
   format: 'blazon-brand',
-  version: 1,
+  version: 2,
   brand: { title, ...(description && { description }) },
   theme: { roles: { text: '#101010', accent: '#635DFF' }, tokens: {}, fonts: [] },
   logo: logo ?? {},
