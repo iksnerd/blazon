@@ -134,6 +134,42 @@ classify_paths() {
     extra_tests="$listed"
 }
 
+# classify_lint ROOT: reads paths, one on a line (the staged ones), and sets what ESLint must be run on for them.
+#   lint_full    1 when a change can alter what ESLint says about a file that is not staged, so the whole tree is linted
+#   lint_files   otherwise, what to hand ESLint: the staged files it reads (.ts .tsx .js .mjs .cjs) that exist in ROOT, and for a
+#                change in src/cli, src/viewer or src/shipped that whole folder; empty when there is nothing
+# Every rule but the type-aware ones looks at one file alone. The type-aware ones (no-floating-promises and two more, src/ only)
+# also read the types of what the file imports, so a changed file can change the findings of the files that import it. The asks
+# for the whole tree are therefore a closed list:
+#   - the config of ESLint, the compiler or the dependencies (eslint.config.js, package.json, package-lock.json, tsconfig*.json)
+#   - a declaration file (*.d.ts): it can type anything
+#   - a file under src/ that a file in another folder of src/ imports: src/core, types, plugins, server, builder. The importers
+#     of src/cli, src/viewer and src/shipped are in the same folder (the layers in test/core/layers.test.ts; nothing in src/
+#     imports them from outside), so for those the folder is linted, not the tree. Nothing in src/ imports src/index.ts.
+# Tests, scripts and mcp/ are not type-aware and no type-aware file imports them: a change there is linted alone.
+# A deleted path is not read, so it only counts when it asks for the whole tree.
+classify_lint() {
+    local root="$1" path dir
+    lint_full=0; lint_files=""
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        case "$path" in
+            eslint.config.js|package.json|package-lock.json|tsconfig*.json|*/tsconfig*.json|*.d.ts) lint_full=1 ;;
+            src/cli/*|src/viewer/*|src/shipped/*)
+                dir="$(printf '%s' "$path" | cut -d/ -f1-2)"
+                [ -d "$root/$dir" ] && lint_files="$lint_files $dir"
+                continue ;;
+            src/index.ts) ;;
+            src/*) lint_full=1 ;;
+        esac
+        case "$path" in
+            *.ts|*.tsx|*.js|*.mjs|*.cjs) [ -f "$root/$path" ] && lint_files="$lint_files $path" ;;
+        esac
+    done
+    lint_files="$(printf '%s\n' $lint_files | sort -u | tr '\n' ' ')"
+    lint_files="${lint_files% }"
+}
+
 # finish HOOKNAME: the ending of a hook.
 finish() {
     local hook="$1" bypass="$2"

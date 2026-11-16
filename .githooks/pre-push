@@ -4,7 +4,8 @@
 # which is where a change that passes alone meets everyone else's. It is also the backstop for a commit made with --no-verify.
 # It tests the pushed commit's own tree, exported from git, not the working tree, and skips a step a tree already passed.
 #
-# What runs, on every pushed tree: typecheck, lint, and the Prettier check of the whole tree.
+# What runs, on every pushed tree: typecheck, lint, and the Prettier check of the whole tree, each with the time it took. This is where
+# the whole-tree lint is guaranteed: pre-commit lints only the staged files when no change can alter the findings of others.
 # Then the tests the changed files ask for (classify_paths in lib.sh, the mapping pre-commit uses), where the changed files are those
 # between what the remote has and what is pushed:
 #   the whole suite     when a changed file asks for it (examples/, a fixture, package.json, the build and test config, a path no rule

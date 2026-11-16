@@ -86,7 +86,7 @@ A commit made by `git merge` skips the pre-commit hook; run `npm run check` and 
 
 **`pre-commit`** is quick, so you commit often. On every commit it runs:
 
-- `npm run typecheck` and `npm run lint`, and a Prettier check of the staged code files (`.ts`, `.tsx`, `.js`, `.mjs`, `.cjs`, `.css`, `.yml`).
+- `npm run typecheck`, `npm run lint` and a Prettier check of the staged code files (`.ts`, `.tsx`, `.js`, `.mjs`, `.cjs`, `.css`, `.yml`). Lint runs on the whole tree only when the change can alter what ESLint says about a file you did not stage: the ESLint, `tsconfig` or `package` config, a `.d.ts` file, or a file in `src/` that another folder of `src/` imports (`core`, `types`, `plugins`, `server`, `builder`, because the type-aware rules read the types of imports). Otherwise it runs on the staged files, and on the whole folder for `src/cli`, `src/viewer` and `src/shipped`, whose importers sit in the same folder. `pre-push` lints the whole tree. Every step prints the seconds it took.
 - A secret scan of the staged changes with [gitleaks](https://github.com/gitleaks/gitleaks), skipped with a notice when it is not installed.
 - `bash -n` on staged shell files, a syntax check of staged Python files, and Ruff when any are staged (skipped with a notice when `uv` is not installed).
 
