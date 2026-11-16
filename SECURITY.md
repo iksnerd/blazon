@@ -10,7 +10,7 @@ Please do not open a public issue.
 
 Report it privately through GitHub: <https://github.com/iksnerd/blazon/security/advisories/new>. Include what you found, the steps to reproduce it and what an attacker could do with it.
 
-GitHub's private vulnerability reporting is for public repositories. While this repository is private, that page is open only to people with access to it, so an outside reporter cannot use it. If you cannot reach it, open an issue that says only that you have a security report and asks for a private channel, with no details.
+If you cannot use that page, email <me@iksnerd.xyz> and say only that you have a security report, with no details, and ask for a private channel.
 
 ## What to expect
 
