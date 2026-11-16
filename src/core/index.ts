@@ -31,7 +31,7 @@ import { initiativeFindings, replacementFindings } from './assets/sidecar.js';
 import { checkTokens } from './checker/index.js';
 import { withoutCascade } from './checker/cascade.js';
 import { staleApprovals } from './checker/approvals.js';
-import { resolveTheme, shadcnProblems } from './brand-theme.js';
+import { resolveTheme } from './brand-theme.js';
 import { starterFileFindings, starterLogoFindings } from './starter.js';
 import { declareInks, loadLogo, logoFiles } from './logo.js';
 import { fontFindings, loadFonts } from './fonts.js';
@@ -175,7 +175,6 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
         ...localProblems,
         ...icons.problems,
         ...theme.problems,
-        ...shadcnProblems(config, resolvedTokens),
         ...fonts.problems,
         ...fontFindings(resolvedTokens, fonts),
         ...logo.problems,

@@ -216,7 +216,7 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `starter-logo-unchanged` | Warning | A configured logo is still blazon's own mark, byte for byte. |
 | `theme-inferred` | Note | No theme is set, so blazon took the theme roles from token names. |
 | `theme-missing` | Note | No theme is set and no token has a conventional name, so blazon uses neutral colors. |
-| `theme-unresolved` | Error | A theme role or a shadcn variable points at a token that does not exist. |
+| `theme-unresolved` | Error | A theme role points at a token that does not exist. |
 | `token-extension-deprecated` | Warning | A token or group has a `dev.folio` extension key, the old name, which blazon ignores. |
 | `token-file-invalid` | Error | A token file is not valid JSON or its top level is not an object. |
 | `token-invalid` | Error | A token is a bare value instead of an object with $value, or a name contains ".", "{" or "}". |

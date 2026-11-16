@@ -183,8 +183,7 @@ export const OPERATIONS: readonly Operation[] = [
       command: ['get'],
       positional: ['path', 'dir'],
       cliOnly: ['dir'],
-      summary:
-        'Read one token: its value, type, CSS variable names in theme.css and tailwind.css, its usage, pairs and logo rules, and the file it is in. To find a path, use blazon list',
+      summary: 'Read one token: its value, type, CSS variable name in theme.css, its usage, pairs and logo rules, and the file it is in. To find a path, use blazon list',
       options: [{ property: 'json', description: 'Print the token as JSON on standard output' }],
     },
   },

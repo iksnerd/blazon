@@ -27,7 +27,7 @@ import { blazonIdentity, type BlazonIdentity } from '../blazon-pin.js';
 // duplicates, and changes with every viewer refactor.
 
 export const BRAND_FORMAT = 'blazon-brand';
-/** Changes only when a field is removed or changes meaning. Adding a field does not change it. 2: `theme.shadcn` was removed (blazon.shadcn derives it). */
+/** Changes only when a field is removed or changes meaning. Adding a field does not change it. 2: a part of `theme` that version 1 held, a UI library's variable mapping, was removed (a plugin derives it). */
 export const BRAND_VERSION = 2;
 
 export interface BrandToken {

@@ -2032,5 +2032,398 @@
         "tier": "primitive"
       }
     }
+  ],
+  "contexts": [
+    {
+      "modifier": "theme",
+      "context": "dark",
+      "selector": "[data-theme=\"dark\"]",
+      "tokens": [
+        {
+          "path": "text.primary",
+          "type": "color",
+          "value": "#F2F0EB",
+          "resolvedValue": "#F2F0EB",
+          "rawValue": "{color.base.bone}",
+          "aliasOf": "color.base.bone",
+          "cssVariable": "--text-primary",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "text.muted",
+          "type": "color",
+          "value": "#8C9096",
+          "resolvedValue": "#8C9096",
+          "rawValue": "{color.ink.zinc}",
+          "aliasOf": "color.ink.zinc",
+          "cssVariable": "--text-muted",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "text.inverse",
+          "type": "color",
+          "value": "#1E1F21",
+          "resolvedValue": "#1E1F21",
+          "rawValue": "{color.ink.graphite}",
+          "aliasOf": "color.ink.graphite",
+          "cssVariable": "--text-inverse",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "surface.background",
+          "type": "color",
+          "value": "#1E1F21",
+          "resolvedValue": "#1E1F21",
+          "rawValue": "{color.ink.graphite}",
+          "aliasOf": "color.ink.graphite",
+          "cssVariable": "--surface-background",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "background"
+          }
+        },
+        {
+          "path": "surface.canvas",
+          "type": "color",
+          "value": "#101113",
+          "resolvedValue": "#101113",
+          "rawValue": "{color.base.carbon}",
+          "aliasOf": "color.base.carbon",
+          "cssVariable": "--surface-canvas",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "background"
+          }
+        },
+        {
+          "path": "surface.inverse",
+          "type": "color",
+          "value": "#F2F0EB",
+          "resolvedValue": "#F2F0EB",
+          "rawValue": "{color.base.bone}",
+          "aliasOf": "color.base.bone",
+          "cssVariable": "--surface-inverse",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "background"
+          }
+        },
+        {
+          "path": "rule.default",
+          "type": "color",
+          "value": "#8C9096",
+          "resolvedValue": "#8C9096",
+          "rawValue": "{color.ink.zinc}",
+          "aliasOf": "color.ink.zinc",
+          "cssVariable": "--rule-default",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "border"
+          }
+        },
+        {
+          "path": "syntax.keyword",
+          "type": "color",
+          "value": "#FF9466",
+          "resolvedValue": "#FF9466",
+          "rawValue": "{color.pigment.ember}",
+          "aliasOf": "color.pigment.ember",
+          "cssVariable": "--syntax-keyword",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "syntax.string",
+          "type": "color",
+          "value": "#7CCBB0",
+          "resolvedValue": "#7CCBB0",
+          "rawValue": "{color.pigment.patina}",
+          "aliasOf": "color.pigment.patina",
+          "cssVariable": "--syntax-string",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "syntax.constant",
+          "type": "color",
+          "value": "#8FB4F5",
+          "resolvedValue": "#8FB4F5",
+          "rawValue": "{color.pigment.enamel}",
+          "aliasOf": "color.pigment.enamel",
+          "cssVariable": "--syntax-constant",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "syntax.function",
+          "type": "color",
+          "value": "#F2F0EB",
+          "resolvedValue": "#F2F0EB",
+          "rawValue": "{color.base.bone}",
+          "aliasOf": "color.base.bone",
+          "cssVariable": "--syntax-function",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "syntax.comment",
+          "type": "color",
+          "value": "#8C9096",
+          "resolvedValue": "#8C9096",
+          "rawValue": "{color.ink.zinc}",
+          "aliasOf": "color.ink.zinc",
+          "cssVariable": "--syntax-comment",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "syntax.punctuation",
+          "type": "color",
+          "value": "#8C9096",
+          "resolvedValue": "#8C9096",
+          "rawValue": "{color.ink.zinc}",
+          "aliasOf": "color.ink.zinc",
+          "cssVariable": "--syntax-punctuation",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic",
+            "role": "text"
+          }
+        },
+        {
+          "path": "border.rule",
+          "type": "border",
+          "value": "2px solid #8C9096",
+          "resolvedValue": {
+            "color": "#8C9096",
+            "width": {
+              "value": 2,
+              "unit": "px"
+            },
+            "style": "solid"
+          },
+          "rawValue": {
+            "color": "{rule.default}",
+            "width": {
+              "value": 2,
+              "unit": "px"
+            },
+            "style": "solid"
+          },
+          "parts": {
+            "color": "#8C9096",
+            "width": "2px",
+            "style": "solid"
+          },
+          "description": "The structural line: panels, tables, section breaks",
+          "cssVariable": "--border-rule",
+          "sourceFile": "tokens/form.json",
+          "blazon": {
+            "tier": "semantic"
+          }
+        },
+        {
+          "path": "shadow.plate",
+          "type": "shadow",
+          "value": "4px 4px 0px 0px #101113",
+          "resolvedValue": {
+            "color": "#101113",
+            "offsetX": {
+              "value": 4,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 4,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          "rawValue": {
+            "color": "{color.base.carbon}",
+            "offsetX": {
+              "value": 4,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 4,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          "parts": {
+            "color": "#101113",
+            "offsetX": "4px",
+            "offsetY": "4px",
+            "blur": "0px",
+            "spread": "0px"
+          },
+          "description": "A hard offset, like a plate bolted onto a panel: panels and keys at rest. Never blurred.",
+          "cssVariable": "--shadow-plate",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic"
+          }
+        },
+        {
+          "path": "shadow.shim",
+          "type": "shadow",
+          "value": "2px 2px 0px 0px #101113",
+          "resolvedValue": {
+            "color": "#101113",
+            "offsetX": {
+              "value": 2,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 2,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          "rawValue": {
+            "color": "{color.base.carbon}",
+            "offsetX": {
+              "value": 2,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 2,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          "parts": {
+            "color": "#101113",
+            "offsetX": "2px",
+            "offsetY": "2px",
+            "blur": "0px",
+            "spread": "0px"
+          },
+          "description": "Half a plate: a key under the pointer, seated halfway into its plate. Never blurred.",
+          "cssVariable": "--shadow-shim",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic"
+          }
+        },
+        {
+          "path": "shadow.recess",
+          "type": "shadow",
+          "value": "inset 2px 2px 0px 0px #8C9096",
+          "resolvedValue": {
+            "color": "#8C9096",
+            "inset": true,
+            "offsetX": {
+              "value": 2,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 2,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          "rawValue": {
+            "color": "{color.ink.zinc}",
+            "inset": true,
+            "offsetX": {
+              "value": 2,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 2,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          "parts": {
+            "color": "#8C9096",
+            "offsetX": "2px",
+            "offsetY": "2px",
+            "blur": "0px",
+            "spread": "0px"
+          },
+          "description": "A well cut into the panel: inputs and tab rails. Never blurred.",
+          "cssVariable": "--shadow-recess",
+          "sourceFile": "tokens/theme/dark.json",
+          "blazon": {
+            "tier": "semantic"
+          }
+        }
+      ]
+    }
   ]
 }

@@ -1,0 +1,12 @@
+{
+  "variables": {
+    "ring": "text.primary",
+    "sidebar-ring": "text.primary",
+    "destructive": "text.primary",
+    "chart-1": "text.primary",
+    "chart-2": "text.muted",
+    "chart-3": "surface.canvas",
+    "chart-4": "rule.default",
+    "chart-5": "rule.quiet"
+  }
+}

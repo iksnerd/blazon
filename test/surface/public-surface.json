@@ -80,7 +80,6 @@
       "port",
       "resolver",
       "sections",
-      "shadcn",
       "theme",
       "title",
       "tokensDir",
@@ -583,6 +582,7 @@
     "blazon.platform-tokens",
     "blazon.press-kit",
     "blazon.print-book",
+    "blazon.shadcn",
     "blazon.social-cards",
     "blazon.tailwind"
   ]

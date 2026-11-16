@@ -1,6 +1,6 @@
 import type { AssetCategoryConfig, IconSetConfig } from './catalog.js';
 import type { SectionId } from './docs.js';
-import type { ShadcnVariable, ThemeRole } from './theme.js';
+import type { ThemeRole } from './theme.js';
 
 /** One use of a plugin the operator allows: its name, an optional instance id, and the options blazon passes it in every request. */
 export interface PluginConfig {
@@ -37,8 +37,6 @@ export interface BlazonConfig {
   logo?: string | { onLight: string; onDark?: string };
   /** Brand book theme: viewer role → token path, e.g. { accent: 'interactive.primary' } */
   theme?: Partial<Record<ThemeRole, string>>;
-  /** shadcn/ui variable (`primary`, `chart-1`, ...) → token path. Wins over what the theme roles give that variable; `brand.json` states the result */
-  shadcn?: Partial<Record<ShadcnVariable, string>>;
   /** Icon packages to preview in the brand book, read from node_modules */
   iconSets?: IconSetConfig[];
   /** Settings for asset categories: label, order, description, an extra folder, rules */

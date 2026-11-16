@@ -33,7 +33,7 @@ export const findingFor =
 
 export const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** The version of brand.json this reader understands (RFC 0001 section 12): 2 since theme.shadcn was removed. */
+/** The version of brand.json this reader understands (RFC 0001 section 12): 2 since the shadcn mapping was removed from `theme`. */
 export const BRAND_VERSION = 2;
 
 /** The brand.json a plugin reads: the object when its format and version are the ones this reader understands, Cannot otherwise (RFC 0001: a reader checks both before it interprets anything). */

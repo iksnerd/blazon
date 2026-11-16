@@ -148,6 +148,22 @@ rm "$request"
     expect(fs.existsSync(path.join(root, 'dist/tokens/tailwind.css'))).toBe(false);
   }, 120_000);
 
+  it('runs the shipped blazon.shadcn with its options, and refuses the old shadcn key of the config naming the plugin', async () => {
+    const root = await starterProject({ plugins: [{ name: 'blazon.shadcn', options: { variables: { destructive: 'text.primary' } } }] });
+    const result = blazon(root, 'tokens');
+    expect(result.status, output(result)).toBe(0);
+    const out = path.join(root, 'dist/tokens/blazon.shadcn');
+    expect(JSON.parse(fs.readFileSync(path.join(out, 'shadcn.json'), 'utf-8')).variables.destructive).toEqual({ token: 'text.primary', value: expect.any(String), from: 'config' });
+    expect(fs.readFileSync(path.join(out, 'shadcn.css'), 'utf-8')).toContain('--destructive:');
+
+    const file = path.join(root, 'blazon.json');
+    fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf-8')), shadcn: { destructive: 'text.primary' } }));
+    const old = blazon(root, 'tokens');
+    expect(old.status).toBe(1);
+    expect(output(old)).toContain('blazon.shadcn');
+    expect(output(old)).toContain('"variables"');
+  }, 120_000);
+
   it('exits 1 when a build plugin reports an error, after the token files are written', async () => {
     const root = await project({ 'acme.deck': { script: plugin(['build'], answer([{ code: 'acme.deck/failed', severity: 'error', path: 'deck', message: 'The deck could not be drawn' }])) } });
     const result = blazon(root, 'tokens');

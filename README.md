@@ -95,7 +95,7 @@ The same token is written as `--color-signal-orange: #FF5A1F;` in `theme.css` an
 ## When not to use blazon
 
 - **You need a stable interface.** Blazon is 0.x: a minor version may break a stable surface, and the CHANGELOG lists it under "Breaking". Pin the version you build with ([chapter 15](docs/manual/15-maintaining-a-brand-book.md#pin-the-blazon-you-build-with)).
-- **You need many output formats.** Blazon writes CSS, TypeScript and JSON, the Tailwind plugin writes a Tailwind v4 theme, and the platform plugin writes Android, Swift and Kotlin for colors and dimensions only. [Style Dictionary](https://styledictionary.com) has a general system of custom transforms and formats.
+- **You need many output formats.** Blazon writes CSS, TypeScript and JSON, the Tailwind and shadcn/ui plugins write a Tailwind v4 theme and the shadcn/ui variables, and the platform plugin writes Android, Swift and Kotlin for colors and dimensions only. [Style Dictionary](https://styledictionary.com) has a general system of custom transforms and formats.
 - **You want rules enforced in a design tool.** Blazon reads token files in the repo and does not sync with Figma or Tokens Studio. A file exported from them works if it is DTCG 2025.10, but the `usage` roles and `tier` names are blazon's, so the editor will not enforce them.
 - **You are on Windows.** It is tested on macOS and Linux with Node 24; WSL is untried.
 
@@ -131,7 +131,7 @@ The same compile feeds the dev server, so a change to a token, a page or the con
 
 ## Plugins
 
-A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships eleven, so there is nothing to install: name one in `blazon.json` and run `blazon build`. A plugin starts with an empty environment and gets only the variables its manifest lists and you approve in its entry's `env`. The ones that draw in Chrome list `BLAZON_CHROME`, `HOME` and `TMPDIR`:
+A plugin is a program, in any language, that blazon runs for a check or a build step. Blazon ships twelve, so there is nothing to install: name one in `blazon.json` and run `blazon build`. A plugin starts with an empty environment and gets only the variables its manifest lists and you approve in its entry's `env`. The ones that draw in Chrome list `BLAZON_CHROME`, `HOME` and `TMPDIR`:
 
 ```json
 {
