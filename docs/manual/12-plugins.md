@@ -9,13 +9,13 @@ Blazon runs a plugin as a child process, once for each call, with a request on i
 | Role | When | What it does |
 |---|---|---|
 | `check` | After the brand compiles, in `blazon check`, `blazon tokens` and `blazon build` | Judges the brand and answers with findings, which show beside blazon's own and fail the check when they are errors |
-| `build` | After the site is written, in `blazon build` | Makes something from the brand and writes it into a folder of its own |
+| `build` | After the site is written, in `blazon build`; and after the token files are written, in `blazon tokens`, with no site | Makes something from the brand and writes it into a folder of its own |
 
 `blazon dev` runs `check` plugins too (see [Plugins in blazon dev](#plugins-in-blazon-dev)) and does not run `build` plugins.
 
 ## What a plugin can look at, and where it writes
 
-- **A rule that needs files is a build plugin.** A `check` plugin gets the brand and nothing else. A `build` plugin runs after the site is written and is given the built site (`site_dir`), so a check on the fonts, the images or the page output belongs there: an error from it fails `blazon build`. The cost is that it runs under `blazon build` only, not under `blazon check` or `blazon dev`.
+- **A rule that needs files is a build plugin.** A `check` plugin gets the brand and nothing else. A `build` plugin runs after the site is written and is given the built site (`site_dir`; `blazon tokens` runs it too, with no site), so a check on the fonts, the images or the page output belongs there: an error from it fails `blazon build`. The cost is that it runs under `blazon build` only, not under `blazon check` or `blazon dev`.
 - **A plugin writes into its own folder.** `<tokensOutDir>/<id>/` (`dist/tokens/<id>/`) is emptied before each run, where the id is the plugin's name unless the entry gives an `as` (see [Use one plugin more than once](#use-one-plugin-more-than-once)). A plugin that works from the exported tokens reads them from `tokens_dir` (`dist/tokens/`), where `blazon build` has written them before the plugin runs.
 - **Nothing beside the folder.** Blazon empties only `<tokensOutDir>/<id>/`, so a file a plugin writes next to it, such as a cache it keeps between builds, is never cleaned and can collide with another plugin's folder. Blazon does not give a plugin a folder for its own state yet. `blazon plugin check` reports a file written beside `out_dir` as a warning (case 9 in [Writing a plugin](13-writing-a-plugin.md#write-and-check-a-plugin)), not as a failure.
 - **A book that shows generated files builds twice.** Build plugins run after the book's data is read, so a file a plugin makes cannot appear in the same build. Copy the files from the plugin's folder into `assets/`, then run `blazon build` again; a build script holds both steps.

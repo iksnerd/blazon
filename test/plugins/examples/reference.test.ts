@@ -52,16 +52,16 @@ describe.skipIf(!python)('the reference plugin', () => {
     expect(result.stdout).toContain('Passed');
   }, 60_000);
 
-  it('says it cannot judge a brand that is not a version 1 blazon brand', () => {
+  it('says it cannot judge a brand that is not a version 2 blazon brand', () => {
     const run = (brand: object) =>
       spawnSync('python3', [path.join(PLUGIN, 'blazon-acme.house-style')], { input: JSON.stringify({ v: 1, type: 'check', options: { headingFont: 'Inter' }, brand }), encoding: 'utf-8' });
-    const wrongFormat = run({ format: 'nope', version: 1, tokens: [] });
+    const wrongFormat = run({ format: 'nope', version: 2, tokens: [] });
     expect(wrongFormat.status).toBe(2);
     expect(wrongFormat.stdout.split('\n')[0]).toBe('the brand in the request is not a blazon brand: its format is "nope", not "blazon-brand"');
     const wrongVersion = run({ format: 'blazon-brand', version: 9, tokens: [] });
     expect(wrongVersion.status).toBe(2);
-    expect(wrongVersion.stdout.split('\n')[0]).toBe('the brand in the request is version 9; this reader understands version 1');
-    expect(run({ format: 'blazon-brand', version: 1, tokens: [] }).status).toBe(0);
+    expect(wrongVersion.stdout.split('\n')[0]).toBe('the brand in the request is version 9; this reader understands version 2');
+    expect(run({ format: 'blazon-brand', version: 2, tokens: [] }).status).toBe(0);
   });
 
   it('fails `blazon check` for a heading in another font than the one the options name', async () => {

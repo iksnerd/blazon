@@ -23,8 +23,8 @@ describe.each(Object.entries(readers))('%s reads brand.json', (_name, read) => {
     expect(() => read(brand)).toThrow();
   });
 
-  it('accepts version 1 of blazon-brand', () => {
-    expect(() => read({ format: 'blazon-brand', version: 1 })).not.toThrow();
+  it('accepts version 2 of blazon-brand', () => {
+    expect(() => read({ format: 'blazon-brand', version: 2 })).not.toThrow();
   });
 });
 
@@ -42,7 +42,7 @@ describe('favicons reads the brand in the request', () => {
     expect(() => requestFrom(request(brand))).toThrow(reason);
   });
 
-  it('accepts version 1 of blazon-brand', () => {
-    expect(() => requestFrom(request({ format: 'blazon-brand', version: 1 }))).not.toThrow();
+  it('accepts version 2 of blazon-brand', () => {
+    expect(() => requestFrom(request({ format: 'blazon-brand', version: 2 }))).not.toThrow();
   });
 });

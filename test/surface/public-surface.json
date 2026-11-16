@@ -481,7 +481,7 @@
   },
   "brandJson": {
     "format": "blazon-brand",
-    "version": 1,
+    "version": 2,
     "keys": [
       "assets",
       "brand",

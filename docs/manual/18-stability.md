@@ -11,8 +11,8 @@ A stable surface changes only by the rule in the next section. An unstable one c
 | Surface | Tier | What it covers | Chapter |
 |---|---|---|---|
 | Token files | Stable | The DTCG 2025.10 format, the fields of `$extensions["dev.blazon"]` and the resolver document | [2](02-tokens.md), [4](04-contexts.md) |
-| `brand.json` | Stable | Format `blazon-brand`, version 1: its keys, and what each holds | [11](11-brand-json.md) |
-| The plugin protocol | Stable | Request version 1, manifest version 2, the `check` and `build` roles, the answer and the exit codes | [13](13-writing-a-plugin.md) |
+| `brand.json` | Stable | Format `blazon-brand`, version 2: its keys, and what each holds | [11](11-brand-json.md) |
+| The plugin protocol | Stable | Request version 1 for `check` and 2 for `build`, manifest version 2, the `check` and `build` roles, the answer and the exit codes | [13](13-writing-a-plugin.md) |
 | The command line | Stable | The commands and their flags, the exit statuses, and the `--json` documents | [1](01-getting-started.md), [3](03-checks.md) |
 | `blazon.json` | Stable | The file name and its plain JSON form, the keys, and the keys inside them (the `assets` block, a plugin entry, the e-mail signature) | [7](07-theme-and-config.md) |
 | Finding codes | Stable | The code of every finding blazon's own checks raise, because a tool that reads `--json` keys on it | [3](03-checks.md) |

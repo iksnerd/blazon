@@ -20,7 +20,7 @@ import { compileBlazonData } from '../../../src/core/index.js';
 import { writeProject } from '../../support/helpers.js';
 
 // A brand.json always carries its format and version (RFC 0001); a fixture that is only a piece of one gets them here
-const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 1, ...brand });
+const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 2, ...brand });
 
 // blazon.press-kit, the plugin blazon ships to pack what an outsider needs from a brand. Seams: the pure parts (which logos go and why,
 // the color files, the fonts, the text), and the entry, run as blazon runs it, whose folder and zip are read back.
@@ -39,7 +39,7 @@ const asset = (id: string, extra: object = {}, meta: object = {}) => ({ id, name
 const token = (tokenPath: string, value: string, extra: object = {}) => ({ path: tokenPath, type: 'color', value, resolvedValue: value, cssVariable: `--${tokenPath.replace(/\./g, '-')}`, ...extra });
 const BRAND = {
   format: 'blazon-brand',
-  version: 1,
+  version: 2,
   brand: { title: 'Acme Co', description: 'Acme makes anvils.' },
   theme: { roles: { fontDisplay: "'Big Shoulders Display', sans-serif", fontBody: 'Arial, sans-serif' }, fonts: ['https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&display=swap'] },
   logo: { onLight: 'brand-assets/logos/mark-light.svg', onDark: 'brand-assets/logos/mark-dark.svg' },
@@ -343,7 +343,7 @@ function world(over: { brand?: object; options?: object } = {}) {
   fs.mkdirSync(path.join(siteDir, 'brand-assets/logos'), { recursive: true });
   fs.writeFileSync(path.join(siteDir, 'index.html'), '<html></html>');
   for (const [name, fill] of [['mark-light', '#1E1F21'], ['mark-dark', '#F2F0EB'], ['draft', '#FF0000'], ['ai', '#00FF00'], ['ai-ok', '#0000FF']]) fs.writeFileSync(path.join(siteDir, `brand-assets/logos/${name}.svg`), SVG(fill!));
-  const request = JSON.stringify({ v: 1, type: 'build', brand: brandOf(over.brand), options: over.options ?? {}, site_dir: siteDir, out_dir: outDir });
+  const request = JSON.stringify({ v: 2, type: 'build', brand: brandOf(over.brand), options: over.options ?? {}, site_dir: siteDir, out_dir: outDir });
   return { siteDir, outDir, request };
 }
 

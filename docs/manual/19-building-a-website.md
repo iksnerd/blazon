@@ -172,4 +172,4 @@ A brand can write these in a page of its `docs/`, for example one called Web, so
 
 ## Ask blazon as tools
 
-A coding agent can call the read commands above as MCP tools instead of running them: `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo`, `get_shadcn` and `check_brand`. `list_tokens` is `blazon list`: it finds a token path. [Chapter 20](20-blazon-for-agents.md) says how to start the server.
+A coding agent can call the read commands above as MCP tools instead of running them: `list_tokens`, `get_token`, `get_rules`, `can_use`, `get_fonts`, `get_logo` and `check_brand`. `list_tokens` is `blazon list`: it finds a token path. [Chapter 20](20-blazon-for-agents.md) says how to start the server.

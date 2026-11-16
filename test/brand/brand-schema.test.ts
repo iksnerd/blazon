@@ -172,7 +172,7 @@ describe('what the schema refuses', () => {
   it.each<[string, (brand: Json) => void]>([
     ['a missing top-level key', (b) => delete b.tokens],
     ['a format that is not blazon-brand', (b) => (b.format = 'something-else')],
-    ['a version other than 1', (b) => (b.version = 2)],
+    ['a version other than 2', (b) => (b.version = 1)],
     ['a token with no value', (b) => delete b.tokens[0].value],
     ['a token path that is not a string', (b) => (b.tokens[0].path = 5)],
     ['`file` on a token, which would be read as a path beside brand.json', (b) => (b.tokens[0].file = 'tokens/colors.json')],

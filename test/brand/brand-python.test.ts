@@ -33,7 +33,7 @@ describe.skipIf(!python)('scripts/read-brand.py', () => {
     const out = JSON.parse(fs.readFileSync(brandJson, 'utf-8'));
     const result = run(brandJson);
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain('Acme Brand Book (blazon-brand v1)');
+    expect(result.stdout).toContain('Acme Brand Book (blazon-brand v2)');
     expect(result.stdout).toContain(`Tokens: ${out.tokens.length}`);
     expect(result.stdout).toMatch(/interactive\.primary\s+#FF5A1F/);
     // Logo rules come through, with their unit in pixels

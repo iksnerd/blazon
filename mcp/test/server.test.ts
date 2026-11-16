@@ -98,7 +98,7 @@ describe.skipIf(!installed)('blazon-mcp', () => {
 
   it('lists the eight tools, each with a title, a description, an output schema and a closed input schema', async () => {
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(['can_use', 'check_brand', 'get_fonts', 'get_logo', 'get_rules', 'get_shadcn', 'get_token', 'list_tokens']);
+    expect(tools.map((t) => t.name).sort()).toEqual(['can_use', 'check_brand', 'get_fonts', 'get_logo', 'get_rules', 'get_token', 'list_tokens']);
     for (const tool of tools) {
       expect(tool.title?.length).toBeGreaterThan(5);
       expect(tool.description?.length).toBeGreaterThan(40);
@@ -230,7 +230,6 @@ describe.skipIf(!installed)('blazon-mcp', () => {
         ['can_use', { fg: 'text.primary', bg: 'surface.background' }],
         ['get_fonts', {}],
         ['get_logo', {}],
-        ['get_shadcn', {}],
       ] as const)
         await other.callTool({ name, arguments: args });
       expect(fs.existsSync(marker)).toBe(false);
@@ -336,7 +335,7 @@ describe.skipIf(!installed)('blazon-mcp', () => {
     const got = await client.getPrompt({ name: 'build_page', arguments: { description: 'a pricing page' } });
     const text = (got.messages[0]!.content as { text: string }).text;
     expect(text).toBe(buildPageText('a pricing page'));
-    for (const word of ['check_brand', 'list_tokens', 'get_rules', 'get_fonts', 'get_logo', 'get_shadcn', 'can_use', 'hard-code', 'does not answer']) expect(text).toContain(word);
+    for (const word of ['check_brand', 'list_tokens', 'get_rules', 'get_fonts', 'get_logo', 'can_use', 'hard-code', 'does not answer']) expect(text).toContain(word);
   });
 
   it('get_token returns the token as blazon describes it', async () => {
@@ -443,16 +442,6 @@ describe.skipIf(!installed)('blazon-mcp', () => {
     const result = await call('check_brand', { severity: 'error' });
     expect(result.isError).toBeFalsy();
     expect(jsonOf(result).command).toBe('check');
-  });
-
-  it('get_shadcn returns theme.shadcn compiled now, with no build', async () => {
-    expect(fs.existsSync(path.join(brand, 'dist'))).toBe(false);
-    const result = await call('get_shadcn');
-    expect(result.isError).toBeFalsy();
-    const shadcn = jsonOf(result);
-    expect(shadcn.variables.primary).toMatchObject({ token: 'interactive.primary', from: 'theme' });
-    expect(Array.isArray(shadcn.unsupplied)).toBe(true);
-    expect(fs.existsSync(path.join(brand, 'dist'))).toBe(false);
   });
 
   it.each(['--help', '-x', '.hidden', 'a b', '../x', 'color.primary; ls', ''])('refuses %j as a token path before blazon runs', async (value) => {

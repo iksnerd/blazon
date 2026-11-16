@@ -101,7 +101,7 @@ Plugins are written in any language: RFC 0005 fixes JSON on standard streams, so
 **The `check` role.** A check plugin judges the brand and says what is wrong with it. Blazon calls it after the brand compiles and before anything is written, in `blazon check`, `blazon tokens`, `blazon build` and `blazon dev`.
 
 ```json
-{ "v": 1, "type": "check", "options": {}, "brand": { "format": "blazon-brand", "version": 1, "...": "the whole brand.json" } }
+{ "v": 1, "type": "check", "options": {}, "brand": { "format": "blazon-brand", "version": 2, "...": "the whole brand.json" } }
 ```
 
 ```json
@@ -111,19 +111,19 @@ Plugins are written in any language: RFC 0005 fixes JSON on standard streams, so
 - `brand` is the content of `brand.json` as RFC 0001 §12 and `brand.schema.json` define it. A plugin author needs nothing else from blazon. Its `findings` hold the core's findings, never another plugin's.
 - `options` is the JSON object the operator wrote for this plugin in the config, default `{}`.
 - A check call receives no file paths, so a check sees what `brand.json` states and cannot read the images. That keeps it cheap and repeatable.
-- A plugin MUST check that `brand.format` is `"blazon-brand"` and `brand.version` is `1` before it reads anything else, and MUST exit `2` with the reason when either is not. A check that cannot judge MUST NOT answer with an empty `findings` list.
+- A plugin MUST check that `brand.format` is `"blazon-brand"` and `brand.version` is `2` before it reads anything else, and MUST exit `2` with the reason when either is not. A check that cannot judge MUST NOT answer with an empty `findings` list.
 - Exit `0` is an answer, and stdout is the object above. Exit `2` is "cannot answer", with the reason as the first line. Exit `1` is not defined for this role, so it is a break.
 - A finding's `code` MUST start with the plugin's name and a `/`, followed by `[a-z0-9-]+`. `severity` is `error`, `warning` or `info`. `path` and `message` are plain text. More than 500 findings, or a finding that breaks these rules, is a break.
 - The role is behind the breaker. The unit of work is one run of a blazon command, and a call that exits `2` counts as a break for the breaker. The dev server has no such unit and uses a cooldown of 30 seconds instead, which a break starts and exit `2` does not.
 - The profile raises the stdout limit for this role to 1 MiB, so that 500 findings fit.
 
-**The `build` role.** A build plugin turns the brand into something else: a deck, Swift or Android constants, a design-tool file. Blazon calls it once the site and the token files exist, in `blazon build` only.
+**The `build` role.** A build plugin turns the brand into something else: a deck, Swift or Android constants, a design-tool file. Blazon calls it in `blazon build`, once the site and the token files exist, and in `blazon tokens`, once the token files exist and before any site does: the request then has no `site_dir`. A plugin that reads the site answers such a request with one `info` finding and writes nothing; the shipped ones that need the site do so under the code `<name>/needs-site`.
 
 ```json
-{ "v": 1, "type": "build", "options": {}, "brand": { "...": "the whole brand.json" }, "site_dir": "/abs/dist/site", "tokens_dir": "/abs/dist/tokens", "out_dir": "/abs/dist/tokens/acme.deck" }
+{ "v": 2, "type": "build", "options": {}, "brand": { "...": "the whole brand.json" }, "site_dir": "/abs/dist/site", "tokens_dir": "/abs/dist/tokens", "out_dir": "/abs/dist/tokens/acme.deck" }
 ```
 
-- `site_dir` holds the built site and `brand.json`, so the `file` paths in `brand` resolve against it. `tokens_dir` is `tokensOutDir`, which holds the token files that `blazon build` writes before the role runs; a plugin that works from the exported tokens reads them there. `out_dir` is `<tokensOutDir>/<id>/`, which blazon creates empty before the call. The plugin writes its files there. A plugin SHOULD write nowhere else; the shipped `blazon.favicons` is the one exception, and also writes `favicons/` in `site_dir` for the book to read at runtime (manual, chapters 12 to 14).
+- `site_dir` holds the built site and `brand.json`, so the `file` paths in `brand` resolve against it. It is absent when `blazon tokens` runs the role. `tokens_dir` is `tokensOutDir`, which holds the token files that `blazon build` writes before the role runs; a plugin that works from the exported tokens reads them there. `out_dir` is `<tokensOutDir>/<id>/`, which blazon creates empty before the call. The plugin writes its files there. A plugin SHOULD write nowhere else; the shipped `blazon.favicons` is the one exception, and also writes `favicons/` in `site_dir` for the book to read at runtime (manual, chapters 12 to 14).
 - Exit `0` is an answer. Its stdout is an object that MAY hold `findings`, as for `check`. Exit `2` is "cannot answer". Exit `1` is a break.
 - The role is behind the breaker, with the same unit and cooldown as `check`.
 - Blazon reads back nothing from `out_dir` except that it exists.

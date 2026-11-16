@@ -34,7 +34,7 @@ The manifest call always has 15 seconds and 64 KB of standard output, whatever `
 
 A plugin that cannot judge MUST exit `2`, never `0`. Blazon cuts the reason to 300 characters. Exit `2` counts as a break for the breaker: after three in a row blazon stops calling the plugin for the rest of the run. Exit `1` is not an answer for either role, so a plugin that dies on an uncaught exception is a break and not a pass.
 
-Every request has a version, `"v": 1`. A plugin refuses a version it does not speak with exit `2`.
+Every request has a version: `"v": 1` for a `check` request and `"v": 2` for a `build` request. A plugin refuses a version it does not speak with exit `2`.
 
 Limits: 64 KB of standard output (1 MiB for a `check` plugin, so that 500 findings fit), the last 8 KB of standard error kept, a request of at most 4 MiB, and the manifest's timeout. A plugin that keeps breaking, three times in a row, is stopped for the rest of that run: the next calls end at once and the program is not started.
 
@@ -57,7 +57,7 @@ A plugin's name is dotted lowercase words, `acme.house-style`, and a manifest th
 Blazon sends a `check` plugin one JSON object:
 
 ```json
-{ "v": 1, "type": "check", "options": { "headingFont": "Inter" }, "brand": { "format": "blazon-brand", "version": 1, "...": "the whole brand.json" } }
+{ "v": 1, "type": "check", "options": { "headingFont": "Inter" }, "brand": { "format": "blazon-brand", "version": 2, "...": "the whole brand.json" } }
 ```
 
 `brand` is the [`brand.json`](11-brand-json.md) of your brand as blazon's own checks left it, and its schema says exactly what is in it. The plugin sees what `brand.json` states and no file paths, so a check cannot read the images. Before it reads anything else, a plugin checks that `format` is `"blazon-brand"` and `version` is `1`, and exits `2` with the reason when either is not: a check that cannot judge the brand must not answer with an empty list.
@@ -82,10 +82,10 @@ A check answer must be a JSON object with a `findings` list, and empty standard 
 A `build` plugin receives the same request with `"type": "build"` and two directories:
 
 ```json
-{ "v": 1, "type": "build", "options": {}, "brand": { "...": "brand.json" }, "site_dir": "/abs/dist/site", "tokens_dir": "/abs/dist/tokens", "out_dir": "/abs/dist/tokens/acme.deck" }
+{ "v": 2, "type": "build", "options": {}, "brand": { "...": "brand.json" }, "site_dir": "/abs/dist/site", "tokens_dir": "/abs/dist/tokens", "out_dir": "/abs/dist/tokens/acme.deck" }
 ```
 
-`site_dir` holds the built site and its `brand.json`, so the `file` paths in `brand` resolve against it. `tokens_dir` is `tokensOutDir`, where `blazon build` has already written the token files (`theme.css`, `tokens.json` and the others) before any build plugin runs; read them there if the plugin works from the exported tokens. `out_dir` is `<tokensOutDir>/<id>/`, which blazon empties and creates before each run. The plugin writes its files there, and nowhere else, with one exception that blazon.favicons documents: it also writes a `favicons/` folder in `site_dir` ([below](14-shipped-plugins.md#the-favicons-page-in-the-book)). Blazon reads nothing back from `out_dir`. The plugin may print findings in the same form as a check, or nothing at all. An error from a build plugin makes `blazon build` exit 1 after the site is written.
+`site_dir` holds the built site and its `brand.json`, so the `file` paths in `brand` resolve against it. A build plugin also runs in `blazon tokens`, before any site exists: that request has no `site_dir`. A plugin that works from the brand alone ignores the difference. One that needs the site answers with exit `0`, one `info` finding and nothing written, as the shipped ones do under the code `<name>/needs-site`, so `blazon tokens` does not fail for it. `tokens_dir` is `tokensOutDir`, where `blazon build` has already written the token files (`theme.css`, `tokens.json` and the others) before any build plugin runs; read them there if the plugin works from the exported tokens. `out_dir` is `<tokensOutDir>/<id>/`, which blazon empties and creates before each run. The plugin writes its files there, and nowhere else, with one exception that blazon.favicons documents: it also writes a `favicons/` folder in `site_dir` ([below](14-shipped-plugins.md#the-favicons-page-in-the-book)). Blazon reads nothing back from `out_dir`. The plugin may print findings in the same form as a check, or nothing at all. An error from a build plugin makes `blazon build` exit 1 after the site is written.
 
 ## Write and check a plugin
 

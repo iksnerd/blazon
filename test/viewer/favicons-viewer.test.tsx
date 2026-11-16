@@ -130,7 +130,7 @@ describe("a site without the plugin's copy", () => {
     ['a 404', () => new Response('', { status: 404 })],
     ['the page itself for any path (blazon dev)', () => new Response('<!doctype html><html></html>', { status: 200, headers: { 'content-type': 'text/html' } })],
     ['a file that is not JSON', () => new Response('{ nope', { status: 200 })],
-    ['JSON of another format', () => json({ format: 'blazon-brand', version: 1 })],
+    ['JSON of another format', () => json({ format: 'blazon-brand', version: 2 })],
     ['JSON that is null', () => new Response('null', { status: 200 })],
     ['a request that fails', () => Promise.reject(new TypeError('Failed to fetch'))],
   ];

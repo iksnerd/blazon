@@ -86,14 +86,14 @@ const site = (slides = 3, { claim = slides, ready = true, delay = 300, clipped =
 
 const request = (siteDir: string, options: object = {}, extra: object = {}): { text: string; outDir: string } => {
   const outDir = tempDir('blazon-print-out-');
-  return { text: JSON.stringify({ v: 1, type: 'build', options, brand: { format: 'blazon-brand', version: 1 }, site_dir: siteDir, out_dir: outDir, ...extra }), outDir };
+  return { text: JSON.stringify({ v: 2, type: 'build', options, brand: { format: 'blazon-brand', version: 2 }, site_dir: siteDir, out_dir: outDir, ...extra }), outDir };
 };
 const pageCount = async (pdf: string): Promise<number> => (await PDFDocument.load(fs.readFileSync(pdf))).getPageCount();
 const pptx = (file: string): { slides: number; size: string } => JSON.parse(spawnSync('python3', ['-I', PPTX_INFO, file], { encoding: 'utf-8' }).stdout);
 const browser = { BLAZON_CHROME: CHROME };
 
 describe('the print-book plugin: what a request asks it to print', () => {
-  const req = (options: unknown, extra: object = {}) => JSON.stringify({ v: 1, type: 'build', options, brand: {}, site_dir: site(1), out_dir: tempDir('blazon-print-out-'), ...extra });
+  const req = (options: unknown, extra: object = {}) => JSON.stringify({ v: 2, type: 'build', options, brand: {}, site_dir: site(1), out_dir: tempDir('blazon-print-out-'), ...extra });
 
   it.each([
     ['no options', {}, '#print', 'brand-book'],
@@ -120,7 +120,7 @@ describe('the print-book plugin: what a request asks it to print', () => {
   it.each([
     ['not JSON', '{ nope', 'the request is not JSON'],
     ['not an object', '[]', 'the request is not a JSON object'],
-    ['another version', JSON.stringify({ v: 2, type: 'build' }), 'the request is version 2; this plugin speaks version 1'],
+    ['another version', JSON.stringify({ v: 1, type: 'build' }), 'the request is version 1; this plugin speaks version 2'],
     ['another role', JSON.stringify({ v: 1, type: 'check' }), 'the request is for the check role; this plugin is a build plugin'],
   ])('refuses a request that is %s', (_, text, reason) => {
     expect(() => jobFor(text)).toThrow(reason);
@@ -157,8 +157,16 @@ describe('the print-book plugin: what a request asks it to print', () => {
   });
 
   it('refuses a site_dir with no index.html, or an out_dir that is not a folder', () => {
-    expect(() => jobFor(JSON.stringify({ v: 1, type: 'build', options: {}, site_dir: tempDir('blazon-empty-'), out_dir: tempDir('o-') }))).toThrow('site_dir has no index.html');
-    expect(() => jobFor(JSON.stringify({ v: 1, type: 'build', options: {}, site_dir: site(1), out_dir: '/nonexistent/out' }))).toThrow('out_dir is not a folder');
+    expect(() => jobFor(JSON.stringify({ v: 2, type: 'build', options: {}, site_dir: tempDir('blazon-empty-'), out_dir: tempDir('o-') }))).toThrow('site_dir has no index.html');
+    expect(() => jobFor(JSON.stringify({ v: 2, type: 'build', options: {}, site_dir: site(1), out_dir: '/nonexistent/out' }))).toThrow('out_dir is not a folder');
+  });
+
+  it('answers a request with no site_dir (blazon tokens) as skipped: exit 0, one info finding, nothing written', () => {
+    const out = tempDir('o-');
+    const ran = plugin(JSON.stringify({ v: 2, type: 'build', options: {}, brand: {}, out_dir: out }));
+    expect(ran.status, ran.out + ran.err).toBe(0);
+    expect(JSON.parse(ran.out).findings).toEqual([expect.objectContaining({ code: 'blazon.print-book/needs-site', severity: 'info', path: 'site_dir' })]);
+    expect(fs.readdirSync(out)).toEqual([]);
   });
 
   it('declares the build role, a version and the one variable it reads', () => {

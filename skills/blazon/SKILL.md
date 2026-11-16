@@ -15,7 +15,7 @@ A brand book is a folder: `tokens/` (DTCG JSON), `docs/` (Markdown pages), `asse
 4. `blazon explain <code>` says what a finding code means and how to clear it. `blazon explain` with no code lists every code. The manual's table of codes is in `docs/manual/03-checks.md`.
 5. `blazon build` (or `blazon tokens`) when the check passes. `--no-plugins` builds without a browser.
 
-Read commands that answer without a build: `blazon list [group]`, `blazon get <path>`, `blazon rules [path]`, `blazon fonts`, `blazon logo`, `blazon brand --key theme.shadcn`. `blazon brand` prints JSON already; the others take `--json`.
+Read commands that answer without a build: `blazon list [group]`, `blazon get <path>`, `blazon rules [path]`, `blazon fonts`, `blazon logo`, `blazon brand --key theme.roles`. `blazon brand` prints JSON already; the others take `--json`.
 
 ## The MCP tools
 
@@ -30,7 +30,6 @@ If the client has the blazon MCP server, use its tools instead of reading token 
 | `can_use` | ask whether one color may be text on another (`role: "ui"` for borders) |
 | `get_fonts` | find the stylesheets and files to load |
 | `get_logo` | read logo variants, clear space and forbidden backgrounds |
-| `get_shadcn` | read the shadcn/ui variables the brand supplies |
 
 A denied `can_use` is a normal answer (`allowed: false`), not an error. When a result says `brandHasErrors`, values may be wrong: run `check_brand` and fix the errors first. The server does not run plugins, so a finding only a plugin raises is not in its answer.
 

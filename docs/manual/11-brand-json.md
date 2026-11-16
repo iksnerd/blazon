@@ -15,7 +15,7 @@ Every `file` and `dir` in it is a path beside `brand.json`: `brand-assets/logos/
 
 A token's or page's `sourceFile` is different: it names the project file the entry was written in, such as `tokens/colors.json`, and that file is not published.
 
-To read it without a build, run `blazon brand`: it prints the same document, compiled now, and writes nothing. `blazon brand --key theme.shadcn` prints one part by its dotted path. Paths to files in it are the ones a build would write beside `brand.json`, so they exist only after `blazon build`.
+To read it without a build, run `blazon brand`: it prints the same document, compiled now, and writes nothing. `blazon brand --key theme.roles` prints one part by its dotted path. Paths to files in it are the ones a build would write beside `brand.json`, so they exist only after `blazon build`.
 
 ## What is in it
 

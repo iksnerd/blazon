@@ -15,7 +15,7 @@ one CUE package. Do not write a `package` line in the rules; the plugin adds it,
 
 The request is {"v": 1, "type": "check", "options": {"rules": "<CUE text>"}, "brand": <brand.json>}. A check gets no file
 path, so the rules come as text: put the file's text in options.rules in blazon.json (see the README). Exit 2 means "I cannot judge", with the
-reason as the first line of standard output: a brand that is not a version 1 blazon brand, bad rules, no `cue`, a `cue` of another version. Never exit 0 for that.
+reason as the first line of standard output: a brand that is not a version 2 blazon brand, bad rules, no `cue`, a `cue` of another version. Never exit 0 for that.
 
 Where `cue` is: the file named by BLAZON_CUE if the host has that variable set, else `cue` on the PATH blazon gives a pinned
 script (the directories it trusts). It must be cue 0.17.1, the version this program and its tests were written against.
@@ -90,15 +90,15 @@ def finding(item, position):
 
 
 def check_brand(brand):
-    """Refuse a brand that is not a version 1 blazon brand: brand.json says what it is and which version."""
+    """Refuse a brand that is not a version 2 blazon brand: brand.json says what it is and which version."""
     if not isinstance(brand, dict):
         raise CannotJudge('the brand in the request is not a blazon brand: its format is nothing, not "blazon-brand"')
     if brand.get("format") != "blazon-brand":
         shown = json.dumps(brand["format"]) if "format" in brand else "nothing"
         raise CannotJudge(f'the brand in the request is not a blazon brand: its format is {shown}, not "blazon-brand"')
-    if brand.get("version") != 1:
+    if brand.get("version") != 2:
         shown = json.dumps(brand["version"]) if "version" in brand else "nothing"
-        raise CannotJudge(f"the brand in the request is version {shown}; this reader understands version 1")
+        raise CannotJudge(f"the brand in the request is version {shown}; this reader understands version 2")
 
 
 def judge(request):

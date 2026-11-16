@@ -41,7 +41,7 @@ beforeAll(async () => {
   fs.mkdirSync(out);
   await buildSite({ ...config, outDir: site }, EXAMPLE);
   const brand = JSON.parse(fs.readFileSync(path.join(site, 'brand.json'), 'utf-8'));
-  const request = JSON.stringify({ v: 1, type: 'build', options: {}, brand, site_dir: site, out_dir: out });
+  const request = JSON.stringify({ v: 2, type: 'build', options: {}, brand, site_dir: site, out_dir: out });
   ran = spawnSync(process.execPath, ['--import', TSX, ENTRY], { input: request, encoding: 'utf-8', env: { PATH: '/usr/bin:/bin', HOME: os.homedir(), BLAZON_CHROME: CHROME } });
 }, 240_000);
 

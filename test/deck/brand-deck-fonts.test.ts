@@ -237,7 +237,7 @@ const styleToken = (p: string, size: number, family: string | null, weight = 400
 const brandWith = (...tokens: object[]) =>
   readBrand({
     format: 'blazon-brand',
-    version: 1,
+    version: 2,
     brand: { title: 'T' },
     tokens,
     groups: [],

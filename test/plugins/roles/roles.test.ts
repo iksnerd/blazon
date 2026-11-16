@@ -426,7 +426,23 @@ describe('the build role', () => {
     }
     const outDir = path.join(installed.cwd, 'dist', 'tokens', 'acme.deck');
     expect(fs.readFileSync(path.join(outDir, 'deck.txt'), 'utf-8')).toBe('deck');
-    expect(JSON.parse(fs.readFileSync(copy, 'utf-8'))).toEqual({ v: 1, type: 'build', options: {}, brand: BRAND, site_dir: siteDir, tokens_dir: path.join(installed.cwd, 'dist', 'tokens'), out_dir: outDir });
+    expect(JSON.parse(fs.readFileSync(copy, 'utf-8'))).toEqual({ v: 2, type: 'build', options: {}, brand: BRAND, site_dir: siteDir, tokens_dir: path.join(installed.cwd, 'dist', 'tokens'), out_dir: outDir });
+  });
+
+  it('sends a request with no site_dir when there is no site, as blazon tokens does (build request version 2)', async () => {
+    const copy = path.join(os.tmpdir(), `blazon-build-nosite-${process.pid}-${Date.now()}`);
+    dirs.push(copy);
+    const installed = install({ 'acme.deck': { script: BUILD('exit 0', { env: ['REQUEST_COPY'] }), pinned: true, approve: ['REQUEST_COPY'] } });
+    process.env.REQUEST_COPY = copy;
+    try {
+      expect(await make(installed).build(BRAND)).toEqual([]);
+    } finally {
+      delete process.env.REQUEST_COPY;
+    }
+    const sent = JSON.parse(fs.readFileSync(copy, 'utf-8')) as Record<string, unknown>;
+    expect(sent).toMatchObject({ v: 2, type: 'build' });
+    expect('site_dir' in sent).toBe(false);
+    expect(sent.out_dir).toBe(path.join(installed.cwd, 'dist', 'tokens', 'acme.deck'));
   });
 
   it('empties out_dir before each run, so a file from an earlier run does not stay', async () => {

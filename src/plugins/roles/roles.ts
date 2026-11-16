@@ -11,7 +11,7 @@ import { MANIFEST_TIMEOUT } from '../wire/limits.js';
 import { LOCK_FILE, pinFor, readLock, type Lock } from '../pins/lock.js';
 import { ManifestError, decodeManifest, manifestTimeout, type Manifest } from '../wire/manifest.js';
 import { instanceIdTooLong, isPluginName, isTokenOutputName, pluginNameOfEntry } from '../../core/plugin-name.js';
-import { BLAZON_CORE_PROFILE, BLAZON_PROFILE, roleRuntime } from '../wire/profile.js';
+import { BLAZON_CORE_PROFILE, BLAZON_PROFILE, REQUEST_VERSIONS, roleRuntime } from '../wire/profile.js';
 import { scrub, scrubPlain } from '../host/scrub.js';
 import { findShipped, shippedDirectory, type Shipped } from '../pins/shipped.js';
 import { message, truncateGraphemes } from '../wire/text.js';
@@ -147,9 +147,12 @@ export class PluginRun {
     return this.each('check', brand);
   }
 
-  /** The `build` role: every plugin that fills it makes something from the brand, in its own out_dir. */
-  build(brand: unknown, siteDir: string): Promise<Finding[]> {
-    return this.each('build', brand, path.resolve(siteDir));
+  /**
+   * The `build` role: every plugin that fills it makes something from the brand, in its own out_dir. `siteDir` is the site `blazon build`
+   * wrote; `blazon tokens` makes none, so it passes no folder and the request has no `site_dir`.
+   */
+  build(brand: unknown, siteDir?: string): Promise<Finding[]> {
+    return this.each('build', brand, siteDir === undefined ? undefined : path.resolve(siteDir));
   }
 
   private async each(role: Role, brand: unknown, siteDir?: string): Promise<Finding[]> {
@@ -319,7 +322,7 @@ export class PluginRun {
     if (admission.warn) this.log(`  warning: ${name} runs unpinned because it was named on the command line`);
 
     // The request. A build plugin gets a directory of its own, emptied for each run.
-    const request: Record<string, unknown> = { v: 1, type: role, options: target.options, brand };
+    const request: Record<string, unknown> = { v: REQUEST_VERSIONS[role], type: role, options: target.options, brand };
     if (role === 'build') {
       const outDir = path.resolve(this.cwd, this.config.tokensOutDir, id);
       // Emptying the folder is the plugin writer's own act, so it asks here as well as in the output check, which only knows the plugins the
@@ -330,7 +333,7 @@ export class PluginRun {
       fs.rmSync(outDir, { recursive: true, force: true });
       fs.mkdirSync(outDir, { recursive: true });
       // tokens_dir: where `blazon build` has already written the token files (theme.css, tokens.json...), which are the plugin's input when it works from the tokens
-      Object.assign(request, { site_dir: siteDir, tokens_dir: path.resolve(this.cwd, this.config.tokensOutDir), out_dir: outDir });
+      Object.assign(request, { ...(siteDir !== undefined && { site_dir: siteDir }), tokens_dir: path.resolve(this.cwd, this.config.tokensOutDir), out_dir: outDir });
     }
     const body = Buffer.from(JSON.stringify(request));
     if (body.length > BLAZON_PROFILE.request_cap_bytes) return [failed(`the request is ${body.length} bytes, over the cap of ${BLAZON_PROFILE.request_cap_bytes}`)];

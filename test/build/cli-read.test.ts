@@ -189,10 +189,10 @@ describe('blazon brand', () => {
   it('prints the compiled brand.json, or one part of it, and writes nothing', () => {
     const whole = blazon('brand', root);
     expect(whole.status, whole.stderr).toBe(0);
-    expect(JSON.parse(whole.stdout)).toMatchObject({ format: 'blazon-brand', version: 1 });
-    const part = blazon('brand', root, '--key', 'theme.shadcn');
+    expect(JSON.parse(whole.stdout)).toMatchObject({ format: 'blazon-brand', version: 2 });
+    const part = blazon('brand', root, '--key', 'theme.roles');
     expect(part.status, part.stderr).toBe(0);
-    expect(JSON.parse(part.stdout).variables.primary).toMatchObject({ token: 'interactive.primary', from: 'theme' });
+    expect(JSON.parse(part.stdout).accent).toBe('#FF5A1F');
     expect(fs.existsSync(path.join(root, 'dist'))).toBe(false);
   });
 

@@ -15,7 +15,7 @@ describe('docs/stats.json', () => {
   it('finds what it counts', () => {
     const stats = buildStats();
     expect(stats.commands.length).toBeGreaterThanOrEqual(15);
-    expect(stats.mcpTools.length).toBeGreaterThanOrEqual(8);
+    expect(stats.mcpTools.length).toBeGreaterThanOrEqual(7);
     expect(stats.chapters.length).toBeGreaterThanOrEqual(20);
     expect(stats.checks.error + stats.checks.warning + stats.checks.info).toBe(stats.checks.total);
   });

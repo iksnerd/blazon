@@ -542,7 +542,7 @@ The Auth0 fixture states no `assets` block: the deck gives no sizes, ratios or f
 | `format`, `version` | `"blazon-brand"`, and an integer. `version` changes only when a field is removed or changes meaning; adding a field does not change it. A reader MUST check both and MUST ignore keys it does not know |
 | `generator` | Which blazon wrote the file: `{ name: "blazon", commit?, dirty? }`. `commit` is the 40-hex commit of the running blazon (the one `blazon pin` compares, from the build stamp or, when run from source, the checkout's HEAD) and `dirty` says its tree had uncommitted changes; both are left out when blazon cannot say its commit, never guessed. There is deliberately no timestamp and no host, so the file stays the same for the same inputs and the same blazon. A reader MUST NOT depend on what it says |
 | `brand` | `title`, `description` |
-| `theme` | `roles` (each viewer role's value), `tokens` (the token each came from), `fonts`, and `shadcn`: `variables` (each shadcn/ui variable blazon supplies, as `{ token, value, from, role? }`, where `value` is the default context's and `from` is `theme` or `config`), `unsupplied` (the variables nothing supplies) and, when the brand declares contrast `pairs`, `pairs` (each shadcn text-on-surface pair with `declared`: whether a `pairs` rule covers its two tokens). A reader MUST treat a file without `shadcn` as one from an earlier blazon |
+| `theme` | `roles` (each viewer role's value), `tokens` (the token each came from), and `fonts`. Version 1 also held `theme.shadcn`, the shadcn/ui mapping; version 2 does not, and a reader of version 2 MUST NOT look for it (`blazon.shadcn` derives the mapping from this file) |
 | `logo` | `onLight`, `onDark`: a path beside brand.json, or the file as a data URI when it is not an asset |
 | `vocabulary`, `sections` | The lockups and usage roles a value may name, and every section a page may declare with its title, each standard entry first and then the brand's own (sections 13 and 14). A reader learns a custom section's title from here |
 | `tokens` | Each token once: `path`, `type`, `value` (CSS-ready), `resolvedValue` (DTCG, aliases replaced), `rawValue`, `parts`, `aliasOf`, `description`, `deprecated`, `cssVariable`, `sourceFile`, `extensions` and `blazon` (its `dev.blazon`: print values, usage, source, review with its `by`, `at` and `value`) |
@@ -573,7 +573,6 @@ Not in it, on purpose: the pages' HTML, SVG markup (the files are beside it), th
 | `BlazonData.tokens` | `tokens`, `groups`, `contexts`, `modifiers` | the members of `ParsedTokens` below |
 | `BlazonData.findings` | `findings` | as is; the token load problems are already in it |
 | `BlazonData.theme`, `BlazonData.themeTokens` | `theme.roles`, `theme.tokens` | `themeTokens` is `{}` when absent |
-| `config.shadcn`, the theme roles, the default context's tokens, the groups' `pairs` | `theme.shadcn` | `deriveShadcn` (section 6) |
 | `BlazonData.fonts` | `theme.fonts` | as is |
 | `BlazonData.emailSignature` | left out | the settings of the `blazon:email-signature` generator (logo URL, domains, fixed lines); they are for the viewer's form and say nothing about the brand |
 | `BlazonData.logo` | `logo` | the members of `LogoSet` below; `{}` when there is no logo |

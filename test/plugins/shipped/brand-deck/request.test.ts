@@ -7,7 +7,7 @@ import { browser, plugin, run, world } from './helpers.js';
 
 describe('the request', () => {
   const folder = tempDir('blazon-deck-request-');
-  const ask = (extra: object) => JSON.stringify({ v: 1, type: 'build', site_dir: folder, out_dir: folder, brand: {}, ...extra });
+  const ask = (extra: object) => JSON.stringify({ v: 2, type: 'build', site_dir: folder, out_dir: folder, brand: {}, ...extra });
 
   it('is the plugin of the build role, with the manifest blazon reads', () => {
     expect(NAME).toBe('blazon.brand-deck');
@@ -26,7 +26,7 @@ describe('the request', () => {
     };
     expect(reason('{ nope')).toBe('the request is not JSON');
     expect(reason('[]')).toBe('the request is not a JSON object');
-    expect(reason(ask({ v: 2 }))).toBe('this plugin speaks version 1 of the request');
+    expect(reason(ask({ v: 1 }))).toBe('this plugin speaks version 2 of the request');
     expect(reason(ask({ type: 'check' }))).toBe('this plugin fills the build role');
     expect(reason(ask({ site_dir: path.join(folder, 'nowhere') }))).toBe('site_dir must name a directory that exists');
     expect(reason(ask({ out_dir: 7 }))).toBe('out_dir must name a directory that exists');
@@ -50,9 +50,9 @@ describe('the deck plugin, as blazon starts it', () => {
   it('exits 2 when the brand is not a blazon brand, or of a version it does not read', () => {
     const w = world();
     const outDir = tempDir('blazon-deck-out-');
-    const ask = (brand: unknown) => plugin(JSON.stringify({ v: 1, type: 'build', options: {}, brand, site_dir: w.siteDir, out_dir: outDir }), browser);
+    const ask = (brand: unknown) => plugin(JSON.stringify({ v: 2, type: 'build', options: {}, brand, site_dir: w.siteDir, out_dir: outDir }), browser);
     expect(ask({ format: 'other', version: 1 }).out.split('\n')[0]).toBe("the brand in the request is not a blazon brand: its format is 'other', not 'blazon-brand'");
-    expect(ask({ ...w.brand, version: 99 }).out.split('\n')[0]).toBe('the brand in the request is version 99; this reader understands version 1');
+    expect(ask({ ...w.brand, version: 99 }).out.split('\n')[0]).toBe('the brand in the request is version 99; this reader understands version 2');
     expect(fs.readdirSync(outDir)).toEqual([]);
   });
 

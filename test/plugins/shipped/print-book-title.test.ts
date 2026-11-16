@@ -51,7 +51,7 @@ afterAll(async () => {
 
 /** Prints the fixture's chapter with these options, through the hash the plugin's own request builds. */
 async function printed(options: object) {
-  const request = JSON.stringify({ v: 1, type: 'build', options: { pages: ['doc/title'], ...options }, brand: {}, site_dir: siteRoot, out_dir: tempDir('o-') });
+  const request = JSON.stringify({ v: 2, type: 'build', options: { pages: ['doc/title'], ...options }, brand: {}, site_dir: siteRoot, out_dir: tempDir('o-') });
   const { hash } = jobFor(request);
   const page = await browser.newPage({ viewport: SLIDE });
   try {

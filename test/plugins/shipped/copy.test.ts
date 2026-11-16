@@ -20,7 +20,7 @@ const run = (request: object) => {
 };
 
 const page = (markdown: string, over: object = {}) => ({ slug: 'a', sourceFile: 'a.md', title: 'A page', order: 1, meta: {}, sections: [], markdown, directives: [], ...over });
-const brandOf = (pages: object[], assets: object[] = []) => ({ format: 'blazon-brand', version: 1, pages, assets });
+const brandOf = (pages: object[], assets: object[] = []) => ({ format: 'blazon-brand', version: 2, pages, assets });
 const options = (raw: object) => parseOptions(raw).options;
 const codes = (found: { code: string }[]) => found.map((f) => f.code);
 
@@ -370,7 +370,7 @@ describe('the entry, run as blazon runs it', () => {
   });
 
   it('answers a request for the build role with exit 2 and the reason first', () => {
-    const ran = run({ v: 1, type: 'build', brand: brandOf([]), options: {} });
+    const ran = run({ v: 2, type: 'build', brand: brandOf([]), options: {} });
     expect(ran.status).toBe(2);
     expect(ran.out.split('\n')[0]).toMatch(/build role; this plugin is a check plugin/);
   });

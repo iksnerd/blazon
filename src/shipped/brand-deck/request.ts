@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { Cannot } from '../shared/plugin.js';
+import { Cannot, NeedsSite, REQUEST_VERSIONS } from '../shared/plugin.js';
 
 /** The plugin's name, which blazon's config names it by, and the prefix of its finding codes */
 export const NAME = 'blazon.brand-deck';
@@ -37,8 +37,9 @@ export function jobFor(text: string): Job {
   }
   if (typeof request !== 'object' || request === null || Array.isArray(request)) throw new Cannot('the request is not a JSON object');
   const asked = request as Record<string, unknown>;
-  if (asked.v !== 1) throw new Cannot('this plugin speaks version 1 of the request');
+  if (asked.v !== REQUEST_VERSIONS.build) throw new Cannot(`this plugin speaks version ${REQUEST_VERSIONS.build} of the request`);
   if (asked.type !== 'build') throw new Cannot('this plugin fills the build role');
+  if (asked.site_dir === undefined) throw new NeedsSite('site_dir is absent: this plugin reads the built site, which blazon tokens does not make');
   for (const field of ['site_dir', 'out_dir'] as const) if (!isFolder(asked[field])) throw new Cannot(`${field} must name a directory that exists`);
   return { siteDir: asked.site_dir as string, outDir: asked.out_dir as string, brand: asked.brand, options: asked.options ?? {} };
 }

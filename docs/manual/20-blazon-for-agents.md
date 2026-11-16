@@ -89,13 +89,11 @@ All eight are read-only (`readOnlyHint: true`) and write nothing.
 | `can_use` | `blazon can <fg> <bg>` | ask whether one color token may be text on another (`role: "ui"` for a border or focus ring), with the rule behind the answer |
 | `get_fonts` | `blazon fonts` | find the stylesheets and font files to load, and whether each family a token names is loaded |
 | `get_logo` | `blazon logo` | read the logo variants and their rules before you place a logo |
-| `get_shadcn` | `blazon brand --key theme.shadcn` | read the shadcn/ui variables the brand supplies and the ones it does not, when the site uses shadcn/ui |
 
 Every tool returns blazon's JSON twice: as structured content that matches the tool's output schema, and as the same compact JSON in a text block. Differences from the command line:
 
 - A denied `can_use` is a normal answer with `allowed: false` and the reason. The command exits 1 for it; the tool does not fail.
 - An error, such as a token that does not exist, comes back as a tool error with blazon's own message and the next step: `list_tokens` finds a path. A group path given to `get_token` is refused, and the error names `list_tokens`.
-- `get_shadcn` runs `blazon brand --key theme.shadcn`, which compiles the brand again each time, so it needs no build and cannot be out of date.
 - When the brand has errors, a read command says so on standard error. The tool returns that as a leading text block and as `warnings` in the structured result, with `brandHasErrors: true`. Values from such a brand may be wrong; run `check_brand` and fix the errors first.
 - A number or boolean sent as a string (`"5"`, `"true"`) is accepted when it reads as one.
 - An answer over 40 000 characters (about 10 000 tokens) is cut and says so, with the way to narrow it ("narrow with a path" for `get_rules`; a tool with no argument that narrows it says that). `check_brand` takes `limit` (default 50, at most 500) and keeps its `counts` and `passed` whole. `list_tokens` keeps whole tokens and says how many it left out; narrow it with `group` or `type`.

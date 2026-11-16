@@ -20,7 +20,7 @@ import { ROOT_DIR } from '../support/spec.js';
 import { tempDir } from '../../support/project';
 
 // A brand.json always carries its format and version (RFC 0001); a fixture that is only a piece of one gets them here
-const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 1, ...brand });
+const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 2, ...brand });
 
 // blazon.office-template, the plugin blazon ships to write an editable PowerPoint template. Seams: the pure parts (colors, the palette
 // mapping, the font fallback, the options, where the logo and the placeholders go, the SVG as shapes), and the entry, run as blazon
@@ -39,7 +39,7 @@ const LOGOS = [
 ];
 const brandOf = (over: object = {}) => ({
   format: 'blazon-brand',
-  version: 1,
+  version: 2,
   brand: { title: 'Acme Co' },
   theme: { roles },
   tokens: [{ path: 'color.hazard', type: 'color', value: '#F2C230' }, { path: 'color.alias', type: 'color', value: '#FF5A1F', aliasOf: 'color.hazard' }],
@@ -437,7 +437,7 @@ function world(over: { brand?: object; options?: object } = {}) {
   fs.writeFileSync(path.join(siteDir, 'index.html'), '<html></html>');
   fs.writeFileSync(path.join(siteDir, 'brand-assets/logos/mark-light.svg'), LIGHT_SVG);
   fs.writeFileSync(path.join(siteDir, 'brand-assets/logos/mark-dark.svg'), DARK_SVG);
-  const request = JSON.stringify({ v: 1, type: 'build', brand: brandOf(over.brand), options: over.options ?? {}, site_dir: siteDir, out_dir: outDir });
+  const request = JSON.stringify({ v: 2, type: 'build', brand: brandOf(over.brand), options: over.options ?? {}, site_dir: siteDir, out_dir: outDir });
   return { siteDir, outDir, request };
 }
 

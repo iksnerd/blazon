@@ -114,6 +114,37 @@ describe('blazon tokens', () => {
     expect(blazon(root, 'tokens').status).toBe(0);
     expect(fs.existsSync(path.join(root, 'dist/tokens/theme.css'))).toBe(true);
   }, 120_000);
+
+  it('runs a build plugin after the token files, with a version 2 request that has no site_dir', async () => {
+    const reading = `#!/bin/sh
+case "$1" in
+  --blazon-manifest) printf '%s' '${manifest(['build'])}'; exit 0;;
+esac
+request="$PWD/.request"
+cat > "$request"
+out=$(sed -n 's/.*"out_dir":"\\([^"]*\\)".*/\\1/p' "$request")
+if grep -q '"site_dir"' "$request"; then echo site > "$out/saw.txt"; else echo none > "$out/saw.txt"; fi
+sed -n 's/.*"v":\\([0-9]*\\),.*/\\1/p' "$request" > "$out/version.txt"
+ls "$(dirname "$out")" > "$out/tokens-listing.txt"
+rm "$request"
+`;
+    const root = await project({ 'acme.deck': { script: reading } });
+    const result = blazon(root, 'tokens');
+    expect(result.status, output(result)).toBe(0);
+    const out = path.join(root, 'dist/tokens/acme.deck');
+    expect(fs.readFileSync(path.join(out, 'saw.txt'), 'utf-8').trim()).toBe('none');
+    expect(fs.readFileSync(path.join(out, 'version.txt'), 'utf-8').trim()).toBe('2');
+    expect(fs.readFileSync(path.join(out, 'tokens-listing.txt'), 'utf-8')).toContain('theme.css');
+    expect(fs.existsSync(path.join(root, 'dist/site'))).toBe(false);
+  }, 120_000);
+
+  it('exits 1 when a build plugin reports an error, after the token files are written', async () => {
+    const root = await project({ 'acme.deck': { script: plugin(['build'], answer([{ code: 'acme.deck/failed', severity: 'error', path: 'deck', message: 'The deck could not be drawn' }])) } });
+    const result = blazon(root, 'tokens');
+    expect(result.status, output(result)).toBe(1);
+    expect(output(result)).toContain('The deck could not be drawn');
+    expect(fs.existsSync(path.join(root, 'dist/tokens/theme.css'))).toBe(true);
+  }, 120_000);
 });
 
 describe('blazon build', () => {

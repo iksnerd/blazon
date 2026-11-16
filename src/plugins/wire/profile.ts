@@ -1,4 +1,5 @@
 import os from 'node:os';
+import { BRAND_VERSION } from '../../core/brand/export.js';
 import type { Profile } from './manifest.js';
 
 // Blazon's profile of the plugin protocol (RFC 0005): the roles it defines and its own decisions under the core
@@ -68,11 +69,14 @@ export function roleRuntime(role: string): { answers: number[]; stdoutLimit?: nu
   return { answers: Object.keys(document.exit_codes).map(Number), stdoutLimit: document.stdout_limit_bytes, breaker: document.breaker === true };
 }
 
+/** The version of the request each role sends (RFC 0005 section 8). The build request is 2: it may carry no `site_dir`, and brand.json is version 2. */
+export const REQUEST_VERSIONS = { check: 1, build: 2 } as const;
+
 /** A valid request for each role, as the check command sends it with a canary set. A plugin answers it with its findings. */
 export function blazonRequests(): Record<string, string> {
-  const brand = { format: 'blazon-brand', version: 1 };
+  const brand = { format: 'blazon-brand', version: BRAND_VERSION };
   return {
-    check: JSON.stringify({ v: 1, type: 'check', options: {}, brand }),
-    build: JSON.stringify({ v: 1, type: 'build', options: {}, brand, site_dir: os.tmpdir(), tokens_dir: os.tmpdir(), out_dir: os.tmpdir() }),
+    check: JSON.stringify({ v: REQUEST_VERSIONS.check, type: 'check', options: {}, brand }),
+    build: JSON.stringify({ v: REQUEST_VERSIONS.build, type: 'build', options: {}, brand, site_dir: os.tmpdir(), tokens_dir: os.tmpdir(), out_dir: os.tmpdir() }),
   };
 }

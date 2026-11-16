@@ -14,7 +14,7 @@ import { ROOT_DIR } from '../support/spec.js';
 import { tempDir } from '../../support/project';
 
 // A brand.json always carries its format and version (RFC 0001); a fixture that is only a piece of one gets them here
-const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 1, ...brand });
+const readBrand = (brand: object) => readBrandRaw({ format: 'blazon-brand', version: 2, ...brand });
 
 // blazon.logo-kit, the plugin blazon ships to draw the files a brand's logo rules describe: a lockup for a logo and each partner, and a sheet
 // that shows the clear space. Seams: the pure parts (options, what to draw, the SVG), and the entry, run as blazon runs it.
@@ -45,7 +45,7 @@ const world = (over: { assets?: object[]; files?: Record<string, string> } = {})
   write('brand-assets/logos/mark.svg', svgFile(100, 40, '#1E1F21'));
   write('brand-assets/partners/acme.svg', svgFile(50, 20, '#FF5A1F'));
   for (const [file, text] of Object.entries(over.files ?? {})) write(file, text);
-  const brand = { format: 'blazon-brand', version: 1, assets: [asset('logos/mark', { meta: MARK_META }), asset('partners/acme', { width: 50, height: 20 }), ...(over.assets ?? [])] };
+  const brand = { format: 'blazon-brand', version: 2, assets: [asset('logos/mark', { meta: MARK_META }), asset('partners/acme', { width: 50, height: 20 }), ...(over.assets ?? [])] };
   return { siteDir, brand };
 };
 
@@ -162,7 +162,7 @@ const plugin = (input: string, env: Record<string, string> = {}, args: string[] 
 };
 const run = (w: ReturnType<typeof world>, options: object, env: Record<string, string> = {}) => {
   const outDir = tempDir('blazon-logo-kit-out-');
-  const ran = plugin(JSON.stringify({ v: 1, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
+  const ran = plugin(JSON.stringify({ v: 2, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
   return { ran, outDir, findings: ran.status === 0 ? (JSON.parse(ran.out).findings as { code: string; severity: string; path: string; message: string }[]) : [] };
 };
 const png = (file: string) => {

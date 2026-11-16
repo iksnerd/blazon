@@ -6,7 +6,8 @@ import { launch } from './browser.js';
 import type { Finding } from './checks.js';
 import { parseOptions, type Known } from './options.js';
 import { drawCards } from './render.js';
-import { Cannot, jobFor, MANIFEST } from './request.js';
+import { skippedForNoSite, NeedsSite } from '../shared/plugin.js';
+import { Cannot, jobFor, MANIFEST, NAME } from './request.js';
 
 // blazon.social-cards: blazon's build role. Reads one request on standard input, draws each card the options ask for as a
 // PNG in out_dir, and answers {"findings": [...]}. Wrong options are findings, not a failure. When the request is broken
@@ -56,6 +57,10 @@ async function main(argv: string[]): Promise<number> {
     process.stdout.write(`${JSON.stringify(await build(fs.readFileSync(0, 'utf-8')))}\n`);
     return 0;
   } catch (error) {
+    if (error instanceof NeedsSite) {
+      process.stdout.write(`${JSON.stringify(skippedForNoSite(NAME, error))}\n`);
+      return 0;
+    }
     const reason =
       error instanceof Cannot
         ? error.message

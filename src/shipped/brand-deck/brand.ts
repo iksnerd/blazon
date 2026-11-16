@@ -13,7 +13,7 @@ export const has = (value: unknown): boolean =>
   Array.isArray(value) ? value.length > 0 : isObject(value) ? Object.keys(value).length > 0 : typeof value === 'number' ? value !== 0 : Boolean(value);
 
 export const FORMAT = 'blazon-brand';
-export const VERSION = 1;
+export const VERSION = 2;
 export const REM_PX = 16;
 
 export interface Token {

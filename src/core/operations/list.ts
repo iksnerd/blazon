@@ -548,38 +548,6 @@ export const OPERATIONS: readonly Operation[] = [
     },
   },
   {
-    name: 'get_shadcn',
-    title: 'Read the shadcn/ui variables',
-    description:
-      'Gets the shadcn/ui variables the brand supplies (theme.shadcn): which token each variable takes, its value, and the variables nothing supplies. Use it when the site uses shadcn/ui. It compiles the brand when called, so it needs no build and is never out of date.',
-    annotations: READ_ONLY,
-    inputSchema: input({}, []),
-    outputSchema: output(
-      {
-        variables: {
-          description: 'Each shadcn variable the brand supplies, by name, with the token it takes, its value and where the pick came from',
-          type: 'object',
-          propertyNames: {
-            type: 'string',
-          },
-          additionalProperties: {},
-        },
-        unsupplied: {
-          description: 'The shadcn variables nothing supplies. They are questions for the brand owner, not for a guess',
-          type: 'array',
-          items: {},
-        },
-      },
-      [],
-    ),
-    cli: false,
-    mcp: {
-      command: ['brand'],
-      fixed: ['--key', 'theme.shadcn'],
-      json: false,
-    },
-  },
-  {
     name: 'get_brand',
     title: 'Read the whole brand',
     description:
@@ -587,7 +555,7 @@ export const OPERATIONS: readonly Operation[] = [
     annotations: READ_ONLY,
     inputSchema: input(
       {
-        key: { type: 'string', description: 'Only this part of the document, by its dotted path, such as theme.shadcn' },
+        key: { type: 'string', description: 'Only this part of the document, by its dotted path, such as theme.roles' },
         dir: DIR,
       },
       [],
@@ -598,7 +566,7 @@ export const OPERATIONS: readonly Operation[] = [
       positional: ['dir'],
       cliOnly: ['dir'],
       summary: 'Print the brand as brand.json holds it, compiled now and written nowhere; --key prints one part',
-      options: [{ property: 'key', value: 'path', description: 'Print only this part of the document, by its dotted path, such as theme.shadcn' }],
+      options: [{ property: 'key', value: 'path', description: 'Print only this part of the document, by its dotted path, such as theme.roles' }],
     },
     mcp: false,
   },

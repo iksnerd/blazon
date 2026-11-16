@@ -1,4 +1,4 @@
-import { buildJob, Cannot } from '../shared/plugin.js';
+import { Cannot, tokensJob } from '../shared/plugin.js';
 
 /** The plugin's name, which blazon's config names it by, and the prefix of its finding codes */
 export const NAME = 'blazon.platform-tokens';
@@ -24,6 +24,6 @@ export interface Job {
 
 /** The job a build request asks for, or Cannot with the reason. The options are checked later, and wrong ones are findings. */
 export function jobFor(text: string): Job {
-  const { outDir, brand, options } = buildJob(text);
+  const { outDir, brand, options } = tokensJob(text);
   return { outDir, brand, options };
 }

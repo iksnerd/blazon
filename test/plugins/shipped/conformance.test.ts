@@ -168,13 +168,16 @@ describe.each(names)('%s', (name) => {
     const site = tempDir('blazon-conformance-site-');
     fs.writeFileSync(path.join(site, 'index.html'), '<!doctype html>');
     const out = tempDir('blazon-conformance-out-');
-    const request = (fields: object) => JSON.stringify({ v: 1, type: manifest.roles[0], brand: {}, options: {}, site_dir: site, out_dir: out, ...fields });
+    // The check request is version 1 and the build request is version 2 (RFC 0005 section 8)
+    const versionOf = (type: unknown) => (type === 'build' ? 2 : 1);
+    const request = (fields: { type?: unknown; [key: string]: unknown }) =>
+      JSON.stringify({ v: versionOf(fields.type ?? manifest.roles[0]), type: manifest.roles[0], brand: {}, options: {}, site_dir: site, out_dir: out, ...fields });
 
     it.each([
       ['is not JSON', '{ nope'],
       ['is empty', ''],
       ['is not an object', '[]'],
-      ['is of another version', request({ v: 2 })],
+      ['is of another version', request({ v: 9 })],
       ['is for a role that is not one', request({ type: 'conformance-probe' })],
     ])('exits 2 with the reason on the first line, and writes nothing, when it %s', (_, input) => {
       const ran = run(source, input);
@@ -192,14 +195,28 @@ describe.each(names)('%s', (name) => {
       }
     });
 
-    it('exits 2 when a build has no site_dir or out_dir to work in', () => {
+    it('exits 2 when a build has no out_dir to work in', () => {
       if (!manifest.roles.includes('build')) return;
-      for (const fields of [{ type: 'build', site_dir: undefined }, { type: 'build', out_dir: path.join(out, 'nonexistent') }]) {
+      for (const fields of [{ type: 'build', out_dir: undefined }, { type: 'build', out_dir: path.join(out, 'nonexistent') }]) {
         const ran = run(source, request(fields));
         expect(ran.status, ran.out + ran.err).toBe(2);
-        expect(ran.first).toMatch(/site_dir|out_dir/);
+        expect(ran.first).toMatch(/out_dir/);
       }
       expect(fs.readdirSync(out)).toEqual([]);
+    });
+
+    it('answers a build with no site_dir (blazon tokens) by working from the brand alone, or by saying it needs the site and writing nothing', () => {
+      if (!manifest.roles.includes('build')) return;
+      const ran = run(source, request({ type: 'build', site_dir: undefined, brand: { format: 'blazon-brand', version: 2 } }));
+      expect(ran.status, ran.out + ran.err).toBe(0);
+      const findings = (JSON.parse(ran.out) as { findings?: { code: string; severity: string }[] }).findings ?? [];
+      const skipped = findings.filter((finding) => finding.code === `${name}/needs-site`);
+      if (skipped.length > 0) {
+        expect(skipped.map((finding) => finding.severity)).toEqual(['info']);
+        expect(fs.readdirSync(out)).toEqual([]);
+      }
+      fs.rmSync(out, { recursive: true, force: true });
+      fs.mkdirSync(out);
     });
   });
 });

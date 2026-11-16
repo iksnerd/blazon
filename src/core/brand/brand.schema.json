@@ -12,7 +12,7 @@
       "const": "blazon-brand"
     },
     "version": {
-      "const": 1
+      "const": 2
     },
     "generator": {
       "type": "object",
@@ -69,80 +69,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "shadcn": {
-          "type": "object",
-          "description": "The shadcn/ui variables (names without the leading dashes). Absent in a file written by a blazon that predates it.",
-          "properties": {
-            "variables": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "object",
-                "properties": {
-                  "token": {
-                    "type": "string"
-                  },
-                  "value": {
-                    "type": "string"
-                  },
-                  "from": {
-                    "enum": [
-                      "theme",
-                      "config"
-                    ]
-                  },
-                  "role": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "token",
-                  "value",
-                  "from"
-                ]
-              }
-            },
-            "unsupplied": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "pairs": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "background": {
-                    "type": "string"
-                  },
-                  "foreground": {
-                    "type": "string"
-                  },
-                  "backgroundToken": {
-                    "type": "string"
-                  },
-                  "foregroundToken": {
-                    "type": "string"
-                  },
-                  "declared": {
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "background",
-                  "foreground",
-                  "backgroundToken",
-                  "foregroundToken",
-                  "declared"
-                ]
-              }
-            }
-          },
-          "required": [
-            "variables",
-            "unsupplied"
-          ]
         }
       },
       "required": [

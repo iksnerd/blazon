@@ -26,7 +26,7 @@ describe('reading favicons.json', () => {
   });
 
   it('a file that is not favicons.json is an error', () => {
-    for (const content of ['{ nope', { format: 'other', version: 1 }, { ...GOOD, version: 2 }, '[]']) {
+    for (const content of ['{ nope', { format: 'other', version: 2 }, { ...GOOD, version: 3 }, '[]']) {
       expect(() => readFavicons(folder(content), none), JSON.stringify(content)).toThrow(DeckError);
     }
   });
@@ -100,8 +100,8 @@ describe('reading favicons.json', () => {
 
 describe('reading the brand', () => {
   it('refuses what is not a blazon brand, and a version it does not know, naming the reason', () => {
-    expect(() => readBrand({ format: 'something-else', version: 1 }, 'x.json')).toThrow("x.json is not a blazon brand: its format is 'something-else', not 'blazon-brand'");
-    expect(() => readBrand({ format: 'blazon-brand', version: 99 })).toThrow('the brand in the request is version 99; this reader understands version 1');
+    expect(() => readBrand({ format: 'something-else', version: 2 }, 'x.json')).toThrow("x.json is not a blazon brand: its format is 'something-else', not 'blazon-brand'");
+    expect(() => readBrand({ format: 'blazon-brand', version: 99 })).toThrow('the brand in the request is version 99; this reader understands version 2');
     expect(() => readBrand(undefined)).toThrow('its format is None');
   });
 });
