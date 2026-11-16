@@ -4,6 +4,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+## 0.1.1 (2026-11-16)
+
 ### Added
 
 - `blazon.print-book` takes a `layout` option, `"compact"` (the default, the layout as it is) or `"roomy"`, which draws every picture whole and sets the prose and sections as the book was set before pictures were squeezed to share a slide, so it runs on more slides. Any other value is the `blazon.print-book/option-invalid` error.
