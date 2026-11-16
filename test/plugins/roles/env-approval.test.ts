@@ -70,6 +70,24 @@ describe('the environment of a plugin', () => {
     expect(fs.existsSync(ran)).toBe(false);
   });
 
+  it('refuses a build plugin in a check run too, so blazon check shows what the first build would refuse', async () => {
+    const ran = marker();
+    const installed = install({ 'acme.a': { script: script({ v: 2, roles: ['build'], env: ['ACME_FONT_DIR', 'HOME'] }, `touch ${ran}\n${answer([])}`), approve: ['HOME'] } });
+    const found = await run(installed);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ code: 'plugin-failed', path: 'acme.a' });
+    expect(found[0]!.message).toContain('its manifest lists ACME_FONT_DIR, which is set here and not approved, so it is not started');
+    expect(found[0]!.fix).toBe('Add "ACME_FONT_DIR" to plugins[0].env in the config, or unset it.');
+    expect(fs.existsSync(ran)).toBe(false);
+  });
+
+  it('says nothing in a check run of a build plugin whose variables are approved', async () => {
+    const ran = marker();
+    const installed = install({ 'acme.a': { script: script({ v: 2, roles: ['build'], env: ['HOME'] }, `touch ${ran}\n${answer([])}`), approve: ['HOME'] } });
+    expect(await run(installed)).toEqual([]);
+    expect(fs.existsSync(ran)).toBe(false);
+  });
+
   it('does not refuse a listed variable that is not set: there is nothing to hold back', async () => {
     const installed = install({ 'acme.a': { script: reporting(['ACME_FONT_DIR'], marker()), approve: [] } });
     const [found] = await new PluginRun(installed.config, installed.cwd, { env: { PATH: HOST.PATH } }).check(BRAND);

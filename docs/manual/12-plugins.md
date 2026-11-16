@@ -32,7 +32,7 @@ Only you decide which plugins may run. Name them in `blazon.json`:
 }
 ```
 
-A name is dotted lowercase words, such as `acme.house-style`, and its program is called `blazon-<name>`: `blazon-acme.house-style`. The dot keeps a plugin apart from anything blazon has built in. `options` is a JSON object that blazon passes the plugin in every request. `env` lists the environment variables you let the plugin have: a plugin starts with an empty environment and gets a variable only when its manifest lists the name and `env` approves it ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The config holds no path and no command, and a field that names one (`command`, `path`, `digest`) is an error: a copied config must not be able to run a program you did not put there.
+A name is dotted lowercase words, such as `acme.house-style`, and its program is called `blazon-<name>`: `blazon-acme.house-style`. The dot keeps a plugin apart from anything blazon has built in. `options` is a JSON object that blazon passes the plugin in every request. `env` lists the environment variables you let the plugin have: a plugin starts with an empty environment and gets a variable only when its manifest lists the name and `env` approves it ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). `blazon check` starts only check plugins, but it reads every configured plugin's manifest, so a build plugin that lists a set variable `env` does not approve is reported by `blazon check` too, not only by the first `blazon build`. The config holds no path and no command, and a field that names one (`command`, `path`, `digest`) is an error: a copied config must not be able to run a program you did not put there.
 
 Blazon runs plugins in the order of the list, one at a time.
 

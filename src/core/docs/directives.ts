@@ -119,6 +119,21 @@ export function directivesIn(markdown: string): PlacedDirective[] {
   }));
 }
 
+export interface LegacyDirective {
+  /** The name after `folio:` */
+  name: string;
+  /** 1-based line in the Markdown */
+  line: number;
+  text: string;
+}
+
+/** Comments written `<!-- folio:name ... -->`, the name blazon had before: they are not read, so each is reported. Fences and inline code are skipped, and line numbers stay those of `markdown`. */
+export function legacyDirectivesIn(markdown: string): LegacyDirective[] {
+  const blank = (cut: string) => cut.replace(/[^\n]/g, '');
+  const prose = markdown.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, blank).replace(/`[^`\n]*`/g, blank);
+  return [...prose.matchAll(/<!--\s*folio:([a-z][\w-]*)[^>]*?-->/g)].map((m) => ({ name: m[1]!, line: prose.slice(0, m.index).split('\n').length, text: m[0] }));
+}
+
 export interface DirectiveContext {
   tokens: Pick<ParsedTokens, 'items' | 'groupMeta'>;
   assets: AssetCatalog;

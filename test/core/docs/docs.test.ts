@@ -98,6 +98,20 @@ describe('parseDocs: slugs, titles and unreadable pages', () => {
     expect(problems[0]!.message).toContain('colors.md');
   });
 
+  it('reports a leftover <!-- folio:name --> with its page and line, and says folio: became blazon:', () => {
+    const problems: Finding[] = [];
+    parseDocs(write({ 'a.md': '---\ntitle: A\n---\n\ntext\n<!-- folio:tokens color.ink -->\n' }), problems);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatchObject({ code: 'directive-deprecated', severity: 'warning', path: 'a.md', line: 6 });
+    expect(problems[0]!.message).toContain('blazon:tokens');
+  });
+
+  it('does not report a folio: comment in a code fence or inline code, a plain comment, or a blazon: directive', () => {
+    const problems: Finding[] = [];
+    parseDocs(write({ 'a.md': '```md\n<!-- folio:tokens -->\n```\n\n`<!-- folio:tokens -->`\n\n<!-- just a note -->\n<!-- blazon:tokens color.ink -->\n' }), problems);
+    expect(problems).toEqual([]);
+  });
+
   it('does not take a heading inside a code fence for the title', () => {
     const [doc] = parseDocs(write({ 'install.md': 'Intro\n\n```bash\n# install\nnpm i\n```\n\n~~~\n# also code\n~~~\n\n# Real title\n' }));
     expect(doc!.title).toBe('Real title');

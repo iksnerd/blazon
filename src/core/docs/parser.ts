@@ -3,7 +3,7 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import { marked } from 'marked';
 import { STANDARD_SECTION_IDS, type DocItem, type DocFrontmatter, type Finding, type SectionId } from '../../types/index.js';
-import { withoutFences } from './directives.js';
+import { isDirective, legacyDirectivesIn, withoutFences } from './directives.js';
 import { pageSections } from './sections.js';
 import { finding } from '../checker/catalogue.js';
 import { compareText } from '../order.js';
@@ -77,6 +77,20 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
             .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
             .join(' ');
         }
+      }
+
+      // `<!-- folio:name -->` is the old spelling: not read, so say so at its line (the lines of the file: the body starts after the front matter)
+      const bodyStart = parsed.content === '' ? 0 : rawContent.lastIndexOf(parsed.content);
+      const firstLine = rawContent.slice(0, Math.max(bodyStart, 0)).split('\n').length;
+      for (const old of legacyDirectivesIn(parsed.content)) {
+        const now = isDirective(old.name) ? `write <!-- blazon:${old.name} ... -->` : `write blazon: and a known directive name, as the table in the manual lists`;
+        problems.push(
+          finding('directive-deprecated', {
+            path: file,
+            line: firstLine + old.line - 1,
+            message: `${old.text}: blazon reads only blazon: directives, so this is ignored; folio: became blazon:, ${now}`,
+          }),
+        );
       }
 
       // Compile Markdown to HTML
