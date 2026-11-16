@@ -330,7 +330,9 @@ export class PluginRun {
       const held = inputsWithin(this.config, this.cwd, outDir);
       if (held.length > 0)
         return [failed(`its output folder ("${path.relative(this.cwd, outDir) || outDir}") holds ${held.map((i) => `${i.name} ("${i.as}")`).join(', ')}, which the brand reads: blazon empties that folder before a build plugin runs and would delete ${held.length === 1 ? 'it' : 'them'}. Move the file, or move tokensOutDir`, OUT_DIR_FIX)];
-      fs.rmSync(outDir, { recursive: true, force: true });
+      // With a site (`blazon build`) the folder is emptied and the plugin makes it again. Without one (`blazon tokens`) it is kept as it is:
+      // a plugin that needs the site writes nothing there, and must not lose what the last build made. What a plugin does write overwrites.
+      if (siteDir !== undefined) fs.rmSync(outDir, { recursive: true, force: true });
       fs.mkdirSync(outDir, { recursive: true });
       // tokens_dir: where `blazon build` has already written the token files (theme.css, tokens.json...), which are the plugin's input when it works from the tokens
       Object.assign(request, { ...(siteDir !== undefined && { site_dir: siteDir }), tokens_dir: path.resolve(this.cwd, this.config.tokensOutDir), out_dir: outDir });

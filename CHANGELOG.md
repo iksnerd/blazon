@@ -7,7 +7,7 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 ### Added
 
 - Two shipped build plugins, `blazon.tailwind` and `blazon.shadcn`. `blazon.tailwind` writes `tailwind.css` and `tailwind-reset.css`; `blazon.shadcn` writes `shadcn.json` (which token each shadcn/ui variable takes) and `shadcn.css` (the variables as CSS, with a block for each context that changes one). Both read `brand.json` only, need only Node and write to `<tokensOutDir>/<plugin name>/`.
-- `blazon tokens` runs the `build` plugins after it writes the token files. A plugin that needs the built site answers with the info finding `<name>/needs-site` and writes nothing, so `blazon build` is still the command for those; `blazon tokens` empties each plugin's folder before the call, as `blazon build` does.
+- `blazon tokens` runs the `build` plugins after it writes the token files. A plugin that needs the built site answers with the info finding `<name>/needs-site` and writes nothing, so `blazon build` is still the command for those. `blazon tokens` does not empty a plugin's folder: what the plugin writes overwrites the old file, and every other file stays, so the deck or press kit of the last `blazon build` survives. A file an earlier `blazon tokens` wrote and the plugin no longer writes also stays; `blazon build` empties the folder.
 
 ### Breaking
 

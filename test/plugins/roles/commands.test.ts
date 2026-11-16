@@ -164,6 +164,48 @@ rm "$request"
     expect(output(old)).toContain('"variables"');
   }, 120_000);
 
+  // A plugin that needs the site: with none it says so and writes nothing, as the shipped ones do
+  const needsSiteScript = () => `#!/bin/sh
+case "$1" in
+  --blazon-manifest) printf '%s' '${manifest(['build'])}'; exit 0;;
+esac
+request=$(cat)
+case "$request" in
+  *'"site_dir"'*) printf '%s' '{"findings":[]}';;
+  *) printf '%s' '{"findings":[{"code":"acme.deck/needs-site","severity":"info","path":"site_dir","message":"site_dir is absent. Nothing was written; blazon build runs it."}]}';;
+esac
+`;
+
+  it('keeps what a plugin wrote before in its folder, and still reports needs-site as info', async () => {
+    const root = await project({ 'acme.deck': { script: needsSiteScript() } });
+    const out = path.join(root, 'dist/tokens/acme.deck');
+    fs.mkdirSync(out, { recursive: true });
+    fs.writeFileSync(path.join(out, 'deck.pdf'), 'earlier deck');
+    const result = blazon(root, 'tokens', '--json');
+    expect(result.status, output(result)).toBe(0);
+    expect(fs.readFileSync(path.join(out, 'deck.pdf'), 'utf-8')).toBe('earlier deck');
+    expect(JSON.parse(result.stdout).findings).toContainEqual(expect.objectContaining({ code: 'acme.deck/needs-site', severity: 'info' }));
+  }, 120_000);
+
+  it('leaves blazon build as it was: the folder is emptied before the plugin runs with a site', async () => {
+    const root = await project({ 'acme.deck': { script: needsSiteScript() } });
+    const out = path.join(root, 'dist/tokens/acme.deck');
+    fs.mkdirSync(out, { recursive: true });
+    fs.writeFileSync(path.join(out, 'deck.pdf'), 'earlier deck');
+    const result = blazon(root, 'build');
+    expect(result.status, output(result)).toBe(0);
+    expect(fs.existsSync(path.join(out, 'deck.pdf'))).toBe(false);
+  }, 120_000);
+
+  it('overwrites the files of blazon.tailwind on a second run', async () => {
+    const root = await starterProject({ plugins: ['blazon.tailwind'] });
+    expect(blazon(root, 'tokens').status).toBe(0);
+    const file = path.join(root, 'dist/tokens/blazon.tailwind/tailwind.css');
+    fs.writeFileSync(file, 'stale');
+    expect(blazon(root, 'tokens').status).toBe(0);
+    expect(fs.readFileSync(file, 'utf-8')).toContain('@theme {');
+  }, 120_000);
+
   it('exits 1 when a build plugin reports an error, after the token files are written', async () => {
     const root = await project({ 'acme.deck': { script: plugin(['build'], answer([{ code: 'acme.deck/failed', severity: 'error', path: 'deck', message: 'The deck could not be drawn' }])) } });
     const result = blazon(root, 'tokens');
