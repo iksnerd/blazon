@@ -376,7 +376,10 @@ describe('running a shipped plugin', () => {
 describe('blazon plugin check', () => {
   here('accepts a shipped plugin by the path of its program', () => {
     const i = install();
-    const result = spawnSync(process.execPath, ['--import', 'tsx', path.join(ROOT_DIR, 'scripts/blazon-src.ts'), 'plugin', 'check', i.entry], { encoding: 'utf-8', cwd: ROOT_DIR, env: { ...process.env, NO_COLOR: '1' } });
+    // Run in the install's own folder, not the repository root: `blazon plugin check` gives each variable the plugin declares the value
+    // 'check', and the fixture writes the request to that path, so in the root it left a file named `check` there.
+    const tsx = pathToFileURL(path.join(ROOT_DIR, 'node_modules/tsx/dist/esm/index.mjs')).href;
+    const result = spawnSync(process.execPath, ['--import', tsx, path.join(ROOT_DIR, 'scripts/blazon-src.ts'), 'plugin', 'check', i.entry], { encoding: 'utf-8', cwd: i.cwd, env: { ...process.env, NO_COLOR: '1' } });
     expect(result.status, result.stdout + result.stderr).toBe(0);
   }, 60_000);
 });

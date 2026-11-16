@@ -4,6 +4,7 @@ import { execFileSync } from './spawn.js';
 import { pluginsAreFresh, PLUGINS_LOCK } from './plugins-build.js';
 import { ensureBuilt, ensureViewer } from './viewer-build.js';
 import { hooksNotice, hooksState } from './hooks-notice.js';
+import { dirtyPaths, leftBehind } from './clean-root.js';
 import { hasReference, REFERENCE_ROOT } from './reference.js';
 
 /**
@@ -11,7 +12,7 @@ import { hasReference, REFERENCE_ROOT } from './reference.js';
  * only when dist/ui is older than what it is made from, and under a lock, so that two runs at once do not delete it under each other.
  * The shipped plugins' programs and plugins/shipped.lock are build output too (`npm run build:plugins`), and are made the same way.
  */
-export default async function setup(): Promise<void> {
+export default async function setup(): Promise<() => void> {
   const root = path.resolve(import.meta.dirname, '../..');
   try {
     const notice = hooksNotice(hooksState(root));
@@ -33,4 +34,16 @@ export default async function setup(): Promise<void> {
       execFileSync('npm', ['run', 'build:plugins', '--silent'], { cwd: root, encoding: 'utf-8' });
     },
   );
+  // A run must leave the repository root as it found it. Only in a git checkout: a tarball or an exported snapshot has no status to compare.
+  const before = dirtyPaths(root);
+  return () => {
+    if (!before) return;
+    const after = dirtyPaths(root);
+    const left = after ? leftBehind(before, after) : [];
+    if (left.length > 0) {
+      // Vitest only prints an error thrown in a teardown and exits 0, so the run is failed by its exit code as well
+      process.stderr.write(`\nthe test run changed the repository root, and a test must write under a temporary folder:\n${left.map((line) => `  ${line}`).join('\n')}\n`);
+      process.exitCode = 1;
+    }
+  };
 }
