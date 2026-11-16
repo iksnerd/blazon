@@ -6,6 +6,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## 0.1.0 (2026-11-16)
 
+Published to npm as @iksnerd/blazon.
+
 First release.
 
 ### Breaking

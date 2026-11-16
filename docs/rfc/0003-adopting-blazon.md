@@ -1,6 +1,6 @@
 # RFC 0003: Adopting blazon from npm
 
-Status: draft 1, sections 2 to 5 not implemented, and section 1 only names the package (nothing is published); some walls of the motivation fixed (see Status) · Scope: the commands and output a company sees from its first `npx` to a checked, built and printed brand book in its own repository
+Status: draft 1, sections 2 to 5 not implemented, and section 1 done by hand for 0.1.0 (published to npm, CI publish not set up); some walls of the motivation fixed (see Status) · Scope: the commands and output a company sees from its first `npx` to a checked, built and printed brand book in its own repository
 Numbering: blazon RFCs, starting at 0001. Builds on [RFC 0001](0001-data-model.md) (the data model) and [RFC 0002](0002-extension-model.md) (plugins).
 
 ## Summary
@@ -19,7 +19,7 @@ On 2026-10-27 blazon was set up in a private Next.js app built on shadcn, the wa
 
 | # | What happened | Cause |
 |---|---|---|
-| 1 | `npx blazon` cannot run this tool | The npm name `blazon` belongs to an unrelated project; blazon is not published, and its repository is not public yet |
+| 1 | `npx blazon` cannot run this tool | The npm name `blazon` belongs to an unrelated project; blazon was not published then, and its repository was not public |
 | 2 | `init` said it created `colors.json, typography.json, spacing.json`; it also wrote `social.json` and `pattern.json` | The message is a fixed string (`src/cli/commands/init.ts`), not the list of files written (fixed, see Status) |
 | 3 | `init brand` titled the book "Brand Brand Book" | The title comes from the folder name (`brandTitle`, `src/cli/commands/init.ts`); `brand/` is the natural folder in an app (fixed, see Status) |
 | 4 | "Next steps: `blazon dev`" | Fixed strings (`src/cli/commands/init.ts:70-71`), wrong for an npx user, who types `npx <package> dev brand` from the app's root |
@@ -45,9 +45,9 @@ The **project root** is the nearest folder at or above the book folder that hold
 
 ### 1. The package
 
-Blazon MUST be published under a name that `npx <name>` resolves to this tool. The bin stays `blazon`. Once it is published, the README's first command SHOULD be `npx @iksnerd/blazon init`. Today it builds from a clone, as the README's quick start says.
+Blazon MUST be published under a name that `npx <name>` resolves to this tool. The bin stays `blazon`. Once it is published, the README's first command SHOULD be `npx @iksnerd/blazon init`. The README's quick start installs it from npm (`npm install @iksnerd/blazon`) and names `npx @iksnerd/blazon` as the form for a run with no install.
 
-The package is published to the public npm registry once the repository is public. `package.json` MUST carry `"name": "@iksnerd/blazon"` and `"repository"` pointing at the GitHub repository, and the publish MUST use `--access public`, because a scoped package is private by default. The scope `@iksnerd` MUST belong to the publisher (`npm whoami`). Publishing runs on a version tag, where blazon's CI already runs. `ci.yml` has no publish job yet, so this part is proposed.
+The package is published to the public npm registry once the repository is public. `package.json` MUST carry `"name": "@iksnerd/blazon"` and `"repository"` pointing at the GitHub repository, and the publish MUST use `--access public`, because a scoped package is private by default. The scope `@iksnerd` MUST belong to the publisher (`npm whoami`). Publishing runs on a version tag, where blazon's CI already runs. `ci.yml` has a `publish` job that is skipped until the owner sets up the trusted publisher and the `NPM_PUBLISH` variable (CONTRIBUTING, "Cutting a release"), so publishing on a tag is proposed; 0.1.0 was published by hand from the tarball its tagged release built.
 
 Installing straight from git (`npm install github:iksnerd/blazon`) does not work today: npm runs `prepare` for a git dependency, blazon's `prepare` installs its commit hooks and does not build, and `dist/` is not committed, so `bin/blazon.js` has nothing to run. It is not a supported route; a registry package is built once, on the tag.
 
@@ -158,7 +158,7 @@ Detectors read files inside the project root only, after following symlinks (the
 
 ## Status
 
-Sections 2 to 5 are not implemented. Section 1 is done as far as the name goes: the package is called `@iksnerd/blazon` and configs import from it, but nothing is published to npm and `ci.yml` has no publish job, while the repository is not public. This RFC stays a draft: it describes what a company would do once blazon is published. The walls of the motivation that were fixed since the run, each by its commit:
+Sections 2 to 5 are not implemented. Section 1 is done as far as the name goes: the package is called `@iksnerd/blazon` and configs import from it, and 0.1.0 is on npm, published by hand from the tarball the tagged release built; CI publishing is not set up. This RFC stays a draft: sections 2 to 5 describe what a company would do and are not built. The walls of the motivation that were fixed since the run, each by its commit:
 
 | # | Fixed by |
 |---|---|
@@ -171,7 +171,7 @@ Partly addressed, and still open: wall 5, by `46616d2 feat(template): ship origi
 
 `blazon init --from <url>` (`3a8b2e3 feat(init): add --from to start a brand book from a live site`, then `8d90a43` and `89654c7`) is a different route from section 2. It reads a live site's page and stylesheets, not a project's files, writes everything `needs-review`, and names the tokens' `source.cssVar` for `blazon drift`. Section 2 first named its explicit CSS form `--from css <file>`, which would have collided with it. That is settled: `--from <url>` keeps its name, because it ships and the manual describes it in chapter 1, and section 2's flag is `--css <file>` (repeatable; it takes the same `--context <selector>=<name>` option). The two never share a flag. `--from` takes an http(s) address only, and `blazon init` exits 2 for anything else, so a file path cannot be mistaken for a site. The `from: 'css'` key of a `sources` entry in `blazon.json` is a config field, not a flag, and is unchanged.
 
-Blazon is dogfooded before it is published: its first adopters are the owner's own projects, starting with a private Next.js app, each set up as a company would from a packed tarball (`npx --package <tarball> blazon …`). Each run adds its walls to the motivation's table, and a section is implemented once a dogfood run needs it. Publishing (section 1) comes after.
+Blazon was dogfooded before it was published: its first adopters are the owner's own projects, starting with a private Next.js app, each set up as a company would from a packed tarball (`npx --package <tarball> blazon …`). Each run adds its walls to the motivation's table, and a section is implemented once a dogfood run needs it. Publishing (section 1) came after, with 0.1.0.
 
 ## Open questions
 

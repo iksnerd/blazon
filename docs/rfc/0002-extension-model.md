@@ -215,7 +215,7 @@ A change that follows this RFC is tested at these points:
 
 ## Compatibility
 
-Blazon is pre-release, so nothing below has a shim.
+Blazon is 0.x, and nothing below has a shim.
 
 - `SectionId`, `LogoLockup` and `UsageRole` widen to `string`. Code that relied on the narrow unions needs `STANDARD_*` or a check.
 - `brand.json` gains `sections` and `vocabulary`, and `pages[].sections` stops being a fixed enumeration in the schema. The format stays `blazon-brand` version 1, because a reader already ignores keys it does not know. `brand.schema.json` gains the two keys and drops the enumeration. A reader that still holds the old schema rejects a brand that uses a custom section and reads every other brand as before.

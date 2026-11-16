@@ -10,26 +10,21 @@ Design tokens, guidelines and brand assets in one repo, compiled into CSS, TypeS
 
 Brand guidelines usually live in a PDF or a slide deck, and the values developers need are copied out of it by hand. Blazon keeps them in the repo as [DTCG](https://www.designtokens.org/TR/2025.10/format/) (Design Tokens Community Group) token files and Markdown. One build writes the CSS variables, a typed TypeScript module and a static brand book, and `blazon check` fails the build when a token breaks the brand's own rules. It reads the same DTCG files as Style Dictionary and Tokens Studio, and adds the rules, the checks and the book.
 
-> **Status: pre-release (0.1.0).** Not published to npm yet. The package is named `@iksnerd/blazon`. The npm package named `blazon` is an unrelated project (a type checker), so `npx blazon` does not run this tool and must not be used to try it.
->
-> Once published, run it with `npx @iksnerd/blazon`, or install it in a project and run `npx --no-install blazon` or `./node_modules/.bin/blazon`. The name can still change before the first publish.
+> **Status: 0.1.0, on npm as `@iksnerd/blazon`.** It is 0.x, so a minor version may break ([versioning](#versioning-and-stability)). The npm package named `blazon` is an unrelated project (a type checker): `npx blazon` in a folder where `@iksnerd/blazon` is not installed runs that one, not this tool. Run it with `npx @iksnerd/blazon <command>`, or install it and run `npx blazon` (the installed program wins) or `./node_modules/.bin/blazon`.
 
 Jump to: [Quick start](#quick-start), [Set up with your agent](#set-up-with-your-agent), [Use blazon from your agent (MCP)](#use-blazon-from-your-agent-mcp), [When not to use blazon](#when-not-to-use-blazon), [How it works](#how-it-works), [Plugins](#plugins), [Commands](#commands), [Configuration](#configuration), [Versioning and stability](#versioning-and-stability), [Security](#security), [Documentation](#documentation), [Contributing](#contributing).
 
 ## Quick start
 
-Node 24 or later; macOS and Linux, and WSL on Windows is untried. Blazon is not published, so clone it, build it once and run it from the clone:
+Node 24 or later; macOS and Linux, and WSL on Windows is untried. Install blazon in the folder that holds your brand, then run it:
 
 ```bash
-git clone https://github.com/iksnerd/blazon.git
-cd blazon
-npm ci
-npm run build              # builds dist/, which bin/blazon.js runs
-node bin/blazon.js init my-brand
-node bin/blazon.js dev my-brand   # the book, with live reload, at http://localhost:3000
+npm install @iksnerd/blazon
+npx blazon init my-brand
+npx blazon dev my-brand   # the book, with live reload, at http://localhost:3000
 ```
 
-There is no `blazon` on your PATH until you run `npm link` in the clone. The rest of this README writes `blazon`; without the link, write `node bin/blazon.js` in its place.
+After the install, `npx blazon` runs the installed program. Without an install, write `npx @iksnerd/blazon` in its place, because `npx blazon` alone runs an unrelated package. The rest of this README writes `blazon` for either. To work on blazon itself from a clone, see [CONTRIBUTING](CONTRIBUTING.md#local-setup).
 
 `blazon init` copies blazon's own brand book, [`examples/blazon/`](examples/blazon/), into the folder:
 
@@ -46,15 +41,15 @@ my-brand/
 
 The book starts as blazon's brand and becomes yours as you replace it. `blazon check` notes every file that is still the starter's text, which is the list of what is left to do, and warns about each logo that is still blazon's own. To start from a company's site instead, run `blazon init acme-brand --from https://acme.com`: blazon reads the page and its stylesheets for colors, fonts and the logo, and flags each value `needs-review` until the brand owner confirms it ([how](docs/manual/01-getting-started.md#starting-from-a-live-site)).
 
-To look at a finished book first, run blazon's own brand book from the clone with no build: `npm run dev:blazon`.
+To look at a finished book first, clone the repository and run blazon's own brand book with no build: `npm run dev:blazon` ([CONTRIBUTING](CONTRIBUTING.md#local-setup)).
 
 ## Set up with your agent
 
-Paste this into a coding agent (Claude Code, Codex, Cursor) in the folder where the brand should live. Replace `<path to your blazon clone>`, and give the agent your colors, fonts and logo, or a site address. Blazon is not published; once it is, the first line becomes the package install.
+Paste this into a coding agent (Claude Code, Codex, Cursor) in the folder where the brand should live. Give the agent your colors, fonts and logo, or a site address.
 
 ```text
-Set up a blazon brand book here. Blazon is not on npm: build it from my clone at <path to your blazon clone>
-with `npm install && npm run build` there, then run it as `node <that path>/bin/blazon.js`.
+Set up a blazon brand book here. Install it with `npm install @iksnerd/blazon` (never run `npx blazon`
+before that: the npm package named `blazon` is an unrelated project), then run it as `npx blazon`.
 Run `blazon init brand` (add `--from <site url>` to read a site's colors, fonts and logo).
 Read brand/AGENTS.md and follow it. Replace the starter's tokens, docs and assets with my brand:
 <my colors, fonts and logo, or the site address>. Ask me for any color, font or license you
@@ -99,7 +94,7 @@ The same token is written as `--color-signal-orange: #FF5A1F;` in `theme.css` an
 
 ## When not to use blazon
 
-- **You need a release you can install.** Blazon is pre-release and not on npm; you build it from a clone.
+- **You need a stable interface.** Blazon is 0.x: a minor version may break a stable surface, and the CHANGELOG lists it under "Breaking". Pin the version you build with ([chapter 15](docs/manual/15-maintaining-a-brand-book.md#pin-the-blazon-you-build-with)).
 - **You need many output formats.** Blazon writes CSS, Tailwind v4, TypeScript and JSON, and the platform plugin writes Android, Swift and Kotlin for colors and dimensions only. [Style Dictionary](https://styledictionary.com) has a general system of custom transforms and formats.
 - **You want rules enforced in a design tool.** Blazon reads token files in the repo and does not sync with Figma or Tokens Studio. A file exported from them works if it is DTCG 2025.10, but the `usage` roles and `tier` names are blazon's, so the editor will not enforce them.
 - **You are on Windows.** It is tested on macOS and Linux with Node 24; WSL is untried.

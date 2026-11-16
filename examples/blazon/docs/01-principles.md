@@ -28,7 +28,7 @@ The brand and the build come from the same files. A build that breaks the brand'
 | Readable from any language | `blazon build` also writes `brand.json`: the tokens with their rules, the pages, the assets and the findings, with a JSON Schema. |
 | Open to plugins | A plugin is a program in any language. blazon ships ten, and a config names one to turn it on. |
 
-blazon is pre-release (0.1.0) and not on npm yet. The attributes above describe what is built today.
+blazon is at version 0.1.0 and on npm as `@iksnerd/blazon`. The attributes above describe what is built today.
 
 ## Exposed structure
 

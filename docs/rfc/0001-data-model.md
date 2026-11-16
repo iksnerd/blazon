@@ -650,7 +650,7 @@ Not in it, on purpose: a section id is not a page address (the slug is), and a s
 
 The rest of a key's rules (a theme role, an `assets` entry, an icon set) are checked where the key is used, in the section named in the table.
 
-**`blazon.lock`.** A brand book may name the blazon it builds with in `blazon.lock`, next to `blazon.json`. Blazon is pre-release and every commit says `0.1.0`, so the commit is the only version there is. The file is JSON, written by `blazon pin` and committed with the book:
+**`blazon.lock`.** A brand book may name the blazon it builds with in `blazon.lock`, next to `blazon.json`. Every commit of the blazon repository says `0.1.0` in `package.json`, so the commit, not the version number, says which blazon it is; a published release is built from one commit. The file is JSON, written by `blazon pin` and committed with the book:
 
 ```json
 { "v": 1, "commit": "0123456789abcdef0123456789abcdef01234567" }
@@ -658,7 +658,7 @@ The rest of a key's rules (a theme role, an `assets` entry, an icon set) are che
 
 `pin-invalid` is raised, and the file is not read as a pin, when the file is not valid JSON, is not an object, has a key other than `v` and `commit`, has a `v` other than the number `1`, or has a `commit` that is not 40 lowercase hexadecimal digits (an abbreviated hash, a branch name and an uppercase hash are each refused). `blazon pin` replaces such a file, which is how a broken pin is mended. A book with no `blazon.lock` is not checked, and nothing else in the book depends on the file.
 
-When the file is valid, `blazon check`, `blazon tokens` and `blazon build` (and the dev server, which reads the file again when it changes) compare the commit with the blazon that is running. That commit is the one the running blazon was built from, read from the stamp `npm run build` compiles into `dist` along with whether the tree had uncommitted changes; run from source, where there is no build, it is the `HEAD` of the blazon clone, read when blazon starts. The comparison is exact, and any failure is `pin-mismatch`: the commit differs, the tree had uncommitted changes (a dirty tree never matches, even at the pinned commit, because it is not that commit), or the blazon cannot say its commit (no checkout and no stamp), which fails closed because a pin that cannot be checked is not met. `blazon pin` itself refuses to write the pin of a dirty or unknown blazon.
+When the file is valid, `blazon check`, `blazon tokens` and `blazon build` (and the dev server, which reads the file again when it changes) compare the commit with the blazon that is running. That commit is the one the running blazon was built from (for an installed package, the commit its release was built from), read from the stamp `npm run build` compiles into `dist` along with whether the tree had uncommitted changes; run from source, where there is no build, it is the `HEAD` of the blazon clone, read when blazon starts. The comparison is exact, and any failure is `pin-mismatch`: the commit differs, the tree had uncommitted changes (a dirty tree never matches, even at the pinned commit, because it is not that commit), or the blazon cannot say its commit (no checkout and no stamp), which fails closed because a pin that cannot be checked is not met. `blazon pin` itself refuses to write the pin of a dirty or unknown blazon.
 
 A match shows that the running blazon was built from the pinned commit. It does not show that `dist/` was left alone after the build, that `node_modules` matches the lockfile, or that nobody edited the stamp. The pin catches the mistake that happens, building a book with another checkout; it is not a defence against someone who means to get round it, and it is not a supply-chain control.
 
@@ -679,7 +679,7 @@ A match shows that the running blazon was built from the pinned commit. It does 
 
 ## Drawbacks
 
-- **Breaking path change.** Every alias and every CSS variable in an existing blazon project changes name. Blazon has no published release yet, so this is the cheapest time for it.
+- **Breaking path change.** Every alias and every CSS variable in an existing blazon project changes name. Blazon had no published release when this was decided, so that was the cheapest time for it.
 - **More to type.** Explicit `$type` and nested `$extensions` are verbose next to `"primary": "#2563eb"`. Group-level `$type` and inherited `dev.blazon` fields keep most files short. The starter, blazon's own brand book, shows this.
 - **A private vocabulary.** The `usage` roles and `tier` names are blazon's. A Tokens Studio user won't see them enforced in their editor.
 - **The resolver adds a second file to learn.** It is optional, and most brand books without locale or theme variants won't need it.
@@ -700,7 +700,7 @@ A match shows that the running blazon was built from the pinned commit. It does 
 
 ## Compatibility
 
-There is no published version, so there are no external users. Inside the repo:
+The model was settled before the first release (0.1.0), so there were no external users to migrate. Inside the repo:
 
 - `examples/blazon/` (the starter) and the encoding of the third-party deck are rewritten to the new format (done).
 - A `blazon migrate` command is not proposed. Given no users, it would be code with no audience.

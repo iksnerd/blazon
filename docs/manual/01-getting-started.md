@@ -2,9 +2,24 @@
 
 ← [Manual index](index.md)
 
-Blazon is pre-release (0.1.0) and not published to npm. Its package name is `@iksnerd/blazon`, because the npm package named `blazon` is an unrelated project, so `npx blazon` does not run this tool. You run it from a clone. `package.json` asks for Node 24 or later (`engines`).
+Blazon is at version 0.1.0 and is on npm as `@iksnerd/blazon`. It is 0.x, so a minor version may break ([chapter 18](18-stability.md)). The npm package named `blazon` is an unrelated project, so `npx blazon` in a folder where `@iksnerd/blazon` is not installed runs the wrong package. `package.json` asks for Node 24 or later (`engines`). It is tested on macOS and Linux; Windows (WSL) is untried.
+
+## Install
+
+In the folder that holds your brand, or in the project that builds it:
+
+```bash
+npm install @iksnerd/blazon
+npx blazon --version       # prints blazon/0.1.0, then your platform and Node version
+npx blazon init my-brand
+npx blazon dev my-brand
+```
+
+After the install, `npx blazon` runs the installed program, and so does `./node_modules/.bin/blazon`. To run it once without installing, write `npx @iksnerd/blazon <command>`. The rest of this manual writes `blazon` for either. If port 3000 is busy, the dev server takes the next free port and prints it; `--strict-port` exits 2 instead.
 
 ## Install from a clone
+
+To work on blazon, or to see a finished brand first, clone the repository. `npm run dev:blazon` serves blazon's own brand book from source at <http://localhost:3000>.
 
 ```bash
 git clone https://github.com/iksnerd/blazon.git
@@ -15,7 +30,7 @@ node bin/blazon.js init my-brand
 node bin/blazon.js dev my-brand
 ```
 
-`npm link` in the clone puts `blazon` on your PATH. The rest of this manual writes `blazon`; if you did not link, write `node bin/blazon.js` in its place, run from the clone. To see a finished brand first, run `npm run dev:blazon` for blazon's own brand book at <http://localhost:3000>. If port 3000 is busy, the dev server takes the next free port and prints it; `--strict-port` exits 2 instead.
+`npm link` in the clone puts `blazon` on your PATH; without it, write `node bin/blazon.js` in its place, run from the clone.
 
 ## What `blazon init` creates
 
@@ -37,7 +52,7 @@ The brand book is named after the project folder: `blazon init acme-brand` title
 
 Everything in the copy that is blazon's identity is blazon's until you replace it: its logo, its type scale and fonts, its colors and the pages written about blazon. `blazon check` notes each such file as `starter-file-unchanged` while it is byte for byte what `init` wrote, so the notes are the list of what is left to replace. The config is not noted: `init` sets its title and description, and the rest is yours to edit. It enables one plugin, `blazon.copy`, which holds the pages to blazon's own word rules and needs only Node; edit its `options` to your brand's, or remove it. The example's other plugins (the deck, social cards, favicons, logo kit, press kit, platform tokens and Office template) mostly draw in Google Chrome, and a first `blazon build` should not need a browser, so they are in the config as a comment inside the `plugins` list; uncomment the ones you want once Chrome is installed ([chapter 14](14-shipped-plugins.md)).
 
-The starter is not a second copy kept beside the example. From a clone, `blazon init` reads `examples/blazon/`. The npm package carries a `template/` folder that `npm pack` makes from the example (`npm run build-starter`, run by `prepack`) and git does not track.
+The starter is not a second copy kept beside the example. From a clone, `blazon init` reads `examples/blazon/`. The npm package, which is what `npm install @iksnerd/blazon` gives you, carries a `template/` folder that `npm pack` makes from the example (`npm run build-starter`, run by `prepack`) and git does not track.
 
 The starter tokens are blazon's own, and later chapters use these names when they say "the starter":
 

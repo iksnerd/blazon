@@ -14,14 +14,26 @@ Do not edit a generated file; change its source and build again. Keep `dist/` ou
 
 ## Pin the blazon you build with
 
-Blazon is pre-release and not on npm, so a build depends on a commit of the blazon repository (`package.json` says `0.1.0` for every commit, so the version number cannot tell them apart). If every person builds with whatever they last pulled, the same sources give different outputs. Name the commit in `blazon.lock` and let blazon refuse any other:
+A build depends on the blazon that runs it. If every person builds with whatever they last installed or pulled, the same sources can give different outputs. There are two ways to fix the blazon, and they combine.
+
+**A published version.** Install an exact version in the project that builds the book. The `package.json` then says `"@iksnerd/blazon": "0.1.0"` and the lockfile fixes the rest of the tree, so `npm ci` gives everyone the same blazon:
 
 ```sh
-# in your blazon clone, at the commit you want, with nothing uncommitted
-npm ci && npm run build
+npm install --save-exact @iksnerd/blazon@0.1.0
+```
 
-# in the book
+While blazon is 0.x, a range such as `^0.1.0` takes new patch releases of 0.1 and no other minor, and a minor release may break ([chapter 18](18-stability.md)); an exact version moves only when you move it.
+
+**A commit.** Name the blazon commit in `blazon.lock` and let blazon refuse any other. `blazon pin` writes the commit of the blazon that runs it. For an installed blazon that is the commit the release was built from; for a clone it is the commit checked out, built with nothing uncommitted. A source checkout is also the only way to build a blazon from a commit no release has (every commit says `0.1.0` in `package.json`, so the version number cannot tell commits apart):
+
+```sh
+# with an installed blazon, in the book
 blazon pin                        # writes blazon.lock: { "v": 1, "commit": "<40 hex digits>" }
+
+# or with a clone: at the commit you want, with nothing uncommitted
+npm ci && npm run build
+# then, in the book
+blazon pin
 ```
 
 Commit `blazon.lock` with the book. From then on `blazon check`, `blazon tokens` and `blazon build` compare the blazon that runs with it, and stop with a `pin-mismatch` error (the file and line in `--json`, a `Next:` step in the text) when they differ. A book with no `blazon.lock` is not checked. `blazon dev` shows the same findings on the Review page and reads `blazon.lock` again when it changes, so pinning, editing or removing it needs no restart.
@@ -32,9 +44,9 @@ Commit `blazon.lock` with the book. From then on `blazon check`, `blazon tokens`
 
 If you check out the pinned commit and forget to build, the error says so: the clone is at the pin but the `dist` that runs was built from another commit.
 
-Keep that clone at the pin, and do any work on blazon itself in a separate worktree (`git worktree add -b topic ../blazon-wt-topic origin/main`), or the next build stops. If blazon is published to npm later, pin its version in `package.json` instead.
+If you build with a clone, keep it at the pin, and do any work on blazon itself in a separate worktree (`git worktree add -b topic ../blazon-wt-topic origin/main`), or the next build stops. With an installed version, moving the pin is `npm install --save-exact @iksnerd/blazon@<version>` and then `blazon pin` again.
 
-**Moving the pin** is a change of its own. Build the book with the old pin and keep what it wrote. Then check out the new commit in the blazon clone (it must be one you can fetch, so push blazon first), run `npm ci && npm run build` there, run `blazon pin` in the book to write the new commit, build again, and compare the two sets of outputs (see below). If they are the same, commit `blazon.lock` alone. If they differ, read what changed in blazon and look at those outputs before you commit. A change that adds markup can move a space or a line break without changing a word: compare the words with spacing before punctuation ignored, and look at the pages that differ, before you call it more than that.
+**Moving the pin** is a change of its own. Build the book with the old pin and keep what it wrote. Then install the new version, or check out the new commit in the blazon clone (it must be one you can fetch, so push blazon first) and run `npm ci && npm run build` there. Run `blazon pin` in the book to write the new commit, build again, and compare the two sets of outputs (see below). If they are the same, commit `blazon.lock` alone. If they differ, read what changed in blazon and look at those outputs before you commit. A change that adds markup can move a space or a line break without changing a word: compare the words with spacing before punctuation ignored, and look at the pages that differ, before you call it more than that.
 
 ## A new blazon option comes with a new pin
 
@@ -116,5 +128,5 @@ A plugin adds findings and writes its own files under `dist/tokens/<name>/` (the
 | `customSections[n].id "..." is a standard section` (`config-invalid`) | A standard section needs no entry in `customSections`; keep its name in `sections` |
 | `icon-set-invalid ... is not installed` | The icon package is not in this checkout's `node_modules`. Run `npm ci` if it is in `package.json`, or `npm install <package>` if it is not |
 | `... is not pinned, and a check plugin must be` (`plugin-failed`) | A `check` plugin must be pinned: [Plugins](12-plugins.md#pin-a-plugin) |
-| Your build script says the blazon is not the pinned one | The clone of blazon moved. Check out the pinned commit and build it |
+| Your build script says the blazon is not the pinned one | The blazon that runs is not the pinned one. Install the version that matches the pin, or check out the pinned commit in your clone and build it |
 | `unknown key "..."` (`config-invalid`), with no "did you mean" | The blazon that runs does not have that option. Spelt right, it belongs to a newer blazon: [move the pin](#a-new-blazon-option-comes-with-a-new-pin) to a commit that has it before you use it |

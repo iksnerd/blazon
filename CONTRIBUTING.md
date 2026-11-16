@@ -136,7 +136,7 @@ npm run release -- 0.2.0
 
 On the tag, CI (`.github/workflows/ci.yml`) runs the tests and the secret scan, then the `release` job: `npm run build`, `npm pack`, `scripts/check-pack.mjs` (the tarball holds `dist/`, the starter, the ten plugin programs and `plugins/shipped.lock`), `scripts/smoke-tarball.mjs` (install the tarball in an empty folder; run `blazon --help`, `init`, `check`, `build`, `plugin check --core` and `doctor`), then `SHA256SUMS`, a build provenance attestation, and a GitHub release with both files. `npm pack` and `npm publish` run `npm run build` first (`prepack`), so a local tarball is never made from a stale `dist/`. Run the same two scripts by hand on any tarball: `node scripts/check-pack.mjs --tarball <file>`.
 
-The `publish` job puts that same tarball on npm with provenance. It is skipped until the owner does two things, once: add a trusted publisher on npmjs.com for the package (GitHub Actions, repository `iksnerd/blazon`, workflow `ci.yml`), and set the repository variable `NPM_PUBLISH` to `true`. The first publish of a new package needs the package to exist on npm before a trusted publisher can be added to it. No npm token is stored.
+The `publish` job puts that same tarball on npm with provenance. It is skipped until the owner does two things, once: add a trusted publisher on npmjs.com for the package (GitHub Actions, repository `iksnerd/blazon`, workflow `ci.yml`), and set the repository variable `NPM_PUBLISH` to `true`. A trusted publisher can be added only to a package that exists on npm; `@iksnerd/blazon` does, because 0.1.0 was published by hand from the tarball the tagged release built. No npm token is stored.
 
 ## Making changes
 

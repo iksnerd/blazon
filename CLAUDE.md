@@ -1,13 +1,13 @@
 # Blazon
 
-Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a typed module and a static brand book, and checks the brand's own rules. Pre-release; not on npm. [README](README.md) is the overview, [CONTRIBUTING](CONTRIBUTING.md) has the hooks and test layout, [docs/manual](docs/manual/index.md) is for users, [docs/rfc](docs/rfc) is normative.
+Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a typed module and a static brand book, and checks the brand's own rules. Version 0.1.0 is on npm as `@iksnerd/blazon`; it is 0.x. [README](README.md) is the overview, [CONTRIBUTING](CONTRIBUTING.md) has the hooks and test layout, [docs/manual](docs/manual/index.md) is for users, [docs/rfc](docs/rfc) is normative.
 
 ## Commands
 
 - `npm run check` is typecheck, lint, Ruff and Prettier. `npm test` is the whole suite. `npm run dev:blazon` runs blazon's own brand book from source.
 - The git hooks are the gate (CONTRIBUTING, "The hooks"). `pre-commit` tests the staged snapshot and only the tests the staged paths ask for. `pre-push` runs the suites for the whole push. Do not run the same suite by hand first.
 - Node 24 is the floor (`engines`) and what CI runs. To see what an older Node does, run `nvm exec 22 npx vitest run`.
-- `npx blazon` runs an unrelated npm package. Run the CLI as `node bin/blazon.js` after `npm run build`, or `npm run blazon:src -- <command>` for source.
+- `npx blazon` runs an unrelated npm package unless `@iksnerd/blazon` is installed in the folder. Run the CLI as `node bin/blazon.js` after `npm run build`, or `npm run blazon:src -- <command>` for source.
 
 ## Layers of `src/`
 

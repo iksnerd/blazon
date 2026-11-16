@@ -2,7 +2,7 @@
 
 ← [Manual index](index.md)
 
-Blazon is pre-release (0.x). Not published yet: no version is on npm, and the version numbers below describe how releases will be numbered. A brand pins the blazon commit it builds with (`blazon pin` writes `blazon.lock`, and `check`, `tokens` and `build` refuse any other blazon), so a change in blazon reaches a brand only when its owner moves the pin. This chapter says what a brand can rely on when it does, how changes are made, and how to move a pin.
+Blazon is 0.x. Version 0.1.0 is on npm as `@iksnerd/blazon`, and the version numbers below describe how releases are numbered. A brand fixes the blazon it builds with, by an exact version in its `package.json` and by the commit in `blazon.lock` (`blazon pin` writes it, and `check`, `tokens` and `build` refuse any other blazon), so a change in blazon reaches a brand only when its owner moves the pin. This chapter says what a brand can rely on when it does, how changes are made, and how to move a pin.
 
 ## What is stable
 
@@ -59,7 +59,7 @@ Unstable surfaces (the brand book and the programmatic API) can change in any re
 
 ## Reading the CHANGELOG
 
-Each release in `CHANGELOG.md` at the repository root has up to four lists. Until the first release, one heading, "Unreleased", holds everything since the project began.
+Each release in `CHANGELOG.md` at the repository root has up to four lists. Changes not yet in a release sit under one heading, "Unreleased".
 
 | Heading | What is in it | What to do |
 |---|---|---|
@@ -75,17 +75,17 @@ This is the plan. None of it is a promise yet, and the table says what is met to
 | Criterion | How a reader checks it | Met today |
 |---|---|---|
 | Each stable surface above is recorded by a test | `test/surface/public-surface.json` and its test list every stable surface | Partly: shipped plugin options and findings are not recorded |
-| No open "Breaking" items | The newest CHANGELOG release has no entry under "Breaking" that is a known mistake still to fix | No: the CHANGELOG still has a pre-release "Breaking" list |
+| No open "Breaking" items | The newest CHANGELOG release has no entry under "Breaking" that is a known mistake still to fix | No: the 0.1.0 entry of the CHANGELOG still has a "Breaking" list |
 | The alias mechanism is built | An old config key, command or finding code works and warns with the new name | No |
 | The deprecation window is stated | This chapter gives the length | In minors, yes; in months, no |
-| Published | A version of `@iksnerd/blazon` is on npm and `npx @iksnerd/blazon` runs it | No |
+| Published | A version of `@iksnerd/blazon` is on npm and `npx @iksnerd/blazon` runs it | Yes: 0.1.0 |
 
 At 1.0 a breaking change to a stable surface would need a major version, and the one-minor alias would apply to every rename. Until all five rows are met, blazon stays 0.x.
 
 ## Moving a pin
 
-1. Read the CHANGELOG between the two commits, and the entries under "Breaking" first.
-2. Build both blazons, each in its own checkout (two `git worktree`s do): `npm ci && npm run build`.
+1. Read the CHANGELOG between the two versions or commits, and the entries under "Breaking" first.
+2. Build both blazons, each in its own checkout (two `git worktree`s do): `npm ci && npm run build`. The script in step 3 takes built checkouts, not installed packages; for two published versions, install each in a copy of your project and compare the outputs of `blazon check` and `blazon build` yourself.
 3. Compare them on your brand:
 
    ```bash
@@ -101,4 +101,4 @@ Blazon runs on macOS and Linux. The plugin host starts programs the POSIX way, s
 
 ## What is not promised
 
-Only the latest commit on `main` gets fixes until there is a release, and the latest minor after ([SECURITY.md](../../SECURITY.md)). No other company is asked to depend on blazon yet. Windows, an older Node than `engines` asks for, and the unstable surfaces above are not promised.
+Only the latest minor version gets fixes, 0.1.x today ([SECURITY.md](../../SECURITY.md)). While blazon is 0.x, a minor release may break a stable surface, as above. Windows, an older Node than `engines` asks for, and the unstable surfaces above are not promised.

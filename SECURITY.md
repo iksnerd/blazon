@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Blazon is pre-release (0.x) and not published yet. Until there is a release, only the latest commit on `main` gets fixes. Once there are releases, only the latest minor version does (for example, 0.3.x when 0.3 is the newest), because a brand pins one blazon and moves the pin to take a fix ([stability](docs/manual/18-stability.md)).
+Blazon is 0.x. Only the latest minor version gets fixes (for example, 0.3.x when 0.3 is the newest), because a brand pins one blazon and moves the pin to take a fix ([stability](docs/manual/18-stability.md)). Today that is 0.1.x, published on npm as `@iksnerd/blazon`. A fix that is not released yet is on `main`.
 
 ## Reporting a vulnerability
 
