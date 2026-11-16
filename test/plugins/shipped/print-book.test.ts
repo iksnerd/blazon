@@ -102,6 +102,9 @@ describe('the print-book plugin: what a request asks it to print', () => {
     ['the reference preset', { preset: 'reference' }, '#print/reference', 'brand-book-reference'],
     ['chosen pages', { pages: ['doc/logo', 'tokens/colors'] }, '#print/pages=doc/logo,tokens/colors', 'brand-book-pages'],
     ['a title', { title: 'Acme Logo' }, '#print?title=Acme%20Logo', 'brand-book'],
+    ['the compact layout, which is the default and not put in the hash', { layout: 'compact' }, '#print', 'brand-book'],
+    ['the roomy layout', { layout: 'roomy' }, '#print?layout=roomy', 'brand-book'],
+    ['the roomy layout with a preset and a title', { preset: 'reference', title: 'A', layout: 'roomy' }, '#print/reference?title=A&layout=roomy', 'brand-book-reference'],
     ['a preset with a title and subtitle', { preset: 'essentials', title: 'A', subtitle: 'B' }, '#print/essentials?title=A&subtitle=B', 'brand-book-essentials'],
     [
       'a title with markup, a quote, an ampersand and Bulgarian letters',
@@ -139,6 +142,9 @@ describe('the print-book plugin: what a request asks it to print', () => {
     ['a subtitle that is not a string', { subtitle: ['a'] }, 'subtitle must be a non-empty string'],
     ['a subtitle with a tab', { subtitle: 'a\tb' }, 'subtitle must be a non-empty string'],
     ['an unknown option', { heading: 'x' }, 'unknown option "heading"'],
+    ['a layout that is not one of the two', { layout: 'tight' }, 'layout must be compact or roomy'],
+    ['a layout that is not a string', { layout: true }, 'layout must be compact or roomy'],
+    ['a layout in another case', { layout: 'Roomy' }, 'layout must be compact or roomy'],
     ['a page id with a question mark', { pages: ['doc/a?b'] }, 'pages must be a non-empty list of chapter ids'],
     ['a preset and pages together', { preset: 'full', pages: ['doc/logo'] }, 'give a preset or pages, not both'],
   ])('refuses %s', (_, options, reason) => {
@@ -218,6 +224,14 @@ describe('the print-book plugin, as blazon starts it', () => {
     const ran = plugin(text, { BLAZON_CHROME: '/nonexistent/chrome' });
     expect(ran.status, ran.out + ran.err).toBe(0);
     expect(JSON.parse(ran.out).findings).toEqual([{ code: `${NAME}/option-invalid`, severity: 'error', path: 'options', message: 'preset must be full, essentials or reference' }]);
+    expect(fs.readdirSync(outDir)).toEqual([]);
+  });
+
+  it('answers a layout that is not compact or roomy with the same finding', () => {
+    const { text, outDir } = request(site(1), { layout: 'tight' });
+    const ran = plugin(text, { BLAZON_CHROME: '/nonexistent/chrome' });
+    expect(ran.status, ran.out + ran.err).toBe(0);
+    expect(JSON.parse(ran.out).findings).toEqual([{ code: `${NAME}/option-invalid`, severity: 'error', path: 'options', message: 'layout must be compact or roomy' }]);
     expect(fs.readdirSync(outDir)).toEqual([]);
   });
 

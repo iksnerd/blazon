@@ -19,6 +19,6 @@ export async function settled(root: HTMLElement): Promise<void> {
 declare global {
   interface Window {
     /** Set when the print book is laid out: the blazon.print-book plugin waits for it, then prints; `clipped` counts the slides still cut off at the foot after they were split and drawn at the smallest size */
-    __blazonPrint?: { ready: true; pages: number; clipped: number[] };
+    __blazonPrint?: { ready: true; pages: number; layout: string; clipped: number[] };
   }
 }

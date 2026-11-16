@@ -1,4 +1,5 @@
-import { CONTENT, FIGURE_MAX, LABEL_GAP, LABEL_LINE, MARGIN, SLIDE } from './geometry';
+import { CONTENT, LABEL_GAP, LABEL_LINE, MARGIN, SLIDE } from './geometry';
+import { layoutOf, type LayoutName } from './layouts';
 
 /**
  * CSS for the print book. Every slide is a frame of its own, the whole 16:9 page: a content frame draws its margin and
@@ -7,7 +8,8 @@ import { CONTENT, FIGURE_MAX, LABEL_GAP, LABEL_LINE, MARGIN, SLIDE } from './geo
  * nothing. Text is set at slide size: the web page's sizes, which are for a screen read at arm's length, are raised by
  * 1.11 (body 18px is 20px, which prints as 15 pt on the 960 pt slide) so a slide's text reads as a slide's.
  */
-export function printCss(): string {
+export function printCss(layout: LayoutName): string {
+  const { figureMax, sectionPadding, sectionGap, proseLeading, proseMargin, headingMargin } = layoutOf(layout);
   const book = '[data-print-book]';
   return `
 @page { size: ${SLIDE.width}px ${SLIDE.height}px; margin: 0; }
@@ -37,12 +39,10 @@ ${book} [data-print-footer] > span:last-child { flex: none; }
 ${book} [data-slot="code-block-actions"], ${book} [data-slot="code-block-copy-button"] { display: none !important; }
 ${book} footer, ${book} [data-section-index] { display: none; }
 ${book} article, ${book} [data-print-chapter] > div, ${book} header { padding-left: 0; padding-right: 0; }
-${book} section:not([data-print-slide] [data-print-slide-body] > section:only-child) { grid-template-columns: minmax(0, 1fr); padding: 12px 0; border: 0; row-gap: 12px; }
+${book} section:not([data-print-slide] [data-print-slide-body] > section:only-child) { grid-template-columns: minmax(0, 1fr); padding: ${sectionPadding}px 0; border: 0; row-gap: ${sectionGap}px; }
 ${book} h2 { font-family: var(--font-heading); font-size: 38px; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
-${book} .blazon-prose { max-width: none; font-size: 20px; line-height: 1.4; }
-${book} .blazon-prose :is(p, ul, ol, table) { margin-bottom: 0.6em; }
-${book} .blazon-prose h3 { margin-top: 1em; }
-${book} .blazon-prose table { font-size: 16px; }
+${book} .blazon-prose { max-width: none; font-size: 20px; line-height: ${proseLeading}; }
+${proseMargin ? `${book} .blazon-prose :is(p, ul, ol, table) { margin-bottom: ${proseMargin}; }\n` : ''}${headingMargin ? `${book} .blazon-prose h3 { margin-top: ${headingMargin}; }\n` : ''}${book} .blazon-prose table { font-size: 16px; }
 ${book} .blazon-prose blockquote { font-size: 15px; }
 ${book} .blazon-prose p, ${book} .blazon-prose li { max-width: 62ch; }
 /* A continued slide's label, the section heading and "(continued)" in the muted colour on one line: the heading gives way
@@ -62,10 +62,10 @@ ${book} [data-section-asset] figure > div { max-height: 360px; }
    smaller (fit) widens it again: a tall image never got shorter and was cut off at the foot of the slide. In print the
    frame takes the image's own size, and the image is held to what a slide has room for. */
 ${book} [data-frame] { aspect-ratio: auto !important; }
-${book} [data-frame] img { max-height: ${FIGURE_MAX}px; width: auto; }
+${book} [data-frame] img { max-height: ${figureMax}px; width: auto; }
 /* A Favicons view is a picture at the full width of the page, as tall as its ratio makes it: a square sheet was 1054px tall and
    wider still when the slide was drawn smaller, past what even the smallest size holds. It is held to what a slide has room for. */
-${book} [data-favicons-view] img { max-height: ${FIGURE_MAX}px; width: auto; max-width: 100%; margin-inline: auto; object-fit: contain; }
+${book} [data-favicons-view] img { max-height: ${figureMax}px; width: auto; max-width: 100%; margin-inline: auto; object-fit: contain; }
 ${book} [data-section-asset] img { max-height: 330px; width: auto; max-width: 100%; margin-inline: auto; object-fit: contain; }
 /* The viewer's small type, raised by the same 1.11 as the body: its smallest (a caption, a label) is 12px, 9 pt on the
    slide and 8.1 pt at the smallest scale a slide is drawn at. In :where, so a rule above that sets a size (a heading) wins */

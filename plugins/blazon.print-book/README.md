@@ -17,7 +17,9 @@ A slide whose content is taller than a slide even drawn at half size is cut off 
 | `{ "preset": "reference" }` | `index.html#print/reference` | `brand-book-reference.pdf`, `.pptx` |
 | `{ "pages": ["doc/logo", "tokens/colors"] }` | `index.html#print/pages=doc/logo,tokens/colors` | `brand-book-pages.pdf`, `.pptx` |
 
-Two optional strings go with any of these: `title` (at most 120 characters) replaces the brand title in the cover heading and in the footers, and `subtitle` (at most 200) replaces the line under the cover heading. They reach the page as `?title=...&subtitle=...` after the hash, percent-encoded. Other options are refused.
+Two optional strings go with any of these: `title` (at most 120 characters) replaces the brand title in the cover heading and in the footers, and `subtitle` (at most 200) replaces the line under the cover heading. They reach the page as `?title=...&subtitle=...` after the hash, percent-encoded. 
+
+One more option, `layout`, is `"compact"` (the default) or `"roomy"`. `compact` lets a figure share a slide by drawing its pictures down to 60% of their height, and sets the prose and sections tighter, so the book runs on fewer slides. `roomy` draws every picture whole and sets the text looser. Only `roomy` is put in the hash, as `layout=roomy`, and the page says which layout it used in `window.__blazonPrint.layout`. Any other value, and any other option, is refused.
 
 It exits `2` with the reason and writes nothing when the request or its options are wrong, when `site_dir` has no `index.html`, when it finds no browser, and when the page does not say it is ready in time.
 

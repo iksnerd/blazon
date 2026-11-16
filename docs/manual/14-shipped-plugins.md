@@ -434,14 +434,15 @@ It states no color's CMYK, Pantone or RAL value that a token does not, no font l
 | `{ "preset": "reference" }` | The token reference | `brand-book-reference.pdf`, `.pptx` |
 | `{ "pages": ["doc/logo", "tokens/colors"] }` | The pages you name | `brand-book-pages.pdf`, `.pptx` |
 
-Two more options, each optional and on top of any row above, put the book's own words on the cover and in the footer:
+Three more options, each optional and on top of any row above. `title` and `subtitle` put the book's own words on the cover and in the footer, and `layout` chooses how closely the slides are set:
 
 | Option | Does | Limits |
 |---|---|---|
 | `title` | Replaces the brand's title in the cover heading and in the footer of every slide that has one (the contents and the content slides) | A non-empty string of at most 120 characters |
 | `subtitle` | Replaces the line under the cover heading, which is the brand's description otherwise | A non-empty string of at most 200 characters |
+| `layout` | `"compact"` (the default) shares a slide between a figure and the text before it by drawing pictures down to 60% of their height, and sets the prose and sections tighter; `"roomy"` draws every picture whole and sets the text looser, so the book runs on more slides (the starter brand's book is 81 pages roomy and 72 compact) | `"compact"` or `"roomy"` |
 
-Without them the cover and the footers show the brand's title and description, as before. Neither may hold a control character (a tab or a line break, say), and a value outside its limit, or an option that is not one of `preset`, `pages`, `title` and `subtitle`, is the error finding `blazon.print-book/option-invalid` and nothing is printed. The text is shown as it is written: `&`, `<`, quotes and any script are not markup here. The footer stays one line high however long the title is, and the PowerPoint file, made from pictures of the slides, carries the same words.
+Without them the cover and the footers show the brand's title and description, as before. Neither may hold a control character (a tab or a line break, say), and a value outside its limit, a `layout` that is not `compact` or `roomy`, or an option that is not one of `preset`, `pages`, `title`, `subtitle` and `layout`, is the error finding `blazon.print-book/option-invalid` and nothing is printed. The text is shown as it is written: `&`, `<`, quotes and any script are not markup here. The footer stays one line high however long the title is, and the PowerPoint file, made from pictures of the slides, carries the same words.
 
 Every option set writes the same file names, so to print more than one book list the plugin once for each, with an `as` ([Use one plugin more than once](12-plugins.md#use-one-plugin-more-than-once)). Each instance writes into its own folder, `dist/tokens/<as>/`, so the four books below are four `brand-book-pages.pdf` that do not overwrite one another, and you copy each out of its folder:
 

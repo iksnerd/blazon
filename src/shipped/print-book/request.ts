@@ -29,7 +29,9 @@ const PRESETS: Record<string, { hash: string; name: string }> = {
   reference: { hash: '#print/reference', name: 'brand-book-reference' },
 };
 
-const OPTIONS = ['preset', 'pages', 'title', 'subtitle'];
+const OPTIONS = ['preset', 'pages', 'title', 'subtitle', 'layout'];
+/** The layouts the viewer's print page spaces a book in; the first is the default and is not put in the hash */
+const LAYOUTS = ['compact', 'roomy'] as const;
 /** The longest title and subtitle: the cover sets the title at 96 px and the footer has one line */
 const LIMITS = { title: 120, subtitle: 200 } as const;
 /** C0 and C1 controls, and the line and paragraph separators */
@@ -56,6 +58,9 @@ function page(options: unknown): { hash: string; name: string } {
     const value = text(options, key);
     return value === undefined ? [] : [`${key}=${encodeURIComponent(value)}`];
   });
+  const layout = options.layout;
+  if (layout !== undefined && (typeof layout !== 'string' || !(LAYOUTS as readonly string[]).includes(layout))) throw new OptionError(`layout must be ${LAYOUTS.join(' or ')}`);
+  if (layout !== undefined && layout !== LAYOUTS[0]) query.push(`layout=${layout}`);
   return query.length === 0 ? chosen : { ...chosen, hash: `${chosen.hash}?${query.join('&')}` };
 }
 

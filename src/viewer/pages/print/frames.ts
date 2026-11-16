@@ -1,4 +1,3 @@
-import { SQUEEZE_FLOOR } from '@/lib/paginate';
 import { CONTENT } from './geometry';
 
 /**
@@ -54,14 +53,14 @@ export function footer(title: string, page: number): HTMLElement {
 /** The pictures of a figure that a slide may draw shorter: a framed image or an asset's picture that does not claim a size of its own. */
 const SQUEEZABLE = '[data-frame] img:not([data-min-size]), [data-section-asset] img:not([data-min-size])';
 
-/** How much shorter (px) the pictures of a block can be drawn, down to SQUEEZE_FLOOR of their height. */
-export function slackOf(el: HTMLElement): number {
+/** How much shorter (px) the pictures of a block can be drawn, down to `floor` of their height. */
+export function slackOf(el: HTMLElement, floor: number): number {
   const imgs = el.matches(SQUEEZABLE) ? [el] : [...el.querySelectorAll<HTMLElement>(SQUEEZABLE)];
-  return Math.floor(imgs.reduce((sum, img) => sum + img.getBoundingClientRect().height * (1 - SQUEEZE_FLOOR), 0));
+  return Math.floor(imgs.reduce((sum, img) => sum + img.getBoundingClientRect().height * (1 - floor), 0));
 }
 
 /** Draws the pictures of a squeezed slide shorter by what its body overflows by, each in its share, never below the floor. */
-function squeeze(body: HTMLElement): void {
+function squeeze(body: HTMLElement, floor: number): void {
   const imgs = [...body.querySelectorAll<HTMLElement>(SQUEEZABLE)];
   const heights = imgs.map((img) => img.getBoundingClientRect().height);
   const total = heights.reduce((a, b) => a + b, 0);
@@ -70,7 +69,7 @@ function squeeze(body: HTMLElement): void {
     if (over <= 1 || total <= 0) return;
     imgs.forEach((img, i) => {
       const now = img.getBoundingClientRect().height;
-      img.style.maxHeight = `${Math.max(heights[i]! * SQUEEZE_FLOOR, now - (over * heights[i]!) / total)}px`;
+      img.style.maxHeight = `${Math.max(heights[i]! * floor, now - (over * heights[i]!) / total)}px`;
     });
   }
 }
@@ -109,10 +108,10 @@ function trueSize(body: HTMLElement, zoom: number): void {
  * a second row of tiles. A body is measured again after each change, because the content reflows, and the factor
  * is taken from the height measured, which is in the body's own pixels.
  */
-export function fit(slide: HTMLElement): void {
+export function fit(slide: HTMLElement, floor: number): void {
   const body = slide.querySelector<HTMLElement>('[data-print-slide-body]')!;
   if (slide.dataset.printSlide !== 'content') return;
-  if (slide.dataset.printSqueeze !== undefined) squeeze(body);
+  if (slide.dataset.printSqueeze !== undefined) squeeze(body, floor);
   let zoom = 1;
   // A picture is as wide as its frame allows, so a body drawn smaller (and wider by the same measure) would draw it wider
   // and as tall as before: held to the width it has now, it shrinks with the zoom as the text does

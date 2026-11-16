@@ -14,12 +14,9 @@ export interface Block {
   lead?: boolean;
   /** A later piece of a table or grid cut by rows: it starts a slide of its own (it carries a label at its top) and nothing joins it */
   continued?: boolean;
-  /** How much shorter the block's pictures can be drawn, in px, without the figure being lost (see SQUEEZE_FLOOR) */
+  /** How much shorter the block's pictures can be drawn, in px, without the figure being lost (the layout's squeezeFloor) */
   slack?: number;
 }
-
-/** A picture is drawn no shorter than this share of its height to share a slide: a figure kept whole, not made a thumbnail. */
-export const SQUEEZE_FLOOR = 0.6;
 
 /** What a block starts: a continued piece starts a slide as a section does, so that nothing is set above its label. */
 const startOf = (block: Block): Block['kind'] => (block.continued ? 'section' : block.kind);

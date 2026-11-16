@@ -7,6 +7,7 @@ import type { Mode } from '@/lib/theme/theme';
 import { printBlocks, measured } from './blocks';
 import { printChapters } from './chapters';
 import { printCss } from './css';
+import { layoutOf, type LayoutName } from './layouts';
 import { fit, footer, frame, slackOf } from './frames';
 import { cut } from './split';
 import { packContents, linesOf } from './contents';
@@ -37,6 +38,7 @@ export function PrintBook({
   title: bookTitle,
   subtitle,
   favicons,
+  layout = 'compact',
 }: {
   data: BlazonData;
   view: BlazonData;
@@ -47,7 +49,10 @@ export function PrintBook({
   /** Replaces the line under the cover's title (the brand's description); the description when absent */
   subtitle?: string;
   favicons: Favicons | null | undefined;
+  /** How the slides are spaced; `compact` when absent */
+  layout?: LayoutName;
 }) {
+  const { squeezeFloor } = layoutOf(layout);
   const heading = bookTitle ?? data.title;
   const line = subtitle ?? data.description;
   const chapters = printChapters(selection, data, view, mode, favicons);
@@ -79,7 +84,7 @@ export function PrintBook({
   // Measure each chapter's blocks, pack them into slides, and build a frame per slide from copies of its blocks
   useEffect(() => {
     let cancelled = false;
-    delete window.__blazonPrint;
+    Reflect.deleteProperty(window, '__blazonPrint');
     if (favicons === undefined || measure?.key !== key) return;
     void settled(flow.current!).then(async () => {
       if (cancelled || !flow.current || !deck.current) return;
@@ -98,7 +103,7 @@ export function PrintBook({
           ...(b.table && { table: true }),
           ...(b.lead && { lead: true }),
           ...(b.continued && { continued: true }),
-          ...(b.figure && slackOf(b.el) > 0 && { slack: slackOf(b.el) }),
+          ...(b.figure && slackOf(b.el, squeezeFloor) > 0 && { slack: slackOf(b.el, squeezeFloor) }),
         }));
         const slides = pairIntros(paginate(measuredBlocks, ROOM), measuredBlocks, ROOM);
         first.push(firstPage + frames.length);
@@ -129,18 +134,19 @@ export function PrintBook({
       deck.current.replaceChildren(...frames);
       await settled(deck.current);
       if (cancelled) return;
-      frames.forEach(fit);
+      frames.forEach((f) => fit(f, squeezeFloor));
       setStarts(first);
       window.__blazonPrint = {
         ready: true,
         pages: firstPage - 1 + frames.length,
+        layout,
         clipped: frames.flatMap((f, i) => (f.dataset.printClipped !== undefined ? [firstPage + i] : [])),
       };
     });
     return () => {
       cancelled = true;
     };
-  }, [selection, favicons, heading, firstPage, measure, key]);
+  }, [selection, favicons, heading, firstPage, measure, key, layout, squeezeFloor]);
 
   // The logo made for the cover's ground (the inverse role), as a deck's title slide carries it; a brand with one logo
   // gets that one
@@ -149,7 +155,7 @@ export function PrintBook({
 
   return (
     <main data-print-book="" className="bg-background text-foreground">
-      <style>{printCss()}</style>
+      <style>{printCss(layout)}</style>
       <div data-print-slide="cover" className="flex flex-col justify-end gap-6 bg-[var(--blazon-inverse)] p-20 text-[var(--blazon-inverse-text)]">
         {coverLogo && <img data-print-cover-logo="" className="mb-auto h-12 w-auto self-start" src={coverLogo} alt="" />}
         <h1 className="font-heading text-[96px] leading-[0.95] font-semibold tracking-[-0.035em]">{heading}</h1>
