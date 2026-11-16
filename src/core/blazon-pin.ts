@@ -5,8 +5,8 @@ import type { Finding } from '../types/index.js';
 import { packageRoot } from './package-root.js';
 import { finding } from './checker/catalogue.js';
 
-// A brand book names the blazon commit it builds with in blazon.lock. Blazon is pre-release and not on npm, so the commit is
-// the only version there is: package.json says 0.1.0 for every commit.
+// A brand book names the blazon commit it builds with in blazon.lock. Blazon is on npm, but a release number does not say which
+// commit built a book: package.json carries the same version for every commit between two releases, so the commit is the pin.
 //
 // What blazon can know about itself:
 //  - dist (what `blazon` runs): `npm run build` compiles the commit the checkout was at, and whether it had uncommitted
