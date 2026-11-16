@@ -4,6 +4,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+## 0.2.0 (2026-11-16)
+
 ### Breaking
 
 - The core no longer writes `tailwind.css` and `tailwind-reset.css`. Add `{ "name": "blazon.tailwind" }` to `plugins` in `blazon.json`, import the files from `dist/tokens/blazon.tailwind/` instead of `dist/tokens/`, and delete the old copies in `dist/tokens/`, which blazon no longer touches. The names `tailwind.css` and `tailwind-reset.css` are no longer reserved in `tokensOutDir`.
