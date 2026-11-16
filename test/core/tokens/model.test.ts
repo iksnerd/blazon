@@ -60,6 +60,19 @@ describe('compileBlazonData: token model (RFC 0001 §1)', () => {
     expect(codes).toContain('color.odd:token-type-unknown');
   });
 
+  it('reports a leftover dev.folio extension key on a token and on a group, naming the file and dev.blazon', async () => {
+    const data = await compileTokens({
+      'a.json': {
+        color: { $type: 'color', $extensions: { 'dev.folio': { tier: 'primitive' } }, ink: { $value: '#111111', $extensions: { 'dev.folio.usage': {}, 'com.acme.x': {} } } },
+      },
+    });
+    const found = data.tokens.problems.filter((p) => p.code === 'token-extension-deprecated');
+    expect(found.map((p) => p.path).sort()).toEqual(['color', 'color.ink']);
+    expect(found[0]).toMatchObject({ severity: 'warning', file: 'tokens/a.json' });
+    expect(found[0]!.message).toContain('dev.blazon');
+    expect(data.tokens.problems.filter((p) => p.message.includes('com.acme.x'))).toEqual([]);
+  });
+
   it('keeps $extensions and merges dev.blazon fields down from groups', async () => {
     const data = await compileTokens({
       'a.json': {

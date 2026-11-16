@@ -301,7 +301,8 @@ export class PluginRun {
       ended('break');
       return [failed(`its manifest is not one blazon loads: ${err instanceof ManifestError ? err.message : String(err)}`, PROTOCOL_FIX)];
     }
-    if (!manifest.roles.includes(role)) return [];
+    // A check run does not start a build plugin, but its manifest is read, so a variable it lists and the config does not approve is said now and not at the first build
+    if (!manifest.roles.includes(role)) return role === 'check' && manifest.roles.includes('build') ? this.unapproved(target, manifest) : [];
 
     // Admission (3.5 and 3.6): a check plugin authorizes, so it must be pinned unless the operator named it.
     const labelled = manifest.env.filter((variable) => SECRET_PREFIXES.some((prefix) => variable.startsWith(prefix)));
@@ -336,12 +337,9 @@ export class PluginRun {
 
     // Object capability (RFC 0002 section 2): a variable reaches the plugin only when the manifest asks for it and the config grants it. A name the
     // manifest lists, that is set here and that the config does not approve, stops the plugin: running it without the variable would hide the refusal
-    const present = manifest.env.filter((variable) => this.env[variable] !== undefined && !OPERATOR_ONLY_ENV.includes(variable));
-    const unapproved = present.filter((variable) => !target.approved.includes(variable));
-    if (unapproved.length > 0) {
-      const key = target.envKey ?? `an entry for ${name} in plugins, with its "env"`;
-      return [failed(`its manifest lists ${unapproved.join(', ')}, which ${unapproved.length === 1 ? 'is' : 'are'} set here and not approved, so it is not started`, `Add ${unapproved.map((variable) => JSON.stringify(variable)).join(', ')} to ${key} in the config, or unset ${unapproved.length === 1 ? 'it' : 'them'}.`)];
-    }
+    const present = this.presentEnv(manifest);
+    const refused = this.unapproved(target, manifest);
+    if (refused.length > 0) return refused;
     const env = Object.fromEntries(present.map((variable) => [variable, this.env[variable]!]));
     const secrets = labelled.flatMap((variable) => (env[variable] ? [env[variable]] : []));
     const result = await run(this.callFor(located, { stdin: body, env, timeout: manifestTimeout(manifest, BLAZON_CORE_PROFILE), stdoutLimit: runtime.stdoutLimit, answers: runtime.answers }));
@@ -349,6 +347,19 @@ export class PluginRun {
     const outcome = this.outcome(target, role, result, secrets, pinPath);
     if (runtime.breaker) this.gate.record(id, 'failure' in outcome ? outcome.ended : 'answer');
     return 'failure' in outcome ? [outcome.failure] : outcome.findings;
+  }
+
+  /** The variables the manifest lists that are set here and that the operator keeps for itself are left out. */
+  private presentEnv(manifest: Manifest): string[] {
+    return manifest.env.filter((variable) => this.env[variable] !== undefined && !OPERATOR_ONLY_ENV.includes(variable));
+  }
+
+  /** One finding when the manifest lists a variable that is set here and not approved by the config; none otherwise. */
+  private unapproved(target: Target, manifest: Manifest): Finding[] {
+    const missing = this.presentEnv(manifest).filter((variable) => !target.approved.includes(variable));
+    if (missing.length === 0) return [];
+    const key = target.envKey ?? `an entry for ${target.name} in plugins, with its "env"`;
+    return [failedFor(target, `its manifest lists ${missing.join(', ')}, which ${missing.length === 1 ? 'is' : 'are'} set here and not approved, so it is not started`, `Add ${missing.map((variable) => JSON.stringify(variable)).join(', ')} to ${key} in the config, or unset ${missing.length === 1 ? 'it' : 'them'}.`)];
   }
 
   /** What a call that ended means: the findings it answered with, or one finding about the plugin. */

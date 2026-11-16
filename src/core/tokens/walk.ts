@@ -87,6 +87,18 @@ export function walk(node: Record<string, unknown>, parts: string[], inherited: 
   const at = parts.join('.');
   const file = sources.get(node) ?? '';
   const ownBlazon = blazonOf(node);
+  if (isObject(node.$extensions)) {
+    for (const key of Object.keys(node.$extensions)) {
+      if (key.startsWith('dev.folio'))
+        tree.problems.push(
+          finding('token-extension-deprecated', {
+            path: at || file,
+            ...(file && { file }),
+            message: `$extensions key "${key}" is the old name and is ignored; rename it to "dev.blazon${key.slice('dev.folio'.length)}"`,
+          }),
+        );
+    }
+  }
   const type = readType(node, at, file, tree.problems) ?? inherited.type;
   const deprecated = (node.$deprecated as boolean | string | undefined) ?? inherited.deprecated;
 

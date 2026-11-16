@@ -128,6 +128,10 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
     fail: { files: colors({ old: { $value: '#111111', $deprecated: true }, now: { $value: '{color.old}' } }) },
     near: { files: colors({ old: { $value: '#111111' }, now: { $value: '{color.old}' } }) },
   },
+  'directive-deprecated': {
+    fail: { files: { ...tokens(), 'docs/a.md': doc('<!-- folio:tokens color.ink -->') } },
+    near: { files: { ...tokens(), 'docs/a.md': doc('<!-- a plain note -->\n<!-- blazon:tokens color.ink -->') } },
+  },
   'directive-invalid': {
     fail: { files: { ...tokens(), 'docs/a.md': doc('<!-- blazon:tokens color.nope -->') } },
     near: { files: { ...tokens(), 'docs/a.md': doc('<!-- blazon:tokens color.ink -->') } },
@@ -135,6 +139,10 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
   'directive-unknown': {
     fail: { files: { ...tokens(), 'docs/a.md': doc('<!-- blazon:nope -->') } },
     near: { files: { ...tokens(), 'docs/a.md': doc('<!-- blazon:tokens color.ink -->') } },
+  },
+  'token-extension-deprecated': {
+    fail: { files: colors({ ink: { $value: '#111111', $extensions: { 'dev.folio': { tier: 'primitive' } } } }) },
+    near: { files: colors({ ink: { $value: '#111111', $extensions: { 'dev.blazon': { tier: 'primitive' } } } }) },
   },
   'token-path-duplicate': {
     fail: { files: { 'tokens/a.json': COLORS, 'tokens/b.json': COLORS } },

@@ -228,6 +228,7 @@ A new command, which also runs at the start of `blazon build`:
 | `contrast-pair-invalid` | error | A contrast pair names no color tokens or has an unknown level. |
 | `contrast-unknown` | warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-duplicate` | error | Two tokens write the same CSS custom property. |
+| `directive-deprecated` | warning | A page has a `folio:` directive comment, the old name, which blazon ignores. |
 | `directive-invalid` | error | A page directive has wrong arguments or names something that does not exist. |
 | `directive-unknown` | error | A page uses a directive name blazon does not have. |
 | `font-family-missing` | warning | A font family a token uses is not loaded by any fonts entry. |
@@ -266,6 +267,7 @@ A new command, which also runs at the start of `blazon build`:
 | `theme-inferred` | info | No theme is set, so blazon took the theme roles from token names. |
 | `theme-missing` | info | No theme is set and no token has a conventional name, so blazon uses neutral colors. |
 | `theme-unresolved` | error | A theme role or a shadcn variable points at a token that does not exist. |
+| `token-extension-deprecated` | warning | A token or group has a `dev.folio` extension key, the old name, which blazon ignores. |
 | `token-file-invalid` | error | A token file is not valid JSON or its top level is not an object. |
 | `token-invalid` | error | A token is a bare value instead of an object with $value, or a name contains ".", "{" or "}". |
 | `token-path-duplicate` | warning | Two token files define the same path. |
@@ -296,8 +298,10 @@ What each code means:
 - `contrast-unknown`: A pair has a value that is not a CSS color (a gradient, a `var()`), so it cannot be measured
 - `css-variable-duplicate`: Two tokens write one CSS custom property in the same output block (`theme.css`, a resolver context's block, or `tailwind.css`); reported at the later token, the first keeps the variable
 - `alias-deprecated`: A token aliases one marked `$deprecated`
+- `directive-deprecated`: A page has `<!-- folio:name -->`, the old spelling, which blazon does not read; reported at its page and line
 - `directive-invalid`: A page directive has the wrong arguments, or names a token, asset, category or icon set that does not exist
 - `directive-unknown`: A page uses `blazon:` with a name that is not in the directive table
+- `token-extension-deprecated`: A token or group has an `$extensions` key that starts `dev.folio`, the old name of `dev.blazon`, which blazon ignores
 - `token-path-duplicate`: A token path is defined in two files; the later file wins
 - `token-value-duplicate`: Two color primitives in one group have the same value
 - `alias-embedded`: An alias is mixed into other text instead of being the whole value
@@ -717,7 +721,7 @@ Asset files come from anyone who can add to the assets folder. The viewer shows 
 
 ## Status
 
-Implemented on `main` as of 2026-11-15. The sections of this RFC are all built; the table says where, and the Conformance section says what pins each one.
+Implemented on `main` as of 2026-11-16. The sections of this RFC are all built; the table says where, and the Conformance section says what pins each one.
 
 | Section | Where |
 |---|---|

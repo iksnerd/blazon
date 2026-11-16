@@ -4,6 +4,12 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Added
+
+- `directive-deprecated` (warning): a page comment `<!-- folio:name -->`, the old spelling, is reported with its page and line. Blazon reads only `blazon:`, so such a comment placed nothing and `blazon check` said nothing. A `blazon:` name that is not a directive was already `directive-unknown`.
+- `token-extension-deprecated` (warning): a `$extensions` key that starts `dev.folio` on a token or a group is reported. It is ignored; rename it to `dev.blazon`.
+- `blazon check` reports a build plugin whose manifest lists a variable that is set and not approved in the plugin's `env`, with the same `plugin-failed` message and fix as `blazon build`. It reads the manifest only and starts no build plugin.
+
 ## 0.1.0 (2026-11-16)
 
 Published to npm as @iksnerd/blazon.
