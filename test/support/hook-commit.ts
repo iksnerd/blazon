@@ -23,6 +23,7 @@ export const BASE: Record<string, string> = {
     scripts: {
       typecheck: 'tsc --noEmit -p .',
       lint: 'node lint.js',
+      'lint:files': 'node lint-files.js',
       'format:files': 'node format.js',
       'lint:py': 'echo ruff',
       test: 'echo full',
@@ -35,6 +36,9 @@ export const BASE: Record<string, string> = {
   // Stands for ESLint: it fails when a file under src/ holds the word LINT_ERROR
   'lint.js':
     "const fs = require('fs'); const bad = fs.readdirSync('src').filter((f) => fs.readFileSync('src/' + f, 'utf8').includes('LINT_ERROR')); if (bad.length) { console.log('lint error in ' + bad.join(', ')); process.exit(1); }\n",
+  // Stands for `eslint <files>`: it fails when a file it is given holds the word LINT_ERROR
+  'lint-files.js':
+    "const fs = require('fs'); const files = (p) => (fs.statSync(p).isDirectory() ? fs.readdirSync(p).flatMap((n) => files(p + '/' + n)) : [p]); const bad = process.argv.slice(2).flatMap(files).filter((f) => fs.readFileSync(f, 'utf8').includes('LINT_ERROR')); if (bad.length) { console.log('lint error in ' + bad.join(', ')); process.exit(1); }\n",
   // Stands for Prettier: it fails when a file it is given holds the word FORMAT_ERROR
   'format.js':
     "const fs = require('fs'); const bad = process.argv.slice(2).filter((f) => fs.readFileSync(f, 'utf8').includes('FORMAT_ERROR')); if (bad.length) { console.log('not formatted: ' + bad.join(', ')); process.exit(1); }\n",

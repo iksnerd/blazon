@@ -9,8 +9,13 @@
 # Bypass:    git commit --no-verify
 #
 # What runs, by what is staged (a deletion counts as staged):
-#   every commit        typecheck and lint (ESLint, with the type-aware rules for src/); secret scan of the staged changes (gitleaks);
-#                       syntax of staged shell and Python files; Ruff on staged Python files (through uv); Prettier on staged code files
+#   every commit        typecheck (whole tree); lint (ESLint, with the type-aware rules for src/); secret scan of the staged changes
+#                       (gitleaks); syntax of staged shell and Python files; Ruff on staged Python files (through uv); Prettier on
+#                       staged code files. Each step prints how long it took.
+#   lint                the whole tree when a change can alter what ESLint says about a file that is not staged (the ESLint, tsconfig
+#                       or package config, a *.d.ts, a file in src/ that another folder of src/ imports); otherwise only the staged
+#                       files, with the folder for a change in src/cli, src/viewer or src/shipped (classify_lint in lib.sh).
+#                       pre-push lints the whole tree of what is pushed, so nothing is left out of the gate
 #   src/, test/**/*.ts(x)
 #                       -> only the tests related to those files (vitest related), plus the manual and RFC tests for src/
 #   mcp/src/, mcp/test/, and the commands and read functions it wraps (src/cli/, src/core/read/)
@@ -68,7 +73,18 @@ classify_paths "$SNAP" <<< "$STAGED"
 
 # --- every commit
 cached_step "typecheck-$TREE" "typecheck" bash -c "cd '$SNAP' && npm run -s typecheck"
-cached_step "lint-$TREE" "lint" bash -c "cd '$SNAP' && npm run -s lint"
+# ESLint on the whole tree only where a change can alter findings in files that are not staged (classify_lint in lib.sh); else on the
+# staged files. pre-push lints the whole tree of every pushed tree, so what a commit leaves out is checked before it leaves the machine.
+classify_lint "$SNAP" <<< "$STAGED"
+if [ "$lint_full" -eq 1 ]; then
+    cached_step "lint-$TREE" "lint" bash -c "cd '$SNAP' && npm run -s lint"
+elif [ -n "$lint_files" ]; then
+    lint_key="$(printf '%s' "$lint_files" | digest_of)"
+    # shellcheck disable=SC2086
+    cached_step "lint-files-$TREE-$lint_key" "lint: staged files" bash -c "cd '$SNAP' && npm run -s lint:files -- $lint_files"
+else
+    echo "  – lint: no staged file ESLint reads; the whole tree is linted at push"
+fi
 
 shell_files=""; python_files=""; format_files=""
 while IFS= read -r path; do

@@ -44,6 +44,7 @@
     "typecheck": "node node_modules/typescript7/bin/tsc --noEmit && node scripts/typecheck-mcp.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:files": "eslint --no-warn-ignored",
     "lint:py": "uvx ruff check scripts test/deck/python",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
