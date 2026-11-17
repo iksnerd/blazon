@@ -16,7 +16,7 @@ The server's instructions give the order: `check_brand` once per session, `list_
 
 | Tool | Arguments | Wraps | Use it to |
 |---|---|---|---|
-| `check_brand` | `severity`, `limit` (default 50, at most 500) | `blazon check --no-plugins` | see the brand's own findings and counts, and whether it `passed` |
+| `check_brand` | `severity`, `limit` (default 50, at most 500) | `blazon check --no-plugins` | see the brand's own findings and counts, and whether it `passed`. Plugins in `blazon.json` do not run, so `warning` and `info` counts can be lower than `blazon check` prints (a plugin such as `blazon.copy` raises its own findings); when the config lists plugins, `pluginsSkipped` and a line in `warnings` name them |
 | `list_tokens` | `group` (optional), `type` (optional) | `blazon list [group] [--type t]` | find a token path, or read many values at once; cut to whole tokens at the size limit |
 | `get_token` | `path` | `blazon get <path>` | read a token's value, type, CSS variable names and rules |
 | `get_rules` | `path` (optional) | `blazon rules` | learn what a token, a group or the whole brand allows and forbids |

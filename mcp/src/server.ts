@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
@@ -25,13 +26,44 @@ interface Lookup {
   shape?: (document: Record<string, unknown>, args: Record<string, unknown>, warnings: string[]) => Record<string, unknown>;
   /** Replaces blazon's message when blazon says no, for a refusal whose next step is a tool and not a command. */
   reword?: (message: string, args: Record<string, unknown>) => string | undefined;
+  /** What the server knows about the answer that blazon's output does not say: fields for the document and lines for `warnings`. */
+  notes?: (brand: string) => { fields: Record<string, unknown>; warnings: string[] };
   /** Whether the values read may be wrong. Default: blazon said so on standard error. */
   brandHasErrors?: (document: Record<string, unknown>) => boolean;
+}
+
+/**
+ * The plugin names the brand's blazon.json lists, read as data (the server starts none). A missing, unreadable or odd file gives none: blazon
+ * reports a bad config itself. Names are cleaned like the rest of the answer, since the file is the brand's.
+ */
+function configuredPlugins(brand: string): string[] {
+  try {
+    const config: unknown = JSON.parse(fs.readFileSync(path.join(brand, 'blazon.json'), 'utf8'));
+    const list = typeof config === 'object' && config !== null ? (config as { plugins?: unknown }).plugins : undefined;
+    if (!Array.isArray(list)) return [];
+    const names = list
+      .map((entry) => (typeof entry === 'string' ? entry : (entry as { name?: unknown } | null)?.name))
+      .filter((n): n is string => typeof n === 'string' && n !== '');
+    return [...new Set(names.map((n) => stripInvisible(n.length > 100 ? `${n.slice(0, 100)}...` : n).value))];
+  } catch {
+    return [];
+  }
+}
+
+/** `check_brand` runs `blazon check --no-plugins`, so it says which plugins of the config did not run. */
+function skippedPlugins(brand: string): { fields: Record<string, unknown>; warnings: string[] } {
+  const names = configuredPlugins(brand);
+  if (names.length === 0) return { fields: {}, warnings: [] };
+  return {
+    fields: { pluginsSkipped: names },
+    warnings: [`${names.length} plugin(s) in blazon.json did not run: the MCP server never starts a plugin, so counts from \`blazon check\` can be higher: ${names.join(', ')}.`],
+  };
 }
 
 const LOOKUPS: Record<string, Lookup> = {
   check_brand: {
     narrow: NARROW_FINDINGS,
+    notes: skippedPlugins,
     shape: (document, args, warnings) => limitItems(document, 'findings', Number(args.limit), NARROW_FINDINGS, warnings),
     brandHasErrors: (document) => ((document.counts as { errors?: number } | undefined)?.errors ?? 0) > 0,
   },
@@ -79,13 +111,14 @@ export function createServer(target: BlazonTarget, runner: BlazonRunner = new Bl
 
   /** Runs a call; blazon's own error message becomes a tool error, and anything else is reported as one too. */
   async function answer(op: Operation, args: Record<string, unknown>): Promise<ToolResult> {
-    const { hint, narrow, shape, reword, brandHasErrors } = LOOKUPS[op.name] ?? {};
+    const { hint, narrow, shape, reword, brandHasErrors, notes } = LOOKUPS[op.name] ?? {};
     try {
       const { argv, options } = commandFor(op, args);
       const run = await runner.run(argv, options);
       const cleaned = stripInvisible(run.document);
-      const warnings = cleaned.removed > 0 ? [...run.warnings, removedNotice(cleaned.removed)] : run.warnings;
-      const shaped = shape ? shape(cleaned.value, args, warnings) : cleaned.value;
+      const extra = notes?.(target.brand) ?? { fields: {}, warnings: [] };
+      const warnings = [...run.warnings, ...(cleaned.removed > 0 ? [removedNotice(cleaned.removed)] : []), ...extra.warnings];
+      const shaped = shape ? shape({ ...cleaned.value, ...extra.fields }, args, warnings) : { ...cleaned.value, ...extra.fields };
       // the notice above is ours, so it must not decide `brandHasErrors` when the lookup leaves that to blazon's own warnings
       return answerWith(shaped, warnings, narrow, brandHasErrors ? brandHasErrors(shaped) : run.warnings.some((w) => /\b\d+ error\(s\)/.test(w)));
     } catch (error) {
