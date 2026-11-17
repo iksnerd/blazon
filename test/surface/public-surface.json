@@ -543,6 +543,29 @@
       "vocabulary"
     ]
   },
+  "mcpServer": {
+    "bins": [
+      "blazon",
+      "blazon-mcp"
+    ],
+    "options": [
+      "--brand",
+      "--version"
+    ],
+    "environment": [
+      "BLAZON_BIN",
+      "BLAZON_BRAND"
+    ],
+    "tools": [
+      "can_use",
+      "check_brand",
+      "get_fonts",
+      "get_logo",
+      "get_rules",
+      "get_token",
+      "list_tokens"
+    ]
+  },
   "pluginProtocol": {
     "v": 1,
     "host": "blazon",

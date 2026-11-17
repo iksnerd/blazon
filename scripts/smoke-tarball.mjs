@@ -4,7 +4,7 @@
 //   npm pack && node scripts/smoke-tarball.mjs iksnerd-blazon-<version>.tgz
 // Nothing here reads the repository: the tarball and a temporary folder are all it uses. blazon refuses to run a plugin that has a
 // folder others can write above it, so on a machine where the system temp folder is one, set BLAZON_SMOKE_DIR to a folder under home.
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -34,6 +34,49 @@ function step(label, file, args, options = {}) {
   return run;
 }
 
+/** Starts the server the way the printed config says, on the fresh brand, and calls tools over stdio: tools/list and a real check_brand and list_tokens. */
+async function callInstalledServer(entry, brand) {
+  const child = spawn(entry.command, entry.args, { cwd: work, env: { PATH: process.env.PATH, HOME: process.env.HOME, ...entry.env }, stdio: ['pipe', 'pipe', 'inherit'] });
+  const pending = new Map();
+  let buffer = '';
+  child.stdout.on('data', (chunk) => {
+    buffer += chunk;
+    for (let at = buffer.indexOf('\n'); at >= 0; at = buffer.indexOf('\n')) {
+      const line = buffer.slice(0, at);
+      buffer = buffer.slice(at + 1);
+      try {
+        const message = JSON.parse(line);
+        pending.get(message.id)?.(message);
+      } catch {
+        // not a reply
+      }
+    }
+  });
+  let id = 0;
+  const request = (method, params) =>
+    new Promise((resolve, reject) => {
+      const mine = ++id;
+      const timer = setTimeout(() => reject(new Error(`${method}: no answer in 60 s`)), 60_000);
+      pending.set(mine, (message) => (clearTimeout(timer), resolve(message)));
+      child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: mine, method, params })}\n`);
+    });
+  try {
+    await request('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'smoke', version: '0' } });
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`);
+    const tools = (await request('tools/list', {})).result.tools.map((tool) => tool.name);
+    const check = await request('tools/call', { name: 'check_brand', arguments: { limit: 1 } });
+    const list = await request('tools/call', { name: 'list_tokens', arguments: { group: 'text' } });
+    const ok = tools.includes('check_brand') && check.result?.structuredContent?.passed === true && (list.result?.structuredContent?.tokens?.length ?? 0) > 0;
+    console.log(`${ok ? 'ok  ' : 'FAIL'} installed MCP server over stdio (${tools.length} tools; check_brand, list_tokens on ${path.basename(brand)})`);
+    if (!ok) {
+      failed = true;
+      throw new Error(`the installed server answered wrongly: ${JSON.stringify({ tools, check: check.result ?? check.error, list: list.result ?? list.error }).slice(0, 600)}`);
+    }
+  } finally {
+    child.kill('SIGTERM');
+  }
+}
+
 try {
   step('npm init', 'npm', ['init', '-y']);
   step('npm install <tarball>', 'npm', ['install', '--no-audit', '--no-fund', tarball]);
@@ -56,6 +99,23 @@ try {
   const name = 'blazon.copy';
   step(`blazon plugin check --core (${name})`, blazon, ['plugin', 'check', path.join(programs, name, 'bin', `blazon-${name}.🔌`), '--core']);
   step('blazon doctor', blazon, ['doctor'], { cwd: path.join(work, 'brand') });
+  // The MCP server ships in the package as one file. --check starts it on the brand, runs a real handshake (initialize, tools/list,
+  // check_brand) and needs no BLAZON_BIN, since the server runs the bin/blazon.js beside it.
+  const check = step('blazon mcp --check (the handshake)', blazon, ['mcp', '--check', '--brand', 'brand', '--json']);
+  const checked = JSON.parse(check.stdout);
+  if (checked.passed !== true) {
+    failed = true;
+    console.error(`FAIL blazon mcp --check did not pass: ${check.stdout}`);
+    throw new Error('mcp --check');
+  }
+  const printed = step('blazon mcp --print-config', blazon, ['mcp', '--print-config', '--client', 'cursor', '--brand', 'brand', '--json']);
+  const entry = JSON.parse(JSON.parse(printed.stdout).snippets[0].text).mcpServers.blazon;
+  if (!fs.existsSync(entry.args[0]) || !entry.args[0].startsWith(path.join(work, 'node_modules'))) {
+    failed = true;
+    console.error(`FAIL the printed command does not name the installed server file: ${JSON.stringify(entry)}`);
+    throw new Error('mcp --print-config');
+  }
+  await callInstalledServer(entry, path.join(work, 'brand'));
   console.log('smoke: the tarball installs and runs');
 } catch (error) {
   if (!failed) console.error(String(error));

@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { CHECKS } from '../../src/core/checker/catalogue.js';
 import { BLAZON_PROFILE } from '../../src/plugins/wire/profile.js';
 import { STANDARD_LOGO_LOCKUPS, STANDARD_SECTION_IDS, STANDARD_USAGE_ROLES } from '../../src/types/index.js';
-import { commandOperations, OPERATIONS, type CliSpec } from '../../src/core/operations/index.js';
+import { commandOperations, OPERATIONS, toolOperations, type CliSpec } from '../../src/core/operations/index.js';
 import { flagOf, rawName } from '../../src/cli/operations.js';
 import { ROOT, read, interfaceKeys, unionMembers, findingCodes } from '../support/spec-helpers.js';
 
@@ -74,6 +74,13 @@ export function currentSurface(): Record<string, unknown> {
       keys: sorted(Object.keys(schema.properties).filter((key) => !key.startsWith('$'))),
       required: sorted(schema.required),
       definitions: sorted(Object.keys(schema.$defs)),
+    },
+    // The MCP server that ships in the package: the program names npm links, how it is started and the tools it offers.
+    mcpServer: {
+      bins: sorted(Object.keys((JSON.parse(read('package.json')) as { bin: Record<string, string> }).bin)),
+      options: ['--brand', '--version'],
+      environment: ['BLAZON_BIN', 'BLAZON_BRAND'],
+      tools: sorted(toolOperations(OPERATIONS).map((op) => op.name)),
     },
     pluginProtocol: BLAZON_PROFILE,
     shippedPlugins: sorted(Object.keys(lock.plugins)),
