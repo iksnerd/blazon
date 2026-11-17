@@ -90,7 +90,7 @@ A brand's Web page may state layout widths that have no token, such as a 640px b
 
 ## Using shadcn/ui
 
-A shadcn/ui project reads its colors from semantic CSS variables: `--background`, `--primary`, `--ring`, `--chart-1` and so on. The `blazon.shadcn` plugin says which token each variable should take, and writes the variables as CSS. Add it to `plugins` in `blazon.json`, and `blazon tokens` and `blazon build` write two files to `dist/tokens/blazon.shadcn/`:
+A shadcn/ui project reads its colors from semantic CSS variables: `--background`, `--primary`, `--ring`, `--chart-1` and so on. The `blazon.shadcn` plugin says which token each variable should take, and writes the variables as CSS. A project made by `blazon init` lists it already; in an older project add it to `plugins` in `blazon.json`. `blazon tokens` and `blazon build` write two files to `dist/tokens/blazon.shadcn/`:
 
 ```json
 {

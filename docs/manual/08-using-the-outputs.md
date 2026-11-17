@@ -32,7 +32,7 @@ A [context](04-contexts.md) other than the default gets its own block in `theme.
 
 ## Tailwind
 
-`tailwind.css` is a Tailwind v4 `@theme` block, written by the `blazon.tailwind` plugin ([chapter 14](14-shipped-plugins.md#blazontailwind)): add `{ "name": "blazon.tailwind" }` to `plugins` in `blazon.json`, and `blazon tokens` and `blazon build` write it, and `tailwind-reset.css`, to `dist/tokens/blazon.tailwind/`. Each token that fills a Tailwind theme namespace becomes a variable in it; the other tokens are left out and stay `var(--path)` from `theme.css`.
+`tailwind.css` is a Tailwind v4 `@theme` block, written by the `blazon.tailwind` plugin ([chapter 14](14-shipped-plugins.md#blazontailwind)). A project made by `blazon init` lists it; in an older project add `{ "name": "blazon.tailwind" }` to `plugins` in `blazon.json`. `blazon tokens` and `blazon build` write it, and `tailwind-reset.css`, to `dist/tokens/blazon.tailwind/`. Each token that fills a Tailwind theme namespace becomes a variable in it; the other tokens are left out and stay `var(--path)` from `theme.css`.
 
 | Token | Tailwind namespace | Example |
 |---|---|---|

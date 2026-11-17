@@ -12,7 +12,7 @@ Run commands from the folder that holds this file, or pass the folder as the las
 2. For each finding, read `code`, `message`, `path`, `file`, `line` and `fix`, and edit the file it names. The `checks` chapter describes every code; look it up, do not guess.
 3. Check again until `counts.errors` is 0, then run `blazon build`.
 
-- Never edit `dist/`. `blazon tokens` writes `dist/tokens/` (`theme.css`, `tokens.ts`, `tokens.json`) and `blazon build` also writes the site to `dist/site/`; both overwrite it, and both stop on an error. `--no-plugins` builds without Google Chrome.
+- Never edit `dist/`. `blazon tokens` writes `dist/tokens/` (`theme.css`, `typography.css`, `tokens.ts`, `tokens.json`, and the Tailwind and shadcn/ui files in `blazon.tailwind/` and `blazon.shadcn/`) and `blazon build` also writes the site to `dist/site/`; both overwrite it, and both stop on an error. `--no-plugins` builds without Google Chrome.
 - The brand lives in `tokens/` (DTCG JSON, `{ "$value": ..., "$type": ... }`, an alias is `"{color.ink.graphite}"`), `docs/` (numbered Markdown pages), `assets/` (images, each with a JSON sidecar of the same name: `mark.svg` and `mark.json`), `blazon.json` (title, theme, logo, plugins) and `blazon.resolver.json` (the token files that load, and the themes; a new token file is listed in `sets` there or it is not read; dark is `tokens/theme/dark.json`).
 - Safe to change: token values, pages, assets with their sidecars, and the title and theme in `blazon.json`. Everything under "Do not touch" needs the person.
 - `blazon dev` serves the book with live reload; `-p <port>` sets the port.

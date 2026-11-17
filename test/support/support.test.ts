@@ -212,7 +212,7 @@ describe('starterProject: the plugins a test wants', () => {
   });
 
   it("keeps the starter's own list when the test says so", async () => {
-    expect(await names(await starterProject({ plugins: 'starter' }))).toEqual(['blazon.copy']);
+    expect(await names(await starterProject({ plugins: 'starter' }))).toEqual(['blazon.copy', 'blazon.tailwind', 'blazon.shadcn']);
   });
 
   it('allows exactly the plugins it names, as names, with options as data', async () => {

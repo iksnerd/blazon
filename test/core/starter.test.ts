@@ -36,11 +36,16 @@ describe('the one copy', () => {
 
 describe("the starter's config", () => {
   it('leaves the Chrome-dependent plugins of the example out, so a first build needs no browser', () => {
-    const example = JSON.parse(read(path.join(EXAMPLE, 'blazon.json'))) as { plugins: { name: string }[]; theme: Record<string, string>; logo: { onLight: string } };
+    const example = JSON.parse(read(path.join(EXAMPLE, 'blazon.json'))) as {
+      plugins: { name: string; env?: string[] }[];
+      theme: Record<string, string>;
+      logo: { onLight: string };
+    };
     expect(example.plugins.map((plugin) => plugin.name)).toContain('blazon.social-cards');
     const starter = JSON.parse(starterConfig(read(path.join(EXAMPLE, 'blazon.json')))) as typeof example;
-    // blazon.copy (Node only) stays; the plugins that draw in Chrome or write kits are not listed
-    expect(starter.plugins.map((plugin) => plugin.name)).toEqual(['blazon.copy']);
+    // The Node-only plugins stay (the word rules, the Tailwind and shadcn/ui files, none with an `env`); the plugins that draw in Chrome or write kits are not listed
+    expect(starter.plugins.map((plugin) => plugin.name)).toEqual(['blazon.copy', 'blazon.tailwind', 'blazon.shadcn']);
+    for (const plugin of starter.plugins) expect(plugin, plugin.name).not.toHaveProperty('env');
     // everything else is the example's: the theme, the logo, the fonts
     expect(starter.theme).toEqual(example.theme);
     expect(starter.logo).toEqual(example.logo);
@@ -57,11 +62,11 @@ describe("the starter's config", () => {
     expect(starterConfig(once)).toBe(once);
   });
 
-  it('loads in a new project with blazon.copy as its only plugin, and compiles with no error', async () => {
+  it('loads in a new project with the three Node-only plugins, and compiles with no error', async () => {
     const dest = tempDir('blazon-starter-copy-');
     copyStarter(dest);
     const config = await loadConfig(dest);
-    expect((config.plugins ?? []).map((plugin) => plugin.name)).toEqual(['blazon.copy']);
+    expect((config.plugins ?? []).map((plugin) => plugin.name)).toEqual(['blazon.copy', 'blazon.tailwind', 'blazon.shadcn']);
     const data = await compileBlazonData(config, dest);
     expect(data.findings.filter((f) => f.severity === 'error')).toEqual([]);
   });

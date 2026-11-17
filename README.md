@@ -157,7 +157,7 @@ A plugin whose manifest lists a variable that is set, and that the entry does no
 | [`blazon.press-kit`](docs/manual/14-shipped-plugins.md#blazonpress-kit) | A folder and zip for people outside the brand: logos, colors, fonts, a one-page PDF |
 | [`blazon.social-cards`](docs/manual/14-shipped-plugins.md#blazonsocial-cards) | Marketing images from the tokens and logo, checked for contrast |
 
-Several need Chrome for their PDF or PNG output; the manual says which. The starter's config enables `blazon.copy` with blazon's own rules, and leaves out the other plugins of blazon's own book (the deck, the social cards, the favicons, the logo kit, the press kit and the platform and Office files), because most need Chrome and a new book has no use for the kits yet; add one by name when you want it. To write your own, see [Writing a plugin](docs/manual/13-writing-a-plugin.md). A plugin can be pinned, so one that changed on disk does not run.
+Several need Chrome for their PDF or PNG output; the manual says which. The starter's config lists `blazon.copy` with blazon's own rules, and `blazon.tailwind` and `blazon.shadcn`, which need only Node and write the Tailwind and shadcn/ui files. It leaves out the other plugins of blazon's own book (the deck, the social cards, the favicons, the logo kit, the press kit and the platform and Office files), because most need Chrome and a new book has no use for the kits yet; add one by name when you want it. To write your own, see [Writing a plugin](docs/manual/13-writing-a-plugin.md). A plugin can be pinned, so one that changed on disk does not run.
 
 ## Using the tokens
 

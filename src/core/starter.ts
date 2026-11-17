@@ -27,8 +27,11 @@ export function getTemplateDir(): string {
   }
 }
 
-/** The plugins a new book enables: the ones that need Node only. The example lists more, and a new book adds them by name. */
-const STARTER_PLUGINS = ['blazon.copy'];
+/**
+ * The plugins a new book enables: the ones that need Node only and write files a new book can use at once, the word rules (`blazon.copy`)
+ * and the Tailwind and shadcn/ui files (`blazon.tailwind`, `blazon.shadcn`). The example lists more, and a new book adds them by name.
+ */
+const STARTER_PLUGINS = ['blazon.copy', 'blazon.tailwind', 'blazon.shadcn'];
 
 /**
  * The example's config as a new book's: its `plugins` list cut to the ones in `STARTER_PLUGINS`. The others draw in Google Chrome or
