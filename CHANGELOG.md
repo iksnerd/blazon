@@ -4,6 +4,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+## 0.2.2 (2026-11-17)
+
 ### Fixed
 
 - A fresh `blazon init` project reported 3 warnings, not the 2 the manual states: `blazon.copy` found a 26-word sentence in the starter's `12-web.md`. The sentence is rewritten, and the first-run test now runs the starter with its own plugins, so a finding from `blazon.copy` on the starter fails the test (it ran the starter with no plugins before).
