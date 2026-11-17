@@ -1,6 +1,6 @@
 # blazon-mcp
 
-An MCP (Model Context Protocol) server that lets a coding agent ask blazon about a brand as tool calls, instead of reading token files. It runs the blazon command line with `--json` and returns what blazon printed. It does not import blazon's code and needs no blazon dependency, only a `blazon` program it can run. What each tool is called, takes and answers comes from blazon's operations list (`src/core/operations/list.ts`); `mcp/src/generated/` is a copy of it that `npm run gen:mcp` writes, because this package cannot import `src/`. It is not published to npm yet.
+An MCP (Model Context Protocol) server that lets a coding agent ask blazon about a brand as tool calls, instead of reading token files. It runs the blazon command line with `--json` and returns what blazon printed. It does not import blazon's code and needs no blazon dependency, only a `blazon` program it can run. What each tool is called, takes and answers comes from blazon's operations list (`src/core/operations/list.ts`); `mcp/src/generated/` is a copy of it that `npm run gen:mcp` writes, because this package cannot import `src/`. It is not published to npm, and the `@iksnerd/blazon` npm package does not hold `mcp/`: run it from a clone of the repository. From an npm install, `blazon mcp --print-config` and `--check` say so and exit 1.
 
 The tools are read-only. None of them writes a file or builds the brand. The manual page for users is [chapter 20](../docs/manual/20-blazon-for-agents.md); it says the same as this file.
 

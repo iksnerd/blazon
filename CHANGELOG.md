@@ -4,6 +4,11 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Fixed
+
+- `blazon mcp --check` and `--print-config` from an npm install said "blazon-mcp is not built" and printed an `npx` command for a package that is not on npm. The npm package has never held `mcp/` (it is a private workspace). They now say the MCP server is not part of the npm package, give the clone steps, and exit 1.
+- `npm run check-pack` fails when a plain path in `package.json` `files` is not in the package, so the manifest cannot name what it does not ship.
+
 ### Changed
 
 - The docs no longer state blazon's current version by hand (README status, manual, starter, CONTRIBUTING): a placeholder takes its place, and `test/docs/versions.test.ts` fails on a stale one.

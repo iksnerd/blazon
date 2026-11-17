@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT_DIR } from '../plugins/support/spec.js';
 import { tempDir } from '../support/project';
-import { missingFiles, requiredFiles } from '../../scripts/check-pack.mjs';
+import { missingFiles, missingListed, requiredFiles } from '../../scripts/check-pack.mjs';
 
 // scripts/check-pack.mjs is what stops a tarball without dist/ from being released: a stale `npm pack` once shipped a package that
 // lacked dist/ui/assets/geist-OFL.txt. The release job runs it on the tarball; here it runs on small trees.
@@ -12,9 +12,9 @@ import { missingFiles, requiredFiles } from '../../scripts/check-pack.mjs';
 const SCRIPT = path.join(ROOT_DIR, 'scripts/check-pack.mjs');
 
 /** A package folder with one plugin, holding the files `present` names (relative paths) and nothing else. */
-function pkg(present: (name: string) => string[]): string {
+function pkg(present: (name: string) => string[], listed: string[] = ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md']): string {
   const dir = tempDir('blazon-check-pack-');
-  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0', files: ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md'] }));
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0', files: listed }));
   fs.mkdirSync(path.join(dir, 'plugins/acme.one'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'plugins/acme.one/README.md'), '# one\n');
   for (const file of present('acme.one')) {
@@ -81,5 +81,19 @@ describe('checking a tree', () => {
     expect(without.stderr).toContain('dist/index.js');
     const full = run(tarOf((name) => requiredFiles([name])));
     expect(full.status, full.stderr).toBe(0);
+  });
+});
+
+describe('a path the manifest lists and the package does not hold', () => {
+  it('is named by missingListed, and a folder counts when anything is packed under it', () => {
+    expect(missingListed(['dist', 'mcp', './bin/', 'NOTICE.md'], ['package.json', 'dist/index.js', 'bin/blazon.js'])).toEqual(['mcp', 'NOTICE.md']);
+  });
+
+  it('fails the check of a tree whose `files` lists mcp and ships no mcp/', () => {
+    const dir = pkg((name) => requiredFiles(name === undefined ? [] : [name]), ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'mcp']);
+    const result = check(dir);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('names 1 path');
+    expect(result.stderr).toContain('mcp');
   });
 });

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import pc from '../../core/colors.js';
-import { mcpConfigFiles, mcpServerNames, type McpClient } from '../../core/mcp-config.js';
+import { mcpConfigFiles, mcpInPackage, mcpServerNames, MCP_CLONE_STEPS, NOT_IN_PACKAGE, type McpClient } from '../../core/mcp-config.js';
 import { OPERATIONS, toolOperations } from '../../core/operations/index.js';
 import { packageRoot } from '../../core/package-root.js';
 import { printJson } from '../read.js';
@@ -36,6 +36,7 @@ export const expectedTools = (): string[] => toolOperations(OPERATIONS).map((op)
 export function checkBuilt(root: string): McpCheck & { entry: string } {
   const entry = path.join(root, 'mcp/dist/index.js');
   const built = fs.existsSync(entry);
+  if (!built && !mcpInPackage(root)) return { name: 'built', passed: false, detail: NOT_IN_PACKAGE, fix: MCP_CLONE_STEPS, entry };
   return built
     ? { name: 'built', passed: true, detail: `${entry} exists`, entry }
     : { name: 'built', passed: false, detail: `${entry} does not exist: blazon-mcp is not built`, fix: `cd ${root} && ${SERVER_FIX}`, entry };
@@ -288,17 +289,24 @@ export interface McpCheckOptions {
   env?: NodeJS.ProcessEnv;
   home?: string;
   timeoutMs?: number;
+  /** blazon's package root; tests give another. */
+  root?: string;
 }
 
 /** `blazon mcp --check`: runs the four checks, prints the answer, and returns the exit status: 0 when the server is ready, 1 when not. Writes no file. */
 export async function runMcpCheck(options: McpCheckOptions): Promise<number> {
   const { client, brand, env = process.env, cwd = process.cwd(), home = os.homedir() } = options;
-  const root = packageRoot();
+  const root = options.root ?? packageRoot();
   const built = checkBuilt(root);
   const blazon = checkBlazon(env, brand, root);
   const shake: McpCheck = built.passed
     ? await handshake({ entry: built.entry, brand, env, ...(options.timeoutMs !== undefined && { timeoutMs: options.timeoutMs }) })
-    : { name: 'handshake', passed: false, detail: 'not run: the server is not built', fix: built.fix as string };
+    : {
+        name: 'handshake',
+        passed: false,
+        detail: `not run: ${mcpInPackage(root) ? 'the server is not built' : 'the MCP server is not part of this install'}`,
+        fix: built.fix as string,
+      };
   const folders = [...new Set([cwd, brand])];
   const registered = checkRegistered(client, folders, brand, home);
   const { entry: _entry, ...builtCheck } = built;

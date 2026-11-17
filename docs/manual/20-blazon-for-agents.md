@@ -2,7 +2,7 @@
 
 ← [Manual index](index.md)
 
-A coding agent that builds a site from a brand can ask blazon questions as tool calls over the Model Context Protocol (MCP), instead of running commands and reading their output. The server is a small separate program, `mcp/` in the blazon repository. It runs the read commands of [chapter 19](19-building-a-website.md) with `--json` and returns what they print. Blazon itself gains no dependency, and the server is not part of the blazon package. It is not published to npm yet: build it from the repository.
+A coding agent that builds a site from a brand can ask blazon questions as tool calls over the Model Context Protocol (MCP), instead of running commands and reading their output. The server is a small separate program, `mcp/` in the blazon repository. It runs the read commands of [chapter 19](19-building-a-website.md) with `--json` and returns what they print. Blazon itself gains no dependency, and the server is not part of the blazon package. It is not published to npm, and the blazon npm package does not hold `mcp/`: run it from a clone of the repository.
 
 ## Start the server
 
@@ -28,7 +28,7 @@ What each client takes (checked against the clients' documentation on 2026-11-09
 | Cursor | an entry for `.cursor/mcp.json`, or `~/.cursor/mcp.json` for every project (`mcpServers`, with `type`) |
 | VS Code | a `code --add-mcp` command, and an entry for `.vscode/mcp.json` (`servers`, with `type`) |
 
-The command blazon prints comes from how this blazon is installed. In a source checkout with `mcp/dist/index.js` built, it is `node` with that file, and `BLAZON_BIN` names this blazon's `bin/blazon.js`. Without a build it prints the proposed form, `npx -y @iksnerd/blazon-mcp`, and says that the package is not published to npm yet, so that command fails until it is.
+A blazon installed from npm has no `mcp/`, so there `blazon mcp --print-config` prints no command: it says that the server is not part of the npm package, gives the clone steps, and exits 1 (`--json` answers `passed: false` with the same `note`). `blazon mcp --check` fails the `built` check with the same words and the same steps. The command blazon prints in a clone comes from how that blazon is built. In a source checkout with `mcp/dist/index.js` built, it is `node` with that file, and `BLAZON_BIN` names this blazon's `bin/blazon.js`. Without a build it prints the proposed form, `npx -y @iksnerd/blazon-mcp`, and says that the package is not published to npm yet, so that command fails until it is.
 
 `blazon dev` shows the same snippets in the brand book: the "Connect your agent" button in the top bar opens a panel with a tab for each client and a copy button on each snippet, with this project's folder as the brand. The dev server provides them at `/__blazon/mcp-config`. A static site has no such answer, so it has no button.
 
@@ -65,7 +65,7 @@ It runs four checks, and each one that does not pass names a `fix` command:
 
 | Check | What it tests | Fix when it fails |
 |---|---|---|
-| `built` | `mcp/dist/index.js` exists beside this blazon | `npm ci && npm run build -w mcp`, run at the repository root |
+| `built` | `mcp/dist/index.js` exists beside this blazon (an npm install has no `mcp/`; the check then says so and gives the clone steps) | `npm ci && npm run build -w mcp`, run at the repository root |
 | `blazon` | the server can find blazon: `BLAZON_BIN` when set, else `blazon` on `PATH`; the answer says which was used | `export BLAZON_BIN=<this blazon's bin/blazon.js>` |
 | `handshake` | the server starts on the brand, answers `initialize` and `tools/list` with every tool by name, and answers `check_brand` with a limit of 1. The server is stopped afterwards, and killed after 30 seconds if it does not answer | rebuild, then run the check again |
 | `registered` | the chosen client's config has a server named `blazon` (`--client`, default `claude-code`). Only server names are read: no command, argument or environment value is kept or printed | `blazon mcp --print-config --client <client> --brand <dir>` |

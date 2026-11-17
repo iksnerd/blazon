@@ -46,6 +46,16 @@ export function resolveMcpLaunch(root: string = packageRoot(), node: string = pr
   return { command: node, args: [entry], env: fs.existsSync(bin) ? { BLAZON_BIN: bin } : {}, built: true };
 }
 
+/** True when `mcp/` came with this blazon: a source checkout has it, the npm package does not ship it. */
+export const mcpInPackage = (root: string = packageRoot()): boolean => fs.existsSync(path.join(root, 'mcp/package.json'));
+
+/** The steps that give a blazon a built MCP server: a clone, because the npm package does not hold `mcp/`. */
+export const MCP_CLONE_STEPS =
+  'git clone https://github.com/iksnerd/blazon && cd blazon && npm ci && npm run build && npm run build -w mcp, then run node bin/blazon.js mcp --print-config from that clone';
+
+/** What an npm-installed blazon says, in place of a command that cannot work. */
+export const NOT_IN_PACKAGE = `The MCP server is not part of the npm package (${MCP_PACKAGE} is not published to npm); run it from a clone: ${MCP_CLONE_STEPS}.`;
+
 const NOT_PUBLISHED = `${MCP_PACKAGE} is not published to npm yet, so this command fails until it is. From a blazon source checkout, run npm run build -w mcp and print the config again.`;
 
 /** A word safe in a POSIX shell: quoted only when it has to be. */

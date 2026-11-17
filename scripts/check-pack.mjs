@@ -5,7 +5,7 @@
 //   node scripts/check-pack.mjs --dir <folder>   the tree in another folder
 //   node scripts/check-pack.mjs --tarball <tgz>  a tarball
 // Required: the compiled library and CLI, the viewer and Geist's license, the starter (template/), every shipped plugin's program
-// (one for each folder in plugins/) and plugins/shipped.lock. The plugin names come from the folders, so a new plugin needs no edit here.
+// (one for each folder in plugins/) and plugins/shipped.lock. Every plain path in package.json `files` must also be in the package, so the manifest never names what it does not ship. The plugin names come from the folders, so a new plugin needs no edit here.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,6 +45,20 @@ function pluginNames(dir) {
     .sort();
 }
 
+/** The entries of `listed` (the manifest's `files`) that no packed file equals or sits under: a path the package names and does not ship. */
+export function missingListed(listed, files) {
+  return listed.filter((entry) => {
+    const base = entry.replace(/^\.\//, '').replace(/\/+$/, '');
+    return !files.some((file) => file === base || file.startsWith(`${base}/`));
+  });
+}
+
+/** The `files` entries of <dir>/package.json that are plain paths (a pattern with a wildcard or a `!` is not checked). */
+function listedFiles(dir) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8'));
+  return (manifest.files ?? []).filter((entry) => !/[*?[\]{}!]/.test(entry));
+}
+
 function listTree(dir) {
   const out = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: dir, encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 });
   return JSON.parse(out)[0].files.map((file) => file.path);
@@ -74,6 +88,13 @@ if (process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(file
   const missing = missingFiles(files, names);
   if (missing.length > 0) {
     console.error(`check-pack: the package lacks ${missing.length} required file${missing.length === 1 ? '' : 's'}; run npm run build, then npm pack:\n  ${missing.join('\n  ')}`);
+    process.exit(1);
+  }
+  const unshipped = missingListed(listedFiles(dir), files);
+  if (unshipped.length > 0) {
+    console.error(
+      `check-pack: package.json "files" names ${unshipped.length} path${unshipped.length === 1 ? '' : 's'} the package does not hold; remove the entry or ship the path:\n  ${unshipped.join('\n  ')}`,
+    );
     process.exit(1);
   }
   console.log(`check-pack: ok (${files.length} files, ${names.length} plugin programs)`);
