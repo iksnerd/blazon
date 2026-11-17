@@ -60,9 +60,9 @@ jobs:
       - run: npm ci
       - name: Audit the dependencies that ship or run
         run: |
-          npm audit --omit=dev
-          # the MCP SDK and zod are bundled into mcp/dist/index.js, so this is the audit of what the shipped server carries
-          npm audit --omit=dev --workspace mcp
+          # audits the root and, because the MCP SDK and zod are bundled into mcp/dist/index.js, the mcp workspace too (what the
+          # shipped server carries); fails on a high advisory that .github/audit-allowlist.json does not allow
+          node scripts/audit-gate.mjs
       - name: Check the tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
       # Built here, from this clone, not taken from any earlier job: the tarball is made of what this step writes.

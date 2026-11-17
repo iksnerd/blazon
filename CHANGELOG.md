@@ -4,7 +4,13 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Added
+
+- The release job's dependency audit is `scripts/audit-gate.mjs`, which reads `.github/audit-allowlist.json`: it fails on a new high or critical advisory, on an allowlist entry that has expired or no longer matches, and when `npm audit` did not run. The one entry is the `picomatch` ReDoS (GHSA-fc5q-39xc-vjpf), which has no patched version and is not reachable from blazon (SECURITY.md).
+
 ## 0.3.0 (2026-11-17)
+
+Tagged and pushed, not released: its release job failed at the dependency audit gate on a high advisory in picomatch (via vite) that has no patched version. Everything in it is part of 0.3.1.
 
 ### Added
 

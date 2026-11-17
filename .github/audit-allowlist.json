@@ -1,0 +1,10 @@
+{
+  "advisories": [
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "reason": "No attacker-controlled glob pattern reaches picomatch in blazon; see SECURITY.md 'Known advisory'.",
+      "expires": "2027-02-17"
+    }
+  ]
+}

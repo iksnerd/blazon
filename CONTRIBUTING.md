@@ -142,6 +142,12 @@ On the tag, CI (`.github/workflows/ci.yml`) runs the tests and the secret scan, 
 
 The `publish` job puts that same tarball on npm with provenance. It is skipped until the owner does two things, once: add a trusted publisher on npmjs.com for the package (GitHub Actions, repository `iksnerd/blazon`, workflow `ci.yml`), and set the repository variable `NPM_PUBLISH` to `true`. A trusted publisher can be added only to a package that exists on npm; `@iksnerd/blazon` does, because 0.1.0 was published by hand from the tarball the tagged release built. No npm token is stored.
 
+## The release audit gate
+
+The release job runs `node scripts/audit-gate.mjs` instead of a bare `npm audit --omit=dev`. It audits the root and the `mcp` workspace and fails on any high or critical advisory that `.github/audit-allowlist.json` does not allow, on an entry whose `expires` date has passed, on an entry that no longer matches an advisory (remove it), and when `npm audit` itself did not run (a registry outage is a failure, not a pass). Low and moderate advisories are printed and do not fail it. Run it by hand before a release.
+
+An entry has four fields: `id` (the GHSA id), `package`, `reason` and `expires` (YYYY-MM-DD). Add one only after reviewing the advisory and finding that blazon cannot be reached through it, and write that reasoning in the `reason` and, for a user-facing risk, in [SECURITY.md](SECURITY.md). Pick a near expiry so it is reviewed again. Never add an entry only to get a release through.
+
 ## Making changes
 
 - Branch from `main`: `git checkout -b feat/your-change`.
