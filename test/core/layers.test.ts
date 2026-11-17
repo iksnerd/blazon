@@ -107,9 +107,10 @@ describe('the scan for imports', () => {
 
 describe('the core knows no framework by name', () => {
   // A CSS framework or a UI library is a build plugin's business (src/shipped/): the core writes no file for one, checks no name of one and
-  // imports nothing of one. The one place it names a plugin is the refusal of a config key that plugin took over (core/config/removed-keys.ts).
+  // imports nothing of one. Two places name a plugin: the refusal of a config key that plugin took over (core/config/removed-keys.ts) and the
+  // list of plugins a new book enables (core/starter.ts), which is a list of names and holds no logic about either.
   const FRAMEWORKS = /tailwind|shadcn/i;
-  const ALLOWED = new Set(['core/config/removed-keys.ts']);
+  const ALLOWED = new Set(['core/config/removed-keys.ts', 'core/starter.ts']);
   const code = (file: string) =>
     fs
       .readFileSync(file, 'utf-8')
@@ -124,7 +125,9 @@ describe('the core knows no framework by name', () => {
     expect(found).toEqual([]);
   });
 
-  it('keeps the allowed file to the one refusal, so the allowance is not a way in', () => {
+  it('keeps the allowed files to the one refusal and the one list of names, so the allowance is not a way in', () => {
     expect(fs.readFileSync(path.join(SRC, 'core/config/removed-keys.ts'), 'utf-8').match(/shadcn|tailwind/gi)).toHaveLength(4);
+    // Comments are not counted, as in the check above: the two entries of STARTER_PLUGINS are the only code that names a plugin.
+    expect(code(path.join(SRC, 'core/starter.ts')).match(/shadcn|tailwind/gi)).toHaveLength(2);
   });
 });
