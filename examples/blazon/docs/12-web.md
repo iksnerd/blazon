@@ -147,7 +147,7 @@ Three details give a page the brand's industrial look. Each uses only tokens, an
 
 ## Using shadcn/ui
 
-A shadcn/ui project takes its colors from the brand through the `blazon.shadcn` plugin. `blazon tokens` writes `dist/tokens/blazon.shadcn/shadcn.css` and `shadcn.json`, as the "Using shadcn/ui" section of `docs/manual/19-building-a-website.md` in the blazon source repository describes. Its components also hard-code `text-sm`, `h-8`, `rounded-xl`, `ring/10`, opacity blends such as `hover:bg-primary/80`, and 0.35s transitions. The brand takes none of them. A site overrides each in its own button and card components, using the rules on this page.
+A shadcn/ui project takes its colors from the brand through the `blazon.shadcn` plugin. Run `blazon tokens` to write `dist/tokens/blazon.shadcn/shadcn.css` and `shadcn.json`. The "Using shadcn/ui" section of `docs/manual/19-building-a-website.md` in the blazon source repository describes both. Its components also hard-code `text-sm`, `h-8`, `rounded-xl`, `ring/10`, opacity blends such as `hover:bg-primary/80`, and 0.35s transitions. The brand takes none of them. A site overrides each in its own button and card components, using the rules on this page.
 
 The brand has no role for two groups of shadcn variables, so the `variables` option of `blazon.shadcn` in `blazon.json` maps them:
 

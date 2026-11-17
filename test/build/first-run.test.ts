@@ -16,7 +16,7 @@ const blazon = (...args: string[]) =>
 
 describe('blazon check on the starter', () => {
   it('prints the starter-file-unchanged notes once for each folder, and warns only about the starter logos', async () => {
-    const root = await starterProject();
+    const root = await starterProject({ plugins: 'starter' });
     const result = blazon('check', root);
     const out = result.stdout;
     expect(result.status, out + result.stderr).toBe(0);
@@ -41,7 +41,7 @@ describe('blazon check on the starter', () => {
   }, 60_000);
 
   it('adds a Next block while the project is mostly the starter', async () => {
-    const root = await starterProject();
+    const root = await starterProject({ plugins: 'starter' });
     const out = blazon('check', root).stdout;
     expect(out).toContain('Next:');
     // Run from the repository, the project is a folder elsewhere: every step names it, so it works as typed
@@ -52,7 +52,7 @@ describe('blazon check on the starter', () => {
   }, 60_000);
 
   it('adds nothing once fewer than five starter files are left', async () => {
-    const root = await starterProject();
+    const root = await starterProject({ plugins: 'starter' });
     // Change every starter file but three: a nearly finished brand
     const keep = new Set(['docs/01-principles.md', 'docs/02-logo.md', 'docs/03-color.md']);
     const walk = (dir: string): string[] =>
