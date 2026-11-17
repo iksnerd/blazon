@@ -84,10 +84,11 @@ describe('the starter AGENTS.md', () => {
     expect(named.filter((file) => !fs.existsSync(path.join(REPO, 'docs/manual', file)))).toEqual([]);
   });
 
-  it('names the MCP server, its check and exactly the tools it serves, and says it is not published', () => {
+  it('names the MCP server, its check and exactly the tools it serves, and says it ships in the blazon package', () => {
     const section = /^## The MCP server\n([\s\S]*?)(?=^## )/m.exec(agents)?.[1] ?? '';
     expect(section).toContain('`blazon mcp --check`');
-    expect(section).toMatch(/not (yet )?published/);
+    expect(section).toContain('ships inside the blazon package');
+    expect(section).not.toMatch(/not (yet )?published/);
     const listed = [...section.matchAll(/`([a-z]+(?:_[a-z]+)+)`/g)].map((m) => m[1]!).sort();
     expect(listed).toEqual(
       toolOperations(OPERATIONS)
