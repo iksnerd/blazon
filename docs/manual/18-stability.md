@@ -14,6 +14,7 @@ A stable surface changes only by the rule in the next section. An unstable one c
 | `brand.json` | Stable | Format `blazon-brand`, version 2: its keys, and what each holds | [11](11-brand-json.md) |
 | The plugin protocol | Stable | Request version 1 for `check` and 2 for `build`, manifest version 2, the `check` and `build` roles, the answer and the exit codes | [13](13-writing-a-plugin.md) |
 | The command line | Stable | The commands and their flags, the exit statuses, and the `--json` documents | [1](01-getting-started.md), [3](03-checks.md) |
+| `blazon-mcp` | Stable | The program name, `--brand` and `--version`, the variables `BLAZON_BIN` and `BLAZON_BRAND`, and the tool names; the tools' answers are recorded in `mcp/test/__snapshots__/tools-list.json` | [20](20-blazon-for-agents.md) |
 | `blazon.json` | Stable | The file name and its plain JSON form, the keys, and the keys inside them (the `assets` block, a plugin entry, the e-mail signature) | [7](07-theme-and-config.md) |
 | Finding codes | Stable | The code of every finding blazon's own checks raise, because a tool that reads `--json` keys on it | [3](03-checks.md) |
 | Output files | Stable | The names of the files `blazon tokens` writes | [8](08-using-the-outputs.md) |
@@ -23,7 +24,7 @@ A stable surface changes only by the rule in the next section. An unstable one c
 
 A shipped plugin's options and findings follow the same rule, but the test below does not record them yet.
 
-A test in the repository (`test/surface/`) records the stable surfaces as one list: the commands and flags, the config keys and the keys inside them, the fields of the token, sidecar and page formats, the finding codes and the severity of each, the keys and constants of `brand.json`, the plugin protocol's profile, the output file names and the shipped plugins. It fails when any of them changes, until the record is updated on purpose.
+A test in the repository (`test/surface/`) records the stable surfaces as one list: the commands and flags, the config keys and the keys inside them, the fields of the token, sidecar and page formats, the finding codes and the severity of each, the keys and constants of `brand.json`, the plugin protocol's profile, the output file names, the program names and tool names of the MCP server, and the shipped plugins. It fails when any of them changes, until the record is updated on purpose.
 
 ## Made before 1.0
 

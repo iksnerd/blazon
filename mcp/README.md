@@ -1,6 +1,6 @@
 # blazon-mcp
 
-An MCP (Model Context Protocol) server that lets a coding agent ask blazon about a brand as tool calls, instead of reading token files. It runs the blazon command line with `--json` and returns what blazon printed. It does not import blazon's code and needs no blazon dependency, only a `blazon` program it can run. What each tool is called, takes and answers comes from blazon's operations list (`src/core/operations/list.ts`); `mcp/src/generated/` is a copy of it that `npm run gen:mcp` writes, because this package cannot import `src/`. It is not published to npm, and the `@iksnerd/blazon` npm package does not hold `mcp/`: run it from a clone of the repository. From an npm install, `blazon mcp --print-config` and `--check` say so and exit 1.
+An MCP (Model Context Protocol) server that lets a coding agent ask blazon about a brand as tool calls, instead of reading token files. It runs the blazon command line with `--json` and returns what blazon printed. It does not import blazon's code and needs no blazon dependency, only a `blazon` program it can run. What each tool is called, takes and answers comes from blazon's operations list (`src/core/operations/list.ts`); `mcp/src/generated/` is a copy of it that `npm run gen:mcp` writes, because this package cannot import `src/`. It ships inside the `@iksnerd/blazon` npm package as the single built file `mcp/dist/index.js`, with the SDK and zod bundled in, so a consumer installs no package for it; `blazon-mcp` is a `bin` of `@iksnerd/blazon`. `mcp/` itself is a private workspace of the repository and is not published on its own (the name `@iksnerd/blazon-mcp` is not on npm).
 
 The tools are read-only. None of them writes a file or builds the brand. The manual page for users is [chapter 20](../docs/manual/20-blazon-for-agents.md); it says the same as this file.
 
@@ -49,7 +49,7 @@ Resources are not cut to the size limit. A warning from blazon comes as a separa
 
 ## Not built
 
-- The package is not on npm; run it from a source checkout.
+- No separate npm package: the server is part of `@iksnerd/blazon`.
 - Only the stdio transport. There is no HTTP server and no sign-in.
 - No tool writes, builds or runs a plugin, so findings that only a plugin raises are not in `check_brand`.
 - No paging: a list is cut to whole items and says how many were left out, and you narrow it (`group`, `type`, `severity`). An `offset` argument is proposed, not built.
@@ -65,31 +65,32 @@ Resources are not cut to the size limit. A warning from blazon comes as a separa
 
 ```bash
 npm install            # at the repository root: mcp/ is a workspace, so this installs its dependencies too
-npm run build -w mcp
+npm run build -w mcp   # or npm run build, which also builds blazon and runs this
 ```
 
-This writes `mcp/dist/index.js`. It needs Node 24 or later.
+This runs `scripts/build-mcp.mjs`, which bundles `mcp/src/index.ts`, the MCP SDK and zod into `mcp/dist/index.js`: one ES module with a shebang, nothing resolved from `node_modules` when it runs, no source map and no machine path in it. The output is a pure function of the sources and the two pinned versions (two builds give the same bytes). The SDK and zod stay in `mcp/package.json` `dependencies` for the build and the tests, and in no dependency list of `@iksnerd/blazon`. `npm run build` runs it, so `npm pack` and `npm publish` ship the file (`package.json` `files`, and `scripts/check-pack.mjs` requires it). `blazon-mcp --version` prints the versions the file carries. It needs Node 24 or later.
 
 ## Settings
 
 | Setting | Default | Meaning |
 |---|---|---|
 | `--brand <folder>` or `--brand=<folder>`, or `BLAZON_BRAND` | the current folder | The brand folder. Every command runs there. A value starting with `--` is refused |
-| `BLAZON_BIN` | `blazon` on `PATH` | The blazon program to run |
+| `BLAZON_BIN` | the `bin/blazon.js` two folders above the server file when it exists (inside `@iksnerd/blazon`), else `blazon` on `PATH` | The blazon program to run |
+| `--version` | | Print blazon's version and the versions of the MCP SDK and zod bundled in, and exit |
 
 ## Print the config
 
-`blazon mcp --print-config [--client claude-code|claude-desktop|cursor|vscode] [--brand <dir>] [--json]` prints the command or JSON that registers this server in a client, with an absolute brand folder when `--brand` is given. It writes no file, and it uses this build (`mcp/dist/index.js`) when it exists. Without a build it prints the proposed `npx -y @iksnerd/blazon-mcp` form and says the package is not published. `blazon dev` offers the same in a "Connect your agent" panel. The sections below show the formats by hand.
+`blazon mcp --print-config [--client claude-code|claude-desktop|cursor|vscode] [--brand <dir>] [--json]` prints the command or JSON that registers this server in a client, with an absolute brand folder when `--brand` is given. It writes no file. It names `node`, the `mcp/dist/index.js` of the blazon that runs it (an installed package ships it) and `BLAZON_BIN`. If an install has lost that file it prints nothing and says to reinstall. `blazon dev` offers the same in a "Connect your agent" panel. The sections below show the formats by hand.
 
 ## Claude Code
 
 Options go before the name; `-e` must not be followed directly by the name.
 
 ```bash
-claude mcp add --scope project -e BLAZON_BIN=/path/to/blazon --transport stdio blazon -- node /path/to/mcp/dist/index.js --brand .
+claude mcp add --scope project -e BLAZON_BIN=/path/to/node_modules/@iksnerd/blazon/bin/blazon.js --transport stdio blazon -- node /path/to/node_modules/@iksnerd/blazon/mcp/dist/index.js --brand .
 ```
 
-Leave out `-e BLAZON_BIN=...` when `blazon` is on `PATH`. `--scope project` writes `.mcp.json` at the project root.
+Leave out `-e BLAZON_BIN=...` when the file is the one inside `@iksnerd/blazon` (it finds the `bin/blazon.js` beside it) or `blazon` is on `PATH`. `--scope project` writes `.mcp.json` at the project root.
 
 ## Cursor and other clients
 
@@ -100,14 +101,14 @@ Add this to the client's MCP settings (for Cursor, `.cursor/mcp.json`):
   "mcpServers": {
     "blazon": {
       "command": "node",
-      "args": ["/path/to/mcp/dist/index.js", "--brand", "/path/to/brand"],
-      "env": { "BLAZON_BIN": "/path/to/blazon" }
+      "args": ["/path/to/node_modules/@iksnerd/blazon/mcp/dist/index.js", "--brand", "/path/to/brand"],
+      "env": { "BLAZON_BIN": "/path/to/node_modules/@iksnerd/blazon/bin/blazon.js" }
     }
   }
 }
 ```
 
-Leave out `env` when `blazon` is on the client's `PATH`. Use an absolute path for `--brand` when the client does not start the server in the brand folder.
+Leave out `env` when the file is the one inside `@iksnerd/blazon` or `blazon` is on the client's `PATH`. Use an absolute path for `--brand` when the client does not start the server in the brand folder.
 
 ## VS Code
 
@@ -119,8 +120,8 @@ Leave out `env` when `blazon` is on the client's `PATH`. Use an absolute path fo
     "blazon": {
       "type": "stdio",
       "command": "node",
-      "args": ["/path/to/mcp/dist/index.js", "--brand", "/path/to/brand"],
-      "env": { "BLAZON_BIN": "/path/to/blazon" }
+      "args": ["/path/to/node_modules/@iksnerd/blazon/mcp/dist/index.js", "--brand", "/path/to/brand"],
+      "env": { "BLAZON_BIN": "/path/to/node_modules/@iksnerd/blazon/bin/blazon.js" }
     }
   }
 }
@@ -128,10 +129,12 @@ Leave out `env` when `blazon` is on the client's `PATH`. Use an absolute path fo
 
 ## SDK version
 
-The server uses `@modelcontextprotocol/sdk` 1.x, pinned to an exact version (1.32.2). The 1.x line is in maintenance, with v2 (split packages, a different server API) in development. The pin is deliberate: v1 is the line with a stable API today, and this server uses only `McpServer`, `registerResource`, `registerPrompt`, the `tools/list` and `tools/call` request handlers of its low-level `Server` (the tools come from the operations list as JSON Schema, not as Zod objects) and the stdio transport. Migration note for v2: move the imports to the v2 packages, re-check how the request handlers are set and how `tools/list` is shaped (the server sends JSON Schema it holds itself; Zod is used for the prompt's arguments only), and re-run the tests, which exercise every tool, the resources and the prompt through a real client. Zod is pinned alongside it. TypeScript is the repository's own compiler (`npm run typecheck -w mcp`); the workspace adds no second one.
+The server uses `@modelcontextprotocol/sdk` 1.x, pinned to an exact version (1.32.2). The 1.x line is in maintenance, with v2 (split packages, a different server API) in development. The pin is deliberate: v1 is the line with a stable API today, and this server uses only `McpServer`, `registerResource`, `registerPrompt`, the `tools/list` and `tools/call` request handlers of its low-level `Server` (the tools come from the operations list as JSON Schema, not as Zod objects) and the stdio transport. Migration note for v2: move the imports to the v2 packages, re-check how the request handlers are set and how `tools/list` is shaped (the server sends JSON Schema it holds itself; Zod is used for the prompt's arguments only), and re-run the tests, which exercise every tool, the resources and the prompt through a real client. Zod is pinned alongside it. Both are frozen into the built file at build time: a consumer gets the versions of the release they installed, `blazon-mcp --version` names them, and a fix for either needs a new blazon release ([SECURITY.md](../SECURITY.md)). TypeScript is the repository's own compiler (`npm run typecheck -w mcp`); the workspace adds no second one.
 
 ## Tests
 
 `npm test` at the repository root runs `mcp/test/`. The tests start the real blazon command line from source on a project `blazon init` wrote. They are skipped, with a notice, when the SDK is not installed.
+
+`mcp/test/bundle.test.ts` builds the file into a temporary folder and runs it from there, where no `node_modules` can be found: it checks the file (a shebang, no source map, no import of a package, no machine path, the same bytes from two builds, `--version`), then calls every tool over stdio, refuses an extra argument, proves that no tool starts a plugin the brand names, that the blazon child gets only the environment allowlist, and that the file finds the `bin/blazon.js` beside it. A bundling mistake fails there and not on a user's machine.
 
 `mcp/test/surface.test.ts` checks what a client receives from `tools/list`, the checks of the owner's MCP design playbook: every tool has a title and `readOnlyHint`, every input and output field has a description, no schema uses `anyOf`, `oneOf` or `allOf`, names are snake_case, a description is at most 2 KB, there are at most 12 tools, the instructions name only registered tools, and the numbers in the text are the constants the code enforces. `mcp/test/__snapshots__/tools-list.json` is the committed `tools/list`, so a change to the surface shows in review; after a deliberate change run `UPDATE_SNAPSHOT=1 npx vitest run mcp/test/surface.test.ts` and review the diff. `mcp/test/operations.test.ts` checks that the tools are the operations of the list that have one, in its order, with its words, and the blazon command each tool runs. One test in `server.test.ts` starts the real entry point over stdio, lists tools, resources and prompts, and calls tools.

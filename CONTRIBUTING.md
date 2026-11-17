@@ -65,7 +65,7 @@ The host's own tests read every file of the vendored corpus in `test/spec/`. `np
 
 ## Read commands and MCP tools
 
-`get`, `list`, `rules`, `can`, `fonts`, `logo` and `brand` on the command line, and the tools of the MCP server in `mcp/`, are the same operations, defined once in `src/core/operations/list.ts`. An entry has the name (the tool name), the title, the description, the input and output schema, the annotations, `cli` (the words, the positional arguments, the options and the help line, or `false`) and `mcp` (how the server runs the command, or `false` for no tool).
+`get`, `list`, `rules`, `can`, `fonts`, `logo` and `brand` on the command line, and the tools of the MCP server (`blazon-mcp`, source in `mcp/`), are the same operations, defined once in `src/core/operations/list.ts`. An entry has the name (the tool name), the title, the description, the input and output schema, the annotations, `cli` (the words, the positional arguments, the options and the help line, or `false`) and `mcp` (how the server runs the command, or `false` for no tool).
 
 To add one:
 
@@ -75,6 +75,10 @@ To add one:
 4. If the tool list changed on purpose, run `UPDATE_SNAPSHOT=1 npx vitest run mcp/test/surface.test.ts` and review the diff of `mcp/test/__snapshots__/tools-list.json`.
 
 An operation that has a command and no tool, or a tool and no command, is named with its reason in `ONE_SIDED` in `test/core/operations.test.ts`. A property typed on the command line must be in the entry; the manual test reads the commands and flags of the list as well as those of `src/cli/index.ts`.
+
+## The MCP server
+
+`mcp/` is a private npm workspace and the source of `blazon-mcp`, which ships inside `@iksnerd/blazon`. `npm run build:mcp` (`scripts/build-mcp.mjs`, also the last step of `npm run build`, so of `npm pack`) bundles `mcp/src/index.ts`, the MCP SDK and zod into one file, `mcp/dist/index.js`, listed in `package.json` `files` and linked as the `blazon-mcp` bin. SDK and zod live in `mcp/package.json` `dependencies` (exact versions) and never in the root `dependencies`: the same rule as a bundled plugin's libraries, so an installed blazon gains no runtime package. The build must give the same bytes twice (no stamp, no source map); `mcp/test/bundle.test.ts` builds the file and runs it from a folder with no `node_modules`, so a bundling mistake fails a test. After a change to `mcp/`, `npm run build -w mcp` before `blazon mcp --check` in a checkout. To bump the SDK or zod, change the pin in `mcp/package.json`, `npm install`, run `npm audit` and the mcp tests, and say so in CHANGELOG, because the bundle freezes the version. `scripts/smoke-tarball.mjs` installs the packed tarball and runs `blazon mcp --check` and a real tool call through the installed server.
 
 ## The hooks
 

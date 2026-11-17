@@ -61,13 +61,14 @@ run the `fix` it names, and register the server with `blazon mcp --print-config 
 
 ## Use blazon from your agent (MCP)
 
-A coding agent can ask blazon about the brand as tool calls (`check_brand`, `get_token`, `can_use` and five more, all read-only) instead of reading token files. The server is a separate program in `mcp/`, not published to npm, so build it, print the config for your client and check that it works:
+A coding agent can ask blazon about the brand as tool calls (`check_brand`, `get_token`, `can_use` and four more, all read-only) instead of reading token files. The server ships inside `@iksnerd/blazon`: `npm install @iksnerd/blazon` gives you its program, `blazon-mcp`, and installs no package for it (it is one file with its libraries bundled in). Print the config for your client and check that it works:
 
 ```bash
-npm run build -w mcp                                  # in the blazon clone, once
-blazon mcp --print-config --client claude-code --brand my-brand
-blazon mcp --check --brand my-brand                    # built? finds blazon? answers a real handshake? registered?
+npx blazon mcp --print-config --client claude-code --brand my-brand
+npx blazon mcp --check --brand my-brand                # finds the server? finds blazon? answers a real handshake? registered?
 ```
+
+`--print-config` prints the command that registers it: `node`, the installed server file, `--brand` and `BLAZON_BIN`. To run the server by hand without installing, `npx -y -p @iksnerd/blazon blazon-mcp --brand my-brand` does it (`blazon-mcp --version` names the MCP SDK and zod it carries).
 
 `blazon mcp --check` writes no file, prints a `fix` command for each check that fails, and exits 1 when the server is not ready. It starts the server on the brand folder, which compiles it with no plugin; what a brand says reaches your agent as tool results, so use a brand you trust. [Blazon for agents](docs/manual/20-blazon-for-agents.md) has the tools and the clients. For an agent that reads skills, [`skills/blazon/SKILL.md`](skills/blazon/SKILL.md) teaches the loop (check, contrast, MCP tools, what never to edit).
 
@@ -126,7 +127,7 @@ The same compile feeds the dev server, so a change to a token, a page or the con
 - **Exports the whole brand.** `blazon build` also writes `brand.json`: the tokens with their rules, the pages, the assets and the findings, in one versioned file with a JSON Schema, readable from any language. [`brand.json`](docs/manual/11-brand-json.md)
 - **Builds a brand book that wears the brand.** The viewer takes its colors, typefaces and logo from your tokens. Pages place live content from them: swatches, the type scale, the logo on each background with its clear space, icons, patterns and social formats. It has search, a dark mode, and a Review page listing what `blazon check` found. [Pages](docs/manual/05-pages.md), [assets and icons](docs/manual/06-assets-and-icons.md)
 - **Compares them with a live site.** `blazon drift <url-or-css-file>` reports which tokens that name a `source.cssVar` have changed since.
-- **Answers a coding agent.** The read commands (`blazon get`, `blazon rules`, `blazon can` and the rest) print JSON, and a separate read-only server in `mcp/` offers them as tool calls over the Model Context Protocol. It is not published: build it from the repository. [Building a website from a brand](docs/manual/19-building-a-website.md), [Blazon for agents](docs/manual/20-blazon-for-agents.md)
+- **Answers a coding agent.** The read commands (`blazon get`, `blazon rules`, `blazon can` and the rest) print JSON, and a read-only server, `blazon-mcp`, offers them as tool calls over the Model Context Protocol. It ships inside the blazon package. [Building a website from a brand](docs/manual/19-building-a-website.md), [Blazon for agents](docs/manual/20-blazon-for-agents.md)
 - **Extends with plugins.** See below.
 
 ## Plugins

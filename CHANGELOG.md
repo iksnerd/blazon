@@ -4,13 +4,16 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
-### Fixed
+### Added
 
-- `blazon mcp --check` and `--print-config` from an npm install said "blazon-mcp is not built" and printed an `npx` command for a package that is not on npm. The npm package has never held `mcp/` (it is a private workspace). They now say the MCP server is not part of the npm package, give the clone steps, and exit 1.
-- `npm run check-pack` fails when a plain path in `package.json` `files` is not in the package, so the manifest cannot name what it does not ship.
+- The MCP server ships inside `@iksnerd/blazon`. `npm install @iksnerd/blazon` gives you `blazon-mcp` (a second `bin`), and `npx -y -p @iksnerd/blazon blazon-mcp --brand <dir>` starts it with no clone. It is one built file, `mcp/dist/index.js`, with the MCP SDK and zod bundled in at build time, so the package gains no dependency and `npm audit --omit=dev` is unchanged. `blazon-mcp --version` prints the versions it carries.
+- `npm run check-pack` requires `mcp/dist/index.js`, fails when a plain path in `package.json` `files` is not in the package, and the tarball smoke test (`scripts/smoke-tarball.mjs`) runs `blazon mcp --check` and a real `check_brand` and `list_tokens` through the installed server.
 
 ### Changed
 
+- `blazon mcp --print-config` and `--check` from an npm install print `node`, the installed `mcp/dist/index.js`, `--brand` and `BLAZON_BIN`, and `--check` passes with a real handshake on a clean install; `--check` finds the blazon beside the server when `BLAZON_BIN` is not set. The `npx @iksnerd/blazon-mcp` form of a package that is not on npm is gone, from the command line and from the dev server's "Connect your agent" panel. An install that has lost the server file says the install is incomplete and to reinstall, and exits 1.
+- The MCP server reports blazon's version as its own (`serverInfo.version`), where it said `0.0.0`.
+- The manual said the server has eight tools; it has seven.
 - The MCP tool `check_brand` says when plugins did not run. It always ran `blazon check --no-plugins`, so a brand whose `blazon.json` lists plugins such as `blazon.copy` got lower counts than `blazon check`, with no word on why. The answer now carries `pluginsSkipped` (the names from `blazon.json`) and one line in `warnings`; a config with no plugins adds nothing.
 - The docs no longer state blazon's current version by hand (README status, manual, starter, CONTRIBUTING): a placeholder takes its place, and `test/docs/versions.test.ts` fails on a stale one.
 

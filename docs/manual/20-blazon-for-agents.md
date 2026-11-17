@@ -2,14 +2,18 @@
 
 ← [Manual index](index.md)
 
-A coding agent that builds a site from a brand can ask blazon questions as tool calls over the Model Context Protocol (MCP), instead of running commands and reading their output. The server is a small separate program, `mcp/` in the blazon repository. It runs the read commands of [chapter 19](19-building-a-website.md) with `--json` and returns what they print. Blazon itself gains no dependency, and the server is not part of the blazon package. It is not published to npm, and the blazon npm package does not hold `mcp/`: run it from a clone of the repository.
+A coding agent that builds a site from a brand can ask blazon questions as tool calls over the Model Context Protocol (MCP), instead of running commands and reading their output. The server is a small program of its own, `blazon-mcp`, that ships inside the blazon package. It runs the read commands of [chapter 19](19-building-a-website.md) with `--json` and returns what they print. It is one file (`mcp/dist/index.js` in the package) with the MCP SDK and zod bundled in at build time, so `npm install @iksnerd/blazon` adds no package for it, and `blazon-mcp` is one more program npm links next to `blazon`. The npm package `@iksnerd/blazon-mcp` is not published; the server is part of `@iksnerd/blazon`.
 
 ## Start the server
 
+Install blazon, and the server is there:
+
 ```bash
-npm ci
-npm run build -w mcp
+npm install @iksnerd/blazon
+npx blazon mcp --check --brand ./my-brand
 ```
+
+A clone of the repository builds it with `npm ci && npm run build`, which writes `mcp/dist/index.js` (or `npm run build -w mcp` for the server alone).
 
 Then let blazon print the config for your client. `blazon mcp --print-config` writes no file; it prints what to paste or run:
 
@@ -28,7 +32,9 @@ What each client takes (checked against the clients' documentation on 2026-11-09
 | Cursor | an entry for `.cursor/mcp.json`, or `~/.cursor/mcp.json` for every project (`mcpServers`, with `type`) |
 | VS Code | a `code --add-mcp` command, and an entry for `.vscode/mcp.json` (`servers`, with `type`) |
 
-A blazon installed from npm has no `mcp/`, so there `blazon mcp --print-config` prints no command: it says that the server is not part of the npm package, gives the clone steps, and exits 1 (`--json` answers `passed: false` with the same `note`). `blazon mcp --check` fails the `built` check with the same words and the same steps. The command blazon prints in a clone comes from how that blazon is built. In a source checkout with `mcp/dist/index.js` built, it is `node` with that file, and `BLAZON_BIN` names this blazon's `bin/blazon.js`. Without a build it prints the proposed form, `npx -y @iksnerd/blazon-mcp`, and says that the package is not published to npm yet, so that command fails until it is.
+The command is the same from an npm install and from a clone: `node`, the server file of the blazon that runs the command (`<blazon>/mcp/dist/index.js`), `--brand`, and `BLAZON_BIN` naming that blazon's `bin/blazon.js`. If that file is missing from an install (a stale or damaged install), `blazon mcp --print-config` prints no command: it says that the install is incomplete and to reinstall, and exits 1 (`--json` answers `passed: false` with the same `note`). `blazon mcp --check` fails the `built` check with the same words. In a clone that has not built the server, it prints the command with a note to run `npm run build -w mcp`.
+
+To start the server without writing a config, `npx -y -p @iksnerd/blazon blazon-mcp --brand ./my-brand` runs it from the package. `blazon-mcp --version` prints blazon's version and the versions of the MCP SDK and zod that the file carries.
 
 `blazon dev` shows the same snippets in the brand book: the "Connect your agent" button in the top bar opens a panel with a tab for each client and a copy button on each snippet, with this project's folder as the brand. The dev server provides them at `/__blazon/mcp-config`. A static site has no such answer, so it has no button.
 
@@ -40,8 +46,8 @@ A hand-written entry looks like this (Cursor and other clients that read a JSON 
     "blazon": {
       "type": "stdio",
       "command": "node",
-      "args": ["/path/to/mcp/dist/index.js", "--brand", "/path/to/brand"],
-      "env": { "BLAZON_BIN": "/path/to/blazon" }
+      "args": ["/path/to/node_modules/@iksnerd/blazon/mcp/dist/index.js", "--brand", "/path/to/brand"],
+      "env": { "BLAZON_BIN": "/path/to/node_modules/@iksnerd/blazon/bin/blazon.js" }
     }
   }
 }
@@ -49,7 +55,7 @@ A hand-written entry looks like this (Cursor and other clients that read a JSON 
 
 VS Code's `.vscode/mcp.json` uses `servers` in place of `mcpServers`. Leave out `env` when `blazon` is on the client's `PATH`.
 
-The server talks over standard input and output. `--brand <folder>` or `--brand=<folder>` (or the environment variable `BLAZON_BRAND`) names the brand folder; it defaults to the folder the client starts the server in. `BLAZON_BIN` names the blazon program when it is not on `PATH`.
+The server talks over standard input and output. `--brand <folder>` or `--brand=<folder>` (or the environment variable `BLAZON_BRAND`) names the brand folder; it defaults to the folder the client starts the server in. `BLAZON_BIN` names the blazon program; without it the server runs the `bin/blazon.js` of the package it ships in, and only when that file is not there, `blazon` on `PATH`.
 
 **Use a brand folder you trust.** The server runs no plugin: `check_brand` is `blazon check --no-plugins`, and the other tools run read commands that never start one, so the plugins `blazon.json` names are not run, and `blazon.json` is plain JSON that is read as data. What the brand says does reach your agent, as tool results: token names and values, rule text and finding messages. A brand can try to put instructions there. The server's instructions tell the model to read that text as data, and the server removes zero-width, bidirectional and Unicode tag characters from every answer and says how many in `warnings`. That makes an instruction harder to hide; it does not stop a plain sentence in a rule. The server hands the blazon program only an allowlist of the environment (`PATH`, `HOME`, `USERPROFILE`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_*`, `BLAZON_*`, `NO_COLOR` and a few Windows names), so secrets in the client's environment do not reach it.
 
@@ -65,8 +71,8 @@ It runs four checks, and each one that does not pass names a `fix` command:
 
 | Check | What it tests | Fix when it fails |
 |---|---|---|
-| `built` | `mcp/dist/index.js` exists beside this blazon (an npm install has no `mcp/`; the check then says so and gives the clone steps) | `npm ci && npm run build -w mcp`, run at the repository root |
-| `blazon` | the server can find blazon: `BLAZON_BIN` when set, else `blazon` on `PATH`; the answer says which was used | `export BLAZON_BIN=<this blazon's bin/blazon.js>` |
+| `built` | `mcp/dist/index.js` exists in this blazon's package (an npm install ships it; a clone builds it; an install that lost it says it is incomplete) | `npm install @iksnerd/blazon` for an install, `npm ci && npm run build -w mcp` at the root of a clone |
+| `blazon` | the server can find blazon: `BLAZON_BIN` when set, else this package's `bin/blazon.js`, else `blazon` on `PATH`; the answer says which was used | `export BLAZON_BIN=<this blazon's bin/blazon.js>` |
 | `handshake` | the server starts on the brand, answers `initialize` and `tools/list` with every tool by name, and answers `check_brand` with a limit of 1. The server is stopped afterwards, and killed after 30 seconds if it does not answer | rebuild, then run the check again |
 | `registered` | the chosen client's config has a server named `blazon` (`--client`, default `claude-code`). Only server names are read: no command, argument or environment value is kept or printed | `blazon mcp --print-config --client <client> --brand <dir>` |
 
@@ -78,7 +84,7 @@ It runs four checks, and each one that does not pass names a `fix` command:
 
 ## The tools
 
-All eight are read-only (`readOnlyHint: true`) and write nothing.
+All seven are read-only (`readOnlyHint: true`) and write nothing.
 
 | Tool | Runs | Use it to |
 |---|---|---|
