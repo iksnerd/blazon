@@ -203,7 +203,8 @@ Each question has a flag, so a script can give the same answers: `--name <text>`
 | `dist/tokens/typography.css` | One class per text style, such as `.type-h1` |
 | `dist/tokens/blazon.tailwind/tailwind.css` | Written by the `blazon.tailwind` plugin, which a new project lists: a Tailwind v4 `@theme` block for the colors, font families, font sizes, font weights, radii, spacing, shadows and easings. Only written when a token maps to one of these |
 | `dist/tokens/blazon.tailwind/tailwind-reset.css` | Written by `blazon.tailwind`: a `@theme` block that removes Tailwind's defaults in the namespaces the brand fills. Import it before `tailwind.css`, see [chapter 8](08-using-the-outputs.md#closing-tailwinds-defaults). Only written when there is a namespace to reset |
-| `dist/tokens/blazon.shadcn/shadcn.css` and `shadcn.json` | Written by the `blazon.shadcn` plugin, which a new project lists: the shadcn/ui variables as CSS, and the token and value each one takes, see [chapter 19](19-building-a-website.md#using-shadcnui) |
+| `dist/tokens/blazon.shadcn/shadcn.css` | Written by the `blazon.shadcn` plugin, which a new project lists: the shadcn/ui variables as CSS, see [chapter 19](19-building-a-website.md#using-shadcnui) |
+| `dist/tokens/blazon.shadcn/shadcn.json` | Written by `blazon.shadcn`: the token and the value each shadcn/ui variable takes |
 | `dist/tokens/tokens.ts` | A typed module with `getToken()` and `getVar()` |
 | `dist/tokens/tokens.json` | The tokens as DTCG, aliases resolved, `dev.blazon` kept |
 | `dist/tokens/tokens.<modifier>.<context>.json` | The same, for one context. Only written when the project has a [resolver document](04-contexts.md), which declares values that change by locale or theme |
