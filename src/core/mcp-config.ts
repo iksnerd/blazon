@@ -2,9 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { packageRoot } from './package-root.js';
 
-/** The MCP server's package name. It is not published to npm yet; the `npx` form below is the proposed one. */
-export const MCP_PACKAGE = '@iksnerd/blazon-mcp';
-
 export const MCP_CLIENTS = ['claude-code', 'claude-desktop', 'cursor', 'vscode'] as const;
 export type McpClient = (typeof MCP_CLIENTS)[number];
 
@@ -13,8 +10,10 @@ export interface McpLaunch {
   command: string;
   args: string[];
   env: Record<string, string>;
-  /** False when this blazon has no built mcp/ beside it, so the command is the `npx` form of a package that is not on npm yet. */
+  /** False when the server file is not there: the command then names the file it would have, and `problem` says why it fails. */
   built: boolean;
+  /** Why the command does not work, said when `built` is false. */
+  problem?: string;
 }
 
 /** One thing to paste: a shell command, or the JSON entry for a client's config file. */
@@ -34,29 +33,31 @@ export interface McpConfig {
   snippets: McpSnippet[];
 }
 
+/** True for a source checkout (it has `mcp/package.json`); the npm package ships only the built file `mcp/dist/index.js`. */
+export const isSourceCheckout = (root: string = packageRoot()): boolean => fs.existsSync(path.join(root, 'mcp/package.json'));
+
+/** What an install without the server file says: the package is meant to hold it, so the install is damaged or stale. */
+export const INCOMPLETE_INSTALL =
+  'The MCP server file mcp/dist/index.js is missing from this blazon, so the install is incomplete; reinstall it (npm install @iksnerd/blazon) and run blazon mcp --check again.';
+
+/** The fix to print with {@link INCOMPLETE_INSTALL}. */
+export const REINSTALL = 'npm install @iksnerd/blazon';
+
+const NOT_BUILT =
+  'mcp/dist/index.js does not exist, so this command fails until the server is built: from this blazon source checkout, run npm run build -w mcp and print the config again.';
+
 /**
- * How to start blazon-mcp from this blazon. A blazon with a built `mcp/dist/index.js` beside it (a source checkout after
- * `npm run build -w mcp`) is started with `node` and that file, and told which blazon to run through BLAZON_BIN. Otherwise the
- * package would be fetched with `npx`, which does not work until it is published.
+ * How to start blazon-mcp from this blazon: `node` and `mcp/dist/index.js` in the package root, with BLAZON_BIN naming this blazon's
+ * `bin/blazon.js`. An npm install holds that file (it is built into the package) and a source checkout has it after `npm run build -w mcp`,
+ * so one rule covers both. When the file is missing the launch still names it, with `built: false` and the reason in `problem`.
  */
 export function resolveMcpLaunch(root: string = packageRoot(), node: string = process.execPath): McpLaunch {
   const entry = path.join(root, 'mcp/dist/index.js');
-  if (!fs.existsSync(entry)) return { command: 'npx', args: ['-y', MCP_PACKAGE], env: {}, built: false };
   const bin = path.join(root, 'bin/blazon.js');
-  return { command: node, args: [entry], env: fs.existsSync(bin) ? { BLAZON_BIN: bin } : {}, built: true };
+  const env: Record<string, string> = fs.existsSync(bin) ? { BLAZON_BIN: bin } : {};
+  if (fs.existsSync(entry)) return { command: node, args: [entry], env, built: true };
+  return { command: node, args: [entry], env, built: false, problem: isSourceCheckout(root) ? NOT_BUILT : INCOMPLETE_INSTALL };
 }
-
-/** True when `mcp/` came with this blazon: a source checkout has it, the npm package does not ship it. */
-export const mcpInPackage = (root: string = packageRoot()): boolean => fs.existsSync(path.join(root, 'mcp/package.json'));
-
-/** The steps that give a blazon a built MCP server: a clone, because the npm package does not hold `mcp/`. */
-export const MCP_CLONE_STEPS =
-  'git clone https://github.com/iksnerd/blazon && cd blazon && npm ci && npm run build && npm run build -w mcp, then run node bin/blazon.js mcp --print-config from that clone';
-
-/** What an npm-installed blazon says, in place of a command that cannot work. */
-export const NOT_IN_PACKAGE = `The MCP server is not part of the npm package (${MCP_PACKAGE} is not published to npm); run it from a clone: ${MCP_CLONE_STEPS}.`;
-
-const NOT_PUBLISHED = `${MCP_PACKAGE} is not published to npm yet, so this command fails until it is. From a blazon source checkout, run npm run build -w mcp and print the config again.`;
 
 /** A word safe in a POSIX shell: quoted only when it has to be. */
 const shell = (word: string): string => (/^[A-Za-z0-9_@%+=:,./-]+$/.test(word) ? word : `'${word.replace(/'/g, `'\\''`)}'`);
@@ -87,7 +88,7 @@ const json = (key: 'mcpServers' | 'servers', value: Record<string, unknown>): st
  * VS Code `.vscode/mcp.json` (`servers`, with `type`) and `code --add-mcp`.
  */
 export function buildMcpConfig(client: McpClient, launch: McpLaunch, brand?: string): McpConfig {
-  const note = launch.built ? undefined : NOT_PUBLISHED;
+  const note = launch.built ? undefined : launch.problem;
   const args = [...launch.args, ...(brand === undefined ? [] : ['--brand', brand])];
   const base = { client, title: TITLES[client], built: launch.built, ...(note && { note }) };
   switch (client) {

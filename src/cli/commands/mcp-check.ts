@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import pc from '../../core/colors.js';
-import { mcpConfigFiles, mcpInPackage, mcpServerNames, MCP_CLONE_STEPS, NOT_IN_PACKAGE, type McpClient } from '../../core/mcp-config.js';
+import { INCOMPLETE_INSTALL, isSourceCheckout, mcpConfigFiles, mcpServerNames, REINSTALL, type McpClient } from '../../core/mcp-config.js';
 import { OPERATIONS, toolOperations } from '../../core/operations/index.js';
 import { packageRoot } from '../../core/package-root.js';
 import { printJson } from '../read.js';
@@ -29,17 +29,20 @@ export interface McpCheck {
 /** mcp/ is a workspace of the repository: its install and build run from the root (`npm ci` inside mcp/ would replace the root's node_modules). */
 const SERVER_FIX = 'npm ci && npm run build -w mcp';
 
+/** What rebuilds the server: the build of a source checkout, or a reinstall of the package. */
+const serverFix = (root: string): string => (isSourceCheckout(root) ? `cd ${root} && ${SERVER_FIX}` : REINSTALL);
+
 /** The tool names the server must list: every operation that has a tool. */
 export const expectedTools = (): string[] => toolOperations(OPERATIONS).map((op) => op.name);
 
-/** (a) The server is built: `mcp/dist/index.js` exists beside this blazon. */
+/** (a) The server is there: `mcp/dist/index.js` exists in this blazon's package (an install ships it; a source checkout builds it). */
 export function checkBuilt(root: string): McpCheck & { entry: string } {
   const entry = path.join(root, 'mcp/dist/index.js');
   const built = fs.existsSync(entry);
-  if (!built && !mcpInPackage(root)) return { name: 'built', passed: false, detail: NOT_IN_PACKAGE, fix: MCP_CLONE_STEPS, entry };
+  if (!built && !isSourceCheckout(root)) return { name: 'built', passed: false, detail: INCOMPLETE_INSTALL, fix: REINSTALL, entry };
   return built
     ? { name: 'built', passed: true, detail: `${entry} exists`, entry }
-    : { name: 'built', passed: false, detail: `${entry} does not exist: blazon-mcp is not built`, fix: `cd ${root} && ${SERVER_FIX}`, entry };
+    : { name: 'built', passed: false, detail: `${entry} does not exist: blazon-mcp is not built`, fix: serverFix(root), entry };
 }
 
 const isExecutable = (file: string): boolean => {
@@ -74,6 +77,8 @@ export function checkBlazon(env: NodeJS.ProcessEnv, brand: string, root: string)
     if (found && isExecutable(found)) return { name: 'blazon', passed: true, detail: `BLAZON_BIN names ${found}`, source: 'BLAZON_BIN', path: found };
     return { name: 'blazon', passed: false, detail: `BLAZON_BIN is set to "${bin}", which is not an executable file`, fix, source: 'BLAZON_BIN' };
   }
+  // The server takes BLAZON_BIN, else the bin/blazon.js of the package it ships in, else `blazon` on PATH: this says the same.
+  if (isExecutable(own)) return { name: 'blazon', passed: true, detail: `the server runs this package's own ${own}`, source: 'package', path: own };
   const found = onPath('blazon', env);
   if (found) return { name: 'blazon', passed: true, detail: `blazon found on PATH at ${found}`, source: 'PATH', path: found };
   return { name: 'blazon', passed: false, detail: 'BLAZON_BIN is not set and no blazon program is on PATH', fix, source: 'none' };
@@ -175,7 +180,7 @@ export async function handshake(options: HandshakeOptions): Promise<McpCheck> {
         name: 'handshake',
         passed: false,
         detail: list.error ? `tools/list failed: ${brief(list.error.message ?? '')}` : `tools/list answered ${names.length} tool(s); missing ${missing.join(', ')}`,
-        fix: `cd ${packageRoot()} && ${SERVER_FIX} (the build is older than this blazon), then run this check again`,
+        fix: `${serverFix(packageRoot())} (the server is older than this blazon), then run this check again`,
         tools: names,
       };
     const calledAt = Date.now();
@@ -206,7 +211,7 @@ export async function handshake(options: HandshakeOptions): Promise<McpCheck> {
       name: 'handshake',
       passed: false,
       detail: `the handshake did not finish: ${message}${timedOut ? '; the server was killed' : ''}`,
-      fix: `cd ${packageRoot()} && ${SERVER_FIX}, then run this check again; on a hang, run the server by hand: node ${entry} --brand ${brand}`,
+      fix: `${serverFix(packageRoot())}, then run this check again; on a hang, run the server by hand: node ${entry} --brand ${brand}`,
       ms: Date.now() - started,
     };
   } finally {
@@ -304,7 +309,7 @@ export async function runMcpCheck(options: McpCheckOptions): Promise<number> {
     : {
         name: 'handshake',
         passed: false,
-        detail: `not run: ${mcpInPackage(root) ? 'the server is not built' : 'the MCP server is not part of this install'}`,
+        detail: `not run: ${isSourceCheckout(root) ? 'the server is not built' : 'the install is incomplete'}`,
         fix: built.fix as string,
       };
   const folders = [...new Set([cwd, brand])];

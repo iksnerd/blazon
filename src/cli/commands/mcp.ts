@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import pc from '../../core/colors.js';
-import { buildMcpConfig, isMcpClient, MCP_CLIENTS, mcpInPackage, NOT_IN_PACKAGE, resolveMcpLaunch, type McpClient } from '../../core/mcp-config.js';
+import { buildMcpConfig, isMcpClient, MCP_CLIENTS, INCOMPLETE_INSTALL, isSourceCheckout, resolveMcpLaunch, type McpClient } from '../../core/mcp-config.js';
 import { UsageError } from '../errors.js';
 import { printJson } from '../read.js';
 import { runMcpCheck } from './mcp-check.js';
@@ -9,7 +9,7 @@ import { runMcpCheck } from './mcp-check.js';
 /**
  * `blazon mcp --print-config [--client c] [--brand dir]`: prints what registers blazon-mcp (stdio) in a client. Writes no file.
  * `blazon mcp --check [--client c] [--brand dir]`: says whether the server is built, can find blazon, answers a real MCP handshake and is registered.
- * Exits 0, or 2 for an unknown client, both flags or neither. `--check` exits 1 when the server is not ready; `--print-config` exits 1 when this blazon has no mcp/ (an npm install), because there is no command that works.
+ * Exits 0, or 2 for an unknown client, both flags or neither. `--check` exits 1 when the server is not ready; `--print-config` exits 1 when an install has lost its server file, because there is no command that works.
  */
 export async function runMcp(options: { printConfig?: boolean; check?: boolean; client?: string; brand?: string; json?: boolean; root?: string } = {}): Promise<number> {
   if (options.printConfig && options.check) throw new UsageError('give --print-config or --check, not both. See blazon mcp --help.', undefined, 'conflicting-options');
@@ -28,13 +28,14 @@ export async function runMcp(options: { printConfig?: boolean; check?: boolean; 
     if (!fs.statSync(folder, { throwIfNoEntry: false })?.isDirectory()) throw new UsageError(`the brand folder ${folder} does not exist.`, undefined, 'no-folder');
     return runMcpCheck({ client, brand: folder, ...(options.root && { root: options.root }), ...(options.json && { json: true }) });
   }
-  if (!mcpInPackage(options.root)) {
-    // An npm install has no mcp/, so every command printed would fail: say so, and print none.
-    if (options.json) printJson('mcp', false, { client, built: false, ...(brand && { brand }), note: NOT_IN_PACKAGE, snippets: [] });
-    else console.error(`\n  ${pc.yellow(NOT_IN_PACKAGE)}\n`);
+  const launch = resolveMcpLaunch(options.root);
+  if (!launch.built && !isSourceCheckout(options.root)) {
+    // An install without its server file is damaged: every command printed would fail, so say so and print none.
+    if (options.json) printJson('mcp', false, { client, built: false, ...(brand && { brand }), note: INCOMPLETE_INSTALL, snippets: [] });
+    else console.error(`\n  ${pc.yellow(INCOMPLETE_INSTALL)}\n`);
     return 1;
   }
-  const config = buildMcpConfig(client, resolveMcpLaunch(options.root), brand);
+  const config = buildMcpConfig(client, launch, brand);
   if (options.json) {
     printJson('mcp', true, { client, built: config.built, ...(brand && { brand }), ...(config.note && { note: config.note }), snippets: config.snippets });
     return 0;

@@ -5,7 +5,7 @@ import { tempDir } from '../support/project';
 import { allMcpConfigs, buildMcpConfig, isMcpClient, MCP_CLIENTS, resolveMcpLaunch, type McpLaunch } from '../../src/core/mcp-config.js';
 
 const BUILT: McpLaunch = { command: '/usr/bin/node', args: ['/f/mcp/dist/index.js'], env: { BLAZON_BIN: '/f/bin/blazon.js' }, built: true };
-const NPX: McpLaunch = { command: 'npx', args: ['-y', '@iksnerd/blazon-mcp'], env: {}, built: false };
+const UNBUILT: McpLaunch = { command: '/usr/bin/node', args: ['/f/mcp/dist/index.js'], env: {}, built: false, problem: 'the server file is missing' };
 const jsonOf = (client: (typeof MCP_CLIENTS)[number], launch: McpLaunch, brand?: string) =>
   JSON.parse(buildMcpConfig(client, launch, brand).snippets.find((s) => s.kind === 'json')!.text);
 
@@ -24,8 +24,27 @@ describe('resolveMcpLaunch', () => {
     });
   });
 
-  it('falls back to the npx form, marked as built: false, when there is no build', async () => {
-    expect(resolveMcpLaunch(await tempDir())).toEqual(NPX);
+  it('finds the server of an installed package the same way: node, the bundled file, and the bin beside it', async () => {
+    const root = await tempDir();
+    fs.mkdirSync(path.join(root, 'mcp/dist'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'bin'));
+    fs.writeFileSync(path.join(root, 'package.json'), '{"name":"@iksnerd/blazon"}');
+    fs.writeFileSync(path.join(root, 'mcp/dist/index.js'), '');
+    fs.writeFileSync(path.join(root, 'bin/blazon.js'), '');
+    const launch = resolveMcpLaunch(root, '/n/node');
+    expect(launch.built).toBe(true);
+    expect(launch.problem).toBeUndefined();
+    expect(launch.args).toEqual([path.join(root, 'mcp/dist/index.js')]);
+  });
+
+  it('still names the file, marked built: false with the cause, when it is missing; never an npx command', async () => {
+    const root = await tempDir();
+    const launch = resolveMcpLaunch(root, '/n/node');
+    expect(launch).toMatchObject({ command: '/n/node', args: [path.join(root, 'mcp/dist/index.js')], built: false });
+    expect(launch.problem).toMatch(/reinstall/i);
+    fs.mkdirSync(path.join(root, 'mcp'));
+    fs.writeFileSync(path.join(root, 'mcp/package.json'), '{}');
+    expect(resolveMcpLaunch(root, '/n/node').problem).toContain('npm run build -w mcp');
   });
 });
 
@@ -50,17 +69,22 @@ describe('buildMcpConfig', () => {
   });
 
   it('VS Code also gets a code --add-mcp command whose JSON carries the name', () => {
-    const text = buildMcpConfig('vscode', NPX, '/b').snippets[0]!.text;
+    const text = buildMcpConfig('vscode', UNBUILT, '/b').snippets[0]!.text;
     expect(text.startsWith("code --add-mcp '")).toBe(true);
-    expect(JSON.parse(text.slice("code --add-mcp '".length, -1))).toEqual({ name: 'blazon', type: 'stdio', command: 'npx', args: ['-y', '@iksnerd/blazon-mcp', '--brand', '/b'] });
+    expect(JSON.parse(text.slice("code --add-mcp '".length, -1))).toEqual({
+      name: 'blazon',
+      type: 'stdio',
+      command: '/usr/bin/node',
+      args: ['/f/mcp/dist/index.js', '--brand', '/b'],
+    });
   });
 
   it('leaves --brand out when no brand is given, and omits env when empty', () => {
-    expect(jsonOf('cursor', NPX).mcpServers.blazon).toEqual({ type: 'stdio', command: 'npx', args: ['-y', '@iksnerd/blazon-mcp'] });
+    expect(jsonOf('cursor', UNBUILT).mcpServers.blazon).toEqual({ type: 'stdio', command: '/usr/bin/node', args: ['/f/mcp/dist/index.js'] });
   });
 
-  it('says the npx form is not published, and says nothing of the kind for a built one', () => {
-    expect(buildMcpConfig('claude-code', NPX).note).toMatch(/not published to npm yet/);
+  it('carries the cause as the note when the server file is missing, and no note for a built one', () => {
+    expect(buildMcpConfig('claude-code', UNBUILT).note).toBe('the server file is missing');
     expect(buildMcpConfig('claude-code', BUILT).note).toBeUndefined();
   });
 

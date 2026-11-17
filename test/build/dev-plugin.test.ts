@@ -50,6 +50,9 @@ describe('blazon dev: the Vite plugin', () => {
     expect(body).toMatchObject({ format: 'blazon-mcp-config', version: 1, brand: path.resolve(project) });
     expect(body.clients.map((c: { client: string }) => c.client)).toEqual(['claude-code', 'claude-desktop', 'cursor', 'vscode']);
     expect(JSON.stringify(body.clients)).toContain(path.resolve(project));
+    // the command is node and the server file of this blazon, never the npx form of a package that is not on npm
+    expect(JSON.stringify(body.clients)).not.toMatch(/npx|blazon-mcp@|not published/);
+    expect(JSON.stringify(body.clients)).toContain('mcp/dist/index.js');
   });
 
   it('pushes fresh data to open pages when a token file changes', async () => {

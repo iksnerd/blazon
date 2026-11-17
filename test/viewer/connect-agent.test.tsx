@@ -12,7 +12,13 @@ const CONFIG = {
   brand: '/work/brand',
   clients: [
     { client: 'claude-code', title: 'Claude Code', built: true, snippets: [{ kind: 'command', label: 'Command', text: 'claude mcp add blazon' }] },
-    { client: 'cursor', title: 'Cursor', built: false, note: 'not published to npm yet', snippets: [{ kind: 'json', label: '.cursor/mcp.json', text: '{"mcpServers":{}}' }] },
+    {
+      client: 'cursor',
+      title: 'Cursor',
+      built: false,
+      note: 'the server file is missing; reinstall blazon',
+      snippets: [{ kind: 'json', label: '.cursor/mcp.json', text: '{"mcpServers":{}}' }],
+    },
   ],
 };
 const answer = (response: Response) =>
@@ -35,7 +41,7 @@ describe('ConnectAgent', () => {
     expect(screen.getByRole('tab', { name: 'Claude Code' })).toBeTruthy();
     expect(screen.getByText('claude mcp add blazon')).toBeTruthy();
     await userEvent.click(screen.getByRole('tab', { name: 'Cursor' }));
-    expect(await screen.findByText('not published to npm yet')).toBeTruthy();
+    expect(await screen.findByText('the server file is missing; reinstall blazon')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Copy' }).length).toBeGreaterThan(0);
   });
 

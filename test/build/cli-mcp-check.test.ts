@@ -78,6 +78,8 @@ const alive = (pid: number): boolean => {
 describe('mcp --check: (a) the server is built', () => {
   it('passes when mcp/dist/index.js exists and fails, with the build command, when it does not', () => {
     const root = tempDir('blazon-root-');
+    fs.mkdirSync(path.join(root, 'mcp'));
+    fs.writeFileSync(path.join(root, 'mcp/package.json'), '{}'); // a source checkout; an install without the file says to reinstall instead
     const missing = checkBuilt(root);
     expect(missing.passed).toBe(false);
     expect(missing.fix).toContain('npm run build -w mcp');
@@ -107,6 +109,16 @@ describe('mcp --check: (b) blazon is resolvable', () => {
     const result = checkBlazon({ BLAZON_BIN: '/nope/blazon', PATH: dir }, brand, root);
     expect(result).toMatchObject({ passed: false, source: 'BLAZON_BIN' });
     expect(result.fix).toBeTruthy();
+  });
+
+  it('uses the bin/blazon.js of its own package when BLAZON_BIN is not set, as the server does, ahead of PATH', () => {
+    const pkg = tempDir('blazon-pkg-');
+    fs.mkdirSync(path.join(pkg, 'bin'));
+    const own = exe(path.join(pkg, 'bin'), 'blazon.js');
+    const dir = tempDir();
+    exe(dir);
+    expect(checkBlazon({ PATH: dir }, brand, pkg)).toMatchObject({ passed: true, source: 'package', path: own });
+    expect(checkBlazon({ BLAZON_BIN: '/nope/blazon', PATH: dir }, brand, pkg)).toMatchObject({ passed: false, source: 'BLAZON_BIN' });
   });
 
   it('finds blazon on PATH, and fails with a fix when there is neither', () => {
