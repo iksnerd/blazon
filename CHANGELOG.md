@@ -4,6 +4,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+## 0.2.1 (2026-11-17)
+
 ### Changed
 
 - A new project lists `blazon.tailwind` and `blazon.shadcn` again, beside `blazon.copy` (both need only Node). `blazon init` then `blazon tokens` writes `dist/tokens/blazon.tailwind/` (`tailwind.css`, `tailwind-reset.css`) and `dist/tokens/blazon.shadcn/` (`shadcn.json`, `shadcn.css`) as well as `theme.css`, `typography.css`, `tokens.ts` and the JSON files, as 0.1.1 did. The starter's `blazon.shadcn` entry keeps the example's `variables` map.
