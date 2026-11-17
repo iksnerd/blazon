@@ -4,6 +4,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+## 0.3.0 (2026-11-17)
+
 ### Added
 
 - The MCP server ships inside `@iksnerd/blazon`. `npm install @iksnerd/blazon` gives you `blazon-mcp` (a second `bin`), and `npx -y -p @iksnerd/blazon blazon-mcp --brand <dir>` starts it with no clone. It is one built file, `mcp/dist/index.js`, with the MCP SDK and zod bundled in at build time, so the package gains no dependency and `npm audit --omit=dev` is unchanged. `blazon-mcp --version` prints the versions it carries.
