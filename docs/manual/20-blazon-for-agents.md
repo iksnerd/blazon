@@ -82,7 +82,7 @@ All eight are read-only (`readOnlyHint: true`) and write nothing.
 
 | Tool | Runs | Use it to |
 |---|---|---|
-| `check_brand` | `blazon check --no-plugins` | see the findings and counts, once per session, before you trust a value; the server's instructions put it first. Not for reading a value |
+| `check_brand` | `blazon check --no-plugins` | see the findings and counts, once per session, before you trust a value; the server's instructions put it first. Plugins do not run, so the counts can be lower than `blazon check` prints: when `blazon.json` lists plugins, `pluginsSkipped` and a line in `warnings` name them. Not for reading a value |
 | `list_tokens` | `blazon list [group] [--type t]` | find a token path, or read many values at once, for the brand, a group or one type |
 | `get_token` | `blazon get <path>` | read the value, type, CSS variable names and rules of one token whose path you know |
 | `get_rules` | `blazon rules [path]` | learn what a token, a group or the whole brand allows and forbids |
@@ -118,4 +118,4 @@ The package is not on npm. The server speaks stdio only: no HTTP and no sign-in.
 
 ## What the server will not do
 
-It writes nothing and does not build. It runs the blazon program without a shell, passes the arguments as a list, and accepts a token path only when it is dot-separated segments of ASCII letters, digits, `_` and `-`, each starting with a letter, digit or `_`, so an argument cannot become a flag. A tool refuses any argument it does not list. It stops a blazon command after 30 seconds, runs at most two at once, and reuses an answer for two seconds. It does not start blazon plugins: `check_brand` is `blazon check --no-plugins`, so findings that only a plugin raises are not in its answer.
+It writes nothing and does not build. It runs the blazon program without a shell, passes the arguments as a list, and accepts a token path only when it is dot-separated segments of ASCII letters, digits, `_` and `-`, each starting with a letter, digit or `_`, so an argument cannot become a flag. A tool refuses any argument it does not list. It stops a blazon command after 30 seconds, runs at most two at once, and reuses an answer for two seconds. It does not start blazon plugins: `check_brand` is `blazon check --no-plugins`, so findings that only a plugin raises, such as those of `blazon.copy`, are not in its answer. When `blazon.json` lists plugins, the answer says so: `pluginsSkipped` holds their names and `warnings` carries the line "N plugin(s) in blazon.json did not run". Run `blazon check` yourself for the full counts.

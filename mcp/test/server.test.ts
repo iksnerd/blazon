@@ -239,6 +239,25 @@ describe.skipIf(!installed)('blazon-mcp', () => {
     }
   });
 
+  it('says in check_brand that the plugins the config names did not run, and names them from blazon.json', async () => {
+    const project = await starterProject({ plugins: ['blazon.copy', { name: 'acme.house-style' }] });
+    const other = await connect({ bin, brand: project });
+    const result = await other.callTool({ name: 'check_brand', arguments: {} });
+    const check = structured(result);
+    expect(check.pluginsSkipped).toEqual(['blazon.copy', 'acme.house-style']);
+    expect(check.warnings).toContain(
+      '2 plugin(s) in blazon.json did not run: the MCP server never starts a plugin, so counts from `blazon check` can be higher: blazon.copy, acme.house-style.',
+    );
+    expect(textOf(result)).toMatch(/^Warning from blazon: .*2 plugin\(s\) in blazon.json did not run/);
+    await other.close();
+  });
+
+  it('adds no plugin line to check_brand when the config names no plugin', async () => {
+    const check = structured(await call('check_brand', {}));
+    expect(check.pluginsSkipped).toBeUndefined();
+    expect(check.warnings.join(' ')).not.toMatch(/plugin/);
+  });
+
   it('stops a blazon command that runs too long', async () => {
     const other = await connect({ bin: fakeBlazon('exec sleep 30'), brand, timeoutMs: 300 });
     const result = await other.callTool({ name: 'get_fonts', arguments: {} });
