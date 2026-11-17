@@ -1,7 +1,10 @@
 #!/usr/bin/env node
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { BlazonRunner, targetFrom } from './blazon.js';
 import { createServer } from './server.js';
+import { versionLine } from './version.js';
 
 let runner: BlazonRunner | undefined;
 let stopping = false;
@@ -16,8 +19,16 @@ function stop(code: number): void {
   process.stdin.pause();
 }
 
+const args = process.argv.slice(2);
+if (args.length === 1 && (args[0] === '--version' || args[0] === '-v')) {
+  console.log(versionLine());
+  process.exit(0);
+}
+
 try {
-  const target = targetFrom(process.argv.slice(2), process.env);
+  // Inside @iksnerd/blazon this file is mcp/dist/index.js and the blazon program is bin/blazon.js two folders up.
+  const own = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../bin/blazon.js');
+  const target = targetFrom(args, process.env, process.cwd(), own);
   runner = new BlazonRunner(target);
   const server = createServer(target, runner);
   server.server.onclose = () => stop(0);

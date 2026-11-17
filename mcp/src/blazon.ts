@@ -5,7 +5,7 @@ import { parseArgs } from 'node:util';
 
 /** Where the blazon CLI is and which brand folder it reads. */
 export interface BlazonTarget {
-  /** The blazon executable: `BLAZON_BIN`, or `blazon` found on PATH. */
+  /** The blazon executable: `BLAZON_BIN`, else the `bin/blazon.js` of the package the server ships in, else `blazon` found on PATH. */
   bin: string;
   /** The brand folder. Every command runs with this as its working directory, so no folder is ever an argument. */
   brand: string;
@@ -53,7 +53,7 @@ export function childEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 /** `--brand dir`, `--brand=dir`, or `BLAZON_BRAND`, or the current folder. A value that starts with `--` is a missing value, not a folder. */
-export function targetFrom(argv: string[], env: NodeJS.ProcessEnv, cwd: string = process.cwd()): BlazonTarget {
+export function targetFrom(argv: string[], env: NodeJS.ProcessEnv, cwd: string = process.cwd(), own?: string): BlazonTarget {
   let brand: string | undefined;
   try {
     const parsed = parseArgs({ args: argv, options: { brand: { type: 'string' } }, strict: true, allowPositionals: false });
@@ -64,7 +64,7 @@ export function targetFrom(argv: string[], env: NodeJS.ProcessEnv, cwd: string =
     throw new Error(`${error instanceof Error ? error.message : String(error)} Usage: blazon-mcp [--brand <folder>]`, { cause: error });
   }
   if (brand !== undefined && (brand === '' || brand.startsWith('--'))) throw new Error('--brand needs a folder.');
-  return { bin: env.BLAZON_BIN || 'blazon', brand: path.resolve(cwd, brand ?? env.BLAZON_BRAND ?? '.') };
+  return { bin: env.BLAZON_BIN || (own !== undefined && fs.existsSync(own) ? own : 'blazon'), brand: path.resolve(cwd, brand ?? env.BLAZON_BRAND ?? '.') };
 }
 
 export interface RunOptions {

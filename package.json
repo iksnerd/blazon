@@ -4,7 +4,8 @@
   "description": "Brand book and design token compiler: DTCG tokens, brand rules checked by blazon check, a static brand book that wears the brand",
   "type": "module",
   "bin": {
-    "blazon": "./bin/blazon.js"
+    "blazon": "./bin/blazon.js",
+    "blazon-mcp": "./mcp/dist/index.js"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -23,6 +24,7 @@
   "files": [
     "dist",
     "bin",
+    "mcp/dist/index.js",
     "plugins",
     "template",
     "THIRD-PARTY-NOTICES.md"
@@ -32,7 +34,8 @@
   ],
   "scripts": {
     "dev": "vite build --watch",
-    "build": "vite build && vite build -c vite.viewer.config.ts && npm run build:plugins",
+    "build": "vite build && vite build -c vite.viewer.config.ts && npm run build:plugins && npm run build:mcp",
+    "build:mcp": "node scripts/build-mcp.mjs",
     "build:plugins": "tsx scripts/build-plugins.mjs && tsx scripts/shipped-lock.mjs",
     "test": "vitest run",
     "test:related": "vitest related --run",

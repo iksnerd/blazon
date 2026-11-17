@@ -9,9 +9,8 @@ import { toolInput, toolOf } from './generated/project.js';
 import type { JsonSchema, Operation } from './generated/types.js';
 import { coerceArgs, commandFor, operationNamed, OPERATIONS, withDefaults } from './operations.js';
 import { buildPageText, INSTRUCTIONS } from './prompts.js';
+import { VERSIONS } from './version.js';
 import { answerWith, failure, limitItems, NARROW_FINDINGS, NARROW_NONE, NARROW_TOKENS, removedNotice, stripInvisible, type ToolResult } from './result.js';
-
-const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
 
 /** Said after blazon's own message when a path is not a token, so the model knows the next call. */
 const FIND_PATH = 'To find a token path, call list_tokens.';
@@ -107,7 +106,7 @@ function wireTool(op: Operation): Record<string, unknown> {
 }
 
 export function createServer(target: BlazonTarget, runner: BlazonRunner = new BlazonRunner(target)): McpServer {
-  const server = new McpServer({ name: 'blazon', version }, { instructions: INSTRUCTIONS });
+  const server = new McpServer({ name: 'blazon', version: VERSIONS.blazon }, { instructions: INSTRUCTIONS });
 
   /** Runs a call; blazon's own error message becomes a tool error, and anything else is reported as one too. */
   async function answer(op: Operation, args: Record<string, unknown>): Promise<ToolResult> {

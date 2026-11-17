@@ -125,8 +125,8 @@ describe.skipIf(!installed)('blazon-mcp', () => {
     expect(await refused(call('check_brand', { limit: 0 }))).toBe(true);
   });
 
-  it('sends the server version from package.json and instructions', async () => {
-    const pkg = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '../package.json'), 'utf8')) as { version: string };
+  it('sends the version of the blazon it ships in, and instructions', async () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '../../package.json'), 'utf8')) as { version: string };
     expect(client.getServerVersion()?.version).toBe(pkg.version);
     expect(client.getInstructions()).toMatch(/Order: check_brand once per session/);
     expect(client.getInstructions()).toMatch(/ask the user/);

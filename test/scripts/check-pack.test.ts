@@ -12,7 +12,7 @@ import { missingFiles, missingListed, requiredFiles } from '../../scripts/check-
 const SCRIPT = path.join(ROOT_DIR, 'scripts/check-pack.mjs');
 
 /** A package folder with one plugin, holding the files `present` names (relative paths) and nothing else. */
-function pkg(present: (name: string) => string[], listed: string[] = ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md']): string {
+function pkg(present: (name: string) => string[], listed: string[] = ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'mcp/dist/index.js']): string {
   const dir = tempDir('blazon-check-pack-');
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0', files: listed }));
   fs.mkdirSync(path.join(dir, 'plugins/acme.one'), { recursive: true });
@@ -30,7 +30,14 @@ const check = (dir: string) => spawnSync(process.execPath, [SCRIPT, '--dir', dir
 describe('which files the package must hold', () => {
   it('names the viewer, the license, the starter, the lock and one program per plugin', () => {
     const required = requiredFiles(['acme.one', 'acme.two']);
-    for (const file of ['dist/index.js', 'dist/ui/assets/geist-OFL.txt', 'template/blazon.json', 'plugins/shipped.lock', 'plugins/acme.two/bin/blazon-acme.two.🔌']) {
+    for (const file of [
+      'dist/index.js',
+      'dist/ui/assets/geist-OFL.txt',
+      'template/blazon.json',
+      'plugins/shipped.lock',
+      'plugins/acme.two/bin/blazon-acme.two.🔌',
+      'mcp/dist/index.js',
+    ]) {
       expect(required).toContain(file);
     }
   });
@@ -42,6 +49,13 @@ describe('which files the package must hold', () => {
 });
 
 describe('checking a tree', () => {
+  it('fails when the MCP server file is absent', () => {
+    const dir = pkg((name) => requiredFiles([name]).filter((file) => file !== 'mcp/dist/index.js'));
+    const result = check(dir);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('mcp/dist/index.js');
+  });
+
   it('fails, naming each file, for a tree with no dist/', () => {
     const dir = pkg((name) => requiredFiles([name]).filter((file) => !file.startsWith('dist/')));
     const result = check(dir);
@@ -89,11 +103,11 @@ describe('a path the manifest lists and the package does not hold', () => {
     expect(missingListed(['dist', 'mcp', './bin/', 'NOTICE.md'], ['package.json', 'dist/index.js', 'bin/blazon.js'])).toEqual(['mcp', 'NOTICE.md']);
   });
 
-  it('fails the check of a tree whose `files` lists mcp and ships no mcp/', () => {
-    const dir = pkg((name) => requiredFiles(name === undefined ? [] : [name]), ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'mcp']);
+  it('fails the check of a tree whose `files` lists a folder it does not ship', () => {
+    const dir = pkg((name) => requiredFiles(name === undefined ? [] : [name]), ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'mcp/dist/index.js', 'extras']);
     const result = check(dir);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('names 1 path');
-    expect(result.stderr).toContain('mcp');
+    expect(result.stderr).toContain('extras');
   });
 });

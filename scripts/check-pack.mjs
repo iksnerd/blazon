@@ -4,7 +4,7 @@
 //   node scripts/check-pack.mjs                  the tree in the current package
 //   node scripts/check-pack.mjs --dir <folder>   the tree in another folder
 //   node scripts/check-pack.mjs --tarball <tgz>  a tarball
-// Required: the compiled library and CLI, the viewer and Geist's license, the starter (template/), every shipped plugin's program
+// Required: the compiled library and CLI, the viewer and Geist's license, the MCP server (mcp/dist/index.js, one bundled file), the starter (template/), every shipped plugin's program
 // (one for each folder in plugins/) and plugins/shipped.lock. Every plain path in package.json `files` must also be in the package, so the manifest never names what it does not ship. The plugin names come from the folders, so a new plugin needs no edit here.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -21,6 +21,7 @@ export function requiredFiles(pluginNames) {
     'dist/cli/index.js',
     'dist/ui/index.html',
     'dist/ui/assets/geist-OFL.txt',
+    'mcp/dist/index.js',
     'template/blazon.json',
     'THIRD-PARTY-NOTICES.md',
     'plugins/shipped.lock',
