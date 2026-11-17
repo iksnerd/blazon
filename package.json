@@ -38,7 +38,7 @@
     "test:related": "vitest related --run",
     "test:files": "vitest run",
     "test:deck": "vitest run test/deck/brand-deck-plan test/deck/brand-deck-fonts.test.ts test/deck/brand-deck-examples.test.ts test/deck/examples-deck.test.ts test/plugins/shipped/brand-deck test/brand/brand-python.test.ts",
-    "test:docs": "vitest run test/docs/manual.test.ts test/docs/rfc.test.ts test/docs/checks-generated.test.ts",
+    "test:docs": "vitest run test/docs/manual.test.ts test/docs/rfc.test.ts test/docs/checks-generated.test.ts test/docs/versions.test.ts",
     "conformance:reads": "rm -f reads.json reads.json.lines && CONFORMANCE_READS=reads.json vitest run test/plugins/host && tsx scripts/conformance-reads.ts reads.json",
     "test:watch": "vitest",
     "typecheck": "node node_modules/typescript7/bin/tsc --noEmit && node scripts/typecheck-mcp.mjs",

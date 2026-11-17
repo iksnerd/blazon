@@ -4,6 +4,10 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Changed
+
+- The docs no longer state blazon's current version by hand (README status, manual, starter, CONTRIBUTING): a placeholder takes its place, and `test/docs/versions.test.ts` fails on a stale one.
+
 ## 0.2.2 (2026-11-17)
 
 ### Fixed

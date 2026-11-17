@@ -2,7 +2,7 @@
 
 ← [Manual index](index.md)
 
-Blazon is 0.x. Version 0.1.0 is on npm as `@iksnerd/blazon`, and the version numbers below describe how releases are numbered. A brand fixes the blazon it builds with, by an exact version in its `package.json` and by the commit in `blazon.lock` (`blazon pin` writes it, and `check`, `tokens` and `build` refuse any other blazon), so a change in blazon reaches a brand only when its owner moves the pin. This chapter says what a brand can rely on when it does, how changes are made, and how to move a pin.
+Blazon is 0.x. Blazon is on npm as `@iksnerd/blazon`, and the version numbers below describe how releases are numbered. A brand fixes the blazon it builds with, by an exact version in its `package.json` and by the commit in `blazon.lock` (`blazon pin` writes it, and `check`, `tokens` and `build` refuse any other blazon), so a change in blazon reaches a brand only when its owner moves the pin. This chapter says what a brand can rely on when it does, how changes are made, and how to move a pin.
 
 ## What is stable
 

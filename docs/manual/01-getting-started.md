@@ -2,7 +2,7 @@
 
 ← [Manual index](index.md)
 
-Blazon is at version 0.1.0 and is on npm as `@iksnerd/blazon`. It is 0.x, so a minor version may break ([chapter 18](18-stability.md)). The npm package named `blazon` is an unrelated project, so `npx blazon` in a folder where `@iksnerd/blazon` is not installed runs the wrong package. `package.json` asks for Node 24 or later (`engines`). It is tested on macOS and Linux; Windows (WSL) is untried.
+Blazon is on npm as `@iksnerd/blazon`. It is 0.x, so a minor version may break ([chapter 18](18-stability.md)). The npm package named `blazon` is an unrelated project, so `npx blazon` in a folder where `@iksnerd/blazon` is not installed runs the wrong package. `package.json` asks for Node 24 or later (`engines`). It is tested on macOS and Linux; Windows (WSL) is untried.
 
 ## Install
 
@@ -10,7 +10,7 @@ In the folder that holds your brand, or in the project that builds it:
 
 ```bash
 npm install @iksnerd/blazon
-npx blazon --version       # prints blazon/0.1.0, then your platform and Node version
+npx blazon --version       # prints blazon/<version>, then your platform and Node version
 npx blazon init my-brand
 npx blazon dev my-brand
 ```

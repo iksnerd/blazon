@@ -16,15 +16,15 @@ Do not edit a generated file; change its source and build again. Keep `dist/` ou
 
 A build depends on the blazon that runs it. If every person builds with whatever they last installed or pulled, the same sources can give different outputs. There are two ways to fix the blazon, and they combine.
 
-**A published version.** Install an exact version in the project that builds the book. The `package.json` then says `"@iksnerd/blazon": "0.1.0"` and the lockfile fixes the rest of the tree, so `npm ci` gives everyone the same blazon:
+**A published version.** Install an exact version in the project that builds the book. The `package.json` then says `"@iksnerd/blazon": "<version>"` and the lockfile fixes the rest of the tree, so `npm ci` gives everyone the same blazon:
 
 ```sh
-npm install --save-exact @iksnerd/blazon@0.1.0
+npm install --save-exact @iksnerd/blazon@<version>
 ```
 
-While blazon is 0.x, a range such as `^0.1.0` takes new patch releases of 0.1 and no other minor, and a minor release may break ([chapter 18](18-stability.md)); an exact version moves only when you move it.
+While blazon is 0.x, a range such as `^<major>.<minor>.0` takes new patch releases of that minor and no other minor, and a minor release may break ([chapter 18](18-stability.md)); an exact version moves only when you move it.
 
-**A commit.** Name the blazon commit in `blazon.lock` and let blazon refuse any other. `blazon pin` writes the commit of the blazon that runs it. For an installed blazon that is the commit the release was built from; for a clone it is the commit checked out, built with nothing uncommitted. A source checkout is also the only way to build a blazon from a commit no release has (every commit says `0.1.0` in `package.json`, so the version number cannot tell commits apart):
+**A commit.** Name the blazon commit in `blazon.lock` and let blazon refuse any other. `blazon pin` writes the commit of the blazon that runs it. For an installed blazon that is the commit the release was built from; for a clone it is the commit checked out, built with nothing uncommitted. A source checkout is also the only way to build a blazon from a commit no release has (every commit between two releases says the older one's version in `package.json`, so the version number cannot tell commits apart):
 
 ```sh
 # with an installed blazon, in the book
