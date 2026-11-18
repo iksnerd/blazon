@@ -4,6 +4,10 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Changed
+
+- The release audit allowlist is empty. The picomatch advisory it held (GHSA-fc5q-39xc-vjpf) was withdrawn upstream on 2026-11-18, so `npm audit` is clean again; the gate failed on the stale entry, as designed, and the entry and the SECURITY.md section about it are removed.
+
 ## 0.3.1 (2026-11-17)
 
 ### Added

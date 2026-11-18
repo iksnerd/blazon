@@ -208,10 +208,10 @@ describe('validating the allowlist', () => {
 });
 
 describe('the committed allowlist', () => {
-  it('is valid and holds exactly the picomatch advisory, with a reason that points at SECURITY.md', () => {
+  it('is valid, and every entry has a reason that points at SECURITY.md', () => {
+    // It is empty while no advisory needs a reviewed exception (the picomatch advisory that first filled it was withdrawn upstream).
     const entries = validateAllowlist(JSON.parse(fs.readFileSync(path.join(ROOT_DIR, '.github/audit-allowlist.json'), 'utf-8')));
-    expect(entries.map((e: { id: string }) => e.id)).toEqual([ID]);
-    expect(entries[0]?.reason).toContain('SECURITY.md');
+    for (const entry of entries) expect(entry.reason).toContain('SECURITY.md');
   });
 });
 
