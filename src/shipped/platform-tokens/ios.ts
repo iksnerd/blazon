@@ -1,6 +1,6 @@
 import type { Rgba } from './colors.js';
 import { dp } from './dimensions.js';
-import { typeName } from './names.js';
+import { assetName, swiftFile, typeName } from './names.js';
 import type { Plan } from './plan.js';
 
 const HEADER = '// Written by blazon.platform-tokens from brand.json. Do not edit: build again instead.';
@@ -48,13 +48,16 @@ extension Color {
     }
 }`;
 
-/** iOS: BlazonTokens.swift with enums of SwiftUI Colors and CGFloat dimensions, and an asset catalog with a colorset for each color, with dark appearances */
+/** iOS: BlazonTokens.swift (or <Prefix>Tokens.swift) with enums of SwiftUI Colors and CGFloat dimensions, and an asset catalog with a colorset for each color, with dark appearances */
 export function iosFiles(plan: Plan): Map<string, string> {
   const files = new Map<string, string>();
   if (plan.colors.length) {
     files.set('ios/Colors.xcassets/Contents.json', json({ info: INFO }));
     for (const c of plan.colors)
-      files.set(`ios/Colors.xcassets/${c.swift}.colorset/Contents.json`, json({ colors: [entry(c.light), ...(c.dark ? [entry(c.dark, true)] : [])], info: INFO }));
+      files.set(
+        `ios/Colors.xcassets/${assetName(plan.prefix, c.swift)}.colorset/Contents.json`,
+        json({ colors: [entry(c.light), ...(c.dark ? [entry(c.dark, true)] : [])], info: INFO }),
+      );
   }
   if (!plan.colors.length && !plan.dimensions.length) return files;
 
@@ -77,6 +80,6 @@ export function iosFiles(plan: Plan): Map<string, string> {
       '}',
     );
   if (dynamic) out.push('', DYNAMIC);
-  files.set('ios/BlazonTokens.swift', `${out.join('\n')}\n`);
+  files.set(`ios/${swiftFile(plan.prefix)}`, `${out.join('\n')}\n`);
   return files;
 }

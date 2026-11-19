@@ -30,4 +30,14 @@ describe('the print layouts', () => {
     expect(roomy).toContain('max-height: 420px');
     expect(roomy).not.toContain('margin-bottom: 0.6em');
   });
+
+  it('draws a task-list checkbox as a visible box with no bullet, in both layouts, with no colour literal', () => {
+    for (const name of ['compact', 'roomy'] as const) {
+      const css = printCss(name);
+      expect(css).toMatch(/li:has\(> input\[type="checkbox"\]\) \{ list-style: none/);
+      expect(css).toMatch(/input\[type="checkbox"\] \{[^}]*appearance: none[^}]*border: [\d.]+px solid var\(--foreground\)/);
+      expect(css).toMatch(/input\[type="checkbox"\]:checked \{[^}]*background: var\(--foreground\)/);
+    }
+    expect(printCss('compact')).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsl|oklch\(/);
+  });
 });

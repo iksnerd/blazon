@@ -187,6 +187,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
     theme: theme.values,
     themeTokens: theme.tokens,
     fonts: fonts.stylesheets,
+    ...(fonts.licenses.length > 0 && { fontLicenses: fonts.licenses }),
     ...(logo.set && { logo: declareInks(logo.set, config, cwd, assets) }),
     docs,
     assets,

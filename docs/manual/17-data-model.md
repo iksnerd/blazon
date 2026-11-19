@@ -37,6 +37,7 @@ tokens/  docs/  assets/  blazon.json   →   BlazonData   →   dist/tokens/  di
 | `theme` | The brand book's own look: each theme role's resolved CSS value |
 | `themeTokens` | The token path behind each theme role, so a context that changes the token changes the role |
 | `fonts` | The font stylesheet addresses the brand book loads |
+| `fontLicenses` | The license file found beside each embedded font file, one per family: `family`, `licenseFile` (a project path) and `licenseText`. Absent when there is none |
 | `logo` | The logo variants as data URIs (`LogoSet`) |
 | `docs` | The pages (`DocItem`) |
 | `assets` | The assets, as a catalog of logos, icons and custom categories (`AssetCatalog`) |

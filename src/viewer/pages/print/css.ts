@@ -45,6 +45,13 @@ ${book} .blazon-prose { max-width: none; font-size: 20px; line-height: ${proseLe
 ${proseMargin ? `${book} .blazon-prose :is(p, ul, ol, table) { margin-bottom: ${proseMargin}; }\n` : ''}${headingMargin ? `${book} .blazon-prose h3 { margin-top: ${headingMargin}; }\n` : ''}${book} .blazon-prose table { font-size: 16px; }
 ${book} .blazon-prose blockquote { font-size: 15px; }
 ${book} .blazon-prose p, ${book} .blazon-prose li { max-width: 62ch; }
+/* A Markdown task item (a native checkbox in an li) has no bullet, and its box is drawn by the book: the browser's own is a pale
+   grey that all but vanishes on paper. A border in the text colour, a checked box filled with it and a ring of the page colour
+   inside, so the two read apart in black and white. 0.8em in a box of the line's size, sunk a little so the text keeps its baseline */
+${book} .blazon-prose li:has(> input[type="checkbox"]) { list-style: none; }
+${book} .blazon-prose li > input[type="checkbox"] { appearance: none; box-sizing: border-box; width: 0.8em; height: 0.8em; margin: 0 0.5em 0 0;
+  vertical-align: -0.04em; border: 2px solid var(--foreground); border-radius: 2px; background: transparent; print-color-adjust: exact; }
+${book} .blazon-prose li > input[type="checkbox"]:checked { background: var(--foreground); box-shadow: inset 0 0 0 1.5px var(--background); }
 /* A continued slide's label, the section heading and "(continued)" in the muted colour on one line: the heading gives way
    with an ellipsis, the suffix never. 14px, so 12.6px (9.5 pt) at the smallest a slide is drawn at */
 ${book} [data-print-continued-label] { display: flex; height: ${LABEL_LINE}px; margin-bottom: ${LABEL_GAP}px; font: 500 14px/${LABEL_LINE}px var(--font-sans); color: var(--muted-foreground); }

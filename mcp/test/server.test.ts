@@ -245,10 +245,18 @@ describe.skipIf(!installed)('blazon-mcp', () => {
     const result = await other.callTool({ name: 'check_brand', arguments: {} });
     const check = structured(result);
     expect(check.pluginsSkipped).toEqual(['blazon.copy', 'acme.house-style']);
-    expect(check.warnings).toContain(
-      '2 plugin(s) in blazon.json did not run: the MCP server never starts a plugin, so counts from `blazon check` can be higher: blazon.copy, acme.house-style.',
-    );
-    expect(textOf(result)).toMatch(/^Warning from blazon: .*2 plugin\(s\) in blazon.json did not run/);
+    const line = `Plugins in blazon.json did not run: blazon.copy, acme.house-style. Only a plugin with a check role can add findings to these counts; a build-only plugin adds none. The server cannot read a plugin's role without starting it, so it lists every configured plugin. Run \`blazon check\` for the full counts.`;
+    expect(check.warnings).toContain(line);
+    expect(textOf(result)).toMatch(/^Warning from blazon: Plugins in blazon.json did not run/);
+    await other.close();
+  });
+
+  it('lists build-only plugins too, since their roles are only in a manifest the server cannot read without starting them, and says so', async () => {
+    const project = await starterProject({ plugins: ['blazon.tailwind', 'blazon.shadcn'] });
+    const other = await connect({ bin, brand: project });
+    const check = structured(await other.callTool({ name: 'check_brand', arguments: {} }));
+    expect(check.pluginsSkipped).toEqual(['blazon.tailwind', 'blazon.shadcn']);
+    expect(check.warnings.join(' ')).toMatch(/Only a plugin with a check role can add findings.*cannot read a plugin's role without starting it/);
     await other.close();
   });
 

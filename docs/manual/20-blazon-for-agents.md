@@ -88,7 +88,7 @@ All seven are read-only (`readOnlyHint: true`) and write nothing.
 
 | Tool | Runs | Use it to |
 |---|---|---|
-| `check_brand` | `blazon check --no-plugins` | see the findings and counts, once per session, before you trust a value; the server's instructions put it first. Plugins do not run, so the counts can be lower than `blazon check` prints: when `blazon.json` lists plugins, `pluginsSkipped` and a line in `warnings` name them. Not for reading a value |
+| `check_brand` | `blazon check --no-plugins` | see the findings and counts, once per session, before you trust a value; the server's instructions put it first. Plugins do not run, so the counts can be lower than `blazon check` prints, but only for a plugin with a `check` role (`blazon.copy`); build-only plugins such as `blazon.tailwind` add no finding. When `blazon.json` lists plugins, `pluginsSkipped` and a line in `warnings` name all of them, since a role is known only by starting the plugin Not for reading a value |
 | `list_tokens` | `blazon list [group] [--type t]` | find a token path, or read many values at once, for the brand, a group or one type |
 | `get_token` | `blazon get <path>` | read the value, type, CSS variable names and rules of one token whose path you know |
 | `get_rules` | `blazon rules [path]` | learn what a token, a group or the whole brand allows and forbids |

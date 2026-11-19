@@ -21,6 +21,12 @@ Two optional strings go with any of these: `title` (at most 120 characters) repl
 
 One more option, `layout`, is `"compact"` (the default) or `"roomy"`. `compact` lets a figure share a slide by drawing its pictures down to 60% of their height, and sets the prose and sections tighter, so the book runs on fewer slides. `roomy` draws every picture whole and sets the text looser. Only `roomy` is put in the hash, as `layout=roomy`, and the page says which layout it used in `window.__blazonPrint.layout`. Any other value, and any other option, is refused.
 
+## Output size
+
+The PDF is Chrome's own output, with lossless images, so it is large: a book can be 3 to 4 times the size of a compressed one. The plugin has no option to compress it and does not call another program. To shrink it, run a post-processing step such as Ghostscript on the file. Ghostscript's `-dJPEGQ` is ignored by its `pdfwrite` device; image quality changes only through `setdistillerparams` (a `QFactor` in the color image dictionary). That recipe has not been run against this plugin's output here, so it is not given.
+
+A Markdown task list (`- [ ]`, `- [x]`) prints without a bullet, as a box with a border in the text color; a checked box is filled.
+
 It exits `2` with the reason and writes nothing when the request or its options are wrong, when `site_dir` has no `index.html`, when it finds no browser, and when the page does not say it is ready in time.
 
 ## Use it

@@ -274,6 +274,14 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
+  'font-license-invalid': {
+    severity: 'warning',
+    summary: 'A license file beside a font file was not read.',
+    fix: 'Keep the license file (OFL.txt, LICENSE, LICENCE or COPYING) under 64 KiB, as UTF-8 text, inside the project folder, or state the license on the font token with font.license.',
+    appliesTo: ['config'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
   'font-license-unknown': {
     severity: 'info',
     summary: 'A font license is not a known SPDX id.',

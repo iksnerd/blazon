@@ -295,6 +295,87 @@ describe('the plan', () => {
   });
 });
 
+describe('border tokens', () => {
+  // A border is a DTCG composite; brand.json has its colour already resolved to a hex string. Only the width is written, as a dimension
+  const border = (p: string, width: unknown, style: unknown = 'solid') => ({
+    path: p,
+    type: 'border',
+    value: '2px solid #1E1F21',
+    resolvedValue: { color: '#1E1F21', ...(width !== undefined && { width }), style },
+  });
+  const withBorders = (...borders: object[]) => brandOf({ tokens: [...(brandOf().tokens as object[]), ...borders] });
+  const px = (n: number, unit = 'px') => ({ value: n, unit });
+  const filesOf = (p: ReturnType<typeof plan>) => Object.fromEntries([...androidFiles(p), ...iosFiles(p), ...composeFiles(p)]);
+
+  it('writes the width as a dimension named <path>.width, in dp, and leaves the colour out', () => {
+    const p = plan(withBorders(border('border.rule', px(2)), border('border.hairline', px(1)), border('border.big', px(0.5, 'rem'))));
+    const got = Object.fromEntries(p.dimensions.map((d) => [d.path, d]));
+    expect(got['border.rule.width']).toMatchObject({ dp: 2, android: 'border_rule_width', swift: 'borderRuleWidth', kotlin: 'borderRuleWidth' });
+    expect(got['border.hairline.width']!.dp).toBe(1);
+    expect(got['border.big.width']!.dp).toBe(8);
+    expect(p.colors.map((c) => c.path)).not.toContain('border.rule');
+    expect(p.findings.filter((f) => f.code === `${NAME}/tokens-skipped`)[0]!.message).not.toContain('border (');
+  });
+
+  it('is written to every output, under the prefix', () => {
+    const p = plan(withBorders(border('border.rule', px(2))), { prefix: 'Acme' });
+    expect(androidFiles(p).get('android/values/dimens.xml')).toContain('<dimen name="acme_border_rule_width">2dp</dimen>');
+    expect(iosFiles(p).get('ios/AcmeTokens.swift')).toContain('public static let borderRuleWidth: CGFloat = 2');
+    expect(composeFiles(p).get('compose/Dimens.kt')).toContain('val borderRuleWidth: Dp = 2.dp');
+  });
+
+  it('matches include and exclude by the border token path, not .width', () => {
+    const b = withBorders(border('border.rule', px(2)), border('border.hairline', px(1)));
+    expect(plan(b, { include: ['border.rule'] }).dimensions.map((d) => d.path)).toEqual(['border.rule.width']);
+    expect(plan(b, { exclude: ['border'] }).dimensions.map((d) => d.path)).toEqual(['size.line', 'space.4']);
+    expect(plan(b, { include: ['border.rule.width'] }).findings.map((f) => f.code)).not.toContain(`${NAME}/border-style-dropped`);
+    expect(plan(b, { include: ['border.rule.width'] }).dimensions.map((d) => d.path)).toEqual([]);
+  });
+
+  it('says once per token which style was not carried, and still writes the width', () => {
+    const p = plan(withBorders(border('border.rule', px(2)), border('border.dash', px(1), 'dashed'), border('border.dot', px(1), 'dotted')));
+    const dropped = p.findings.filter((f) => f.code === `${NAME}/border-style-dropped`);
+    expect(dropped.map((f) => f.path)).toEqual(['border.dash', 'border.dot']);
+    expect(dropped.every((f) => f.severity === 'info')).toBe(true);
+    expect(dropped[0]!.message).toContain('dashed');
+    expect(p.dimensions.map((d) => d.path)).toContain('border.dash.width');
+  });
+
+  it('warns about a width it cannot read and skips the token', () => {
+    const p = plan(withBorders(border('border.none', undefined), border('border.nan', 'thick'), border('border.em', px(1, 'em')), border('border.rule', px(2))));
+    const bad = p.findings.filter((f) => f.code === `${NAME}/dimension-unreadable`);
+    expect(bad.map((f) => f.path)).toEqual(['border.em', 'border.nan', 'border.none']);
+    expect(bad.every((f) => f.severity === 'warning' && f.message.includes(f.path))).toBe(true);
+    expect(p.dimensions.map((d) => d.path)).toEqual(['border.rule.width', 'size.line', 'space.4']);
+  });
+
+  it('does not crash on a border whose value is not a composite', () => {
+    const odd = [
+      { path: 'border.str', type: 'border', value: '3px', resolvedValue: '3px' },
+      { path: 'border.dim', type: 'border', value: '4px', resolvedValue: px(4) },
+      { path: 'border.null', type: 'border', value: null, resolvedValue: null },
+      { path: 'border.list', type: 'border', value: [], resolvedValue: [] },
+    ];
+    const p = plan(withBorders(...odd));
+    expect(p.dimensions.filter((d) => d.path.startsWith('border.')).map((d) => [d.path, d.dp])).toEqual([
+      ['border.dim.width', 4],
+      ['border.str.width', 3],
+    ]);
+  });
+
+  it('counts a border the dark context gives another width with the changed dimensions', () => {
+    const b = withBorders(border('border.rule', px(2)));
+    (b.contexts as { tokens: object[] }[])[0]!.tokens.push(border('border.rule', px(3)));
+    expect(plan(b).findings.find((f) => f.code === `${NAME}/dark-dimensions-ignored`)!.message).toContain('1 dimension token');
+  });
+
+  it('leaves every output byte-identical for a brand with no border token', () => {
+    const base = filesOf(plan(brandOf()));
+    expect(filesOf(plan(withBorders(border('border.rule', px(2))), { exclude: ['border'] }))).toEqual(base);
+    expect(filesOf(plan(withBorders(border('border.rule', px(2)))))['android/values/dimens.xml']).toContain('<dimen name="border_rule_width">2dp</dimen>');
+  });
+});
+
 describe('the Android files', () => {
   const files = androidFiles(plan());
 
@@ -382,10 +463,25 @@ describe('the iOS files', () => {
     expect(light).not.toContain('UIKit');
   });
 
-  it('names the enums after the prefix', () => {
-    const named = iosFiles(plan(brandOf(), { prefix: 'Acme' })).get('ios/BlazonTokens.swift')!;
+  it('names the enums and the Swift file after the prefix, and the colorsets too', () => {
+    const prefixed = iosFiles(plan(brandOf(), { prefix: 'Acme' }));
+    expect([...prefixed.keys()]).toEqual([
+      'ios/Colors.xcassets/Contents.json',
+      'ios/Colors.xcassets/acmeBrandPrimary.colorset/Contents.json',
+      'ios/Colors.xcassets/acmeOverlay.colorset/Contents.json',
+      'ios/Colors.xcassets/acmeSurfaceBackground.colorset/Contents.json',
+      'ios/Colors.xcassets/acmeTextPrimary.colorset/Contents.json',
+      'ios/AcmeTokens.swift',
+    ]);
+    const named = prefixed.get('ios/AcmeTokens.swift')!;
     expect(named).toContain('public enum AcmeColors {');
     expect(named).toContain('public enum AcmeDimensions {');
+    expect(named).toContain('public static let brandPrimary =');
+    expect(iosFiles(plan(brandOf(), { prefix: 'acme' })).has('ios/AcmeTokens.swift')).toBe(true);
+  });
+
+  it('with no prefix writes the names it always wrote', () => {
+    expect(iosFiles(plan(brandOf(), { prefix: '' }))).toEqual(files);
   });
 });
 
@@ -433,6 +529,109 @@ object BlazonDimens {
 
   it('has no BlazonDarkColors without a dark context', () => {
     expect(composeFiles(plan(brandOf({ contexts: [] }))).get('compose/Colors.kt')).not.toContain('BlazonDarkColors');
+  });
+});
+
+describe('include and exclude', () => {
+  const tree = (over: object) =>
+    brandOf({
+      tokens: [
+        color('color.brand.primary', '#FF5A1F'),
+        color('color.surface.background', '#F2F0EB'),
+        dim('breakpoint.md', 768),
+        dim('breakpoint.lg', 1024),
+        dim('breakpoints.x', 5),
+        dim('component.button.website.height', 48),
+        dim('component.button.webapp.height', 40),
+        dim('space.4', 4),
+      ],
+      contexts: [{ modifier: 'theme', context: 'dark', selector: '', tokens: [color('color.surface.background', '#1E1F21'), dim('breakpoint.md', 800)] }],
+      ...over,
+    });
+  const paths = (options: object) => {
+    const p = plan(tree({}), options);
+    return { colors: p.colors.map((c) => c.path), dimensions: p.dimensions.map((d) => d.path), findings: p.findings };
+  };
+  const parse = (options: object) => parseOptions(options, new Set(['dark']));
+
+  it('keeps everything with neither option', () => {
+    expect(paths({}).dimensions).toHaveLength(6);
+    expect(paths({}).colors).toHaveLength(2);
+    expect(parse({}).options).toEqual({ platforms: ['android', 'ios', 'compose'], prefix: '' });
+  });
+
+  it('exclude removes a token, and everything under a group, by whole segments', () => {
+    const { dimensions, colors } = paths({ exclude: ['breakpoint', 'component.button.website'] });
+    expect(dimensions).toEqual(['breakpoints.x', 'component.button.webapp.height', 'space.4']);
+    expect(colors).toHaveLength(2);
+  });
+
+  it('a prefix stops at the segment: breakpoint does not match breakpoints.x', () => {
+    expect(paths({ exclude: ['breakpoint'] }).dimensions).toContain('breakpoints.x');
+    expect(paths({ include: ['breakpoint'] }).dimensions).toEqual(['breakpoint.lg', 'breakpoint.md']);
+    expect(paths({ exclude: ['breakpoint.md'] }).dimensions).toContain('breakpoint.lg');
+    expect(paths({ exclude: ['space.4'] }).dimensions).not.toContain('space.4');
+  });
+
+  it('include keeps only the matching tokens, colours and dimensions alike', () => {
+    const { dimensions, colors } = paths({ include: ['color.brand', 'space'] });
+    expect(colors).toEqual(['color.brand.primary']);
+    expect(dimensions).toEqual(['space.4']);
+  });
+
+  it('exclude applies after include', () => {
+    expect(paths({ include: ['component.button'], exclude: ['component.button.website'] }).dimensions).toEqual(['component.button.webapp.height']);
+  });
+
+  it('applies to the dark context too, with no dark-unmatched finding for a token left out', () => {
+    const p = paths({ exclude: ['color.surface', 'breakpoint'] });
+    expect(p.colors).toEqual(['color.brand.primary']);
+    expect(p.findings.map((f) => f.code)).toEqual([`${NAME}/dark-empty`]);
+  });
+
+  it('says in an info finding which entry matched no token, so a typo shows', () => {
+    const { findings } = paths({ include: ['spaec', 'space'], exclude: ['breakpoin'] });
+    const unmatched = findings.filter((f) => f.code === `${NAME}/filter-unmatched`);
+    expect(unmatched.map((f) => [f.severity, f.path])).toEqual([
+      ['info', 'options.include'],
+      ['info', 'options.exclude'],
+    ]);
+    expect(unmatched[0]!.message).toContain('"spaec"');
+    expect(unmatched[1]!.message).toContain('"breakpoin"');
+    expect(findings.some((f) => f.code === `${NAME}/option-invalid`)).toBe(false);
+  });
+
+  it('writes the filtered tokens to every output', () => {
+    const p = plan(tree({}), { exclude: ['breakpoint', 'breakpoints', 'component'] });
+    expect(androidFiles(p).get('android/values/dimens.xml')).not.toContain('breakpoint');
+    expect(composeFiles(p).get('compose/Dimens.kt')).not.toContain('breakpoint');
+    expect(iosFiles(p).get('ios/BlazonTokens.swift')).not.toContain('breakpoint');
+  });
+
+  it('validates: lists of non-empty dot paths, a stated maximum', () => {
+    const bad: object[] = [
+      { include: 'breakpoint' },
+      { include: [] },
+      { exclude: [] },
+      { exclude: [3] },
+      { exclude: [''] },
+      { exclude: ['a..b'] },
+      { exclude: ['a.'] },
+      { include: ['.a'] },
+      { exclude: ['a.*'] },
+      { exclude: ['{a.b}'] },
+      { exclude: ['a b'] },
+      { include: ['$type'] },
+      { exclude: Array.from({ length: 101 }, (_, i) => `t${i}`) },
+    ];
+    for (const options of bad) {
+      const { findings, options: parsed } = parse(options);
+      expect(findings.map((f) => f.code), JSON.stringify(options).slice(0, 40)).toEqual([`${NAME}/option-invalid`]);
+      expect(parsed.include).toBeUndefined();
+      expect(parsed.exclude).toBeUndefined();
+    }
+    expect(parse({ exclude: Array.from({ length: 100 }, (_, i) => `t${i}`) }).findings).toEqual([]);
+    expect(parse({ include: ['color.brand-primary', 'size.2xl', 'a_b'] }).findings).toEqual([]);
   });
 });
 
@@ -494,6 +693,15 @@ describe('the entry', () => {
 
   it('writes the same bytes for the same brand', () => {
     expect(run({}).files).toEqual(run({}).files);
+  });
+
+  it('with a prefix names the Swift file and colorsets, and says so in README.txt', () => {
+    const { files } = run({ prefix: 'Acme' });
+    expect(Object.keys(files)).toContain('ios/AcmeTokens.swift');
+    expect(Object.keys(files)).toContain('ios/Colors.xcassets/acmeBrandPrimary.colorset/Contents.json');
+    expect(Object.keys(files)).not.toContain('ios/BlazonTokens.swift');
+    expect(files['README.txt']).toContain('add AcmeTokens.swift and Colors.xcassets');
+    expect(files['compose/Colors.kt']).toContain('package blazon.tokens');
   });
 
   it('writes only the platforms asked for', () => {

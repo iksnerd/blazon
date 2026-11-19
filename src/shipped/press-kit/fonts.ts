@@ -1,11 +1,17 @@
-import { fontOf } from '../shared/font-stack.js';
+import { SYSTEM_FAMILIES } from '../../core/fonts.js';
+import { families as stackFamilies, fontOf } from '../shared/font-stack.js';
 import type { BrandRead } from './brand.js';
 import { finding, type Finding } from './options.js';
 
 // The fonts the brand names, for fonts.txt: each family, what it is used for, where it comes from and under what license. A font token's
 // `font` extension states the source and the license; without a source it is found where the data has one (a Google Fonts stylesheet, a font
-// file the brand embeds), and a license is also read from any extension's `license` text. For the rest the file says "not stated", and a
+// file the brand embeds), and a license is also read from any extension's `license` text. Failing both, the license file blazon found beside the family's font files (`theme.fontLicenses` of brand.json: a plugin is never given the project folder) gives the line that names it and its path. For the rest the file says "not stated", and a
 // finding says it too: a source or license is never guessed from the family.
+//
+// What counts as a brand font is decided as the rest of blazon decides it (`blazon fonts`, SYSTEM_FAMILIES in core/fonts.ts): the family at
+// the front of a stack is the brand's, unless it is a keyword or a font every computer has (SFMono-Regular, Arial) that no stylesheet or font
+// file of the brand loads and no font token gives a source or license for. The other families of a stack are fallbacks. Fallbacks are printed
+// once, on one line, as "not shipped", so a reader sees the whole stack and never reads a system font as a font the brand supplies.
 
 interface Family {
   name: string;
@@ -13,6 +19,8 @@ interface Family {
   license?: string;
   licenseUrl?: string;
   source?: string;
+  /** From the license file beside the font files, when the token states no license */
+  fileLicense?: { headline?: string; file: string };
 }
 
 const NOT_STATED = 'not stated';
@@ -46,7 +54,18 @@ function stylesheetFamilies(sheet: string): { names: string[]; source: (name: st
   }
 }
 
-export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'stylesheets'>): { text?: string; findings: Finding[] } {
+/**
+ * What a license file's text says it is: an `SPDX-License-Identifier:` line, else the first line that is short and is not a copyright notice
+ * (the OFL starts with a copyright line, often a long one, and names itself on the next). Nothing is guessed from the family or the words.
+ */
+export function licenseHeadline(text: string): string | undefined {
+  const lines = text.split('\n').map((line) => line.trim());
+  const spdx = lines.map((line) => /^(?:[#*/;\s]*)SPDX-License-Identifier:\s*(.+)$/i.exec(line)?.[1]?.trim()).find(Boolean);
+  if (spdx) return spdx;
+  return lines.find((line) => line !== '' && line.length <= 100 && !/^(copyright\b|\(c\)|©)/i.test(line));
+}
+
+export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'stylesheets'> & Partial<Pick<BrandRead, 'fontLicenses'>>): { text?: string; findings: Finding[] } {
   const families = new Map<string, Family>();
   const add = (name: string, usedFor?: string, stated?: Pick<Family, 'license' | 'licenseUrl' | 'source'>) => {
     const family = families.get(name.toLowerCase()) ?? { name, usedFor: [] };
@@ -56,14 +75,24 @@ export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'style
     family.source ??= stated?.source;
     families.set(name.toLowerCase(), family);
   };
-  for (const [role, label] of ROLES) {
-    const name = fontOf(brand.roles[role]);
-    if (name) add(name, label);
-  }
-  for (const token of brand.fontTokens) {
-    const name = fontOf(token.stack);
-    if (name) add(name, token.path, token);
-  }
+  const sheetNames = new Set<string>();
+  for (const sheet of brand.stylesheets) for (const name of stylesheetFamilies(sheet)?.names ?? []) sheetNames.add(name.toLowerCase());
+  const fallbacks = new Map<string, string>();
+  const fallback = (name: string) => {
+    if (!/[()]/.test(name) && !sheetNames.has(name.toLowerCase())) fallbacks.set(name.toLowerCase(), fallbacks.get(name.toLowerCase()) ?? name);
+  };
+  /** The front family of a stack is a brand font unless it is a system one nothing loads and nothing states a source or license for; the rest of the stack is fallback */
+  const take = (stack: string | undefined, usedFor: string, stated?: Pick<Family, 'license' | 'licenseUrl' | 'source'>) => {
+    const name = fontOf(stack);
+    for (const family of stack ? stackFamilies(stack) : []) {
+      const brandFont =
+        family === name && (!SYSTEM_FAMILIES.has(family.toLowerCase()) || sheetNames.has(family.toLowerCase()) || !!(stated?.license || stated?.licenseUrl || stated?.source));
+      if (brandFont) add(family, usedFor, stated);
+      else fallback(family);
+    }
+  };
+  for (const [role, label] of ROLES) take(brand.roles[role], label);
+  for (const token of brand.fontTokens) take(token.stack, token.path, token);
   const sources = new Map<string, string>();
   for (const sheet of brand.stylesheets) {
     const read = stylesheetFamilies(sheet);
@@ -74,9 +103,22 @@ export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'style
     }
   }
 
+  // A license file found beside the font files says what the token does not: it is the last word, after the token's own license and its address
+  for (const found of brand.fontLicenses ?? []) {
+    const family = families.get(found.family.toLowerCase());
+    if (family && !family.license && !family.licenseUrl) family.fileLicense = { headline: licenseHeadline(found.licenseText), file: found.licenseFile };
+  }
+
   const findings: Finding[] = [];
   if (families.size === 0) {
-    findings.push(finding('font-none', 'warning', 'theme.roles', 'the brand names no font, so the kit has no fonts.txt'));
+    findings.push(
+      finding(
+        'font-none',
+        'warning',
+        'theme.roles',
+        'the brand names no font it ships or loads (system fonts and generic families are fallbacks, not brand fonts), so the kit has no fonts.txt',
+      ),
+    );
     return { findings };
   }
   const lines = ['Fonts', ''];
@@ -89,12 +131,17 @@ export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'style
       lines.push('  License:', ...family.license.split('\n').map((line) => `    ${line}`.trimEnd()));
       if (family.licenseUrl) lines.push(`  License text: ${family.licenseUrl}`);
     } else if (family.licenseUrl) lines.push(`  License: see ${family.licenseUrl}`);
-    else {
+    else if (family.fileLicense) {
+      const { headline, file } = family.fileLicense;
+      lines.push(`  License: ${headline ?? `see ${file}`}`, `  License file: ${file} (in the brand project, not in this kit)`);
+    } else {
       lines.push(`  License: ${NOT_STATED}`);
       unlicensed.push(family.name);
     }
     lines.push('');
   }
+  const left = [...fallbacks].filter(([key]) => !families.has(key)).map(([, name]) => name);
+  if (left.length > 0) lines.push(`Fallback fonts, not shipped: ${left.join(', ')}`);
   if (unlicensed.length > 0)
     findings.push(
       finding(

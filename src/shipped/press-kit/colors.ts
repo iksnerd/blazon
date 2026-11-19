@@ -94,8 +94,8 @@ export function colorsCss(colors: KitColor[]): string {
   return `${lines.join('\n')}\n`;
 }
 
-export function colorsText(colors: KitColor[]): string {
-  const lines = ['Colors', ''];
+export function colorsText(colors: KitColor[], note?: string): string {
+  const lines = note ? ['Colors', '', `Note: ${note}`, ''] : ['Colors', ''];
   for (const color of colors) {
     const name = color.description && color.description.length <= 60 ? `${color.description} (${color.path})` : color.path;
     lines.push(color.review ? `${name} (unreviewed)` : name);

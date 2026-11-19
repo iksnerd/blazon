@@ -2,6 +2,7 @@ import path from 'node:path';
 import type { BlazonConfig, Finding } from '../types/index.js';
 import { finding } from './checker/catalogue.js';
 import { inProject, outsideMessage } from './confine.js';
+import { licenseFileIn } from './fonts.js';
 import { categoryDirs } from './assets/categories.js';
 import { packageDir } from './icons/icon-sets.js';
 import { logoFiles } from './logo.js';
@@ -42,7 +43,13 @@ export function projectInputs(config: BlazonConfig, cwd: string): Input[] {
   for (const input of resolverInputs(resolver))
     found.push({ name: input === resolver ? 'resolver' : 'a resolver source', as: path.relative(cwd, input) || input, path: input, folder: false });
   for (const logo of logoFiles(config)) file('a logo file', logo);
-  for (const font of Array.isArray(config.fonts) ? config.fonts : []) if (font && typeof font === 'object') file(`the font file of ${String(font.family)}`, font.file);
+  for (const font of Array.isArray(config.fonts) ? config.fonts : []) {
+    if (!font || typeof font !== 'object') continue;
+    file(`the font file of ${String(font.family)}`, font.file);
+    // The license file beside it is read too (fonts.ts), so a change to it is a change to the brand
+    const beside = typeof font.file === 'string' ? licenseFileIn(path.dirname(path.resolve(cwd, font.file))) : undefined;
+    if (beside) file(`the license file of ${String(font.family)}`, path.relative(cwd, beside));
+  }
   // An icon set is read from its package in node_modules, which a build must not empty
   for (const set of Array.isArray(config.iconSets) ? config.iconSets : []) {
     const pkg = set && typeof set.package === 'string' ? packageDir(cwd, set.package) : undefined;

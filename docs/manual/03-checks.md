@@ -183,6 +183,7 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `directive-unknown` | Error | A page uses a directive name blazon does not have. |
 | `font-family-missing` | Warning | A font family a token uses is not loaded by any fonts entry. |
 | `font-file-invalid` | Error | A font entry names a file that is missing or not a font. |
+| `font-license-invalid` | Warning | A license file beside a font file was not read. |
 | `font-license-unknown` | Note | A font license is not a known SPDX id. |
 | `font-meta-invalid` | Error | The font fields on a token are not valid. |
 | `icon-set-invalid` | Error | An icon set in the config cannot be loaded. |

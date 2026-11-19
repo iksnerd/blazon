@@ -12,7 +12,7 @@ npm run hooks
 npm test
 ```
 
-`npm run typecheck` runs the TypeScript 7 compiler (`typescript7`) with `--noEmit`. Lint and the declaration step of the build still use TypeScript 6 (`typescript`), because typescript-eslint and vite-plugin-dts need the JS API that 7 does not ship yet; and `npm run build` builds `dist/`. Run it before `blazon check` on a brand or any build that uses the shipped `blazon.print-book` plugin: the plugin's program, `plugins/blazon.print-book/bin/blazon-blazon.print-book.🔌`, is build output (`npm run build:plugins`, which `npm run build` runs), so without a build it is missing and the call fails with `plugin-failed`. The suite builds the programs and `plugins/shipped.lock` itself when they are older than their sources. The README's Contributing section lists `npm run dev:blazon`.
+`npm run typecheck` runs the TypeScript 7 compiler (`typescript7`) with `--noEmit`, on the root project and on `mcp/` (`scripts/typecheck-mcp.mjs`). Lint and the declaration step of the build still use TypeScript 6 (`typescript`), because typescript-eslint and vite-plugin-dts need the JS API that 7 does not ship yet; and `npm run build` builds `dist/`. Run it before `blazon check` on a brand or any build that uses the shipped `blazon.print-book` plugin: the plugin's program, `plugins/blazon.print-book/bin/blazon-blazon.print-book.🔌`, is build output (`npm run build:plugins`, which `npm run build` runs), so without a build it is missing and the call fails with `plugin-failed`. The suite builds the programs and `plugins/shipped.lock` itself when they are older than their sources. The README's Contributing section lists `npm run dev:blazon`.
 
 ## Linting and formatting
 

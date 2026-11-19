@@ -5,6 +5,15 @@ import type { LogoSet, BrandTheme, ThemeRole } from './theme.js';
 import type { ParsedTokens } from './parsed.js';
 import type { EmailSignatureConfig } from './config.js';
 
+/** The license file in the folder of a font file the config lists, read by blazon: a plugin is never given the project folder, so brand.json carries the text */
+export interface FontLicense {
+  family: string;
+  /** From the project root, with `/` separators */
+  licenseFile: string;
+  /** The file's text: UTF-8, at most 64 KiB, line breaks as `\n` */
+  licenseText: string;
+}
+
 export interface BlazonData {
   title: string;
   description?: string;
@@ -18,6 +27,8 @@ export interface BlazonData {
   themeTokens?: Partial<Record<ThemeRole, string>>;
   /** Font stylesheet URLs the brand book loads */
   fonts: string[];
+  /** The license text found beside the font files of the config, one per family (absent when none was found): see `readFontLicense` */
+  fontLicenses?: FontLicense[];
   /** Logo variants as data URIs: onLight for light backgrounds, onDark for dark ones */
   logo?: LogoSet;
   docs: DocItem[];

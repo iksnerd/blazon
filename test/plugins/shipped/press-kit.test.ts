@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from '../../support/spawn';
 import { readBrand as readBrandRaw } from '../../../src/shipped/press-kit/brand.js';
-import { colorsCss, colorsText, planColors } from '../../../src/shipped/press-kit/colors.js';
+import { colorsCss, colorsText, planColors, type KitColor } from '../../../src/shipped/press-kit/colors.js';
+import { pageHtml, pickSwatches } from '../../../src/shipped/press-kit/pdf.js';
 import { pdfFallbacks, planFonts } from '../../../src/shipped/press-kit/fonts.js';
 import { chooseLogos, logoIds, logosText } from '../../../src/shipped/press-kit/logos.js';
 import { parseOptions } from '../../../src/shipped/press-kit/options.js';
@@ -92,6 +93,199 @@ describe('options', () => {
 
   it('answers options that are not an object with one finding', () => {
     expect(parseOptions([], known).findings).toHaveLength(1);
+  });
+});
+
+describe('the company and note options', () => {
+  const known = new Set<string>();
+  const bad = (raw: object) => parseOptions(raw, known);
+
+  it('takes a company with a description, a boilerplate and ordered facts, and a note', () => {
+    const company = { description: 'Acme is a bank.', boilerplate: 'About Acme.\n\nSecond paragraph.', facts: [{ label: 'Legal name', value: 'Acme Ltd' }, { label: 'Registration', value: '123' }] };
+    const { options, findings } = bad({ company, note: 'The colours are proposed.' });
+    expect(findings).toEqual([]);
+    expect(options).toMatchObject({ company, note: 'The colours are proposed.' });
+  });
+
+  it('has neither option by default', () => {
+    expect(bad({}).options).toEqual({ name: 'press-kit', pdf: true, unreviewed: false });
+  });
+
+  it.each([
+    [{ company: 'x' }, 'options.company'],
+    [{ company: { bogus: 1 } }, 'options.company'],
+    [{ company: { description: 3 } }, 'options.company.description'],
+    [{ company: { description: '  ' } }, 'options.company.description'],
+    [{ company: { description: 'x'.repeat(1001) } }, 'options.company.description'],
+    [{ company: { boilerplate: '' } }, 'options.company.boilerplate'],
+    [{ company: { boilerplate: 'x'.repeat(2001) } }, 'options.company.boilerplate'],
+    [{ company: { facts: 'x' } }, 'options.company.facts'],
+    [{ company: { facts: [] } }, 'options.company.facts'],
+    [{ company: { facts: Array.from({ length: 21 }, () => ({ label: 'a', value: 'b' })) } }, 'options.company.facts'],
+    [{ company: { facts: [{ label: '', value: 'b' }] } }, 'options.company.facts[0].label'],
+    [{ company: { facts: [{ label: 'a', value: 7 }] } }, 'options.company.facts[0].value'],
+    [{ company: { facts: [{ label: 'a', value: 'x'.repeat(301) }] } }, 'options.company.facts[0].value'],
+    [{ company: { facts: [{ label: 'a\nb', value: 'v' }] } }, 'options.company.facts[0].label'],
+    [{ company: { facts: [{ label: 'a', value: 'v', extra: 1 }] } }, 'options.company.facts[0]'],
+    [{ note: 3 }, 'options.note'],
+    [{ note: ' ' }, 'options.note'],
+    [{ note: 'x'.repeat(281) }, 'options.note'],
+    [{ note: 'two\nlines' }, 'options.note'],
+  ])('refuses %j with one option-invalid finding at %s and leaves the option unset', (raw, at) => {
+    const { options, findings } = bad(raw);
+    expect(findings.map((f) => [f.code, f.path])).toEqual([[`${NAME}/option-invalid`, at]]);
+    expect(findings[0]!.message).toContain(at.replace('options.', ''));
+    expect(options.note).toBeUndefined();
+    expect(options.company?.facts).toBeUndefined();
+  });
+
+  it('keeps the good facts and drops only the bad one', () => {
+    const r = bad({ company: { facts: [{ label: 'a', value: 'b' }, { label: '', value: 'b' }] } });
+    expect(r.options.company?.facts).toEqual([{ label: 'a', value: 'b' }]);
+    expect(r.findings.map((f) => f.path)).toEqual(['options.company.facts[1].label']);
+  });
+
+  it('accepts exactly the caps', () => {
+    const company = { description: 'x'.repeat(1000), boilerplate: 'y'.repeat(2000), facts: Array.from({ length: 20 }, () => ({ label: 'l'.repeat(60), value: 'v'.repeat(300) })) };
+    expect(bad({ company, note: 'n'.repeat(280) }).findings).toEqual([]);
+  });
+});
+
+describe('the text with company and note', () => {
+  const base = { title: 'Acme Brand Book', named: true, description: 'A book of the brand.' };
+  const company = { description: 'Acme is a bank.', boilerplate: 'About Acme.', facts: [{ label: 'Legal name', value: 'Acme Ltd' }, { label: 'Registration', value: '123' }] };
+
+  it('puts the company description in place of the brand description, then the boilerplate, the facts in order, and the note', () => {
+    const { text, findings } = aboutText(base, { company, note: 'The colours are proposed.' });
+    expect(text).toBe('Acme Brand Book\n\nAcme is a bank.\n\nAbout Acme.\n\nLegal name: Acme Ltd\nRegistration: 123\n\nNote: The colours are proposed.\n');
+    expect(findings).toEqual([]);
+  });
+
+  it('keeps the brand description when the company has none, and the no-description line when neither has', () => {
+    expect(aboutText(base, { company: { boilerplate: 'B' } }).text).toBe('Acme Brand Book\n\nA book of the brand.\n\nB\n');
+    expect(aboutText({ ...base, description: undefined }, { company: { description: 'D' } }).findings).toEqual([]);
+    expect(aboutText({ ...base, description: undefined }, { note: 'N' }).text).toBe('Acme Brand Book\n\nNo description is set in blazon.json.\n\nNote: N\n');
+  });
+
+  it('writes the note in README.txt after the title, and in colors.txt before the colors', () => {
+    expect(readmeText('Acme Co', ['about.txt'], 'press-kit', 'Proposed.').split('\n').slice(0, 4)).toEqual(['Acme Co: press kit', '', 'Note: Proposed.', '']);
+    expect(colorsText(planColors(readBrand(BRAND)).colors, 'Proposed.').split('\n').slice(0, 3)).toEqual(['Colors', '', 'Note: Proposed.']);
+  });
+
+  it('is byte-identical to the old output with no option', () => {
+    expect(aboutText(base).text).toBe('Acme Brand Book\n\nA book of the brand.\n');
+    expect(readmeText('Acme Co', ['about.txt'], 'press-kit')).toBe(
+      "Acme Co: press kit\n\nWhat is in this folder\n\n  about.txt       The brand name and a short description, to quote.\n\npress-kit.zip holds the same files.\n\nThe logos are the brand's own files, not redrawn.\n",
+    );
+  });
+});
+
+describe('the README.txt separator', () => {
+  it.each(['press-kit', 'acme-press-kit-2026', 'a-very-long-kit-name-indeed-yes'])('keeps two spaces after the longest name, for the name %s', (name) => {
+    const text = readmeText('Acme', ['logos/a.svg', 'colors/colors.txt', 'fonts.txt', 'about.txt', `${name}.pdf`], name);
+    const rows = text.split('\n').filter((line) => /^ {2}\S/.test(line));
+    expect(rows).toHaveLength(5);
+    for (const row of rows) expect(row).toMatch(/^ {2}\S+ {2,}[A-Z]/);
+    expect(new Set(rows.map((row) => row.search(/ [A-Z]/))).size).toBe(1);
+    expect(text).not.toMatch(/\.pdf[A-Z]/);
+  });
+
+  it('keeps the old width of 16 for names that fit', () => {
+    expect(readmeText('A', ['fonts.txt', 'press-kit.pdf'], 'press-kit')).toContain('  fonts.txt       The fonts');
+  });
+});
+
+describe('the PDF swatches', () => {
+  const c = (path: string, hex: string | undefined = '#112233', description?: string): KitColor => ({
+    path,
+    hex,
+    value: hex ?? '',
+    cssVariable: '--x',
+    usedAs: [],
+    ...(description && { description }),
+  });
+
+  it("takes whole groups in the brand's order, labelled group and step, up to ten", () => {
+    const six = (group: string) => [100, 200, 300, 400, 500, 600].map((n) => c(`color.${group}.${n}`));
+    const { swatches, more } = pickSwatches([...six('blue'), ...six('red'), c('color.green.500')]);
+    expect(swatches.map((s) => s.label)).toEqual(['blue 100', 'blue 200', 'blue 300', 'blue 400', 'blue 500', 'blue 600']);
+    expect(more).toBe(7);
+  });
+
+  it('gathers a group whose tokens are apart, and cuts a first group over ten at ten', () => {
+    const mixed = [c('color.blue.100'), c('color.red.100'), c('color.blue.200'), c('color.red.200')];
+    expect(pickSwatches(mixed).swatches.map((s) => s.label)).toEqual(['blue 100', 'blue 200', 'red 100', 'red 200']);
+    expect(pickSwatches(Array.from({ length: 12 }, (_, i) => c(`color.grey.${i}`))).swatches).toHaveLength(10);
+  });
+
+  it('labels a flat token as before: its short description, else its last segment', () => {
+    expect(pickSwatches([c('color.ink', '#111111', 'Ink'), c('color.signal')]).swatches.map((s) => s.label)).toEqual(['Ink', 'signal']);
+  });
+
+  it('leaves out a color with no hex', () => {
+    expect(pickSwatches([{ ...c('color.blue.100'), hex: undefined }, c('color.blue.200')]).swatches.map((s) => s.label)).toEqual(['blue 200']);
+  });
+});
+
+describe('the PDF page with company and note', () => {
+  it('shows the company description, the boilerplate, the facts and the note, and not the brand description', () => {
+    const html = pageHtml({
+      brand: { title: 'T', description: 'BRANDDESC', roles: {}, stylesheets: [] },
+      colors: [],
+      company: { description: 'COMPANYDESC', boilerplate: 'BOILER', facts: [{ label: 'Legal name', value: 'Acme Ltd' }] },
+      note: 'NOTE <b>',
+    });
+    expect(html).toContain('COMPANYDESC');
+    expect(html).not.toContain('BRANDDESC');
+    expect(html).toContain('BOILER');
+    expect(html).toContain('Legal name');
+    expect(html).toContain('Acme Ltd');
+    expect(html).toContain('NOTE &#60;b&#62;');
+  });
+
+  it('is the same page as before with neither option', () => {
+    const html = pageHtml({ brand: { title: 'T', description: 'D', roles: {}, stylesheets: [] }, colors: [] });
+    expect(html).toContain('<h1>T</h1><p>D</p></div>');
+    expect(html).not.toContain('class="facts"');
+  });
+});
+
+describe('the fonts a brand ships', () => {
+  const MONO = '-apple-system, BlinkMacSystemFont, SFMono-Regular, ui-monospace, monospace';
+
+  it('lists a system family as a fallback line, not as a brand font with License: not stated', () => {
+    const brand = readBrand({
+      theme: { roles: { fontBody: "'Inter', system-ui, sans-serif" }, fonts: ['https://fonts.googleapis.com/css2?family=Inter:wght@400'] },
+      tokens: [{ path: 'font.family.mono', type: 'fontFamily', value: MONO, resolvedValue: MONO.split(', ') }],
+    });
+    const { text, findings } = planFonts(brand);
+    expect(text).toBe(
+      'Fonts\n\nInter\n  Used for: running text (the fontBody role)\n  Source: Google Fonts, https://fonts.googleapis.com/css2?family=Inter\n  License: not stated\n\nFallback fonts, not shipped: system-ui, sans-serif, -apple-system, BlinkMacSystemFont, SFMono-Regular, ui-monospace, monospace\n',
+    );
+    expect(text).not.toMatch(/SFMono-Regular\n/);
+    expect(findings.map((f) => f.message).join()).toContain('1 font has no license stated: Inter');
+  });
+
+  it('reads a quoted family after a comma without its quotes', () => {
+    const { text } = planFonts(readBrand({ theme: { roles: { fontBody: "'Big Shoulders Display', 'Helvetica Neue', sans-serif" } } }));
+    expect(text).toContain('Fallback fonts, not shipped: Helvetica Neue, sans-serif\n');
+  });
+
+  it('keeps a family a stylesheet or a font token states as a brand font, even when it is also a common system name', () => {
+    const brand = readBrand({
+      theme: { roles: {}, fonts: ['https://fonts.googleapis.com/css2?family=Roboto:wght@400'] },
+      tokens: [{ path: 'font.family.mono', type: 'fontFamily', value: 'Menlo, monospace', blazon: { font: { license: 'OFL-1.1' } } }],
+    });
+    const { text } = planFonts(brand);
+    expect(text).toContain('Roboto\n  Source: Google Fonts');
+    expect(text).toContain('Menlo\n  Used for: font.family.mono\n  Source: not stated\n  License:\n    OFL-1.1\n');
+    expect(text).toContain('Fallback fonts, not shipped: monospace\n');
+  });
+
+  it('writes no fonts.txt, and says the brand names no font it ships, when the stacks hold only system families', () => {
+    const { text, findings } = planFonts(readBrand({ theme: { roles: { fontBody: 'Arial, sans-serif', fontDisplay: 'system-ui' } } }));
+    expect(text).toBeUndefined();
+    expect(findings.map((f) => f.code)).toEqual([`${NAME}/font-none`]);
   });
 });
 
@@ -211,8 +405,9 @@ describe('the fonts', () => {
     expect(text).toContain('Big Shoulders Display\n  Used for: headings (the fontDisplay role), font.family.display\n  Source: Google Fonts, https://fonts.googleapis.com/css2?family=Big+Shoulders+Display\n  License: not stated\n');
     expect(text).toContain('IBM Plex Sans\n  Source: Google Fonts, https://fonts.googleapis.com/css2?family=IBM+Plex+Sans\n');
     expect(text).not.toContain('wght');
-    expect(text).toContain('Arial\n  Used for: running text (the fontBody role)\n  Source: not stated\n  License: not stated\n');
-    expect(findings).toEqual([{ code: `${NAME}/font-license-unstated`, severity: 'warning', path: 'fonts', message: expect.stringContaining('3 fonts have no license stated: Big Shoulders Display, Arial, IBM Plex Sans') }]);
+    expect(text).not.toContain('\nArial\n');
+    expect(text).toContain('Fallback fonts, not shipped: sans-serif, Arial\n');
+    expect(findings).toEqual([{ code: `${NAME}/font-license-unstated`, severity: 'warning', path: 'fonts', message: expect.stringContaining('2 fonts have no license stated: Big Shoulders Display, IBM Plex Sans') }]);
   });
 
   it('says "1 font has" for one', () => {
@@ -227,7 +422,7 @@ describe('the fonts', () => {
       tokens: [{ path: 'font.family.mono', type: 'fontFamily', value: "'Mono Sans', monospace", extensions: { 'com.acme': { license: 'SIL OFL 1.1\nsee ofl.txt' } } }],
     });
     const { text, findings } = planFonts(brand);
-    expect(text).toBe('Fonts\n\nMono Sans\n  Used for: font.family.mono\n  Source: a font file the brand embeds in its brand book; the file is not in this kit\n  License:\n    SIL OFL 1.1\n    see ofl.txt\n');
+    expect(text).toBe('Fonts\n\nMono Sans\n  Used for: font.family.mono\n  Source: a font file the brand embeds in its brand book; the file is not in this kit\n  License:\n    SIL OFL 1.1\n    see ofl.txt\n\nFallback fonts, not shipped: monospace\n');
     expect(findings).toEqual([]);
   });
 
@@ -275,6 +470,40 @@ describe('the fonts', () => {
     const brand = readBrand(JSON.parse(formatBrandJson(await compileBlazonData(config, root), config, root)));
     expect(pdfFallbacks({ roles: { fontDisplay: "'Kinto', sans-serif", fontBody: "'Mulish', sans-serif" }, stylesheets: brand.stylesheets })).toEqual(['Mulish']);
     expect(planFonts(brand).text).toContain('Kinto\n  Used for: font.display\n  Source: Kinto Type Foundry\n  License:\n    OFL-1.1\n  License text: https://openfontlicense.org/\n');
+  });
+
+  describe('the license file of a font, carried by brand.json as theme.fontLicenses', () => {
+    const OFL_TEXT = 'Copyright 2017 IBM Corp. All rights reserved.\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.\n\nPREAMBLE\n';
+    const withLicense = (fontLicenses: object[], font: object = {}) =>
+      readBrand({
+        theme: { roles: { fontDisplay: "'Plex Mono', monospace" }, fonts: [], fontLicenses },
+        tokens: [{ path: 'font.mono', type: 'fontFamily', value: "'Plex Mono', monospace", resolvedValue: ['Plex Mono', 'monospace'], blazon: { font } }],
+      });
+    const entry = { family: 'Plex Mono', licenseFile: 'fonts/OFL.txt', licenseText: OFL_TEXT };
+
+    it('prints the license sentence of the file and its path when the token states no license', () => {
+      expect(planFonts(withLicense([entry])).text).toContain(
+        'Plex Mono\n  Used for: headings (the fontDisplay role), font.mono\n  Source: not stated\n  License: This Font Software is licensed under the SIL Open Font License, Version 1.1.\n  License file: fonts/OFL.txt (in the brand project, not in this kit)\n',
+      );
+      expect(planFonts(withLicense([entry])).findings.map((f) => f.code)).toEqual([]);
+    });
+
+    it('prefers an SPDX-License-Identifier line, and says see the file when no line reads as a name', () => {
+      const spdx = { ...entry, licenseText: 'Copyright A\nSPDX-License-Identifier: OFL-1.1\n' };
+      expect(planFonts(withLicense([spdx])).text).toContain('  License: OFL-1.1\n  License file: fonts/OFL.txt');
+      const bare = { ...entry, licenseText: `Copyright ${'x'.repeat(200)}\n` };
+      expect(planFonts(withLicense([bare])).text).toContain('  License: see fonts/OFL.txt\n');
+    });
+
+    it('lets the token license and licenseUrl win over the file', () => {
+      expect(planFonts(withLicense([entry], { license: 'OFL-1.1' })).text).toContain('  License:\n    OFL-1.1\n');
+      expect(planFonts(withLicense([entry], { license: 'OFL-1.1' })).text).not.toContain('License file');
+      expect(planFonts(withLicense([entry], { licenseUrl: 'https://x.example/l' })).text).toContain('  License: see https://x.example/l\n');
+    });
+
+    it('ignores an entry that is the wrong shape, and says not stated without one', () => {
+      expect(planFonts(withLicense([{ family: 'Plex Mono', licenseFile: 3, licenseText: 'x' }, {}])).text).toContain('License: not stated');
+    });
   });
 
   it('writes no file when the brand names no font', () => {
@@ -409,6 +638,21 @@ describe('the entry', () => {
     const folder = path.join(made.outDir, 'press-kit/colors');
     expect(fs.readFileSync(path.join(folder, 'colors.txt'), 'utf-8')).toContain('color.draft (unreviewed)');
     expect(JSON.parse(fs.readFileSync(path.join(folder, 'colors.json'), 'utf-8')).colors.find((c: { path: string }) => c.path === 'color.draft').review).toBe('needs-review');
+  });
+
+  it('prints the company and the note in about.txt, README.txt and colors.txt, and names a wrong company key without losing the kit', () => {
+    const company = { description: 'Acme is a bank.', boilerplate: 'About Acme.', facts: [{ label: 'Legal name', value: 'Acme Ltd' }] };
+    const made = world({ options: { pdf: false, company: { ...company, bogus: 1 }, note: 'The colours are proposed.' } });
+    const ran = plugin(made.request);
+    expect(ran.status, ran.out + ran.err).toBe(0);
+    const folder = path.join(made.outDir, 'press-kit');
+    expect(fs.readFileSync(path.join(folder, 'about.txt'), 'utf-8')).toBe(
+      'Acme Co\n\nAcme is a bank.\n\nAbout Acme.\n\nLegal name: Acme Ltd\n\nNote: The colours are proposed.\n',
+    );
+    expect(fs.readFileSync(path.join(folder, 'README.txt'), 'utf-8')).toContain('Acme Co: press kit\n\nNote: The colours are proposed.\n\n');
+    expect(fs.readFileSync(path.join(folder, 'colors/colors.txt'), 'utf-8')).toMatch(/^Colors\n\nNote: The colours are proposed\.\n\n/);
+    const invalid = findingsOf(ran.out).filter((f) => f.code === `${NAME}/option-invalid`);
+    expect(invalid.map((f) => f.path)).toEqual(['options.company']);
   });
 
   it('names the folder and the zip by the name option, and takes the logos the option lists', () => {

@@ -18,7 +18,7 @@ const GENERIC = new Set([
 
 /** The families of a CSS font stack, unquoted, in order */
 export function families(stack: string): string[] {
-  return [...stack.matchAll(/"([^"]+)"|'([^']+)'|([^,]+)/g)].map((match) => (match[1] ?? match[2] ?? match[3]!).trim()).filter((name) => name !== '');
+  return [...stack.matchAll(/\s*"([^"]+)"|\s*'([^']+)'|([^,]+)/g)].map((match) => (match[1] ?? match[2] ?? match[3]!).trim()).filter((name) => name !== '');
 }
 
 /** The first family of the stack that names a font: not a generic, not a var(). */

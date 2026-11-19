@@ -43,14 +43,14 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   if (colors.colors.length > 0) {
     files.set('colors/colors.json', colorsJson(colors.colors));
     files.set('colors/colors.css', colorsCss(colors.colors));
-    files.set('colors/colors.txt', colorsText(colors.colors));
+    files.set('colors/colors.txt', colorsText(colors.colors, options.note));
   }
 
   const fonts = planFonts(brand);
   findings.push(...fonts.findings);
   if (fonts.text) files.set('fonts.txt', fonts.text);
 
-  const about = aboutText(brand);
+  const about = aboutText(brand, { company: options.company, note: options.note });
   findings.push(...about.findings);
   if (about.text) files.set('about.txt', about.text);
 
@@ -58,7 +58,13 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
     const shown = present.find((item) => item.surface === 'light') ?? present[0];
     try {
       const pdf = await drawPdf(
-        { brand, colors: colors.colors, logo: shown && { data: data.get(shown.asset.id)!, format: shown.asset.format, surface: shown.surface } },
+        {
+          brand,
+          colors: colors.colors,
+          logo: shown && { data: data.get(shown.asset.id)!, format: shown.asset.format, surface: shown.surface },
+          company: options.company,
+          note: options.note,
+        },
         process.env,
       );
       files.set(`${options.name}.pdf`, pdf);
@@ -79,7 +85,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
       findings.push(finding('pdf-skipped', 'warning', 'options.pdf', `${options.name}.pdf is not in the kit: ${reason}`));
     }
   }
-  files.set('README.txt', readmeText(brand.title, [...files.keys()], options.name));
+  files.set('README.txt', readmeText(brand.title, [...files.keys()], options.name, options.note));
 
   // Written once, whole, after the work is done: a call that ends earlier leaves out_dir as it was. The folder is the plugin's own, so a
   // file from an earlier run, such as a logo that is no longer ready, does not stay in it.

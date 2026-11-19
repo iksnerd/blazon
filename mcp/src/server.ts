@@ -49,13 +49,18 @@ function configuredPlugins(brand: string): string[] {
   }
 }
 
-/** `check_brand` runs `blazon check --no-plugins`, so it says which plugins of the config did not run. */
+/**
+ * `check_brand` runs `blazon check --no-plugins`, so it says which plugins of the config did not run. A plugin's roles are only in the manifest
+ * its program prints (`--blazon-manifest`), so the server cannot tell a check plugin from a build-only one without starting it: it lists all and says so.
+ */
 function skippedPlugins(brand: string): { fields: Record<string, unknown>; warnings: string[] } {
   const names = configuredPlugins(brand);
   if (names.length === 0) return { fields: {}, warnings: [] };
   return {
     fields: { pluginsSkipped: names },
-    warnings: [`${names.length} plugin(s) in blazon.json did not run: the MCP server never starts a plugin, so counts from \`blazon check\` can be higher: ${names.join(', ')}.`],
+    warnings: [
+      `Plugins in blazon.json did not run: ${names.join(', ')}. Only a plugin with a check role can add findings to these counts; a build-only plugin adds none. The server cannot read a plugin's role without starting it, so it lists every configured plugin. Run \`blazon check\` for the full counts.`,
+    ],
   };
 }
 

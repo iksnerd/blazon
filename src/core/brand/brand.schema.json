@@ -69,6 +69,31 @@
           "items": {
             "type": "string"
           }
+        },
+        "fontLicenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "minLength": 1
+              },
+              "licenseFile": {
+                "type": "string",
+                "minLength": 1
+              },
+              "licenseText": {
+                "type": "string",
+                "maxLength": 65536
+              }
+            },
+            "required": [
+              "family",
+              "licenseFile",
+              "licenseText"
+            ]
+          }
         }
       },
       "required": [

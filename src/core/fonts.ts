@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Finding, BlazonConfig, FontEntry, LocalFont, ParsedTokens } from '../types/index.js';
+import type { Finding, BlazonConfig, FontEntry, FontLicense, LocalFont, ParsedTokens } from '../types/index.js';
 import { finding } from './checker/catalogue.js';
 
 /** The font files blazon embeds, by extension: the media type of the data URL and the format the @font-face names. */
@@ -23,6 +23,57 @@ export const isLocalFont = (entry: FontEntry): entry is LocalFont => typeof entr
  */
 export const isFamilyName = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '' && !/["\\\r\n]/.test(value);
 
+/** The most of a license file that is read: the OFL is about 4 KiB, the Apache License 2.0 about 11 KiB */
+export const LICENSE_MAX_BYTES = 64 * 1024;
+
+/** The names of a license file, in the order one is preferred. Matched whole and without regard to case: `OFL.txt`, `LICENSE`, `LICENCE-Plex.md`, `COPYING` */
+const LICENSE_NAMES = [/^ofl(\.(txt|md))?$/i, /^license(\.(txt|md))?$/i, /^licence/i, /^copying(\.(txt|md))?$/i];
+
+/**
+ * The license file in `dir` (the folder of a font file): the first of OFL, LICENSE, LICENCE and COPYING by name, and among equals the lowest
+ * name in code point order. Only that folder is looked at, never a parent, and only a regular file counts.
+ */
+export function licenseFileIn(dir: string): string | undefined {
+  let names: string[];
+  try {
+    names = fs.readdirSync(dir);
+  } catch {
+    return undefined;
+  }
+  for (const pattern of LICENSE_NAMES) {
+    const hit = names
+      .filter((name) => pattern.test(name) && fs.statSync(path.join(dir, name), { throwIfNoEntry: false })?.isFile())
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
+    if (hit) return path.join(dir, hit);
+  }
+  return undefined;
+}
+
+/**
+ * The text of the license file beside a font file, or why it is not read. The file must really be inside the project (a link that leaves it is
+ * refused, as the font file is), at most LICENSE_MAX_BYTES, and valid UTF-8 without a NUL byte. A skipped file is a finding, never an error:
+ * the license is a courtesy to the plugins, and the font still loads.
+ */
+function readFontLicense(family: string, fontFile: string, cwd: string): { license?: FontLicense; problem?: Finding } {
+  const file = licenseFileIn(path.dirname(fontFile));
+  if (!file) return {};
+  const shown = path.relative(cwd, file).split(path.sep).join('/');
+  const skip = (why: string) => ({
+    problem: finding('font-license-invalid', { path: shown, message: `The license file ${shown} beside the font file of "${family}" ${why}, so it is not read` }),
+  });
+  if (!isInside(fs.realpathSync(file), cwd)) return skip('is outside the project folder, or is a link that leaves it');
+  if (fs.statSync(file).size > LICENSE_MAX_BYTES) return skip(`is over ${LICENSE_MAX_BYTES / 1024} KiB`);
+  const bytes = fs.readFileSync(file);
+  let text: string;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes);
+  } catch {
+    return skip('is not UTF-8 text');
+  }
+  if (text.includes('\0')) return skip('is not UTF-8 text');
+  return { license: { family, licenseFile: shown, licenseText: text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n') } };
+}
+
 export interface LoadedFonts {
   /** Stylesheet URLs for the brand book, in the order the config lists them: a local font is a `data:` stylesheet among the URLs */
   stylesheets: string[];
@@ -32,6 +83,8 @@ export interface LoadedFonts {
   declared: boolean;
   /** True when a URL names no family blazon can read (a self-hosted stylesheet), so what it loads is not known */
   opaque: boolean;
+  /** The license file beside a local font's file, once per family: the first font of a family that has one gives it */
+  licenses: FontLicense[];
   problems: Finding[];
 }
 
@@ -73,7 +126,7 @@ function isInside(file: string, cwd: string): boolean {
  * A file that is missing or is not a font blazon can embed is an error, and is left out.
  */
 export function loadFonts(fonts: BlazonConfig['fonts'], cwd: string): LoadedFonts {
-  const loaded: LoadedFonts = { stylesheets: [], families: new Set(), declared: (fonts ?? []).length > 0, opaque: false, problems: [] };
+  const loaded: LoadedFonts = { stylesheets: [], families: new Set(), declared: (fonts ?? []).length > 0, opaque: false, licenses: [], problems: [] };
   for (const entry of fonts ?? []) {
     if (!isLocalFont(entry)) {
       loaded.stylesheets.push(entry);
@@ -92,6 +145,11 @@ export function loadFonts(fonts: BlazonConfig['fonts'], cwd: string): LoadedFont
       const src = `url(data:${kind.type};base64,${fs.readFileSync(full).toString('base64')}) format("${kind.format}")`;
       loaded.stylesheets.push(`data:text/css;base64,${Buffer.from(fontFaceRule(entry, src)).toString('base64')}`);
       loaded.families.add(entry.family.toLowerCase());
+      if (!loaded.licenses.some((l) => l.family.toLowerCase() === entry.family.toLowerCase())) {
+        const { license, problem } = readFontLicense(entry.family, full, cwd);
+        if (license) loaded.licenses.push(license);
+        if (problem && !loaded.problems.some((p) => p.path === problem.path)) loaded.problems.push(problem);
+      }
     }
   }
   return loaded;

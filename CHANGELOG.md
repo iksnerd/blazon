@@ -4,9 +4,29 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+### Added
+
+- `blazon.platform-tokens` writes the width of `border` tokens as a dimension named `<token path>.width` (`border.rule` is `border_rule_width` in `dimens.xml`, `BlazonDimensions.borderRuleWidth`, `BlazonDimens.borderRuleWidth`), so every output and option applies. The colour is not written. A style other than `solid` is named in a new `border-style-dropped` info finding; an unreadable width is a `dimension-unreadable` warning. `include` and `exclude` match the border token's path. `border` leaves the `tokens-skipped` list. A brand with no border token gets the same files.
+- `blazon.platform-tokens` takes `include` and `exclude`: lists of token path prefixes in dot form (`["breakpoint", "component.button.website"]`), compared name by name, with no glob or regular expression. `include` keeps only the matching tokens, `exclude` then removes matching ones, in every output and the dark context. A bad list is an `option-invalid` finding; an entry that matches no token is a `filter-unmatched` info finding.
+- `blazon.press-kit` takes a `company` option (`description`, `boilerplate` and up to 20 `facts` as `{ label, value }`) for a brand whose own title and description are a book's: the company description replaces the brand's in `about.txt` and the PDF, and the boilerplate and facts follow. It also takes a `note` (one line) printed in `README.txt`, `about.txt`, `colors/colors.txt` and the PDF, for a kit whose colors are not yet approved. A wrong value is an `option-invalid` finding at `options.company...` or `options.note`, with length limits stated in the plugin README. With neither option the files are unchanged except for the fixes below.
+- `brand.json` carries the license file that sits beside a font file the config embeds (`OFL.txt`, `LICENSE`, `LICENCE`, `COPYING`, in that file's own folder only) as `theme.fontLicenses`: `{ family, licenseFile, licenseText }`, at most 64 KiB, UTF-8, inside the project. A new optional field, so `version` stays 2. A file that is too large, not UTF-8 or reached through a link out of the project is not read, and `font-license-invalid` (a warning) says why.
+
 ### Changed
 
+- The MCP tool `check_brand` says what its counts leave out. A plugin's roles are only in the manifest its program prints, so the server cannot tell a `check` plugin from a build-only one (`blazon.tailwind`, `blazon.shadcn`) without starting it. `pluginsSkipped` still lists every plugin in `blazon.json`; the warning and the tool description now say that only a plugin with a `check` role can add findings, and the warning no longer says the counts "can be higher" without that condition.
+- `blazon.press-kit` `fonts.txt` prints the license from that file (`License file:` and its identifying line) for a font whose token states no license, instead of `License: not stated`.
+- The `blazon.print-book` docs say its PDF is Chrome's output with lossless images, so it is large, and that a post-processing step such as Ghostscript shrinks it.
+- `blazon.platform-tokens`: with a `prefix`, the colorset names in `Colors.xcassets` carry it in lowerCamel (`acmeBlue100`) and the Swift file is `<Prefix>Tokens.swift` (`AcmeTokens.swift`), so generated color symbols do not collide with an app's own assets. With no prefix the output is byte-identical. The Kotlin `package blazon.tokens` stays fixed.
+- The `blazon.platform-tokens` README documents `prefix`, what it reaches, the naming rule per output and which token types are not written.
 - The release audit allowlist is empty. The picomatch advisory it held (GHSA-fc5q-39xc-vjpf) was withdrawn upstream on 2026-11-18, so `npm audit` is clean again; the gate failed on the stale entry, as designed, and the entry and the SECURITY.md section about it are removed.
+
+### Fixed
+
+- The print book draws a Markdown task item (`- [ ]`, `- [x]`) with no bullet and a visible box: a border in the theme's text color, filled when checked. The browser's own checkbox printed as a nearly invisible pale grey.
+- `blazon.press-kit` `fonts.txt` listed system fonts (`SFMono-Regular`, `Arial`) as brand fonts with `License: not stated`. It now lists a family only when it is the front of a stack and not a system font, or a stylesheet or font file loads it, or its token states a source or license; the rest are one last line, `Fallback fonts, not shipped: ...`. With no option the output changes: that line is new, and a system family is gone from the font list and from the `font-license-unstated` finding. A brand whose stacks name only system fonts now gets `font-none` and no `fonts.txt`. The license is still read only from the font token: the plugin gets no project folder, so it cannot read a license file beside the font files.
+- `blazon.press-kit` `README.txt` ran the PDF's name into its description (`acme-press-kit.pdfOne page`) when the name was long. The descriptions now start two spaces after the longest name, and at column 16 when the names are shorter, so a kit with short names is unchanged.
+- `blazon.press-kit` PDF swatches took the first ten colors in file order, labelled with the last path segment (`500`). They now take whole color groups in the order the brand gives them, labelled with group and step (`blue 500`); a flat color keeps its description. The PDF line of `README.txt` states the rule.
+- A quoted family after a comma in a font stack (`'Inter', 'Arial Narrow'`) was read with its quotes by the shipped plugins' stack reader.
 
 ## 0.3.1 (2026-11-17)
 

@@ -82,5 +82,11 @@ export function nameTokens(paths: string[], style: Style, kind: Kind, prefix: st
     });
 }
 
+/** The name of a colorset in the asset catalog: the Swift name, with the prefix in front as lowerCamel (`acmeBlue100`), or the Swift name alone with no prefix */
+export const assetName = (prefix: string, swift: string): string => (prefix ? `${lowerFirst(prefix)}${upperFirst(swift)}` : swift);
+
+/** The Swift file name: `BlazonTokens.swift`, or `AcmeTokens.swift` with the prefix `acme` */
+export const swiftFile = (prefix: string): string => `${typeName(prefix, 'Tokens')}.swift`;
+
 /** The Swift and Kotlin type name for a group of tokens: `BlazonColors`, or `AcmeColors` with the prefix `acme` */
 export const typeName = (prefix: string, suffix: string): string => `${prefix ? upperFirst(prefix) : 'Blazon'}${suffix}`;

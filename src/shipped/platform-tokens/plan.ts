@@ -2,7 +2,7 @@ import { sameColor, readColor, type Rgba } from './colors.js';
 import type { BrandRead, ContextRead, TokenRead } from './brand.js';
 import { readDimension } from './dimensions.js';
 import { nameTokens, type Kind, type Style } from './names.js';
-import { finding, type Finding, type Options } from './options.js';
+import { finding, underPrefix, type Finding, type Options } from './options.js';
 
 // What the plugin writes, decided once for every platform: the color and dimension tokens in path order, each with its name on each platform,
 // the dark value of a color that differs in the dark context, and the findings for everything left out or changed on the way.
@@ -41,6 +41,12 @@ const STYLES: [Style, string][] = [
 ];
 const PLATFORM_OF: Record<Style, Options['platforms'][number]> = { android: 'android', swift: 'ios', kotlin: 'compose' };
 
+const isComposite = (value: unknown): value is { width?: unknown; style?: unknown } => typeof value === 'object' && value !== null && !Array.isArray(value) && 'width' in value;
+
+/** The width of a border token in dp: the `width` of its composite value, or the value itself when it is a plain dimension */
+const borderWidth = (token: TokenRead): number | undefined =>
+  isComposite(token.resolved) ? readDimension(token.resolved.width, undefined) : readDimension(token.resolved, token.value);
+
 const byPath = (a: { path: string }, b: { path: string }): number => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 const count = (n: number, what: string): string => `${n} ${what}${n === 1 ? '' : 's'}`;
 
@@ -58,18 +64,47 @@ function darkContext(contexts: ContextRead[], options: Options, findings: Findin
   return matches[0];
 }
 
+/** The tokens `include` and `exclude` leave, and an info finding for each entry that matched no token of the brand (a typo shows) */
+function filterTokens(tokens: TokenRead[], options: Options, findings: Finding[]): { kept: TokenRead[]; keep: (path: string) => boolean } {
+  const { include, exclude } = options;
+  const keep = (path: string): boolean => (!include || include.some((prefix) => underPrefix(path, prefix))) && !(exclude ?? []).some((prefix) => underPrefix(path, prefix));
+  for (const [key, list] of [
+    ['include', include],
+    ['exclude', exclude],
+  ] as const)
+    for (const prefix of list ?? [])
+      if (!tokens.some((token) => underPrefix(token.path, prefix)))
+        findings.push(
+          finding(
+            'filter-unmatched',
+            'info',
+            `options.${key}`,
+            `${key} ${JSON.stringify(prefix)} matches no token of the brand: check the spelling (it matches a whole name or a group of names, not part of a name)`,
+          ),
+        );
+  return { kept: tokens.filter((token) => keep(token.path)), keep };
+}
+
 /** The tokens to write, their names, and what was said about each. */
 export function planTokens(brand: BrandRead, options: Options): Plan {
   const findings: Finding[] = [];
-  const tokens = [...brand.tokens].sort(byPath);
+  const all = [...brand.tokens].sort(byPath);
+  const { kept, keep } = filterTokens(all, options, findings);
+  const tokens = kept;
 
   const skipped = new Map<string, number>();
-  for (const token of tokens) if (token.type !== 'color' && token.type !== 'dimension') skipped.set(token.type || 'untyped', (skipped.get(token.type || 'untyped') ?? 0) + 1);
+  for (const token of tokens)
+    if (token.type !== 'color' && token.type !== 'dimension' && token.type !== 'border') skipped.set(token.type || 'untyped', (skipped.get(token.type || 'untyped') ?? 0) + 1);
   if (skipped.size) {
     const total = [...skipped.values()].reduce((sum, n) => sum + n, 0);
     const list = [...skipped].sort(([a], [b]) => (a < b ? -1 : 1)).map(([type, n]) => `${type} (${n})`);
     findings.push(
-      finding('tokens-skipped', 'info', 'tokens', `${count(total, 'token')} not written: this plugin writes color and dimension tokens only. Skipped types: ${list.join(', ')}`),
+      finding(
+        'tokens-skipped',
+        'info',
+        'tokens',
+        `${count(total, 'token')} not written: this plugin writes color and dimension tokens, and the width of border tokens, only. Skipped types: ${list.join(', ')}`,
+      ),
     );
   }
 
@@ -96,6 +131,25 @@ export function planTokens(brand: BrandRead, options: Options): Plan {
       if (amount === undefined)
         findings.push(finding('dimension-unreadable', 'warning', token.path, `${token.path} is not a px or rem dimension (${JSON.stringify(token.value)}), so it was left out`));
       else dimensions.set(token.path, amount);
+    } else if (token.type === 'border') {
+      const amount = borderWidth(token);
+      if (amount === undefined) {
+        findings.push(
+          finding('dimension-unreadable', 'warning', token.path, `${token.path} has no border width in px or rem (${JSON.stringify(token.value)}), so it was left out`),
+        );
+        continue;
+      }
+      dimensions.set(`${token.path}.width`, amount);
+      const style = isComposite(token.resolved) ? token.resolved.style : undefined;
+      if (style !== undefined && style !== 'solid')
+        findings.push(
+          finding(
+            'border-style-dropped',
+            'info',
+            token.path,
+            `${token.path} has the style ${typeof style === 'string' ? JSON.stringify(style) : 'a custom stroke style'}, which has no equivalent in these files: only its width was written, as ${token.path}.width`,
+          ),
+        );
     }
   }
 
@@ -104,7 +158,7 @@ export function planTokens(brand: BrandRead, options: Options): Plan {
   if (context) {
     const unmatched: string[] = [];
     let dimensionsChanged = 0;
-    for (const token of [...context.tokens].sort(byPath)) {
+    for (const token of [...context.tokens].filter((item) => keep(item.path)).sort(byPath)) {
       if (token.type === 'color') {
         const light = colors.get(token.path);
         if (!light) {
@@ -116,6 +170,9 @@ export function planTokens(brand: BrandRead, options: Options): Plan {
       } else if (token.type === 'dimension') {
         const light = dimensions.get(token.path);
         if (light !== undefined && readDimension(token.resolved, token.value) !== light) dimensionsChanged++;
+      } else if (token.type === 'border') {
+        const light = dimensions.get(`${token.path}.width`);
+        if (light !== undefined && borderWidth(token) !== light) dimensionsChanged++;
       }
     }
     if (unmatched.length)

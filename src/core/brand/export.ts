@@ -5,6 +5,7 @@ import {
   type AssetCategoryInfo,
   type AssetMeta,
   type Finding,
+  type FontLicense,
   type BlazonConfig,
   type BlazonData,
   type BlazonExtension,
@@ -65,6 +66,8 @@ export interface BrandExport {
     roles: Partial<Record<ThemeRole, string>>;
     tokens: Partial<Record<ThemeRole, string>>;
     fonts: string[];
+    /** The license file found beside the font files the config embeds, one per family, read by blazon because a plugin is never given the project folder. `licenseFile` is a project path, not shipped beside brand.json; absent when no family has one */
+    fontLicenses?: FontLicense[];
   };
   /** A path beside brand.json, or the file embedded as a data URI when it is not an asset. `onLightInk` and `onDarkInk`: the color a logo's sidecar declares for it, when it does; without one a reader judges the file as black on light or white on dark */
   logo: { onLight?: string; onDark?: string; onLightInk?: string; onDarkInk?: string };
@@ -165,6 +168,7 @@ export function buildBrandExport(data: BlazonData, config: BlazonConfig, cwd: st
       roles: data.theme,
       tokens: data.themeTokens ?? {},
       fonts: data.fonts,
+      ...(data.fontLicenses && { fontLicenses: data.fontLicenses }),
     },
     logo: logoReferences(data, config, cwd),
     vocabulary: data.vocabulary,

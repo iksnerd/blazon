@@ -10,8 +10,59 @@ The source is `src/shipped/press-kit/`, and `npm run build` (`npm run build:plug
 |---|---|
 | `logos/` | Assets that are logos (the `logos` category, or the files `logo.onLight` and `logo.onDark` name), as they are, in a folder for each background their sidecars name |
 | `colors/` | The color tokens that are not aliases, as JSON, CSS and text; CMYK, Pantone and RAL only where a token states them |
-| `fonts.txt` | The families of `fontDisplay`, `fontBody`, the font tokens and the font stylesheets; the source and license only where a font token states them (its `font` extension) or the data has them, else `not stated` |
-| `about.txt` | `brand.title` and `brand.description`; without one, a line saying none is set |
-| `press-kit.pdf` | The title, the description, up to ten colors and one logo, drawn in Chrome |
+| `fonts.txt` | The brand's fonts: the front family of `fontDisplay`, `fontBody` and each font token, and the families the font stylesheets load, unless it is a system font nothing loads (then it is a fallback); the source and license only where a font token states them (its `font` extension) or the data has them, else the license file blazon found beside the family's font files (`License file:` with its path), else `not stated`. The fallbacks are one last line, `Fallback fonts, not shipped` |
+| `about.txt` | `brand.title`, then the `company` option's description, else `brand.description` (without either, a line saying none is set), then the company's boilerplate and facts and the `note` |
+| `press-kit.pdf` | The title, the description (the company's when the option gives one), the boilerplate, the facts, the note, up to ten colors and one logo, drawn in Chrome |
 
 A logo marked `needs-review`, and a generated logo with no `review`, are left out, with a finding for each. A color token marked `needs-review` is left out too, unless the `unreviewed` option is `true`, which includes it labelled as unreviewed.
+
+## Options
+
+Every option is plain data in the plugin's `options` in `blazon.json`. A wrong one is an `option-invalid` finding at `options.<key>` that names the key; it is left at its default and the rest of the kit is written. An unknown key, a wrong type, an empty or blank text, a text over its limit and a list over its limit are all wrong.
+
+| Option | Type | Default | Does |
+|---|---|---|---|
+| `name` | string | `press-kit` | Folder, zip and PDF name, without an extension: letters, digits, dots, hyphens and underscores, up to 64 characters |
+| `pdf` | boolean | `true` | `false` writes no PDF and needs no browser |
+| `unreviewed` | boolean | `false` | `true` includes the colors marked `needs-review`, labelled as unreviewed |
+| `logos` | list of asset ids | every logo | The logos to include; one that is not ready stays out |
+| `company` | object | none | The company behind the brand, for a brand whose own title and description are a book's. Keys: `description`, `boilerplate`, `facts` |
+| `company.description` | string, up to 1000 characters | none | Replaces `brand.description` in `about.txt` and the PDF when given |
+| `company.boilerplate` | string, up to 2000 characters | none | One text printed after the description in `about.txt` and the PDF; blank lines make paragraphs |
+| `company.facts` | list of up to 20 `{ "label", "value" }` | none | Labelled lines in the order given, such as the legal name and the registration number. A label is up to 60 characters and a value up to 300, each on one line |
+| `note` | string, up to 280 characters, one line | none | Printed as `Note: ...` in `README.txt`, `about.txt`, `colors/colors.txt` and the PDF, such as that the colors are not yet approved |
+
+With none of `company` and `note` the files are the bytes they were before, apart from the fixes in the next section.
+
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.press-kit",
+      "env": ["BLAZON_CHROME", "HOME", "TMPDIR"],
+      "options": {
+        "name": "acme-press-kit",
+        "company": {
+          "description": "Acme builds payment tools for teams that move money across borders.",
+          "boilerplate": "Acme Ltd is a licensed payment institution. Press enquiries: press@acme.example.",
+          "facts": [
+            { "label": "Legal name", "value": "Acme Ltd" },
+            { "label": "Registered address", "value": "1 Example Street, London" },
+            { "label": "Registration number", "value": "01234567" }
+          ]
+        },
+        "note": "The colours are proposed and not yet approved."
+      }
+    }
+  ]
+}
+```
+
+That entry was run on `examples/blazon`; `about.txt` then reads the company description, the boilerplate, the three facts and `Note: The colours are proposed and not yet approved.`, each in its own paragraph.
+
+## Fonts and swatches
+
+- A family is a brand font when it is at the front of a font stack and is not a system font, or when a stylesheet or font file of the brand loads it, or when its font token states a source or license. The same families blazon treats as system fonts everywhere (`blazon fonts`) are fallbacks, and so is every family after the first in a stack. They are not listed as fonts with `License: not stated`; `fonts.txt` ends with one line, `Fallback fonts, not shipped: ...`. A stack with no brand font writes no `fonts.txt`.
+- The license comes from the font token (`license`, `licenseUrl`, `source` of its `dev.blazon` `font`), then from the license file beside the family's font files (`OFL.txt`, `LICENSE`, `LICENCE`, `COPYING`), which blazon reads into `brand.json` as `theme.fontLicenses`: the plugin is given the brand and the built site, not the project folder, so it never opens the file itself. It prints `License file:` with the project path and, as `License:`, an `SPDX-License-Identifier:` line or the first short line that is not a copyright notice (`see <path>` when none). The kit copies no font and no license text.
+- The PDF draws up to ten colors. A color belongs to the group named by the path before its last segment (`color.blue.500` is step `500` of `color.blue`). Groups run in the order their first color appears in the brand, each group's steps together, a group goes in whole, and the walk stops at the first group that does not fit in the places left (the first group alone is cut at ten). A swatch reads `blue 500`; a color straight under `color` keeps its short description, else its last segment.
+- `README.txt` aligns its descriptions two spaces after the longest file name, or at column 16 when the names are shorter.

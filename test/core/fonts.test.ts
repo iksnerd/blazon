@@ -4,6 +4,7 @@ import path from 'node:path';
 import { DEFAULT_CONFIG } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';
 import type { BlazonConfig } from '../../src/types/index.js';
+import { formatBrandJson } from '../../src/core/brand/export.js';
 import { fontFaceCss } from '../../src/core/read/index.js';
 import { writeProject } from '../support/helpers.js';
 
@@ -92,6 +93,70 @@ describe('a font file in the config', () => {
 
     expect(data.findings.filter((f) => f.code === 'config-invalid').map((f) => f.path)).toEqual(bad.map((_, i) => `fonts[${i + 1}]`));
     expect(data.fonts).toHaveLength(1);
+  });
+});
+
+describe('the license file beside a font file', () => {
+  const OFL = 'This Font Software is licensed under the SIL Open Font License, Version 1.1.\n';
+  const licenses = async (files: Record<string, unknown>, fonts: BlazonConfig['fonts'] = [{ family: 'Mulish', file: 'fonts/Mulish.woff2' }]) => {
+    const data = await compile(files, fonts);
+    return { data, found: data.fontLicenses ?? [], skipped: data.findings.filter((f) => f.code === 'font-license-invalid') };
+  };
+
+  it('is read as text and kept with the family and its project-relative path', async () => {
+    const { found, skipped } = await licenses({ 'fonts/OFL.txt': OFL });
+    expect(found).toEqual([{ family: 'Mulish', licenseFile: 'fonts/OFL.txt', licenseText: OFL }]);
+    expect(skipped).toEqual([]);
+  });
+
+  it('is found by name whatever the case, OFL first, then LICENSE, LICENCE and COPYING', async () => {
+    expect((await licenses({ 'fonts/license.TXT': 'b', 'fonts/COPYING': 'c' })).found[0]?.licenseFile).toBe('fonts/license.TXT');
+    expect((await licenses({ 'fonts/Licence-Mulish.md': 'b', 'fonts/copying': 'c' })).found[0]?.licenseFile).toBe('fonts/Licence-Mulish.md');
+    expect((await licenses({ 'fonts/LICENSE': 'b', 'fonts/ofl.txt': OFL })).found[0]?.licenseFile).toBe('fonts/ofl.txt');
+  });
+
+  it('is looked for in the font file own folder only, never in a parent, and not as a folder', async () => {
+    expect((await licenses({ 'OFL.txt': OFL, 'LICENSE/readme': 'x' })).found).toEqual([]);
+  });
+
+  it('is not read when it is over 64 KiB, and a finding says so', async () => {
+    const { found, skipped } = await licenses({ 'fonts/OFL.txt': 'x'.repeat(65 * 1024) });
+    expect(found).toEqual([]);
+    expect(skipped).toEqual([expect.objectContaining({ severity: 'warning', path: 'fonts/OFL.txt', message: expect.stringContaining('64 KiB') })]);
+  });
+
+  it('is not kept when it is not UTF-8 text, and a finding says so', async () => {
+    const root = writeProject({ 'tokens/a.json': tokens(['Mulish', 'sans-serif']), 'fonts/Mulish.woff2': FONT_BYTES });
+    fs.writeFileSync(path.join(root, 'fonts/OFL.txt'), Buffer.from([0xff, 0xfe, 0x41, 0x00, 0xc3, 0x28]));
+    const data = await compileBlazonData({ ...DEFAULT_CONFIG, fonts: [{ family: 'Mulish', file: 'fonts/Mulish.woff2' }] }, root);
+    expect(data.fontLicenses ?? []).toEqual([]);
+    expect(data.findings.filter((f) => f.code === 'font-license-invalid')).toEqual([expect.objectContaining({ path: 'fonts/OFL.txt', message: expect.stringContaining('UTF-8') })]);
+  });
+
+  it('is not read through a link that leaves the project', async () => {
+    const outside = path.join(writeProject({ 'OFL.txt': OFL }), 'OFL.txt');
+    const root = writeProject({ 'tokens/a.json': tokens(['Mulish', 'sans-serif']), 'fonts/Mulish.woff2': FONT_BYTES });
+    fs.symlinkSync(outside, path.join(root, 'fonts/OFL.txt'));
+    const data = await compileBlazonData({ ...DEFAULT_CONFIG, fonts: [{ family: 'Mulish', file: 'fonts/Mulish.woff2' }] }, root);
+    expect(data.fontLicenses ?? []).toEqual([]);
+    expect(data.findings.filter((f) => f.code === 'font-license-invalid')).toEqual([expect.objectContaining({ message: expect.stringContaining('outside the project folder') })]);
+  });
+
+  it('is kept once for a family whose files share a folder, and the file is a project input', async () => {
+    const { found } = await licenses({ 'fonts/OFL.txt': OFL, 'fonts/Mulish-Bold.woff2': FONT_BYTES }, [
+      { family: 'Mulish', file: 'fonts/Mulish.woff2' },
+      { family: 'Mulish', file: 'fonts/Mulish-Bold.woff2', weight: 700 },
+    ]);
+    expect(found).toHaveLength(1);
+  });
+
+  it('is carried by brand.json as theme.fontLicenses, and left out when there is none', async () => {
+    const root = writeProject({ 'tokens/a.json': tokens(['Mulish', 'sans-serif']), 'fonts/Mulish.woff2': FONT_BYTES, 'fonts/OFL.txt': OFL });
+    const config = { ...DEFAULT_CONFIG, fonts: [{ family: 'Mulish', file: 'fonts/Mulish.woff2' }] };
+    const brand = JSON.parse(formatBrandJson(await compileBlazonData(config, root), config, root));
+    expect(brand.theme.fontLicenses).toEqual([{ family: 'Mulish', licenseFile: 'fonts/OFL.txt', licenseText: OFL }]);
+    const none = JSON.parse(formatBrandJson(await compileBlazonData({ ...DEFAULT_CONFIG }, root), { ...DEFAULT_CONFIG }, root));
+    expect('fontLicenses' in none.theme).toBe(false);
   });
 });
 

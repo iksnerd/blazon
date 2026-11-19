@@ -38,6 +38,13 @@ export interface FontToken {
   source?: string;
 }
 
+/** The license file blazon found beside a family's font files (`theme.fontLicenses`): the project path and the text, since a plugin is never given the project folder */
+export interface FontLicenseRead {
+  family: string;
+  licenseFile: string;
+  licenseText: string;
+}
+
 export interface BrandRead {
   title: string;
   /** False when the brand has no title and `title` is the stand-in */
@@ -49,6 +56,8 @@ export interface BrandRead {
   fontTokens: FontToken[];
   /** The stylesheets the brand loads its fonts from: URLs, and data: stylesheets for the font files it embeds */
   stylesheets: string[];
+  /** The license files beside the font files the brand embeds, one per family */
+  fontLicenses: FontLicenseRead[];
   assets: Map<string, PressAsset>;
   /** The files brand.json names as the logo for a light and for a dark surface */
   logo: { onLight?: string; onDark?: string };
@@ -115,6 +124,11 @@ export function readBrand(brand: unknown): BrandRead {
     colors,
     fontTokens,
     stylesheets: (Array.isArray(theme.fonts) ? theme.fonts : []).filter((sheet): sheet is string => typeof sheet === 'string'),
+    fontLicenses: (Array.isArray(theme.fontLicenses) ? theme.fontLicenses : []).flatMap((raw): FontLicenseRead[] =>
+      isObject(raw) && text(raw.family) && text(raw.licenseFile) && typeof raw.licenseText === 'string' && raw.licenseText.trim() !== ''
+        ? [{ family: raw.family as string, licenseFile: raw.licenseFile as string, licenseText: raw.licenseText }]
+        : [],
+    ),
     assets,
     logo: readLogo(root),
   };

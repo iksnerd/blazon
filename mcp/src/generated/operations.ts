@@ -6,7 +6,7 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'check_brand',
     title: 'Check the brand',
     description:
-      'Runs blazon check on the brand, without plugins, and returns its findings and counts. Plugins in blazon.json do not run, so the counts can be lower than `blazon check` prints; `pluginsSkipped` and `warnings` name them. `passed` is false when the brand has errors, and values read from such a brand can be wrong. Returns at most `limit` findings (default 50, at most 500); `counts` stay whole. Not for reading a value: use get_token.',
+      'Runs blazon check on the brand, without plugins, and returns its findings and counts. Plugins in blazon.json do not run, so the counts can be lower than `blazon check` prints, but only for a plugin with a check role; a build-only plugin adds no finding. `pluginsSkipped` and `warnings` list every configured plugin, since a role is known only by starting the plugin. `passed` is false when the brand has errors, and values read from such a brand can be wrong. Returns at most `limit` findings (default 50, at most 500); `counts` stay whole. Not for reading a value: use get_token.',
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
@@ -58,7 +58,7 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'array',
           items: { type: 'string' },
           description:
-            'The plugins blazon.json lists, which did not run because the server never starts a plugin, so `blazon check` can report more findings than `counts`. Absent when the config lists none',
+            'Every plugin blazon.json lists, which did not run because the server never starts a plugin. Only one with a check role can make `blazon check` report more findings than `counts`; the server cannot tell which without starting it. Absent when the config lists none',
         },
       },
       required: ['warnings', 'brandHasErrors', 'passed', 'counts', 'findings'],

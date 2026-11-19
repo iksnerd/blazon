@@ -11,9 +11,25 @@ export interface Options {
   dark?: string;
   /** Letters and digits: first in an Android resource name, and the start of the Swift and Kotlin type names in place of `Blazon`. Empty for none */
   prefix: string;
+  /** Token path prefixes in dot form; when given, only the tokens under one of them are written */
+  include?: string[];
+  /** Token path prefixes in dot form; the tokens under one of them are not written (applied after `include`) */
+  exclude?: string[];
 }
 
-const KEYS = ['platforms', 'dark', 'prefix'];
+const KEYS = ['platforms', 'dark', 'prefix', 'include', 'exclude'];
+/** The most entries `include` or `exclude` may hold */
+export const MAX_FILTER = 100;
+// A token path: names joined with dots, each of letters, digits, `_` and `-`. Narrower than the names DTCG allows on purpose: a filter is
+// compared as plain text, and a `*` or `[` in one is a mistake for a pattern, which this option does not take.
+const PATH = /^[\p{L}\p{N}_-]+(\.[\p{L}\p{N}_-]+)*$/u;
+
+/** True when `path` is `prefix` or lies under it: the names are compared one by one, so `breakpoint` does not reach `breakpoints.x`. Plain comparison, no pattern. */
+export function underPrefix(path: string, prefix: string): boolean {
+  const names = path.split('.');
+  const head = prefix.split('.');
+  return head.length <= names.length && head.every((name, at) => name === names[at]);
+}
 
 export type { Finding };
 export const finding = findingFor(NAME);
@@ -48,6 +64,17 @@ export function parseOptions(raw: unknown, contexts: ReadonlySet<string>): { opt
   if (raw.prefix !== undefined) {
     if (typeof raw.prefix !== 'string' || !/^([A-Za-z][A-Za-z0-9]*)?$/.test(raw.prefix)) findings.push(invalid('prefix must be letters and digits, starting with a letter'));
     else options.prefix = raw.prefix;
+  }
+  for (const key of ['include', 'exclude'] as const) {
+    const list = raw[key];
+    if (list === undefined) continue;
+    if (!Array.isArray(list) || list.length === 0 || list.length > MAX_FILTER || list.some((item) => typeof item !== 'string' || !PATH.test(item)))
+      findings.push(
+        invalid(
+          `${key} must be a list of 1 to ${MAX_FILTER} token paths in dot form, such as "breakpoint" or "component.button.website", each name letters, digits, "_" and "-" (no pattern characters)`,
+        ),
+      );
+    else options[key] = [...new Set(list as string[])];
   }
   return { options, findings };
 }
