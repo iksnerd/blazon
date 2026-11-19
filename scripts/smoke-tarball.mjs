@@ -2,12 +2,13 @@
 // would run first. It proves the package works from its own files, not from this checkout. The release job runs it on the tarball
 // it is about to attach (ci.yml); run it by hand the same way:
 //   npm pack && node scripts/smoke-tarball.mjs iksnerd-blazon-<version>.tgz
-// Nothing here reads the repository: the tarball and a temporary folder are all it uses. blazon refuses to run a plugin that has a
+// Nothing here reads the repository but test/first-run/expected.json (what a fresh project's check may report): the tarball and a temporary folder are all else it uses. blazon refuses to run a plugin that has a
 // folder others can write above it, so on a machine where the system temp folder is one, set BLAZON_SMOKE_DIR to a folder under home.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { firstRunProblems } from './first-run-expectation.mjs';
 
 const tarball = process.argv[2] ? path.resolve(process.argv[2]) : undefined;
 if (!tarball || !fs.existsSync(tarball)) {
@@ -95,6 +96,15 @@ try {
   step('blazon --help', blazon, ['--help'], { expect: 'Usage' });
   step('blazon init', blazon, ['init', 'brand', '--yes']);
   step('blazon check', blazon, ['check', 'brand']);
+  // What a new user sees on minute one, from the packed starter: judged against the same file the source test reads.
+  const fresh = step('blazon check --json', blazon, ['check', 'brand', '--json']);
+  const expected = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'test', 'first-run', 'expected.json'), 'utf-8'));
+  const drift = firstRunProblems(JSON.parse(fresh.stdout), expected);
+  if (drift.length > 0) {
+    failed = true;
+    console.error(`FAIL the packed starter's first run differs from test/first-run/expected.json:\n${drift.map((line) => `  ${line}`).join('\n')}`);
+    throw new Error('first run');
+  }
   step('blazon build', blazon, ['build', 'brand']);
   const name = 'blazon.copy';
   step(`blazon plugin check --core (${name})`, blazon, ['plugin', 'check', path.join(programs, name, 'bin', `blazon-${name}.🔌`), '--core']);

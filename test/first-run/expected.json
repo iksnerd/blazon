@@ -1,0 +1,12 @@
+{
+  "about": "What `blazon check --json` may report on a fresh `blazon init` project, as shipped. Read by test/build/first-run.test.ts (the source starter) and scripts/smoke-tarball.mjs (the packed one). A starter change that adds a finding fails both until this file is edited on purpose.",
+  "errors": 0,
+  "codes": {
+    "starter-logo-unchanged": "warning",
+    "starter-file-unchanged": "info"
+  },
+  "max": {
+    "warning": 2,
+    "info": 43
+  }
+}
