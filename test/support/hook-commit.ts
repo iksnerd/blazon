@@ -31,6 +31,7 @@ export const BASE: Record<string, string> = {
       'test:deck': 'echo deck',
       'test:docs': 'echo docs',
       'test:files': 'echo files',
+      'test:guards': 'echo guards',
     },
   }),
   // Stands for ESLint: it fails when a file under src/ holds the word LINT_ERROR

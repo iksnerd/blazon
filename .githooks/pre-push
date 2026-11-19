@@ -10,7 +10,8 @@
 # between what the remote has and what is pushed:
 #   the whole suite     when a changed file asks for it (examples/, a fixture, package.json, the build and test config, a path no rule
 #                       names), for a new tag, for a ref the remote does not hold an ancestor of, or when BLAZON_PUSH_FULL=1
-#   otherwise           only the suites those files ask for, on the pushed tree
+#   otherwise           only the suites those files ask for, on the pushed tree, and always the whole-tree guards (no private name
+#                       in any tracked file, the layers of src/); the whole suite holds them already
 #
 # Install:   npm run hooks   (runs `git config core.hooksPath .githooks`; not a prepare script, so the published package carries none)
 # Bypass:    git push --no-verify
@@ -112,6 +113,9 @@ for entry in "${refs[@]}"; do
         # shellcheck disable=SC2086
         cached_step "files-$tree-$files_key" "tests: hooks and scripts" bash -c "cd '$snap' && npm run -s test:files -- $TEST_ARGS $extra_tests"
     fi
+    # Not the whole suite (that path continued above, and the suite holds both guards): the tests that read the whole tree still run,
+    # whatever the changed paths (whole_tree_guards in lib.sh)
+    whole_tree_guards "$tree" "$snap"
 done
 
 finish pre-push 'git push --no-verify'

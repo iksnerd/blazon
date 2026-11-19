@@ -34,7 +34,7 @@ step() {
         # What the person needs is the failing lines. A suite prints a banner first and a lot of noise in between (jsdom's "Not
         # implemented" lines), so the first lines are rarely it: show the lines that name a failure, or the end when there are none.
         local failing
-        failing="$(printf '%s\n' "$out" | grep -v 'Not implemented: ' | grep -E '(×|✗| FAIL |AssertionError|Error:|error TS|ERROR|leaks found|Secret:|File:|RuleID:)' | head -25)"
+        failing="$(printf '%s\n' "$out" | grep -v 'Not implemented: ' | grep -E '(×|✗| FAIL |AssertionError|Error:|error TS|ERROR|leaks found|Secret:|File:|RuleID:)|^\+ +"' | head -25)"
         if [ -z "$failing" ]; then failing="$(printf '%s\n' "$out" | tail -25)"; fi
         printf '%s\n' "$failing" | sed 's/^/      /'
         printf '      full output: %s\n' "$LOG"
@@ -132,6 +132,19 @@ classify_paths() {
         [ -e "$root/$item" ] && listed="$listed $item"
     done
     extra_tests="$listed"
+}
+
+# whole_tree_guards TREE DIR: the tests that read the whole tree, run in DIR, an export of the tree: test/core/no-private-markers.test.ts
+# (no private name or home folder in any tracked file) and test/core/layers.test.ts (the layers of src/, no framework name in core).
+# `vitest related` never selects them, and classify_paths names them for no path, so a README or a plugin test that carried a private
+# name passed both hooks. Both hooks run them on every commit and on every push that does not run the whole suite (which holds them).
+# They are not in classify_paths' extra_tests on purpose: that list depends on the paths, and these must run whatever the paths.
+# The marker file lives outside the tree ($BLAZON_PRIVATE_MARKERS, or ~/.config/blazon/private-markers.json), so its content is part
+# of the key: a new marker must not hide behind a pass of the same tree.
+whole_tree_guards() {
+    local tree="$1" dir="$2" markers="${BLAZON_PRIVATE_MARKERS:-$HOME/.config/blazon/private-markers.json}" mkey=none
+    [ -f "$markers" ] && mkey="$(digest_of < "$markers")"
+    cached_step "guards-$tree-$mkey" "tests: whole-tree guards" bash -c "cd '$dir' && npm run -s test:guards -- $TEST_ARGS"
 }
 
 # classify_lint ROOT: reads paths, one on a line (the staged ones), and sets what ESLint must be run on for them.
