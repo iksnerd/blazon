@@ -4,6 +4,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+## 0.3.2 (2026-11-19)
+
 ### Added
 
 - `blazon.platform-tokens` writes the width of `border` tokens as a dimension named `<token path>.width` (`border.rule` is `border_rule_width` in `dimens.xml`, `BlazonDimensions.borderRuleWidth`, `BlazonDimens.borderRuleWidth`), so every output and option applies. The colour is not written. A style other than `solid` is named in a new `border-style-dropped` info finding; an unreadable width is a `dimension-unreadable` warning. `include` and `exclude` match the border token's path. `border` leaves the `tokens-skipped` list. A brand with no border token gets the same files.
