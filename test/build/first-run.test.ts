@@ -5,6 +5,8 @@ import path from 'node:path';
 import { REPO } from '../support/paths';
 import { starterProject, tempDir } from '../support/project';
 import { literal, starterFacts } from '../support/starter-facts';
+import { firstRunProblems } from '../../scripts/first-run-expectation.mjs';
+import expected from '../first-run/expected.json';
 import { runInit } from '../../src/cli/commands/init.js';
 
 // What a new user sees: `blazon init`, then `blazon check` on the starter. The findings stay one for each file in the
@@ -38,6 +40,14 @@ describe('blazon check on the starter', () => {
 
     // The summary counts findings, not the lines
     expect(out).toContain(`2 warning(s) and ${starterFacts().notes} note(s)`);
+  }, 60_000);
+
+  it('reports only what test/first-run/expected.json allows (the file the tarball smoke test reads too)', async () => {
+    // The project is what `blazon init` writes, with the plugin list init gives it: the brand a user gets, not one made by hand
+    const root = await starterProject({ plugins: 'starter' });
+    const result = blazon('check', root, '--json');
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(firstRunProblems(JSON.parse(result.stdout), expected)).toEqual([]);
   }, 60_000);
 
   it('adds a Next block while the project is mostly the starter', async () => {
