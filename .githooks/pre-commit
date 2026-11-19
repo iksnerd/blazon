@@ -26,6 +26,7 @@
 #                       -> the manual and RFC tests
 #   .githooks/, scripts/install-hooks.mjs, shipped-lock.mjs, blazon-src.ts
 #                       -> the few tests that read them by name
+#   every commit also runs the whole-tree guards (no private name in any tracked file, the layers of src/), whatever the paths
 #   the linters' and formatter's own config -> no test: the lint and format steps run on every commit
 #   examples/, package.json, other files under test/ (goldens, corpus, fixtures), build and test config
 #   and any path no rule names
@@ -147,5 +148,8 @@ if [ -n "$extra_tests" ]; then
     # shellcheck disable=SC2086
     cached_step "files-$TREE-$files_key" "tests: hooks and scripts" bash -c "cd '$SNAP' && npm run -s test:files -- $TEST_ARGS $extra_tests"
 fi
+
+# Whatever the paths: the tests that read the whole tree (whole_tree_guards in lib.sh)
+whole_tree_guards "$TREE" "$SNAP"
 
 finish pre-commit 'git commit --no-verify'

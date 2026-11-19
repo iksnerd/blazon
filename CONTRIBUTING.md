@@ -94,6 +94,8 @@ A commit made by `git merge` skips the pre-commit hook; run `npm run check` and 
 - A secret scan of the staged changes with [gitleaks](https://github.com/gitleaks/gitleaks), skipped with a notice when it is not installed.
 - `bash -n` on staged shell files, a syntax check of staged Python files, and Ruff when any are staged (skipped with a notice when `uv` is not installed).
 
+- The whole-tree guards (`npm run test:guards`: `test/core/no-private-markers.test.ts` and `test/core/layers.test.ts`), whatever the paths. They read every tracked file, so `vitest related` never selects them, and a README or a plugin test with a private name in it would otherwise pass. `pre-push` runs them too, unless it runs the whole suite, which holds them.
+
 It then runs the tests the staged paths ask for, and never the whole suite (`npm test`). `pre-push` runs the whole suite only for the changes that ask for it. A deletion counts as staged. One list of paths, `classify_paths` in `.githooks/lib.sh`, serves both hooks.
 
 | Changed | Tests that run |

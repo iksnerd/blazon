@@ -41,6 +41,7 @@ export const manifest = (counter: string, exit = 0) =>
       'test:related': 'echo related',
       'test:deck': 'echo deck',
       'test:docs': 'echo docs',
+      'test:guards': 'echo guards',
     },
   });
 export const FILES: Record<string, string> = {
