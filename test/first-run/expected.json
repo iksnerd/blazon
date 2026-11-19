@@ -6,7 +6,6 @@
     "starter-file-unchanged": "info"
   },
   "max": {
-    "warning": 2,
-    "info": 43
+    "warning": 2
   }
 }
