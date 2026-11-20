@@ -34,6 +34,9 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
  * a command ends with is printed in one shape by `errorText`: `blazon <command>: <what happened>`, then the fix on its own line.
  */
 export class BlazonError extends Error {
+  /** A third line for a person, set where the command line is known (folder-first.ts). Standard error only: `--json` does not carry it. */
+  hint?: string;
+
   constructor(
     message: string,
     readonly fix?: string,
@@ -57,8 +60,8 @@ export const USAGE_STATUS = 2;
 const clause = (fix: string): string => fix.replace(/^./, (first) => first.toLowerCase()).replace(/\.$/, '');
 
 /** The one text shape of an error: `blazon <command>: <what happened>`, and the fix, when there is one, indented on the next line. */
-export function errorText(command: string, what: string, fix?: string): string {
-  return `blazon${command ? ` ${command}` : ''}: ${what}${fix ? `\n  ${fix}` : ''}`;
+export function errorText(command: string, what: string, fix?: string, hint?: string): string {
+  return `blazon${command ? ` ${command}` : ''}: ${what}${fix ? `\n  ${fix}` : ''}${hint ? `\n  ${hint}` : ''}`;
 }
 
 /** The same error as the one sentence `--json` carries in `error.message`: what happened, then the fix after a semicolon. */
@@ -107,7 +110,7 @@ export const isUsageError = (error: unknown): error is Error => error instanceof
 export function failed(command: string, error: unknown, debug: boolean): never {
   const fix = error instanceof BlazonError ? error.fix : undefined;
   if (error instanceof UsageError)
-    return refuse(errorText(command, error.message, fix), error.code, { stack: debug ? error.stack : undefined, json: jsonMessage(error.message, fix), fix });
+    return refuse(errorText(command, error.message, fix, error.hint), error.code, { stack: debug ? error.stack : undefined, json: jsonMessage(error.message, fix), fix });
   const text = error instanceof Error ? error.message : String(error);
   console.error();
   printError(errorText(command, text, fix ?? (debug || error instanceof BlazonError ? undefined : pc.dim('Run again with --debug for the stack.'))));
