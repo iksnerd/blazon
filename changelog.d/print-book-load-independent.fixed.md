@@ -1,0 +1,1 @@
+The print book's page count no longer depends on machine load. The fonts are awaited before the book is paginated, so a slow or busy computer gives the same pages as a quiet one. A book can gain a page or more compared with 0.3.2, because the earlier count was measured with the fallback font: page counts of existing books can change. The starter is 73 pages compact and 83 roomy.

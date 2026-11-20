@@ -10,7 +10,7 @@ import { starterProject, tempDir } from '../../support/project';
 
 // A Markdown task list (`- [ ]`, `- [x]`) in the print book: the native checkbox was drawn pale grey and nearly invisible, after a
 // bullet. In print the bullet is gone and the box has a border in the text colour; a checked box is filled, so it differs from an
-// unchecked one. Both layouts, and the page count of a book with no task list stays what it was (72 compact, 81 roomy).
+// unchecked one. Both layouts, and the page count of a book with no task list stays what it was (73 compact, 83 roomy).
 
 const MAC_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const CHROME = process.env.BLAZON_CHROME || (fs.existsSync(MAC_CHROME) ? MAC_CHROME : '');
@@ -136,8 +136,8 @@ describe.skipIf(!CHROME)('the print book draws a task-list checkbox', () => {
     });
   }
 
-  it('leaves the page count of a book with no task list at 72 compact and 81 roomy', async () => {
-    expect((await seen(plain, 'compact')).pages).toBe(72);
-    expect((await seen(plain, 'roomy')).pages).toBe(81);
+  it('leaves the page count of a book with no task list at 73 compact and 83 roomy', async () => {
+    expect((await seen(plain, 'compact')).pages).toBe(73);
+    expect((await seen(plain, 'roomy')).pages).toBe(83);
   });
 });
