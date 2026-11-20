@@ -33,6 +33,30 @@ describe('blazon.lock through the CLI', () => {
     expect(text.stdout).toContain('pin-mismatch');
   });
 
+  it('check --json says the brand has no errors of its own and names the mismatch', async () => {
+    const root = await lockedProject('0'.repeat(40));
+    const doc = JSON.parse(blazon('check', root, '--json').stdout);
+    expect(doc.passed).toBe(false);
+    expect(doc.brandHasErrors).toBe(false);
+    expect(doc.pinMismatch).toMatchObject({ pinned: '0'.repeat(12), message: expect.stringContaining('pinned to blazon') });
+  });
+
+  it('a read command warns once and exits 0: the pin is not an error of the brand', async () => {
+    const root = await lockedProject('0'.repeat(40));
+    for (const args of [['list'], ['rules'], ['fonts'], ['get', 'text.primary']]) {
+      const ran = blazon(...args, root);
+      expect(ran.status, `${args[0]}: ${ran.stderr}`).toBe(0);
+      const lines = ran.stderr.split('\n').filter((line) => /pin/.test(line));
+      expect(lines, args[0]).toHaveLength(1);
+      expect(lines[0]).toMatch(/^blazon: pin mismatch \(pinned 0{12}, running \S.*\): this book is pinned to blazon/);
+      expect(ran.stderr).not.toMatch(/error\(s\)/);
+    }
+  });
+
+  it('a read command says nothing about the pin when there is none', async () => {
+    expect(blazon('list', await starterProject()).stderr).not.toMatch(/pin/);
+  });
+
   it('build stops before it writes anything', async () => {
     const root = await lockedProject('0'.repeat(40));
     const ran = blazon('build', root);

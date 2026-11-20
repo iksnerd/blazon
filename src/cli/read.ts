@@ -1,17 +1,24 @@
 import pc from '../core/colors.js';
 import { compileBlazonData } from '../core/index.js';
-import { summarizeFindings } from '../core/checker/index.js';
+import { blazonPinState, pinMismatchLine } from '../core/blazon-pin.js';
+import { brandErrors } from '../core/checker/index.js';
 import { LookupError } from '../core/read/index.js';
 import type { BlazonConfig, BlazonData } from '../types/index.js';
 import { UsageError } from './errors.js';
 import { loadProject } from './project.js';
 
-/** The brand in `dir`, from the same compile as `check`. A brand with errors is still read; standard error says so, since a value may be wrong. */
+/**
+ * The brand in `dir`, from the same compile as `check`. A brand with errors is still read; standard error says so, since a value may be wrong.
+ * A blazon.lock that names another blazon build is a second, separate line, a warning only: it says nothing about a value. Only blazon.lock is read.
+ */
 export async function readBrand(dir: string): Promise<{ config: BlazonConfig; data: BlazonData }> {
   const config = await loadProject(dir);
   const data = await compileBlazonData(config, dir);
-  const { errors } = summarizeFindings(data.findings);
+  const errors = brandErrors(data.findings);
   if (errors.length > 0) console.error(pc.yellow(`blazon: this brand has ${errors.length} error(s), so a value below may be wrong; run blazon check.`));
+  const { problems, mismatch } = blazonPinState(dir);
+  for (const problem of problems) console.error(pc.yellow(`blazon: ${problem.message}`));
+  if (mismatch) console.error(pc.yellow(pinMismatchLine(mismatch)));
   return { config, data };
 }
 

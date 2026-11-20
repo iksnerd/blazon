@@ -103,7 +103,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
         const severity = severityOf('build', options?.severity, options?.json);
         // -o is a path from where blazon is run; runBuild takes one from the book
         const build = () => runBuild(dir ? dir : process.cwd(), options?.outDir === undefined ? undefined : path.resolve(process.cwd(), options.outDir), options);
-        if (options?.json) await asJson('build', false, build, severity);
+        if (options?.json) await asJson('build', false, build, severity, dir ? dir : process.cwd());
         else await build();
       } catch (err) {
         failed('build', err, debug);
@@ -121,7 +121,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
         pluginFlags('tokens', options);
         const severity = severityOf('tokens', options?.severity, options?.json);
         const tokens = () => runTokens(dir ? dir : process.cwd(), options);
-        if (options?.json) await asJson('tokens', false, tokens, severity);
+        if (options?.json) await asJson('tokens', false, tokens, severity, dir ? dir : process.cwd());
         else await tokens();
       } catch (err) {
         failed('tokens', err, debug);
@@ -140,7 +140,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
         pluginFlags('check', options);
         const severity = severityOf('check', options?.severity, options?.json);
         const check = () => runCheck(dir ? dir : process.cwd(), options?.strict, options);
-        if (options?.json) await asJson('check', Boolean(options.strict), check, severity);
+        if (options?.json) await asJson('check', Boolean(options.strict), check, severity, dir ? dir : process.cwd());
         else if (!(await check()).passed) process.exitCode = 1;
       } catch (err) {
         failed('check', err, debug);

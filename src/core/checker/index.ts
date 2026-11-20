@@ -2,6 +2,7 @@ import { STANDARD_USAGE_ROLES, type BlazonData, type Finding, type Vocabulary } 
 import { compareFindings } from '../order.js';
 import { contrastFindings } from './contrast.js';
 import { duplicateFindings } from './duplicates.js';
+import { isPinFinding } from './catalogue.js';
 import { printFindings } from './print.js';
 import { proportionFindings } from './proportion.js';
 import { reviewFindings } from './review.js';
@@ -42,6 +43,12 @@ export function checkTokens(data: Pick<BlazonData, 'tokens'> & { vocabulary?: Pi
 
   return summarizeFindings(all, options);
 }
+
+/**
+ * The findings that make a value of the brand possibly wrong: errors, except the pin family (the blazon build and the book disagree, which
+ * says nothing about any token). The one definition of "the brand has errors" that `check --json`, the read commands and the MCP tools share.
+ */
+export const brandErrors = (found: readonly Finding[]): Finding[] => found.filter((f) => f.severity === 'error' && !isPinFinding(f.code));
 
 /** Puts findings in the defined total order (`compareFindings`) and splits them by severity; `strict` makes warnings fail too. */
 export function summarizeFindings(found: Finding[], options?: { strict?: boolean }): CheckResult {
