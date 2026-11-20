@@ -41,7 +41,7 @@ The Swift file type-checks with `swiftc -typecheck` for macOS 10.15 and iOS 13, 
 }
 ```
 
-Run on blazon's own example brand with this entry, `blazon tokens` writes the same 39 files as with no options except for the iOS names below, and no `radius.*` dimension in any output.
+Run on blazon's own example brand with this entry, `blazon tokens` writes the same files as with no options except for the iOS names below, and no `radius.*` dimension in any output.
 
 ## What the prefix reaches
 
