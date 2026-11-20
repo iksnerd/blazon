@@ -138,7 +138,7 @@
   {
     "name": "list_tokens",
     "title": "List the tokens",
-    "description": "Lists the design tokens of the brand, or of one group, or of one type, each with its path, type and value, in the order the token files write them. Use it to find a path or to read many values at once. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over 40000 characters is cut to whole tokens, and `tokensTotal` says how many matched: narrow with `group` or `type`.",
+    "description": "Lists the design tokens of the brand, or of one group, type or tier, each with its path, type, tier and value, in the order the token files write them. Use it to find a path or to read many values at once. `tier` (primitive, semantic or component) keeps to one layer of the brand. `theme` gives the values as that theme resolves them, and `defaultValue` on a token the theme changes; `themes` names the themes the brand has. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over 40000 characters is cut to whole tokens, and `tokensTotal` says how many matched: narrow with `group`, `type` or `tier`.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -153,6 +153,18 @@
           "type": "string",
           "maxLength": 40,
           "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*$"
+        },
+        "tier": {
+          "description": "A tier: primitive, semantic or component. Leave out for every tier. An unknown tier is refused with the list of tiers",
+          "type": "string",
+          "maxLength": 40,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*$"
+        },
+        "theme": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*$",
+          "description": "List the values in this context of the resolver's theme modifier, such as dark. An unknown theme is refused with the list of themes. Default: the default tokens"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -188,6 +200,21 @@
           "description": "The type asked for. Absent when every type was listed",
           "type": "string"
         },
+        "tier": {
+          "description": "The tier asked for. Absent when every tier was listed",
+          "type": "string"
+        },
+        "theme": {
+          "description": "The theme the values are resolved in. Absent when the default tokens were listed",
+          "type": "string"
+        },
+        "themes": {
+          "description": "The names of the themes the brand has, to pass as `theme`. Absent when the brand has no resolver theme modifier",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "tokens": {
           "type": "array",
           "items": {
@@ -207,6 +234,13 @@
               "aliasOf": {
                 "description": "The token this one is an alias of, when it is one",
                 "type": "string"
+              },
+              "tier": {
+                "description": "primitive, semantic or component, when the brand writes one",
+                "type": "string"
+              },
+              "defaultValue": {
+                "description": "With `theme`: the value in the default tokens, present only when the theme changes it"
               }
             },
             "required": [
@@ -243,7 +277,7 @@
   {
     "name": "get_token",
     "title": "Read a token",
-    "description": "Looks up one design token of the brand: its value, type, the CSS variable names it gets, and the rules that apply to it. Use it for the value of a path you know; a group path is refused. For a path you do not know use list_tokens.",
+    "description": "Looks up one design token of the brand: its value, type, the CSS variable names it gets, and the rules that apply to it. Use it for the value of a path you know; a group path is refused. With `theme` the value is the one that theme resolves, and `defaultValue` is the default one when it differs. For a path you do not know use list_tokens.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -252,6 +286,12 @@
           "maxLength": 200,
           "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
           "description": "The token path, for example color.brand.primary. A path from list_tokens works"
+        },
+        "theme": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*$",
+          "description": "Read the value in this context of the resolver's theme modifier, such as dark. An unknown theme is refused with the list of themes. Default: the default tokens"
         }
       },
       "required": [
@@ -295,7 +335,18 @@
               "type": "string"
             },
             "value": {
-              "description": "The value as CSS needs it, with aliases resolved"
+              "description": "The value as CSS needs it, with aliases resolved; with `theme`, as that theme resolves it"
+            },
+            "defaultValue": {
+              "description": "With `theme`: the value in the default tokens, present only when the theme changes it"
+            },
+            "theme": {
+              "description": "The theme the value is resolved in. Absent for the default tokens",
+              "type": "string"
+            },
+            "tier": {
+              "description": "primitive, semantic or component, when the brand writes one",
+              "type": "string"
             }
           },
           "required": [
@@ -400,7 +451,7 @@
   {
     "name": "can_use",
     "title": "Can this color be used here",
-    "description": "Answers whether one color token may be text on another color token, by the brand rules. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. For a color you have not picked, find one with list_tokens and type color.",
+    "description": "Answers whether one color token may be text on another color token, by the brand rules. Give `fg` and `bg` for one pair, or `pairs` (at most 50) for several in one call: the answer then has one result per pair, in order, and `allowed` is true only when every pair is. Exactly one of the two forms. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. `verbose` false leaves out the `checks` of an allowed answer; a denial keeps them. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. Pairs come only from the `pairs` rules of token groups; component tokens are not read for them. For a color you have not picked, find one with list_tokens and type color.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -408,13 +459,46 @@
           "type": "string",
           "maxLength": 200,
           "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
-          "description": "The text color token path, for example text.primary"
+          "description": "The text color token path, for example text.primary. Give it with bg, or give pairs instead"
         },
         "bg": {
           "type": "string",
           "maxLength": 200,
           "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
-          "description": "The background color token path, for example surface.background"
+          "description": "The background color token path, for example surface.background. Give it with fg, or give pairs instead"
+        },
+        "pairs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "description": "Several pairs to judge in one call, each a text color token fg and a background color token bg, in place of fg and bg. At most 50",
+          "items": {
+            "type": "object",
+            "properties": {
+              "fg": {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
+                "description": "The text color token path"
+              },
+              "bg": {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
+                "description": "The background color token path"
+              }
+            },
+            "required": [
+              "fg",
+              "bg"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "verbose": {
+          "type": "boolean",
+          "default": true,
+          "description": "False leaves out the `checks` of an answer that is allowed, which shortens the answer; a denial keeps its checks, since they are the reason. Default: true"
         },
         "role": {
           "type": "string",
@@ -432,10 +516,6 @@
           "description": "Judge the pair in this context of the resolver's theme modifier, such as dark. Default: the default tokens"
         }
       },
-      "required": [
-        "fg",
-        "bg"
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false
     },
@@ -463,7 +543,14 @@
         },
         "allowed": {
           "type": "boolean",
-          "description": "True when the brand allows this text color on this background"
+          "description": "True when the brand allows this text color on this background; with `pairs`, true when it allows every pair"
+        },
+        "results": {
+          "description": "With `pairs`: one answer for each pair, in order, each with the fields of a single answer: fg, bg, allowed, reason, role, contrast and, unless `verbose` is false and the pair is allowed, checks",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         },
         "reason": {
           "type": "string",
@@ -497,8 +584,7 @@
       "required": [
         "warnings",
         "brandHasErrors",
-        "allowed",
-        "reason"
+        "allowed"
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": {}

@@ -2,6 +2,7 @@ import type { BlazonData, TokenItem, TokenType } from '../../types/index.js';
 import { tokenVariables } from '../tokens/formatters/css.js';
 import { typographyClassName } from '../tokens/names.js';
 import { findToken } from './lookup.js';
+import { inTheme } from './theme.js';
 import { tokenRules, type TokenRules } from './rules.js';
 
 /** The names a token has in the CSS files `blazon tokens` writes. */
@@ -27,8 +28,12 @@ export function tokenNames(data: BlazonData, item: TokenItem): TokenNames {
 export interface TokenDescription {
   path: string;
   type?: TokenType;
-  /** CSS-ready, aliases resolved */
+  /** CSS-ready, aliases resolved; with a theme, as that theme resolves it */
   value: string | number;
+  /** With a theme: the value in the default tokens, only when the theme changes it */
+  defaultValue?: string | number;
+  /** The theme the value is resolved in; absent for the default tokens */
+  theme?: string;
   /** A composite token's parts, CSS-ready */
   parts?: Record<string, string | number>;
   description?: string;
@@ -45,8 +50,9 @@ export interface TokenDescription {
 }
 
 /** Everything the brand says about one token, from the same compile every other command uses. */
-export function describeToken(data: BlazonData, typedPath: string): TokenDescription {
-  const item = findToken(data, typedPath);
+export function describeToken(data: BlazonData, typedPath: string, theme?: string): TokenDescription {
+  const item = findToken(theme === undefined ? data : inTheme(data, theme), typedPath);
+  const was = theme === undefined ? undefined : findToken(data, typedPath);
   const contexts = (data.tokens.contexts ?? []).flatMap((c) =>
     c.tokens.filter((t) => t.path === item.path).map((t) => ({ modifier: c.modifier, context: c.context, selector: c.selector, value: t.value })),
   );
@@ -54,6 +60,8 @@ export function describeToken(data: BlazonData, typedPath: string): TokenDescrip
     path: item.path,
     ...(item.type && { type: item.type }),
     value: item.value,
+    ...(was && was.value !== item.value && { defaultValue: was.value }),
+    ...(theme !== undefined && { theme }),
     ...(item.parts && { parts: item.parts }),
     ...(item.description && { description: item.description }),
     ...(item.deprecated && { deprecated: item.deprecated }),

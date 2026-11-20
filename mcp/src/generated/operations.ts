@@ -71,7 +71,7 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'list_tokens',
     title: 'List the tokens',
     description:
-      "Lists the design tokens of the brand, or of one group, or of one type, each with its path, type and value, in the order the token files write them. Use it to find a path or to read many values at once. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over 40000 characters is cut to whole tokens, and `tokensTotal` says how many matched: narrow with `group` or `type`.",
+      "Lists the design tokens of the brand, or of one group, type or tier, each with its path, type, tier and value, in the order the token files write them. Use it to find a path or to read many values at once. `tier` (primitive, semantic or component) keeps to one layer of the brand. `theme` gives the values as that theme resolves them, and `defaultValue` on a token the theme changes; `themes` names the themes the brand has. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over 40000 characters is cut to whole tokens, and `tokensTotal` says how many matched: narrow with `group`, `type` or `tier`.",
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
@@ -87,6 +87,19 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'string',
           maxLength: 40,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
+        },
+        tier: {
+          description: 'A tier: primitive, semantic or component. Leave out for every tier. An unknown tier is refused with the list of tiers',
+          type: 'string',
+          maxLength: 40,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
+        },
+        theme: {
+          type: 'string',
+          maxLength: 200,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
+          description:
+            "List the values in this context of the resolver's theme modifier, such as dark. An unknown theme is refused with the list of themes. Default: the default tokens",
         },
         dir: { type: 'string', description: 'The brand folder. Default: the current folder' },
       },
@@ -105,6 +118,13 @@ export const OPERATIONS: readonly Operation[] = [
         notice: { description: 'Present when the answer was cut: how much was kept and how to ask a narrower question', type: 'string' },
         group: { description: 'The group asked for, as a clean path. Absent when the whole brand was listed', type: 'string' },
         type: { description: 'The type asked for. Absent when every type was listed', type: 'string' },
+        tier: { description: 'The tier asked for. Absent when every tier was listed', type: 'string' },
+        theme: { description: 'The theme the values are resolved in. Absent when the default tokens were listed', type: 'string' },
+        themes: {
+          description: 'The names of the themes the brand has, to pass as `theme`. Absent when the brand has no resolver theme modifier',
+          type: 'array',
+          items: { type: 'string' },
+        },
         tokens: {
           type: 'array',
           items: {
@@ -114,6 +134,8 @@ export const OPERATIONS: readonly Operation[] = [
               type: { description: 'The token type, such as color', type: 'string' },
               value: { description: 'The value as CSS needs it, with aliases resolved: a string or a number' },
               aliasOf: { description: 'The token this one is an alias of, when it is one', type: 'string' },
+              tier: { description: 'primitive, semantic or component, when the brand writes one', type: 'string' },
+              defaultValue: { description: 'With `theme`: the value in the default tokens, present only when the theme changes it' },
             },
             required: ['path', 'value'],
             additionalProperties: {},
@@ -135,6 +157,13 @@ export const OPERATIONS: readonly Operation[] = [
       options: [
         { property: 'json', description: 'Print the list as JSON on standard output' },
         { property: 'type', value: 'type', description: 'List only the tokens of one $type (color, dimension, fontFamily, ...)' },
+        { property: 'tier', value: 'tier', description: 'List only the tokens of one tier: primitive, semantic or component' },
+        {
+          property: 'theme',
+          value: '<name>',
+          description:
+            "list the values as this context of the resolver's theme modifier resolves them (such as dark), and the default value of each token it changes; exits 2 for an unknown theme",
+        },
       ],
     },
   },
@@ -142,7 +171,7 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'get_token',
     title: 'Read a token',
     description:
-      'Looks up one design token of the brand: its value, type, the CSS variable names it gets, and the rules that apply to it. Use it for the value of a path you know; a group path is refused. For a path you do not know use list_tokens.',
+      'Looks up one design token of the brand: its value, type, the CSS variable names it gets, and the rules that apply to it. Use it for the value of a path you know; a group path is refused. With `theme` the value is the one that theme resolves, and `defaultValue` is the default one when it differs. For a path you do not know use list_tokens.',
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
@@ -152,6 +181,13 @@ export const OPERATIONS: readonly Operation[] = [
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
           description: 'The token path, for example color.brand.primary. A path from list_tokens works',
+        },
+        theme: {
+          type: 'string',
+          maxLength: 200,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
+          description:
+            "Read the value in this context of the resolver's theme modifier, such as dark. An unknown theme is refused with the list of themes. Default: the default tokens",
         },
         dir: { type: 'string', description: 'The brand folder. Default: the current folder' },
       },
@@ -175,7 +211,10 @@ export const OPERATIONS: readonly Operation[] = [
           properties: {
             path: { type: 'string', description: 'The token path' },
             type: { description: 'The token type, such as color', type: 'string' },
-            value: { description: 'The value as CSS needs it, with aliases resolved' },
+            value: { description: 'The value as CSS needs it, with aliases resolved; with `theme`, as that theme resolves it' },
+            defaultValue: { description: 'With `theme`: the value in the default tokens, present only when the theme changes it' },
+            theme: { description: 'The theme the value is resolved in. Absent for the default tokens', type: 'string' },
+            tier: { description: 'primitive, semantic or component, when the brand writes one', type: 'string' },
           },
           required: ['path', 'value'],
           additionalProperties: {},
@@ -190,7 +229,15 @@ export const OPERATIONS: readonly Operation[] = [
       positional: ['path', 'dir'],
       cliOnly: ['dir'],
       summary: 'Read one token: its value, type, CSS variable name in theme.css, its usage, pairs and logo rules, and the file it is in. To find a path, use blazon list',
-      options: [{ property: 'json', description: 'Print the token as JSON on standard output' }],
+      options: [
+        {
+          property: 'theme',
+          value: '<name>',
+          description:
+            "read the value as this context of the resolver's theme modifier resolves it (such as dark), and the default value when it differs; exits 2 for an unknown theme",
+        },
+        { property: 'json', description: 'Print the token as JSON on standard output' },
+      ],
     },
   },
   {
@@ -244,7 +291,7 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'can_use',
     title: 'Can this color be used here',
     description:
-      'Answers whether one color token may be text on another color token, by the brand rules. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. For a color you have not picked, find one with list_tokens and type color.',
+      'Answers whether one color token may be text on another color token, by the brand rules. Give `fg` and `bg` for one pair, or `pairs` (at most 50) for several in one call: the answer then has one result per pair, in order, and `allowed` is true only when every pair is. Exactly one of the two forms. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. `verbose` false leaves out the `checks` of an allowed answer; a denial keeps them. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. Pairs come only from the `pairs` rules of token groups; component tokens are not read for them. For a color you have not picked, find one with list_tokens and type color.',
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
@@ -253,13 +300,33 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'string',
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
-          description: 'The text color token path, for example text.primary',
+          description: 'The text color token path, for example text.primary. Give it with bg, or give pairs instead',
         },
         bg: {
           type: 'string',
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
-          description: 'The background color token path, for example surface.background',
+          description: 'The background color token path, for example surface.background. Give it with fg, or give pairs instead',
+        },
+        pairs: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 50,
+          description: 'Several pairs to judge in one call, each a text color token fg and a background color token bg, in place of fg and bg. At most 50',
+          items: {
+            type: 'object',
+            properties: {
+              fg: { type: 'string', maxLength: 200, pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$', description: 'The text color token path' },
+              bg: { type: 'string', maxLength: 200, pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$', description: 'The background color token path' },
+            },
+            required: ['fg', 'bg'],
+            additionalProperties: false,
+          },
+        },
+        verbose: {
+          type: 'boolean',
+          default: true,
+          description: 'False leaves out the `checks` of an answer that is allowed, which shortens the answer; a denial keeps its checks, since they are the reason. Default: true',
         },
         role: {
           type: 'string',
@@ -276,7 +343,6 @@ export const OPERATIONS: readonly Operation[] = [
         },
         dir: { type: 'string', description: 'The brand folder. Default: the current folder' },
       },
-      required: ['fg', 'bg'],
       additionalProperties: false,
     },
     outputSchema: {
@@ -290,7 +356,13 @@ export const OPERATIONS: readonly Operation[] = [
         brandHasErrors: { type: 'boolean', description: 'True when the brand has errors, so values read from it may be wrong. Run check_brand to see them' },
         truncated: { description: 'True when the answer was cut to fit the size limit. `notice` says how to narrow the question', type: 'boolean' },
         notice: { description: 'Present when the answer was cut: how much was kept and how to ask a narrower question', type: 'string' },
-        allowed: { type: 'boolean', description: 'True when the brand allows this text color on this background' },
+        allowed: { type: 'boolean', description: 'True when the brand allows this text color on this background; with `pairs`, true when it allows every pair' },
+        results: {
+          description:
+            'With `pairs`: one answer for each pair, in order, each with the fields of a single answer: fg, bg, allowed, reason, role, contrast and, unless `verbose` is false and the pair is allowed, checks',
+          type: 'array',
+          items: { type: 'object' },
+        },
         reason: { type: 'string', description: 'The rule that decided the answer' },
         fg: { description: 'The text color token that was asked about', type: 'string' },
         bg: { description: 'The background color token that was asked about', type: 'string' },
@@ -298,7 +370,7 @@ export const OPERATIONS: readonly Operation[] = [
         theme: { description: 'The theme context the pair was judged in; absent for the default tokens', type: 'string' },
         contrast: { description: 'The contrast ratio of the pair, the strictest WCAG level it meets, and for role ui the threshold it had to reach', type: 'object' },
       },
-      required: ['warnings', 'brandHasErrors', 'allowed', 'reason'],
+      required: ['warnings', 'brandHasErrors', 'allowed'],
       additionalProperties: {},
     },
     cli: {
@@ -306,9 +378,19 @@ export const OPERATIONS: readonly Operation[] = [
       command: ['can'],
       positional: ['fg', 'bg', 'dir'],
       cliOnly: ['dir'],
+      folder: 'fg',
       summary:
-        'Ask whether the foreground token may be text (or, with --role ui, a border or focus ring) on the background token, by the brand rules; exits 0 allowed, 1 denied, 2 unknown token',
+        'Ask whether the foreground token may be text (or, with --role ui, a border or focus ring) on the background token, by the brand rules; exits 0 allowed, 1 denied, 2 unknown token. Several pairs: --pair fg:bg, repeated',
       options: [
+        {
+          property: 'pairs',
+          flag: 'pair',
+          value: 'fg:bg',
+          items: ['fg', 'bg'],
+          description:
+            'judge this pair, in place of the fg and bg arguments; repeat the flag for up to 50 pairs, one result each, in order; exits 0 when every pair is allowed, else 1',
+        },
+        { property: 'verbose', flag: 'no-verbose', description: 'leave out the checks of an allowed answer, which are all it adds to the reason; a denial keeps them' },
         { property: 'role', value: 'text|ui', description: 'text (default) or ui: judge a non-text element by the 3:1 rule, with no pairs' },
         { property: 'theme', value: '<name>', description: "judge the pair in this context of the resolver's theme modifier (such as dark); exits 2 for an unknown theme" },
         { property: 'json', description: 'Print the answer as JSON on standard output' },

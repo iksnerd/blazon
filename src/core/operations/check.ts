@@ -23,7 +23,7 @@ function typeOk(type: string, value: unknown): boolean {
 
 /**
  * Checks `value` against a schema and returns what is wrong, one sentence each, as a list that is empty when the value fits. Understands
- * type, enum, pattern, maxLength, minimum, maximum, items, properties, required and additionalProperties; any other keyword is ignored.
+ * type, enum, pattern, maxLength, minimum, maximum, minItems, maxItems, items, properties, required and additionalProperties; any other keyword is ignored.
  * The one check for the arguments of a tool call and for the answer the server sends back.
  */
 export function checkAgainst(schema: JsonSchema, value: unknown, at = 'the value'): string[] {
@@ -38,6 +38,10 @@ export function checkAgainst(schema: JsonSchema, value: unknown, at = 'the value
   if (typeof value === 'number') {
     if (typeof schema.minimum === 'number' && value < schema.minimum) problems.push(`${at} must be at least ${schema.minimum}`);
     if (typeof schema.maximum === 'number' && value > schema.maximum) problems.push(`${at} must be at most ${schema.maximum}`);
+  }
+  if (Array.isArray(value)) {
+    if (typeof schema.minItems === 'number' && value.length < schema.minItems) problems.push(`${at} must have at least ${schema.minItems} items`);
+    if (typeof schema.maxItems === 'number' && value.length > schema.maxItems) problems.push(`${at} must have at most ${schema.maxItems} items`);
   }
   if (Array.isArray(value) && isRecord(schema.items)) value.forEach((item, i) => problems.push(...checkAgainst(schema.items as JsonSchema, item, `${at}[${i}]`)));
   if (isRecord(value)) {

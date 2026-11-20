@@ -17,10 +17,10 @@ The server's instructions give the order: `check_brand` once per session, `list_
 | Tool | Arguments | Wraps | Use it to |
 |---|---|---|---|
 | `check_brand` | `severity`, `limit` (default 50, at most 500) | `blazon check --no-plugins` | see the brand's own findings and counts, and whether it `passed`. Plugins in `blazon.json` do not run, so `warning` and `info` counts can be lower than `blazon check` prints (a plugin with a `check` role, such as `blazon.copy`, raises its own findings; a build-only one such as `blazon.tailwind` raises none); when the config lists plugins, `pluginsSkipped` and a line in `warnings` name all of them, since a role is known only by starting the plugin |
-| `list_tokens` | `group` (optional), `type` (optional) | `blazon list [group] [--type t]` | find a token path, or read many values at once; cut to whole tokens at the size limit |
-| `get_token` | `path` | `blazon get <path>` | read a token's value, type, CSS variable names and rules |
+| `list_tokens` | `group`, `type`, `tier`, `theme` (all optional) | `blazon list [group] [--type t] [--tier t] [--theme name]` | find a token path, or read many values at once; `tier` keeps one of primitive, semantic or component; `theme` gives the values in a resolver theme, and `themes` in the answer names the themes the brand has; cut to whole tokens at the size limit |
+| `get_token` | `path`, `theme` (optional) | `blazon get <path> [--theme name]` | read a token's value, type, CSS variable names and rules, optionally as a resolver theme resolves it |
 | `get_rules` | `path` (optional) | `blazon rules` | learn what a token, a group or the whole brand allows and forbids |
-| `can_use` | `fg`, `bg`, `role` | `blazon can` | ask whether one color may be text on another, or with `role: "ui"` a focus ring, border or icon stroke judged at 3:1 with no pairs. A denied answer is a result with `allowed: false`, not an error |
+| `can_use` | `fg` and `bg`, or `pairs` (up to 50), `role`, `theme`, `verbose` | `blazon can` | ask whether one color may be text on another (`pairs` answers `results`, one for each pair in order; `verbose: false` drops the `checks` of an allowed answer), or with `role: "ui"` a focus ring, border or icon stroke judged at 3:1 with no pairs. A denied answer is a result with `allowed: false`, not an error |
 | `get_fonts` | none | `blazon fonts` | find the stylesheets and files to load, and whether each family a token names is loaded |
 | `get_logo` | none | `blazon logo` | read the logo variants and their clear space, minimum size and forbidden backgrounds |
 

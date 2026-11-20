@@ -30,7 +30,7 @@ describe('the commands that are operations', () => {
   it.each(commandOperations(OPERATIONS).map((op) => [specOf(op).command.join(' '), op] as const))('shows every option of %s in its help', (_name, op) => {
     const text = blazon(...specOf(op).command, '--help').stdout;
     for (const option of specOf(op).options) {
-      expect(text).toContain(`--${option.property}`);
+      expect(text).toContain(`--${option.flag ?? option.property}`);
       expect(text).toContain(option.description);
     }
   });

@@ -9,11 +9,11 @@ import type { Handler } from './types.js';
  * `get_token`, `blazon get <path>`: one token, as the brand states it. A group path is a list, and `blazon list` prints those.
  * Prints only; exits 0, or 2 when there is no such token or the path is a group.
  */
-export const getTokenHandler: Handler = async ({ path: typedPath }, { dir }) => {
+export const getTokenHandler: Handler = async ({ path: typedPath, theme }, { dir }) => {
   const { data } = await readBrand(dir);
   if (isGroupPath(data, String(typedPath)))
     throw new UsageError(`"${String(typedPath)}" is a group of tokens, not one token; \`blazon list ${String(typedPath)}\` lists its tokens.`, undefined, 'not-a-token');
-  const token = asked(() => describeToken(data, String(typedPath)));
+  const token = asked(() => describeToken(data, String(typedPath), theme as string | undefined));
   return { command: 'get', passed: true, status: 0, body: { token }, text: () => printToken(token) };
 };
 
@@ -22,6 +22,8 @@ function printToken(token: TokenDescription): void {
   console.log(`\n  ${pc.bold(token.path)}${token.deprecated ? pc.yellow('  deprecated') : ''}`);
   printRows([
     ['value', String(token.value)],
+    ['default', token.defaultValue === undefined ? undefined : String(token.defaultValue)],
+    ['theme', token.theme],
     ['type', token.type],
     ['alias of', token.aliasOf && `{${token.aliasOf}}`],
     ['tier', token.tier],

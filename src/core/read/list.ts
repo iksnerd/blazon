@@ -1,6 +1,10 @@
-import { TOKEN_TYPES, type BlazonData, type TokenType } from '../../types/index.js';
+import { TOKEN_TYPES, type BlazonData, type Tier, type TokenType } from '../../types/index.js';
 import { closest } from '../suggest.js';
 import { LookupError, cleanPath } from './lookup.js';
+import { inTheme, themeNames } from './theme.js';
+
+/** The tiers a token can have, as `$extensions["dev.blazon"].tier` writes them. */
+export const TIERS = ['primitive', 'semantic', 'component'] as const satisfies readonly Tier[];
 
 /** One line of the token list: enough to pick a path, and to use its value without a second call. */
 export interface TokenListing {
@@ -10,6 +14,10 @@ export interface TokenListing {
   value: string | number;
   /** The token this one aliases directly */
   aliasOf?: string;
+  /** `primitive`, `semantic` or `component`, when the brand writes one */
+  tier?: Tier;
+  /** With a theme: the value in the default tokens, only when the theme changes it */
+  defaultValue?: string | number;
 }
 
 export interface TokenList {
@@ -17,6 +25,12 @@ export interface TokenList {
   group?: string;
   /** The type asked for; absent for every type */
   type?: TokenType;
+  /** The tier asked for; absent for every tier */
+  tier?: Tier;
+  /** The theme the values are resolved in; absent for the default tokens */
+  theme?: string;
+  /** The names of the brand's themes (the contexts of its resolver `theme` modifier); absent when it has none */
+  themes?: string[];
   tokens: TokenListing[];
 }
 
@@ -40,12 +54,19 @@ export function isGroupPath(data: BlazonData, typed: string): boolean {
  * The tokens of the brand, or of one group, in the order the token files write them, optionally only one `$type`.
  * Throws a LookupError for a group that is not there, or a type blazon does not know. Lets an agent find a path to give `describeToken`.
  */
-export function listTokens(data: BlazonData, options: { group?: string; type?: string } = {}): TokenList {
+export function listTokens(data: BlazonData, options: { group?: string; type?: string; tier?: string; theme?: string } = {}): TokenList {
   let type: TokenType | undefined;
   if (options.type !== undefined) {
     type = TOKEN_TYPES.find((known) => known === options.type);
     if (!type) throw new LookupError(`no token type "${options.type}"; the types are ${TOKEN_TYPES.join(', ')}.`);
   }
+  let tier: Tier | undefined;
+  if (options.tier !== undefined) {
+    tier = TIERS.find((known) => known === options.tier);
+    if (!tier) throw new LookupError(`no tier "${options.tier}"; the tiers are ${TIERS.join(', ')}.`);
+  }
+  const themes = themeNames(data);
+  const resolved = options.theme === undefined ? data : inTheme(data, options.theme);
   let group: string | undefined;
   if (options.group !== undefined) {
     group = cleanPath(options.group);
@@ -55,8 +76,25 @@ export function listTokens(data: BlazonData, options: { group?: string; type?: s
       throw new LookupError(`no group "${group}"${meant ? `; did you mean "${meant}"?` : '.'}`);
     }
   }
-  const tokens = data.tokens.items
-    .filter((item) => (group === undefined || item.path.startsWith(`${group}.`)) && (type === undefined || item.type === type))
-    .map((item): TokenListing => ({ path: item.path, ...(item.type && { type: item.type }), value: item.value, ...(item.aliasOf && { aliasOf: item.aliasOf }) }));
-  return { ...(group !== undefined && { group }), ...(type && { type }), tokens };
+  const tokens = resolved.tokens.items
+    .filter((item) => (group === undefined || item.path.startsWith(`${group}.`)) && (type === undefined || item.type === type) && (tier === undefined || item.blazon.tier === tier))
+    .map((item): TokenListing => {
+      const was = options.theme === undefined ? undefined : data.tokens.byPath.get(item.path);
+      return {
+        path: item.path,
+        ...(item.type && { type: item.type }),
+        value: item.value,
+        ...(item.aliasOf && { aliasOf: item.aliasOf }),
+        ...(item.blazon.tier && { tier: item.blazon.tier }),
+        ...(was && was.value !== item.value && { defaultValue: was.value }),
+      };
+    });
+  return {
+    ...(group !== undefined && { group }),
+    ...(type && { type }),
+    ...(tier && { tier }),
+    ...(options.theme !== undefined && { theme: options.theme }),
+    ...(themes.length > 0 && { themes }),
+    tokens,
+  };
 }

@@ -28,7 +28,7 @@ describe('the manual covers the product surface', () => {
   // The read commands are registered from the operations list, not in index.ts
   const handWritten = [...cli.matchAll(/\.command\('([a-z]+)/g)].map((m) => m[1]!);
   const fromList = commandOperations(OPERATIONS).map((op) => (op.cli as CliSpec).command[0]!);
-  const listFlags = commandOperations(OPERATIONS).flatMap((op) => (op.cli as CliSpec).options.map((option) => `--${option.property}`));
+  const listFlags = commandOperations(OPERATIONS).flatMap((op) => (op.cli as CliSpec).options.map((option) => `--${option.flag ?? option.property}`));
 
   it('finds the commands it is checking', () => {
     // If the extraction breaks, fail loudly instead of checking nothing
@@ -146,7 +146,7 @@ describe('the manual and the README do not describe what is gone', () => {
     }
     for (const op of commandOperations(OPERATIONS)) {
       const spec = op.cli as CliSpec;
-      byCommand.set(spec.command[0]!, new Set(spec.options.map((option) => `--${option.property}`)));
+      byCommand.set(spec.command[0]!, new Set(spec.options.map((option) => `--${option.flag ?? option.property}`)));
     }
     return { global, byCommand };
   })();

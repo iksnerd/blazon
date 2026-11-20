@@ -24,12 +24,16 @@ export function rawName(op: Operation): string {
   return [...spec.command, ...spec.positional.map((name) => (required.has(name) ? `<${name}>` : `[${name}]`))].join(' ');
 }
 
-/** The flag for an option: `--json`, `--type <type>`, `--key <path>`. */
+/** The flag for an option: `--json`, `--type <type>`, `--key <path>`, `--pair <fg:bg>`, `--no-verbose`. */
 export function flagOf(op: Operation, option: CliOption): string {
   if (option.property === 'json') return '--json';
   const prop = op.inputSchema.properties[option.property];
-  return prop?.type === 'boolean' ? `--${kebab(option.property)}` : `--${kebab(option.property)} <${option.value ?? kebab(option.property)}>`;
+  const name = option.flag ?? kebab(option.property);
+  return prop?.type === 'boolean' ? `--${name}` : `--${name} <${option.value ?? name}>`;
 }
+
+/** The key the parser files an option under: the flag in camel case, without a `no-` that negates it. */
+const keyOf = (option: CliOption): string => (option.flag ?? kebab(option.property)).replace(/^no-/, '').replace(/-(.)/g, (_, letter: string) => letter.toUpperCase());
 
 /** Whether `typed` names a folder and not a token path: a path has no slash and never starts with a dot. */
 const isFolder = (typed: unknown): boolean => typeof typed === 'string' && /^\.|[\\/]/.test(typed) && Boolean(fs.statSync(typed, { throwIfNoEntry: false })?.isDirectory());
@@ -47,7 +51,7 @@ export function registerOperations(cli: CAC, debug: boolean): void {
       try {
         const args: Record<string, unknown> = {};
         spec.positional.forEach((name, i) => (args[name] = received[i]));
-        for (const option of spec.options) if (option.property !== 'json') args[option.property] = options[option.property];
+        for (const option of spec.options) if (option.property !== 'json') args[option.property] = options[keyOf(option)];
         // `blazon rules ./brand` names a folder, not a path
         let dir = args.dir;
         if (spec.folder !== undefined && dir === undefined && isFolder(args[spec.folder])) {

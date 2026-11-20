@@ -44,7 +44,19 @@ export function commandFor(op: Operation, args: Record<string, unknown>): { argv
   const flags = mcp.flags ?? (cli?.options ?? []).map((option) => option.property).filter((name) => name !== 'json' && !positional.includes(name) && !only.has(name));
   const argv = [...words, ...(mcp.fixed ?? [])];
   for (const name of positional) if (args[name] !== undefined) argv.push(String(args[name]));
-  for (const name of flags) if (args[name] !== undefined) argv.push(`--${kebab(name)}=${String(args[name])}`);
+  for (const name of flags) {
+    const value = args[name];
+    if (value === undefined) continue;
+    const option = cli?.options.find((o) => o.property === name);
+    const flag = option?.flag ?? kebab(name);
+    if (Array.isArray(value)) {
+      // a list is one flag for each item; an object item is its listed fields joined with ':'
+      for (const item of value) argv.push(`--${flag}=${option?.items ? option.items.map((field) => String((item as Record<string, unknown>)[field])).join(':') : String(item)}`);
+    } else if (flag.startsWith('no-')) {
+      // a boolean that is true by default is turned off with its `--no-` flag, and left alone when true
+      if (value === false) argv.push(`--${flag}`);
+    } else argv.push(`--${flag}=${String(value)}`);
+  }
   const options: RunOptions = { ...(mcp.answers && { answers: mcp.answers }), ...(mcp.json === false && { json: false }), ...(mcp.ignoreStderr && { stderr: 'ignore' as const }) };
   return { argv, options };
 }

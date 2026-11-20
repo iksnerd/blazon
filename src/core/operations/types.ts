@@ -4,7 +4,8 @@
 export type Prop =
   | { type: 'string'; description: string; default?: string; enum?: readonly string[]; maxLength?: number; pattern?: string }
   | { type: 'integer'; description: string; default?: number; minimum?: number; maximum?: number }
-  | { type: 'boolean'; description: string; default?: boolean };
+  | { type: 'boolean'; description: string; default?: boolean }
+  | { type: 'array'; description: string; items: JsonSchema; minItems?: number; maxItems?: number };
 
 /** A JSON Schema fragment. Output schemas use it freely; `check.ts` understands the keywords below and ignores the rest. */
 export type JsonSchema = { [keyword: string]: unknown };
@@ -23,6 +24,13 @@ export interface CliOption {
   /** The placeholder in `--type <type>`; the property name when left out. */
   value?: string;
   description: string;
+  /**
+   * The flag, without the dashes, when it is not the property's name in kebab case. A flag that starts with `no-` turns a boolean property that
+   * is true by default off (`no-verbose`). For a list property it is the flag that is repeated, one per item (`pair`).
+   */
+  flag?: string;
+  /** For a list of objects: the fields of each item, joined with `:` into the one value of each flag (`['fg', 'bg']` gives `--pair a:b`). */
+  items?: string[];
 }
 
 /** How the command line serves an operation. */
