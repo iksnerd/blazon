@@ -47,7 +47,7 @@ The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT" and "MAY" are to be int
 1. Blazon MUST accept DTCG 2025.10 token files, including composite types (`typography`, `gradient`, `shadow`, `border`, `transition`) and `$deprecated`.
 2. `$type` MUST come from the token or an ancestor group. Blazon MUST NOT infer it from the file name or the value. A token with no resolvable `$type` is an error in `blazon check`.
 3. All files in `tokensDir` merge into one tree. **The file name is not part of the token path.** Aliases are full paths from the root (`{color.brand.indigo}`).
-4. Blazon MUST keep `$extensions` it doesn't understand and pass them through to `tokens.json`.
+4. Blazon MUST keep `$extensions` it doesn't understand, on a token or on a group, and pass them through to `tokens.json` at the path where they were written. A group's `dev.blazon` key is not written back: blazon reads it and applies it to the group's tokens.
 5. A `dimension` in a print unit (`pt`, `pc`, `in`, `cm`, `mm` or `Q`) is a `token-value-invalid` error whose message gives the px value at CSS's 96px to the inch (1pt = 4/3 px). DTCG allows `px` and `rem`; a screen token in a print unit was copied from print, and other DTCG tools cannot read it. A relative unit such as `em` or `%` is kept and written to CSS as it is.
 
 Decision 3 is the load-bearing one. It makes blazon files portable to Style Dictionary, Tokens Studio and any DTCG tool, and it removes the file-dependent alias lookup above. Its cost is in [Compatibility](#compatibility).
@@ -360,7 +360,7 @@ What each code means:
 - **CSS variable names** are the token path, kebab-cased, after `cssPrefix`. With no file-name segment, `color.brand.indigo` becomes `--color-brand-indigo` whichever file declares it.
 - **`typography` composites** emit one variable per property (`--type-h1-font-size` and so on), plus a `.type-h1` class in `typography.css`, which is written whenever typography tokens exist.
 - **`gradient` composites** emit `linear-gradient(<angle>deg, <stops>)`, with `angle` from `dev.blazon`, default 180.
-- **`tokens.json`** is DTCG with aliases resolved and `$extensions` kept, so other tools can read it.
+- **`tokens.json`** is DTCG with aliases resolved and `$extensions` kept, on tokens and on groups, so other tools can read it. A group's `$description`, `$type` and `$deprecated` are not written: a token carries its own resolved `$type` and `$deprecated`, and a group's description lives in the brand book and `brand.json`.
 - **`tokens.ts`** keeps today's typed `getToken` / `getVar` helpers (`src/core/tokens/formatters/ts.ts`).
 
 ### 6. The brand book wears the brand
