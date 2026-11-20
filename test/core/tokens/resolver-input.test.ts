@@ -93,3 +93,21 @@ describe('modifier and context names (output file names, selectors, comments)', 
     await expect(emitTokenOutputs(data, config, root)).rejects.toThrow(/outside tokensOutDir/);
   });
 });
+
+describe('a pointer to an inline modifier', () => {
+  const inline = { name: 'density', type: 'modifier', contexts: { roomy: [], tight: [] }, default: 'roomy' };
+  const point = { $ref: '#/modifiers/density' };
+  const parse = (resolutionOrder: unknown[]) => () => parseResolver('/p/blazon.resolver.json', { version: '2025.10', resolutionOrder });
+
+  it('is refused whether the inline item comes before it or after it', () => {
+    expect(parse([inline, point])).toThrow(ResolverError);
+    expect(parse([point, inline])).toThrow(ResolverError);
+    expect(parse([inline, point])).toThrow(/#\/modifiers\/density/);
+  });
+
+  it('lists an inline modifier once', () => {
+    const parsed = parseResolver('/p/blazon.resolver.json', { version: '2025.10', resolutionOrder: [inline] });
+    expect(parsed.order).toHaveLength(1);
+    expect(parsed.modifiers.map((m) => m.name)).toEqual(['density']);
+  });
+});

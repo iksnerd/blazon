@@ -69,7 +69,9 @@ export function parseResolver(file: string, content: unknown): Resolver {
   const sets = Object.fromEntries(
     Object.entries(isObject(content.sets) ? content.sets : {}).map(([name, set]) => [name, readSources(isObject(set) ? set.sources : undefined, `set "${name}".sources`)]),
   );
-  const modifiers = Object.entries(isObject(content.modifiers) ? content.modifiers : {}).map(([name, m]) => readModifier(name, m));
+  const declaredModifiers = Object.entries(isObject(content.modifiers) ? content.modifiers : {}).map(([name, m]) => readModifier(name, m));
+  // A pointer names an entry of "sets" or "modifiers", never an inline item, so what it finds does not depend on the item order.
+  const modifiers = [...declaredModifiers];
 
   const seenInline = new Set<string>();
   const declared = new Set([...Object.keys(sets), ...modifiers.map((m) => m.name)]);
@@ -82,7 +84,7 @@ export function parseResolver(file: string, content: unknown): Resolver {
         return { kind: 'set', name: set, sources: sets[set]! };
       }
       const modifier = item.$ref.match(/^#\/modifiers\/(.+)$/)?.[1];
-      const found = modifiers.find((m) => m.name === modifier);
+      const found = declaredModifiers.find((m) => m.name === modifier);
       if (!found) fail(`resolutionOrder points at ${item.$ref}, which does not exist`);
       return { kind: 'modifier', modifier: found };
     }
