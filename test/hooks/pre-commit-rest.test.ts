@@ -288,6 +288,70 @@ describe('the pre-commit hook', () => {
       expect(fs.readdirSync(dir)).toEqual([]);
     });
 
+    const hooksPath = (dir: string) => git(dir, ['config', '--get', 'core.hooksPath']).stdout.trim();
+
+    it('rewrites an absolute core.hooksPath to .githooks, and says what it replaced and why', () => {
+      const dir = repo();
+      git(dir, ['config', 'core.hooksPath', path.join(dir, '.githooks')]);
+      const result = run(dir);
+      expect(result.status, result.stderr).toBe(0);
+      expect(hooksPath(dir)).toBe('.githooks');
+      expect(result.stderr).toContain(`core.hooksPath was ${path.join(dir, '.githooks')}; set to .githooks so a git worktree runs its own hooks`);
+    });
+
+    it('rewrites any other folder to .githooks', () => {
+      const dir = repo();
+      git(dir, ['config', 'core.hooksPath', 'elsewhere']);
+      const result = run(dir);
+      expect(hooksPath(dir)).toBe('.githooks');
+      expect(result.stderr).toContain('core.hooksPath was elsewhere; set to .githooks');
+    });
+
+    it('leaves a core.hooksPath that is already .githooks alone, and prints no "was" line', () => {
+      const dir = repo();
+      const result = run(dir);
+      expect(result.status, result.stderr).toBe(0);
+      expect(hooksPath(dir)).toBe('.githooks');
+      expect(result.stderr).not.toContain('was');
+    });
+
+    it('does nothing, and does not fail, in a checkout with no .githooks folder', () => {
+      const dir = tempDir('blazon-nohooks-');
+      git(dir, ['init', '-q', '-b', 'main']);
+      git(dir, ['config', 'core.hooksPath', '/somewhere/else']);
+      const result = run(dir);
+      expect(result.status, result.stderr).toBe(0);
+      expect(hooksPath(dir)).toBe('/somewhere/else');
+      expect(result.stderr).toBe('');
+    });
+
+    it('makes a git worktree run its own .githooks, not the main checkout', () => {
+      const main = tempDir('blazon-wt-main-');
+      git(main, ['init', '-q', '-b', 'main']);
+      const hook = (name: string) => `#!/bin/sh\necho ${name}-hook-ran\nexit 1\n`;
+      write(main, { '.githooks/pre-commit': hook('main'), 'a.txt': 'a\n' });
+      fs.chmodSync(path.join(main, '.githooks/pre-commit'), 0o755);
+      git(main, ['add', '-A']);
+      expect(git(main, ['commit', '-q', '--no-verify', '-m', 'base']).status).toBe(0);
+      // the trap: an absolute path, shared by every worktree through .git/config
+      git(main, ['config', 'core.hooksPath', path.join(main, '.githooks')]);
+      const wt = path.join(tempDir('blazon-wt-'), 'tree');
+      expect(git(main, ['worktree', 'add', '-q', wt, '-b', 'wt']).status).toBe(0);
+      const hooksIn = () => git(wt, ['rev-parse', '--path-format=absolute', '--git-path', 'hooks']).stdout.trim();
+      expect(hooksIn()).toBe(path.join(main, '.githooks'));
+
+      expect(run(wt).status).toBe(0);
+      expect(fs.realpathSync(hooksIn())).toBe(fs.realpathSync(path.join(wt, '.githooks')));
+      // a hook that exists only in the worktree runs on a commit there
+      fs.writeFileSync(path.join(wt, '.githooks/pre-commit'), hook('worktree'));
+      write(wt, { 'b.txt': 'b\n' });
+      git(wt, ['add', 'b.txt']);
+      const result = commit(wt);
+      expect(result.status).not.toBe(0);
+      expect(result.out).toContain('worktree-hook-ran');
+      expect(result.out).not.toContain('main-hook-ran');
+    });
+
     it('is the hooks script, not a prepare script (the published manifest must carry none), and the suites the hook names are scripts of the package', () => {
       const scripts = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf-8')).scripts;
       expect(scripts.hooks).toBe('node scripts/install-hooks.mjs');
