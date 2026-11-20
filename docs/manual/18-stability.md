@@ -60,7 +60,7 @@ Unstable surfaces (the brand book and the programmatic API) can change in any re
 
 ## Reading the CHANGELOG
 
-Each release in `CHANGELOG.md` at the repository root has up to four lists. Changes not yet in a release sit under one heading, "Unreleased".
+Each release in `CHANGELOG.md` at the repository root has up to four lists. Changes not yet in a release are small files in `changelog.d/`; the release turns them into the next section.
 
 | Heading | What is in it | What to do |
 |---|---|---|

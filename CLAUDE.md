@@ -1,6 +1,6 @@
 # Blazon
 
-Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a typed module and a static brand book, and checks the brand's own rules. Version 0.1.0 is on npm as `@iksnerd/blazon`; it is 0.x. [README](README.md) is the overview, [CONTRIBUTING](CONTRIBUTING.md) has the hooks and test layout, [docs/manual](docs/manual/index.md) is for users, [docs/rfc](docs/rfc) is normative.
+Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a typed module and a static brand book, and checks the brand's own rules. It is on npm as `@iksnerd/blazon` and is 0.x. [README](README.md) is the overview, [CONTRIBUTING](CONTRIBUTING.md) has the hooks and test layout, [docs/manual](docs/manual/index.md) is for users, [docs/rfc](docs/rfc) is normative.
 
 ## Commands
 
