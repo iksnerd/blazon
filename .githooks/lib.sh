@@ -9,6 +9,7 @@ export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin"
 TEST_ARGS="${BLAZON_HOOK_TEST_ARGS---maxWorkers=4 --retry=1}"
 
 fail=0
+failed=""   # the labels of the steps that failed, in order, for the line that says the tests were skipped
 
 # hook_log NAME: where the whole output of a failed step is saved, in the repository's own git folder.
 hook_log() {
@@ -39,10 +40,20 @@ step() {
         printf '%s\n' "$failing" | sed 's/^/      /'
         printf '      full output: %s\n' "$LOG"
         fail=1
+        failed="${failed:+$failed, }$label"
         return 1
     fi
     t1="$(now_ds)"; took=$(( t1 - t0 ))
     printf '  ✓ %s %d.%ds\n' "$label" $(( took / 10 )) $(( took % 10 ))
+}
+
+# tests_gate: the line between the cheap steps and the test steps. A cheap step that failed means the commit or push is refused
+# whatever the tests say, so they are not started (a full run on a busy machine for a refusal already decided). They are skipped,
+# not passed: nothing is remembered for them, so the attempt after the fix runs them. Returns 1 when they are to be skipped.
+tests_gate() {
+    [ "$fail" -eq 0 ] && return 0
+    printf '  – tests not run: %s failed; fix those first\n' "$failed"
+    return 1
 }
 
 # --- trees that passed. A step that passed on a tree is not run again on the same tree: a reset and a second commit, or a push of
