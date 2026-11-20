@@ -11,7 +11,7 @@ Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a ty
 
 ## Layers of `src/`
 
-`test/core/layers.test.ts` holds a row for every folder: `core` imports only `types`; `plugins`, `shipped` and `viewer` import only `core` and `types`; `server` also `plugins`; `builder` also `server`; `cli` anything but the viewer. A helper two layers need goes down into `core`. `src/plugins/` is the plugin host, `src/shipped/` is the source of the plugins blazon ships, the root `plugins/` holds each one's README and `package.json`, and `npm run build:plugins` writes its program (`bin/blazon-<name>.🔌`, one CommonJS file, git-ignored) and `plugins/shipped.lock` (git-ignored) there, and `examples/plugins/` holds reference plugins.
+Which folder may import which is one table, `scripts/layers.json`: `test/core/layers.test.ts` enforces it and `npm run layers-docs` draws it into [ARCHITECTURE](ARCHITECTURE.md#layers-of-src). A helper two layers need goes down into `core`. `src/plugins/` is the plugin host, `src/shipped/` is the source of the plugins blazon ships, the root `plugins/` holds each one's README and `package.json`, and `npm run build:plugins` writes its program (`bin/blazon-<name>.🔌`, one CommonJS file, git-ignored) and `plugins/shipped.lock` (git-ignored) there, and `examples/plugins/` holds reference plugins.
 
 ## Docs are tested against the code
 

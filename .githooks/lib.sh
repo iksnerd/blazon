@@ -99,8 +99,8 @@ classify_paths() {
         case "$path" in
             eslint.config.js|prettier.config.js|.prettierignore|ruff.toml|.editorconfig|.git-blame-ignore-revs) ;;
             .githooks/*|scripts/install-hooks.mjs) extra_tests="$extra_tests test/hooks" ;;
-            # The generator writes the finding tables of the manual and RFC 0001; test/docs/checks-generated.test.ts is in the docs run
-            scripts/gen-checks-docs.ts) docs=1 ;;
+            # The generators write the finding tables of the manual and RFC 0001 and the layers diagram of ARCHITECTURE.md; their tests are in the docs run
+            scripts/gen-checks-docs.ts|scripts/gen-layers-docs.ts|scripts/layers.json) docs=1 ;;
             scripts/shipped-lock.mjs) extra_tests="$extra_tests test/scripts/shipped-lock.test.ts" ;;
             # The build of the plugins' programs: what the conformance test and the print-book test hold them to
             scripts/build-plugins.mjs|scripts/plugin-externals.ts) extra_tests="$extra_tests test/scripts/shipped-lock.test.ts test/plugins/shipped/conformance.test.ts test/plugins/shipped/print-book.test.ts" ;;

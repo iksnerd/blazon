@@ -4,18 +4,10 @@ import path from 'node:path';
 import { ROOT_DIR } from '../plugins/support/spec.js';
 
 // The layers of src/ and which of them each may import. core was once cyclic with the plugin host, and the dev server with the CLI, until the
-// shared pieces moved down into core; every layer has a row here so that no new dependency is a decision nobody made. `root` is the files
-// directly in src/ (the package's public entry), which may import anything. A folder with no row fails the first test.
-const MAY_IMPORT: Record<string, string[]> = {
-  types: [],
-  core: ['types'],
-  plugins: ['core', 'types'],
-  shipped: ['core', 'types'],
-  viewer: ['core', 'types'],
-  server: ['core', 'plugins', 'types'],
-  builder: ['core', 'server', 'types'],
-  cli: ['builder', 'core', 'plugins', 'server', 'types'],
-};
+// shared pieces moved down into core; every layer has a row in scripts/layers.json, the one table (scripts/gen-layers-docs.ts draws it into
+// ARCHITECTURE.md), so that no new dependency is a decision nobody made. `root` is the files directly in src/ (the package's public entry),
+// which may import anything. A folder with no row fails the first test.
+const MAY_IMPORT = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'scripts/layers.json'), 'utf-8')) as Record<string, string[]>;
 
 const SRC = path.join(ROOT_DIR, 'src');
 const sources = (dir: string): string[] =>

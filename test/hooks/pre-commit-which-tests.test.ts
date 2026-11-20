@@ -13,6 +13,7 @@ describe('the pre-commit hook', () => {
       ['package.json', { 'package.json': BASE['package.json']!.replace('throwaway', 'throwaway2') }, []],
       ['a script in TypeScript', { 'scripts/x.ts': '// script\n' }, []],
       ['the generator of the finding tables, whose output the docs tests compare', { 'scripts/gen-checks-docs.ts': '// generator\n' }, ['docs']],
+      ['the generator of the layers diagram and its rules', { 'scripts/layers.json': '{}\n' }, ['docs']],
       ['a file the mapping does not know', { 'mystery.bin': 'x\n' }, []],
       ['a Python script', { 'scripts/x.py': 'print(1)\n' }, ['deck']],
       ['a Python launcher with no extension', { 'scripts/blazon-blazon.x': '#!/usr/bin/env python3\nprint(1)\n' }, ['deck']],
