@@ -27,7 +27,8 @@
     "mcp/dist/index.js",
     "plugins",
     "template",
-    "THIRD-PARTY-NOTICES.md"
+    "THIRD-PARTY-NOTICES.md",
+    "CHANGELOG.md"
   ],
   "workspaces": [
     "mcp"

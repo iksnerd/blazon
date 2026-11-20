@@ -12,7 +12,10 @@ import { missingFiles, missingListed, requiredFiles } from '../../scripts/check-
 const SCRIPT = path.join(ROOT_DIR, 'scripts/check-pack.mjs');
 
 /** A package folder with one plugin, holding the files `present` names (relative paths) and nothing else. */
-function pkg(present: (name: string) => string[], listed: string[] = ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'mcp/dist/index.js']): string {
+function pkg(
+  present: (name: string) => string[],
+  listed: string[] = ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'CHANGELOG.md', 'mcp/dist/index.js'],
+): string {
   const dir = tempDir('blazon-check-pack-');
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0', files: listed }));
   fs.mkdirSync(path.join(dir, 'plugins/acme.one'), { recursive: true });
@@ -37,6 +40,7 @@ describe('which files the package must hold', () => {
       'plugins/shipped.lock',
       'plugins/acme.two/bin/blazon-acme.two.🔌',
       'mcp/dist/index.js',
+      'CHANGELOG.md',
     ]) {
       expect(required).toContain(file);
     }
@@ -54,6 +58,14 @@ describe('checking a tree', () => {
     const result = check(dir);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('mcp/dist/index.js');
+  });
+
+  it('fails with a readable message when CHANGELOG.md is absent from the file list', () => {
+    const dir = pkg((name) => requiredFiles([name]).filter((file) => file !== 'CHANGELOG.md'));
+    const result = check(dir);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('CHANGELOG.md');
+    expect(result.stderr).toContain('required file');
   });
 
   it('fails, naming each file, for a tree with no dist/', () => {
@@ -104,7 +116,10 @@ describe('a path the manifest lists and the package does not hold', () => {
   });
 
   it('fails the check of a tree whose `files` lists a folder it does not ship', () => {
-    const dir = pkg((name) => requiredFiles(name === undefined ? [] : [name]), ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'mcp/dist/index.js', 'extras']);
+    const dir = pkg(
+      (name) => requiredFiles(name === undefined ? [] : [name]),
+      ['dist', 'bin', 'plugins', 'template', 'THIRD-PARTY-NOTICES.md', 'CHANGELOG.md', 'mcp/dist/index.js', 'extras'],
+    );
     const result = check(dir);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('names 1 path');
