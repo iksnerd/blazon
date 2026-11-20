@@ -102,7 +102,7 @@ getVar('brand.primary');       // "var(--brand-primary)"
 
 ## JSON
 
-`tokens.json` is DTCG with aliases resolved and `dev.blazon` kept, so other tools can read it. Each non-default context also gets a complete `tokens.<modifier>.<context>.json`.
+`tokens.json` is DTCG with aliases resolved and `$extensions` kept, so other tools can read it. A token's `$extensions` are written as they are. A group's `$extensions` are written at the group's path too, except its `dev.blazon` key (a group's own `$description` is not written; the brand book and `brand.json` carry it). Each non-default context also gets a complete `tokens.<modifier>.<context>.json`.
 
 ## Reading the brand from the command line
 

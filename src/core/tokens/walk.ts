@@ -117,8 +117,11 @@ export function walk(node: Record<string, unknown>, parts: string[], inherited: 
   }
 
   const description = typeof node.$description === 'string' ? node.$description : undefined;
-  if (at && (description || Object.keys(ownBlazon).length > 0)) {
-    tree.groupMeta.push({ path: at, ...(description && { description }), blazon: ownBlazon });
+  // Every `$extensions` key but blazon's own is another tool's, and tokens.json hands it back at the group's path
+  const foreign = isObject(node.$extensions) ? Object.fromEntries(Object.entries(node.$extensions).filter(([key]) => key !== BLAZON_EXTENSION_KEY)) : {};
+  const hasForeign = Object.keys(foreign).length > 0;
+  if (at && (description || hasForeign || Object.keys(ownBlazon).length > 0)) {
+    tree.groupMeta.push({ path: at, ...(description && { description }), ...(hasForeign && { extensions: foreign }), blazon: ownBlazon });
   }
 
   const childInherited: Inherited = {

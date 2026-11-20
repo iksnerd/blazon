@@ -46,6 +46,8 @@ export interface TokenGroup {
 export interface GroupMeta {
   path: string;
   description?: string;
+  /** The group's `$extensions` other than `dev.blazon`, as authored: tokens.json writes them back at the group's path. Absent when there are none */
+  extensions?: Record<string, unknown>;
   blazon: BlazonExtension;
 }
 
