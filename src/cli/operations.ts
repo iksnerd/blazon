@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import type { CAC } from 'cac';
 import { commandOperations, OPERATIONS, type CliOption, type CliSpec, type Operation } from '../core/operations/index.js';
-import { failed } from './errors.js';
+import { BlazonError, failed } from './errors.js';
+import { folderFirstHint } from './folder-first.js';
 import { HANDLERS } from './handlers/index.js';
 import { printJson } from './read.js';
 
@@ -64,6 +65,9 @@ export function registerOperations(cli: CAC, debug: boolean): void {
         else outcome.text();
         process.exitCode = outcome.status;
       } catch (err) {
+        // the one place a folder typed first is explained, for every command registered here
+        const hint = folderFirstHint(spec.command, spec.positional, received, new Set(op.inputSchema.required ?? []), err);
+        if (hint && err instanceof BlazonError) err.hint = hint;
         failed(spec.command.join(' '), err, debug);
       }
     });

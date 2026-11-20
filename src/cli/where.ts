@@ -16,7 +16,7 @@ export function shownDir(dir: string, from: string = process.cwd()): string {
 export const inDir = (dir: string, file: string): string => (dir ? `${dir}/${file}` : file);
 
 /** A word for the shell, quoted when it holds anything the shell reads. */
-const shellWord = (word: string): string => (/^[\w./@%+=:,-]+$/.test(word) ? word : `'${word.replace(/'/g, `'\\''`)}'`);
+export const shellWord = (word: string): string => (/^[\w./@%+=:,-]+$/.test(word) ? word : `'${word.replace(/'/g, `'\\''`)}'`);
 
 /** A blazon command that works from where blazon was run: `blazon dev a`, or `blazon dev` in the folder itself. */
 export const blazonCommand = (command: string, dir: string): string => `blazon ${command}${dir ? ` ${shellWord(dir)}` : ''}`;
