@@ -4,6 +4,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## Unreleased
 
+<!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
+
 ## 0.3.2 (2026-11-19)
 
 ### Added

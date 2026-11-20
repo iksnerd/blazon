@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT_DIR } from '../plugins/support/spec.js';
 import { tempDir } from '../support/project';
-import { compareVersions, releaseChangelog } from '../../scripts/release.mjs';
+import { compareVersions, releaseChangelog, readFragments, assembleSection, previewChangelog } from '../../scripts/release.mjs';
 
 // scripts/release.mjs cuts a release in the git repository of the current folder. These tests run it in throwaway repositories, whose
 // own `check` script stands in for `npm run check`. It never pushes, and none of these has a remote.
@@ -18,7 +18,7 @@ const git = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, en
  * that records the version. The `docs:stats` script rewrites that file from package.json and `test:docs` (the script `testDocs` when given)
  * fails when the file's version is not the package's, as the real ones do.
  */
-function repo(options: { branch?: string; check?: string; testDocs?: string } = {}): string {
+function repo(options: { branch?: string; check?: string; testDocs?: string; changelog?: string; fragments?: Record<string, string> } = {}): string {
   const dir = tempDir('blazon-release-');
   const run = (...args: string[]) => {
     const result = git(dir, ...args);
@@ -38,7 +38,11 @@ function repo(options: { branch?: string; check?: string; testDocs?: string } = 
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.1.0', scripts }, null, 2) + '\n');
   fs.mkdirSync(path.join(dir, 'docs'));
   fs.writeFileSync(path.join(dir, 'docs/stats.json'), '{"version":"0.1.0"}\n');
-  fs.writeFileSync(path.join(dir, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n### Added\n\n- a thing\n');
+  fs.writeFileSync(path.join(dir, 'CHANGELOG.md'), options.changelog ?? '# Changelog\n\n## Unreleased\n\n### Added\n\n- a thing\n');
+  if (options.fragments) {
+    fs.mkdirSync(path.join(dir, 'changelog.d'));
+    for (const [name, body] of Object.entries(options.fragments)) fs.writeFileSync(path.join(dir, 'changelog.d', name), body);
+  }
   run('add', '.');
   run('commit', '-q', '-m', 'start');
   return dir;
@@ -155,4 +159,90 @@ describe('releasing', () => {
     expect(git(dir, 'status', '--porcelain').stdout).toBe('');
     expect(git(dir, 'remote').stdout).toBe('');
   }, 60_000);
+});
+
+// Change fragments: one file per change under changelog.d/, assembled by the release (changelog.d/README.md).
+const EMPTY = '# Changelog\n\n## Unreleased\n\n## 0.1.0 (2026-01-01)\n\n### Added\n\n- old\n';
+
+describe('change fragments', () => {
+  const fragments = {
+    'b-fix.fixed.md': 'Acme logos no longer\nlose their margin.\n',
+    'a-new.added.md': 'A new `acme` command.\n',
+    'c-more.added.md': 'Another addition.\n',
+    'd-change.changed.md': 'Changed a default.\n',
+    'e-break.breaking.md': 'Removed a key.\n',
+    'README.md': 'not a fragment\n',
+  };
+
+  it('are assembled in the CHANGELOG order of kinds and file-name order within a kind, wrapped lines indented', () => {
+    const found = readFragments(repo({ changelog: EMPTY, fragments }));
+    expect(found.map((f) => f.file)).toEqual(['a-new.added.md', 'b-fix.fixed.md', 'c-more.added.md', 'd-change.changed.md', 'e-break.breaking.md']);
+    expect(assembleSection(found, '0.2.0', '2026-11-20')).toBe(
+      [
+        '## 0.2.0 (2026-11-20)',
+        '### Breaking\n\n- Removed a key.',
+        '### Added\n\n- A new `acme` command.\n- Another addition.',
+        '### Changed\n\n- Changed a default.',
+        '### Fixed\n\n- Acme logos no longer\n  lose their margin.',
+      ].join('\n\n'),
+    );
+  });
+
+  it('are refused by name: an unknown kind, no kind, a bad character', () => {
+    const bad = (name: string) => () => readFragments(repo({ changelog: EMPTY, fragments: { [name]: 'text\n' } }));
+    expect(bad('x.removed.md')).toThrow(/x\.removed\.md.*kind/);
+    expect(bad('x.md')).toThrow(/x\.md/);
+    expect(bad('Upper.added.md')).toThrow(/Upper\.added\.md.*\[a-z0-9\._-\]/);
+    expect(bad('sp ace.added.md')).toThrow(/sp ace\.added\.md/);
+    expect(bad('x.added.txt')).toThrow(/x\.added\.txt/);
+  });
+
+  it('are refused for an empty body and for an em-dash', () => {
+    expect(() => readFragments(repo({ changelog: EMPTY, fragments: { 'e.added.md': ' \n\n' } }))).toThrow(/e\.added\.md.*empty/);
+    expect(() => readFragments(repo({ changelog: EMPTY, fragments: { 'd.added.md': 'one — two\n' } }))).toThrow(/d\.added\.md.*em-dash/);
+  });
+
+  it('are the release: written as the new section, removed with git rm in the release commit', () => {
+    const dir = repo({ changelog: EMPTY, fragments });
+    const result = release(dir, '0.2.0');
+    expect(result.status, result.stderr).toBe(0);
+    const changelog = fs.readFileSync(path.join(dir, 'CHANGELOG.md'), 'utf-8');
+    expect(changelog).toMatch(
+      /## Unreleased\n\n## 0\.2\.0 \(\d{4}-\d{2}-\d{2}\)\n\n### Breaking\n\n- Removed a key\.\n\n### Added\n\n- A new `acme` command\.\n- Another addition\.\n\n### Changed[^]*### Fixed\n\n- Acme logos no longer\n {2}lose their margin\.\n\n## 0\.1\.0/,
+    );
+    const stat = git(dir, 'show', '--name-status', '--format=', 'HEAD').stdout;
+    for (const name of Object.keys(fragments).filter((n) => n !== 'README.md')) expect(stat).toContain(`D\tchangelog.d/${name}`);
+    expect(stat).not.toContain('README.md');
+    expect(fs.readdirSync(path.join(dir, 'changelog.d'))).toEqual(['README.md']);
+    expect(git(dir, 'status', '--porcelain').stdout).toBe('');
+  }, 60_000);
+
+  it('keep a comment under Unreleased and do not count it as text', () => {
+    const text = '# C\n\n## Unreleased\n\n<!-- changelog.d/README.md -->\n\n## 0.1.0 (2026-01-01)\n';
+    const out = releaseChangelog(text, '0.2.0', '2026-11-20', readFragments(repo({ changelog: text, fragments: { 'a.added.md': 'x\n' } })));
+    expect(out).toBe('# C\n\n## Unreleased\n\n<!-- changelog.d/README.md -->\n\n## 0.2.0 (2026-11-20)\n\n### Added\n\n- x\n\n## 0.1.0 (2026-01-01)\n');
+  });
+
+  it('refuse a release with a bad fragment, with fragments next to hand-written text, and with nothing at all; nothing changes', () => {
+    const cases: [Parameters<typeof repo>[0], RegExp][] = [
+      [{ changelog: EMPTY, fragments: { 'x.removed.md': 'text\n' } }, /x\.removed\.md/],
+      [{ fragments: { 'x.added.md': 'text\n' } }, /hand-written/],
+      [{ changelog: EMPTY }, /nothing to release/],
+    ];
+    for (const [options, message] of cases) {
+      const dir = repo(options);
+      const result = release(dir, '0.2.0');
+      expect(result.status).toBe(1);
+      expect(result.stderr).toMatch(message);
+      expect(git(dir, 'status', '--porcelain').stdout).toBe('');
+      expect(git(dir, 'tag', '--list').stdout).toBe('');
+    }
+  }, 60_000);
+
+  it('are previewed without changing anything', () => {
+    const dir = repo({ changelog: EMPTY, fragments });
+    const out = previewChangelog(dir, new Date('2026-11-20T00:00:00Z'));
+    expect(out).toContain('## <version> (2026-11-20)\n\n### Breaking');
+    expect(git(dir, 'status', '--porcelain').stdout).toBe('');
+  });
 });
