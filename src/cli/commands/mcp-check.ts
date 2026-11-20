@@ -3,7 +3,17 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import pc from '../../core/colors.js';
-import { INCOMPLETE_INSTALL, isSourceCheckout, mcpConfigFiles, mcpServerNames, REINSTALL, type McpClient } from '../../core/mcp-config.js';
+import {
+  INCOMPLETE_INSTALL,
+  isSourceCheckout,
+  mcpConfigFiles,
+  mcpEntryLaunches,
+  mcpServerNames,
+  REINSTALL,
+  resolveMcpLaunch,
+  type McpClient,
+  type McpEntryLaunch,
+} from '../../core/mcp-config.js';
 import { OPERATIONS, toolOperations } from '../../core/operations/index.js';
 import { packageRoot } from '../../core/package-root.js';
 import { printJson } from '../read.js';
@@ -245,16 +255,47 @@ async function stop(child: ReturnType<typeof spawn>, exited: Promise<void>, grou
   } else signal('SIGKILL');
 }
 
+/** realpath, or the resolved path when the file is not there. */
+const real = (file: string): string => {
+  try {
+    return fs.realpathSync(file);
+  } catch {
+    return path.resolve(file);
+  }
+};
+
 /**
- * (d) Whether the client's config has an entry named `blazon`. It reads server names only: nothing else in a file (a command, an
- * argument, an environment value, a token) is kept or printed, and nothing is written. Not being registered is a finding, not a
- * failure of the server.
+ * The server file an entry runs, or undefined when the entry alone does not say (nothing is run to find out). It is the first argument that
+ * names a `.js` or `.mjs` file (after `~`, a path relative to `base` and symlinks are resolved) and that exists or is `thisInstall`. This is
+ * the only thing taken out of an entry: no other argument, no command and no environment value is kept.
  */
-export function checkRegistered(client: McpClient, folders: string[], brand: string, home = os.homedir()): McpCheck {
+function scriptOf(entry: McpEntryLaunch, home: string, base: string | undefined, thisInstall: string): string | undefined {
+  for (const arg of entry.args) {
+    if (arg.startsWith('-')) continue;
+    const expanded = arg.startsWith('~/') || arg.startsWith(`~${path.sep}`) ? path.join(home, arg.slice(1)) : arg;
+    if (!path.isAbsolute(expanded) && base === undefined) continue; // a relative path from a user-wide file: the client's folder is unknown
+    const file = real(path.resolve(base ?? '/', expanded));
+    if (!/\.m?js$/.test(file)) continue;
+    if (file === thisInstall || fs.existsSync(file)) return file;
+  }
+  return undefined;
+}
+
+/**
+ * (d) Whether the client's config has an entry named `blazon`, and whether that entry runs this install's server file (the `mcp/dist/index.js`
+ * that `blazon mcp --print-config` names: it comes from the same function). Of a file it reads the server names and, for the `blazon` entry,
+ * the command and arguments, to find one script path; nothing else (another argument, an environment value, a token) is kept or printed, and
+ * nothing is written or run. State `same`: it runs this install's file. `different`: it runs another file. `unknown`: no script path could be
+ * identified from the entry (an `npx` or `blazon-mcp` form, a file that is not there), and this says so instead of guessing. `none`: not
+ * registered. Only `same` passes; the check is advisory in every state, so none of them changes the exit status.
+ */
+export function checkRegistered(client: McpClient, folders: string[], brand: string, home = os.homedir(), root = packageRoot()): McpCheck {
   const files = mcpConfigFiles(client, folders, home, process.platform, process.env.APPDATA);
+  const installPath = real(resolveMcpLaunch(root).args[0] as string);
   const found: string[] = [];
   const read: string[] = [];
   const unreadable: string[] = [];
+  const scripts: { file: string; script: string | undefined }[] = [];
   for (const file of files) {
     let text: string;
     try {
@@ -268,21 +309,57 @@ export function checkRegistered(client: McpClient, folders: string[], brand: str
       continue;
     }
     read.push(file.path);
-    if (names.includes('blazon')) found.push(file.path);
+    if (!names.includes('blazon')) continue;
+    found.push(file.path);
+    // a project file's relative path is read from its project folder; a user-wide file has none
+    const base = file.scope === 'project' ? folders.find((dir) => file.path.startsWith(dir + path.sep)) : undefined;
+    const launches = mcpEntryLaunches(text, file, 'blazon') ?? [];
+    if (launches.length === 0) scripts.push({ file: file.path, script: undefined });
+    for (const launch of launches) scripts.push({ file: file.path, script: scriptOf(launch, home, base, installPath) });
   }
   const note = unreadable.length > 0 ? ` (not valid JSON, skipped: ${unreadable.join(', ')})` : '';
   const fix = `blazon mcp --print-config --client ${client} --brand ${brand}`;
-  return found.length > 0
-    ? { name: 'registered', passed: true, advisory: true, client, detail: `${client} has a server named blazon in ${found.join(', ')}${note}`, files: found }
-    : {
-        name: 'registered',
-        passed: false,
-        advisory: true,
-        client,
-        detail: `no server named blazon in ${client}'s config; looked in ${read.length > 0 ? read.join(', ') : 'no file that exists'}${note}`,
-        fix,
-        files: [],
-      };
+  if (found.length === 0)
+    return {
+      name: 'registered',
+      passed: false,
+      advisory: true,
+      client,
+      state: 'none',
+      found: false,
+      sameServer: null,
+      detail: `no server named blazon in ${client}'s config; looked in ${read.length > 0 ? read.join(', ') : 'no file that exists'}${note}`,
+      fix,
+      files: [],
+    };
+  const head = { name: 'registered' as const, advisory: true as const, client, found: true, files: found, installPath };
+  const other = scripts.find((item) => item.script !== undefined && item.script !== installPath);
+  if (other?.script !== undefined)
+    return {
+      ...head,
+      passed: false,
+      state: 'different',
+      sameServer: false,
+      registeredPath: other.script,
+      detail: `${client} has a server named blazon in ${other.file}, but it runs ${other.script}, not this install's ${installPath}; blazon mcp --print-config prints the command that registers this install${note}`,
+      fix,
+    };
+  if (scripts.some((item) => item.script === undefined))
+    return {
+      ...head,
+      passed: false,
+      state: 'unknown',
+      sameServer: null,
+      detail: `${client} has a server named blazon in ${found.join(', ')}, but this check could not tell which file it runs; this install's is ${installPath}, and blazon mcp --print-config prints the command that registers it${note}`,
+      fix,
+    };
+  return {
+    ...head,
+    passed: true,
+    state: 'same',
+    sameServer: true,
+    detail: `${client} has a server named blazon in ${found.join(', ')}, and it runs this install's ${installPath}${note}`,
+  };
 }
 
 export interface McpCheckOptions {
@@ -313,12 +390,12 @@ export async function runMcpCheck(options: McpCheckOptions): Promise<number> {
         fix: built.fix as string,
       };
   const folders = [...new Set([cwd, brand])];
-  const registered = checkRegistered(client, folders, brand, home);
+  const registered = checkRegistered(client, folders, brand, home, root);
   const { entry: _entry, ...builtCheck } = built;
   const checks: McpCheck[] = [builtCheck, blazon, shake, registered];
   const passed = checks.filter((check) => !check.advisory).every((check) => check.passed);
   if (options.json) {
-    printJson('mcp', passed, { mode: 'check', client, brand, runsPlugins: false, trust: TRUST_NOTICE, registered: registered.passed, checks });
+    printJson('mcp', passed, { mode: 'check', client, brand, runsPlugins: false, trust: TRUST_NOTICE, registered: registered.found, checks });
     return passed ? 0 : 1;
   }
   console.log(`\n  ${pc.bold(`blazon-mcp for ${client}, brand ${brand}`)}\n  ${pc.yellow(TRUST_NOTICE)}\n`);
@@ -328,7 +405,7 @@ export async function runMcpCheck(options: McpCheckOptions): Promise<number> {
     if (!check.passed && check.fix) console.log(`  ${' '.repeat(7)} ${' '.repeat(10)} ${pc.dim('fix:')} ${check.fix}`);
   }
   console.log(
-    `\n  ${passed ? pc.green('The server is ready.') : pc.red('The server is not ready.')}${registered.passed ? '' : ' It is not registered in this client yet (a finding, not a failure).'}\n`,
+    `\n  ${passed ? pc.green('The server is ready.') : pc.red('The server is not ready.')}${registered.found ? '' : ' It is not registered in this client yet (a finding, not a failure).'}\n`,
   );
   return passed ? 0 : 1;
 }

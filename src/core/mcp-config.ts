@@ -175,11 +175,8 @@ export function mcpConfigFiles(client: McpClient, folders: string[], home: strin
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/**
- * The server NAMES a client's config file holds, from its text. Only keys are returned: a server's command, arguments and
- * environment (where a token may be) are never copied out. Returns undefined when the text is not a JSON object.
- */
-export function mcpServerNames(text: string, file: Pick<McpConfigFile, 'serversKey' | 'projects'>): string[] | undefined {
+/** The objects of a parsed client file that hold server entries: the file itself and, for `~/.claude.json`, each known project. */
+function serverHolders(text: string, file: Pick<McpConfigFile, 'serversKey' | 'projects'>): Record<string, unknown>[] | undefined {
   let doc: unknown;
   try {
     doc = JSON.parse(text);
@@ -187,7 +184,36 @@ export function mcpServerNames(text: string, file: Pick<McpConfigFile, 'serversK
     return undefined;
   }
   if (!isRecord(doc)) return undefined;
-  const names = (holder: unknown): string[] => (isRecord(holder) && isRecord(holder[file.serversKey]) ? Object.keys(holder[file.serversKey] as object) : []);
   const projects = isRecord(doc.projects) ? doc.projects : {};
-  return [...names(doc), ...(file.projects ?? []).flatMap((folder) => names(projects[folder]))];
+  const servers = (holder: unknown): Record<string, unknown>[] =>
+    isRecord(holder) && isRecord(holder[file.serversKey]) ? [holder[file.serversKey] as Record<string, unknown>] : [];
+  return [...servers(doc), ...(file.projects ?? []).flatMap((folder) => servers(projects[folder]))];
+}
+
+/**
+ * The server NAMES a client's config file holds, from its text. Only keys are returned: a server's command, arguments and
+ * environment (where a token may be) are never copied out. Returns undefined when the text is not a JSON object.
+ */
+export function mcpServerNames(text: string, file: Pick<McpConfigFile, 'serversKey' | 'projects'>): string[] | undefined {
+  return serverHolders(text, file)?.flatMap((servers) => Object.keys(servers));
+}
+
+/** What an entry says to run. The values are the user's own and may hold a secret: a caller keeps only what it identified as a script path, and prints nothing else. */
+export interface McpEntryLaunch {
+  command: string | undefined;
+  args: string[];
+}
+
+/** The `command` and string `args` of every entry named `name` in a client's config file. `env` is never read. Returns undefined when the text is not a JSON object. */
+export function mcpEntryLaunches(text: string, file: Pick<McpConfigFile, 'serversKey' | 'projects'>, name: string): McpEntryLaunch[] | undefined {
+  return serverHolders(text, file)?.flatMap((servers) => {
+    const entry = servers[name];
+    if (!isRecord(entry)) return [];
+    return [
+      {
+        command: typeof entry.command === 'string' ? entry.command : undefined,
+        args: Array.isArray(entry.args) ? entry.args.filter((arg): arg is string => typeof arg === 'string') : [],
+      },
+    ];
+  });
 }

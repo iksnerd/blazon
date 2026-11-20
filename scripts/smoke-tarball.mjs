@@ -91,6 +91,14 @@ try {
     throw new Error('install-time scripts');
   }
   console.log('ok   no install-time script in the package');
+  // An agent reads what changed between versions in the installed package: the release writes the new section into CHANGELOG.md before the tag, so the packed file names this version.
+  const changelog = path.join(work, 'node_modules', '@iksnerd', 'blazon', 'CHANGELOG.md');
+  if (!fs.existsSync(changelog) || !fs.readFileSync(changelog, 'utf-8').includes(`## ${manifest.version} `)) {
+    failed = true;
+    console.error(`FAIL the installed package has no CHANGELOG.md with a "## ${manifest.version}" section`);
+    throw new Error('CHANGELOG.md');
+  }
+  console.log('ok   CHANGELOG.md is in the package and has this version');
   const blazon = path.join(work, 'node_modules', '.bin', 'blazon');
   const programs = path.join(work, 'node_modules', '@iksnerd', 'blazon', 'plugins');
   step('blazon --help', blazon, ['--help'], { expect: 'Usage' });

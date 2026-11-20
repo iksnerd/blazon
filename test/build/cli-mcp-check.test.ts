@@ -1,10 +1,10 @@
-import { afterAll, describe, it, expect } from 'vitest';
+import { afterAll, describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from '../support/spawn';
 import { REPO } from '../support/paths';
 import { starterProject, tempDir } from '../support/project';
-import { checkBuilt, checkBlazon, checkRegistered, expectedTools, handshake } from '../../src/cli/commands/mcp-check';
+import { checkBuilt, checkBlazon, checkRegistered, expectedTools, handshake, runMcpCheck } from '../../src/cli/commands/mcp-check';
 
 // `blazon mcp --check`: the four checks (built, blazon found, a real handshake, registered), each failing alone. The handshake is tried on
 // a fake server that speaks JSON-RPC (so a hang, an early exit and a missing tool can be made) and, in the last block, on the real built
@@ -193,10 +193,10 @@ describe('mcp --check: (d) the client has a blazon entry', () => {
     const project = tempDir('blazon-proj-');
     write(home, '.claude.json', { projects: { [project]: { mcpServers: { blazon: entry } } }, mcpServers: { other: entry } });
     const result = checkRegistered('claude-code', [project], project, home);
-    expect(result).toMatchObject({ passed: true, advisory: true });
+    expect(result).toMatchObject({ found: true, advisory: true });
     expect(JSON.stringify(result)).not.toContain(canary);
     write(home, '.claude.json', { mcpServers: { blazon: entry } });
-    expect(checkRegistered('claude-code', [project], project, home).passed).toBe(true);
+    expect(checkRegistered('claude-code', [project], project, home).found).toBe(true);
   });
 
   it("does not take another project's entry, and reports the exact print-config command as the fix", () => {
@@ -212,9 +212,9 @@ describe('mcp --check: (d) the client has a blazon entry', () => {
     const project = tempDir('blazon-proj-');
     const home = tempDir('blazon-home-');
     write(project, '.mcp.json', { mcpServers: { blazon: entry } });
-    expect(checkRegistered('claude-code', [project], project, home).passed).toBe(true);
+    expect(checkRegistered('claude-code', [project], project, home).found).toBe(true);
     write(project, '.vscode/mcp.json', { servers: { blazon: entry } });
-    expect(checkRegistered('vscode', [project], project, home).passed).toBe(true);
+    expect(checkRegistered('vscode', [project], project, home).found).toBe(true);
     write(project, '.vscode/mcp.json', { mcpServers: { blazon: entry } });
     expect(checkRegistered('vscode', [project], project, home).passed).toBe(false);
   });
@@ -226,6 +226,123 @@ describe('mcp --check: (d) the client has a blazon entry', () => {
     expect(result.passed).toBe(false);
     expect(result.detail).toContain('not valid JSON');
   });
+});
+
+describe('mcp --check: (e) the registered entry runs this install', () => {
+  // Built at run time, as in (d): a literal reads as a credential to the secret scan
+  const canary = ['not', 'a', 'credential', '42'].join('-');
+  const write = (home: string, rel: string, value: unknown) => {
+    fs.mkdirSync(path.dirname(path.join(home, rel)), { recursive: true });
+    fs.writeFileSync(path.join(home, rel), JSON.stringify(value));
+  };
+  /** A package root holding mcp/dist/index.js; the path of that file comes back too. */
+  const install = (): { root: string; entry: string } => {
+    const root = fs.realpathSync(tempDir('blazon-install-'));
+    fs.mkdirSync(path.join(root, 'mcp/dist'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'mcp/dist/index.js'), '');
+    return { root, entry: path.join(root, 'mcp/dist/index.js') };
+  };
+  const run = (entry: { command?: string; args?: string[]; env?: Record<string, string> }, root: string, home = tempDir('blazon-home-')) => {
+    const project = tempDir('blazon-proj-');
+    write(home, '.claude.json', { mcpServers: { blazon: entry } });
+    return checkRegistered('claude-code', [project], project, home, root);
+  };
+
+  it('passes when the entry runs this install server file, through a symlink or a ~ path too', () => {
+    const { root, entry } = install();
+    const same = run({ command: 'node', args: [entry, '--brand', '/b'] }, root);
+    expect(same).toMatchObject({ passed: true, advisory: true, state: 'same', sameServer: true });
+    expect(same.detail).toContain(entry);
+    const link = path.join(tempDir('blazon-link-'), 'server.js');
+    fs.symlinkSync(entry, link);
+    expect(run({ command: 'node', args: [link] }, root)).toMatchObject({ passed: true, state: 'same' });
+    const home = fs.realpathSync(tempDir('blazon-home-'));
+    const rel = path.relative(home, entry);
+    expect(run({ command: 'node', args: [`~/${rel}`] }, root, home)).toMatchObject({ passed: true, state: 'same' });
+  });
+
+  it('is a finding naming the client, the registered file and this install file when the entry runs another file', () => {
+    const { root, entry } = install();
+    const clone = install().entry;
+    const result = run({ command: 'node', args: [clone, '--brand', '/b'] }, root);
+    expect(result).toMatchObject({
+      name: 'registered',
+      passed: false,
+      advisory: true,
+      state: 'different',
+      sameServer: false,
+      found: true,
+      registeredPath: clone,
+      installPath: entry,
+    });
+    expect(result.detail).toContain('claude-code');
+    expect(result.detail).toContain(clone);
+    expect(result.detail).toContain(entry);
+    expect(result.detail).toContain('blazon mcp --print-config');
+    expect(result.fix).toMatch(/^blazon mcp --print-config --client claude-code/);
+  });
+
+  it('says it could not tell when the entry has no script path it can identify, and neither passes nor fails it', () => {
+    const { root } = install();
+    for (const entry of [
+      { command: 'npx', args: ['-y', 'blazon-mcp'] },
+      { command: 'blazon-mcp', args: ['--brand', '/b'] },
+      { command: 'node', args: ['/no/such/server.js'] },
+      { command: 'docker', args: ['run', 'blazon'] },
+      { args: [] },
+    ]) {
+      const result = run(entry, root);
+      expect(result, JSON.stringify(entry)).toMatchObject({ passed: false, advisory: true, state: 'unknown', sameServer: null, found: true });
+      expect(result.detail).toContain('could not tell which file it runs');
+      expect(result).not.toHaveProperty('registeredPath');
+    }
+  });
+
+  it('is unchanged when nothing is registered', () => {
+    const { root } = install();
+    const project = tempDir('blazon-proj-');
+    const result = checkRegistered('claude-code', [project], project, tempDir('blazon-home-'), root);
+    expect(result).toMatchObject({ passed: false, advisory: true, state: 'none', found: false, files: [] });
+    expect(result.detail).toContain("no server named blazon in claude-code's config");
+    expect(result.fix).toBe(`blazon mcp --print-config --client claude-code --brand ${project}`);
+  });
+
+  it('names a different file even when another config holds the same one', () => {
+    const { root, entry } = install();
+    const clone = install().entry;
+    const home = tempDir('blazon-home-');
+    const project = tempDir('blazon-proj-');
+    write(home, '.claude.json', { mcpServers: { blazon: { command: 'node', args: [clone] } } });
+    write(project, '.mcp.json', { mcpServers: { blazon: { command: 'node', args: [entry] } } });
+    expect(checkRegistered('claude-code', [project], project, home, root)).toMatchObject({ state: 'different', registeredPath: clone });
+  });
+
+  it('never prints an argument or an environment value, in the text or the JSON answer', async () => {
+    const { root } = install();
+    const clone = install().entry;
+    const home = tempDir('blazon-home-');
+    const project = tempDir('blazon-proj-');
+    const secretEntry = { command: 'node', args: [clone, '--token', canary, `--key=${canary}`], env: { API_TOKEN: canary } };
+    write(home, '.claude.json', { mcpServers: { blazon: secretEntry } });
+    expect(JSON.stringify(checkRegistered('claude-code', [project], project, home, root))).not.toContain(canary);
+    write(home, '.claude.json', { mcpServers: { blazon: { command: 'npx', args: ['-y', `--token=${canary}`], env: { API_TOKEN: canary } } } });
+    expect(JSON.stringify(checkRegistered('claude-code', [project], project, home, root))).not.toContain(canary);
+    write(home, '.claude.json', { mcpServers: { blazon: secretEntry } });
+    for (const json of [false, true]) {
+      const out: string[] = [];
+      const spy = vi.spyOn(console, 'log').mockImplementation((...parts: unknown[]) => void out.push(parts.join(' ')));
+      const stdout = vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array) => (out.push(String(chunk)), true));
+      try {
+        await runMcpCheck({ client: 'claude-code', brand: project, cwd: project, home, root, json, env: { PATH: '' } });
+      } finally {
+        spy.mockRestore();
+        stdout.mockRestore();
+      }
+      const text = out.join('\n');
+      expect(text).toContain(clone);
+      expect(text).not.toContain(canary);
+    }
+  }, 60_000);
 });
 
 describe('blazon mcp --check (command line)', () => {
