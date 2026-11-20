@@ -192,7 +192,7 @@ export const OPERATIONS: readonly Operation[] = [
         { property: 'tier', value: 'tier', description: 'List only the tokens of one tier: primitive, semantic or component' },
         {
           property: 'theme',
-          value: '<name>',
+          value: 'name',
           description:
             "list the values as this context of the resolver's theme modifier resolves them (such as dark), and the default value of each token it changes; exits 2 for an unknown theme",
         },
@@ -280,7 +280,7 @@ export const OPERATIONS: readonly Operation[] = [
       options: [
         {
           property: 'theme',
-          value: '<name>',
+          value: 'name',
           description:
             "read the value as this context of the resolver's theme modifier resolves it (such as dark), and the default value when it differs; exits 2 for an unknown theme",
         },
@@ -472,7 +472,7 @@ export const OPERATIONS: readonly Operation[] = [
         },
         { property: 'verbose', flag: 'no-verbose', description: 'leave out the checks of an allowed answer, which are all it adds to the reason; a denial keeps them' },
         { property: 'role', value: 'text|ui', description: 'text (default) or ui: judge a non-text element by the 3:1 rule, with no pairs' },
-        { property: 'theme', value: '<name>', description: "judge the pair in this context of the resolver's theme modifier (such as dark); exits 2 for an unknown theme" },
+        { property: 'theme', value: 'name', description: "judge the pair in this context of the resolver's theme modifier (such as dark); exits 2 for an unknown theme" },
         { property: 'json', description: 'Print the answer as JSON on standard output' },
       ],
     },

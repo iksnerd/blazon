@@ -283,7 +283,7 @@ export const OPERATIONS: readonly Operation[] = [
         },
         {
           property: 'theme',
-          value: '<name>',
+          value: 'name',
           description:
             "list the values as this context of the resolver's theme modifier resolves them (such as dark), and the default value of each token it changes; exits 2 for an unknown theme",
         },
@@ -356,7 +356,7 @@ export const OPERATIONS: readonly Operation[] = [
       options: [
         {
           property: 'theme',
-          value: '<name>',
+          value: 'name',
           description:
             "read the value as this context of the resolver's theme modifier resolves it (such as dark), and the default value when it differs; exits 2 for an unknown theme",
         },
@@ -548,7 +548,7 @@ export const OPERATIONS: readonly Operation[] = [
         },
         {
           property: 'theme',
-          value: '<name>',
+          value: 'name',
           description: "judge the pair in this context of the resolver's theme modifier (such as dark); exits 2 for an unknown theme",
         },
         {
