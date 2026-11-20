@@ -28,4 +28,41 @@ describe('alias-circular', () => {
   it('is one report for a token that aliases itself', () => {
     expect(report([token('s', '{s}')])).toEqual(['s: Alias {s} leads back to s']);
   });
+
+  it('is reported once, on the smallest member, for a 3-token loop from any start', () => {
+    const tokens = [token('c', '{a}'), token('b', '{c}'), token('a', '{b}')];
+    const expected = ['a: Alias {b} leads back to a'];
+    expect(report(tokens)).toEqual(expected);
+    expect(report([...tokens].reverse())).toEqual(expected);
+  });
+
+  it('is not reported for a plain chain, and every link resolves to the end value', () => {
+    const tokens = [token('a', '{b}'), token('b', '{c}'), token('c', '#fff')];
+    const resolver = new Resolver(tokens);
+    expect(resolver.token('a')).toBe('#fff');
+    expect(resolver.token('b')).toBe('#fff');
+    expect(resolver.problems).toEqual([]);
+  });
+
+  it('is not reported twice when a looping token is resolved twice', () => {
+    const resolver = new Resolver([token('a', '{b}'), token('b', '{a}')]);
+    resolver.token('a');
+    resolver.token('a');
+    expect(resolver.problems).toHaveLength(1);
+  });
+});
+
+describe('typeOf', () => {
+  const typed = (path: string, rawValue: unknown, type: DeclaredToken['type']): DeclaredToken => ({ ...token(path, rawValue), type });
+
+  it('follows an alias chain to the first declared type', () => {
+    const tokens = [token('a', '{b}'), token('b', '{c}'), typed('c', '#fff', 'color')];
+    expect(new Resolver(tokens).typeOf(tokens[0]!)).toBe('color');
+  });
+
+  it('gives undefined for a 3-token loop, a self alias and a broken link', () => {
+    const tokens = [token('a', '{b}'), token('b', '{c}'), token('c', '{a}'), token('s', '{s}'), token('u', '{missing}')];
+    const resolver = new Resolver(tokens);
+    for (const t of tokens) expect(resolver.typeOf(t)).toBeUndefined();
+  });
 });

@@ -12,10 +12,14 @@ export function aliasTarget(value: unknown): string | undefined {
   return value.trim().match(ALIAS)?.[1]?.trim();
 }
 
+/** A token path is unvisited (no entry), resolving (on the stack) or resolved (has a value). */
+type State = { readonly kind: 'resolving' } | { readonly kind: 'resolved'; readonly value: unknown };
+
 export class Resolver {
   private readonly declared: Map<string, DeclaredToken>;
-  private readonly resolved = new Map<string, unknown>();
-  private readonly resolving = new Set<string>();
+  private readonly states = new Map<string, State>();
+  /** The paths in the `resolving` state, in the order the walk entered them. */
+  private readonly stack: string[] = [];
   readonly problems: Finding[] = [];
 
   constructor(tokens: DeclaredToken[]) {
@@ -24,12 +28,14 @@ export class Resolver {
 
   /** Resolves a token's `$value`, following aliases through nested composite values. */
   token(path: string): unknown {
-    if (this.resolved.has(path)) return this.resolved.get(path);
+    const state = this.states.get(path);
+    if (state?.kind === 'resolved') return state.value;
     const token = this.declared.get(path)!;
-    this.resolving.add(path);
+    this.states.set(path, { kind: 'resolving' });
+    this.stack.push(path);
     const value = this.value(token.rawValue, path);
-    this.resolving.delete(path);
-    this.resolved.set(path, value);
+    this.stack.pop();
+    this.states.set(path, { kind: 'resolved', value });
     return value;
   }
 
@@ -49,10 +55,9 @@ export class Resolver {
       this.report(owner, 'alias-unresolved', `Alias {${target}} does not match any token`);
       return value;
     }
-    if (this.resolving.has(target)) {
+    if (this.states.get(target)?.kind === 'resolving') {
       // Reported on the smallest member of the loop, so the finding does not depend on which token the walk reached first
-      const stack = [...this.resolving];
-      const loop = stack.slice(stack.indexOf(target));
+      const loop = this.stack.slice(this.stack.indexOf(target));
       const first = loop.reduce((a, b) => (compareText(b, a) < 0 ? b : a));
       this.report(first, 'alias-circular', `Alias {${loop[(loop.indexOf(first) + 1) % loop.length]}} leads back to ${first}`);
       return value;
@@ -60,13 +65,17 @@ export class Resolver {
     return this.token(target);
   }
 
-  typeOf(token: DeclaredToken, seen = new Set<string>()): TokenType | undefined {
-    if (token.type) return token.type;
-    const target = aliasTarget(token.rawValue);
-    const targetToken = target ? this.declared.get(target) : undefined;
-    if (!targetToken || seen.has(targetToken.path)) return undefined;
-    seen.add(token.path);
-    return this.typeOf(targetToken, seen);
+  /** The declared type of a token, or of the first token down its alias chain that has one. A loop or a broken link gives undefined. */
+  typeOf(token: DeclaredToken): TokenType | undefined {
+    const visited = new Set<string>();
+    let current: DeclaredToken | undefined = token;
+    while (current && !visited.has(current.path)) {
+      if (current.type) return current.type;
+      visited.add(current.path);
+      const target = aliasTarget(current.rawValue);
+      current = target === undefined ? undefined : this.declared.get(target);
+    }
+    return undefined;
   }
 
   report(path: string, code: CheckCode, message: string): void {
