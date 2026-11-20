@@ -11,8 +11,8 @@ export const cleanPath = (typed: string): string =>
     .replace(/^\{(.*)\}$/, '$1')
     .trim();
 
-/** The token at `typed`, or a LookupError that names the closest path when there is one near. */
-export function findToken(data: BlazonData, typed: string): TokenItem {
+/** The token at `typed` (in the theme `theme` when the data is one, for the message), or a LookupError that names the closest path when there is one near. */
+export function findToken(data: BlazonData, typed: string, theme?: string): TokenItem {
   const wanted = cleanPath(typed);
   const item = data.tokens.byPath.get(wanted);
   if (item) return item;
@@ -22,6 +22,8 @@ export function findToken(data: BlazonData, typed: string): TokenItem {
   );
   const isGroup = data.tokens.items.some((token) => token.path.startsWith(`${wanted}.`));
   throw new LookupError(
-    isGroup ? `"${wanted}" is a group, not a token; \`blazon rules ${wanted}\` shows its rules.` : `no token "${wanted}"${meant ? `; did you mean "${meant}"?` : '.'}`,
+    isGroup
+      ? `"${wanted}" is a group, not a token; \`blazon rules ${wanted}\` shows its rules.`
+      : `no token "${wanted}"${theme === undefined ? '' : ` in theme "${theme}"`}${meant ? `; did you mean "${meant}"?` : '.'}`,
   );
 }

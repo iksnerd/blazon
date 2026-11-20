@@ -591,6 +591,29 @@
           "items": {
             "$ref": "#/$defs/token"
           }
+        },
+        "removed": {
+          "description": "The paths of the default's tokens this context leaves out, sorted. Apply them after `tokens` and `metadataChanges`.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "groupChanges": {
+          "description": "The groups whose description or rules differ from the default's, or that only this context has: each is the context's whole record for that group.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group"
+          }
+        },
+        "removedGroups": {
+          "description": "The paths of the default's groups that carry no description or rules in this context, sorted.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "required": [

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BlazonData, ThemeRole } from '../../../types/index.js';
-import { contextItems } from '../../../core/tokens/contexts.js';
+import { contextGroups, contextItems } from '../../../core/tokens/contexts.js';
 import type { Mode } from '@/lib/theme/theme';
 
 /** Chosen context per modifier; a modifier not listed shows its default. */
@@ -84,7 +84,7 @@ export function effectiveData(data: BlazonData, selected: SelectedContexts): Bla
   return {
     ...data,
     theme,
-    tokens: { ...data.tokens, items },
+    tokens: { ...data.tokens, items, groupMeta: contextGroups(data.tokens.groupMeta, active) },
     findings: data.findings.filter((f) => !f.context || shown.has(f.context)),
   };
 }

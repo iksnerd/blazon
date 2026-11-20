@@ -95,6 +95,8 @@ tokens/  docs/  assets/  blazon.json   →   BlazonData   →   dist/tokens/  di
 | `selector` | The CSS selector its variables are written under: `:lang(ja)` |
 | `tokens` | The tokens whose CSS value differs from the default's, which is what the context's CSS block holds |
 | `metadataChanges` | The tokens that keep the default's CSS value but say something else: another description, deprecation, type, extension or alias |
+| `removed` | The paths of the default's tokens the context leaves out |
+| `groupChanges`, `removedGroups` | The groups whose description or rules differ in the context, and the default's groups that carry none in it |
 
 A context holds only what it changes. The whole set of tokens in a context is the default's with those changes applied, and a copy kept by hand drifts from it.
 

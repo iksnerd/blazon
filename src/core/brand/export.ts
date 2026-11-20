@@ -6,6 +6,7 @@ import {
   type AssetMeta,
   type Finding,
   type FontLicense,
+  type GroupMeta,
   type BlazonConfig,
   type BlazonData,
   type BlazonExtension,
@@ -77,13 +78,25 @@ export interface BrandExport {
   sections: SectionInfo[];
   tokens: BrandToken[];
   /** Groups that carry a description or rules: proportions, contrast pairs, patterns */
-  groups: { path: string; description?: string; blazon: BlazonExtension }[];
+  groups: BrandGroup[];
   modifiers: { name: string; default: string; contexts: string[] }[];
   /**
    * Each non-default context with only what it changes: `tokens` have another value, `metadataChanges` (absent when there are none) keep the
    * default's value and say something else
    */
-  contexts: { modifier: string; context: string; selector: string; tokens: BrandToken[]; metadataChanges?: BrandToken[] }[];
+  contexts: {
+    modifier: string;
+    context: string;
+    selector: string;
+    tokens: BrandToken[];
+    metadataChanges?: BrandToken[];
+    /** The paths of the default's tokens the context leaves out, sorted; absent when there are none */
+    removed?: string[];
+    /** The groups whose description or rules differ from the default's (the context's whole record), as in `groups`; absent when there are none */
+    groupChanges?: BrandGroup[];
+    /** The default's groups that carry no description or rules in the context, sorted; absent when there are none */
+    removedGroups?: string[];
+  }[];
   pages: {
     slug: string;
     sourceFile: string;
@@ -113,6 +126,15 @@ export interface BrandExport {
   iconSets: (IconSet & { /** The folder of `<icon>.svg` files, beside brand.json */ dir: string })[];
   findings: Finding[];
 }
+
+/** A group that carries a description or rules */
+export interface BrandGroup {
+  path: string;
+  description?: string;
+  blazon: BlazonExtension;
+}
+
+const projectGroup = (g: GroupMeta): BrandGroup => ({ path: g.path, ...(g.description && { description: g.description }), blazon: g.blazon });
 
 const hasKeys = (value: object | undefined): value is object => value !== undefined && Object.keys(value).length > 0;
 
@@ -174,7 +196,7 @@ export function buildBrandExport(data: BlazonData, config: BlazonConfig, cwd: st
     vocabulary: data.vocabulary,
     sections: data.sections,
     tokens: data.tokens.items.map(projectToken),
-    groups: data.tokens.groupMeta.map((g) => ({ path: g.path, ...(g.description && { description: g.description }), blazon: g.blazon })),
+    groups: data.tokens.groupMeta.map(projectGroup),
     modifiers: data.tokens.modifiers ?? [],
     contexts: (data.tokens.contexts ?? []).map((c) => ({
       modifier: c.modifier,
@@ -182,6 +204,9 @@ export function buildBrandExport(data: BlazonData, config: BlazonConfig, cwd: st
       selector: c.selector,
       tokens: c.tokens.map(projectToken),
       ...(c.metadataChanges && { metadataChanges: c.metadataChanges.map(projectToken) }),
+      ...(c.removed && { removed: c.removed }),
+      ...(c.groupChanges && { groupChanges: c.groupChanges.map(projectGroup) }),
+      ...(c.removedGroups && { removedGroups: c.removedGroups }),
     })),
     pages: data.docs.map((doc) => ({
       slug: doc.slug,

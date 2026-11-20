@@ -64,6 +64,12 @@ export interface TokenContext {
    * alias that holds the same value. They have no CSS to write, and they belong in the context's own DTCG document. Absent when there are none.
    */
   metadataChanges?: TokenItem[];
+  /** The paths of the default's tokens this context leaves out, sorted. Absent when there are none. A context is not the default plus additions */
+  removed?: string[];
+  /** The groups whose `$description` or `dev.blazon` rules differ from the default's, or that only this context has: the context's whole record. Absent when there are none */
+  groupChanges?: GroupMeta[];
+  /** The paths of the default's groups that carry no description or rules in this context, sorted. Absent when there are none */
+  removedGroups?: string[];
 }
 
 export interface ParsedTokens {
