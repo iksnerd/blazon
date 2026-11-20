@@ -1,4 +1,5 @@
-import { summarizeFindings } from '../core/checker/index.js';
+import { blazonPinState } from '../core/blazon-pin.js';
+import { brandErrors, summarizeFindings } from '../core/checker/index.js';
 import { fixOf } from '../core/checker/fixes.js';
 import type { Finding } from '../types/index.js';
 import { CheckFailed } from './commands/check.js';
@@ -8,7 +9,8 @@ import { runInit, type InitOptions, type InitReport } from './commands/init.js';
 /**
  * Runs a command that finds things and prints what it found as one JSON document on standard output. Everything else the
  * command prints (its banner, its list of findings) goes to standard error for the time it runs, so a script can parse
- * standard output whole. `counts` and `passed` cover every finding; `severity` only cuts the list. Exit status: 0 passed, 1 not passed. A command that cannot start throws, and prints nothing here.
+ * standard output whole. `counts` and `passed` cover every finding; `severity` only cuts the list. `brandHasErrors` is true when a finding other than the pin
+ * family is an error (a value may be wrong); `pinMismatch` is there when blazon.lock names another blazon build, and `cwd` is the folder it is read from. Exit status: 0 passed, 1 not passed. A command that cannot start throws, and prints nothing here.
  */
 export const SEVERITIES = ['error', 'warning', 'info'] as const;
 export type SeverityOption = (typeof SEVERITIES)[number];
@@ -21,6 +23,7 @@ export async function asJson(
   strict: boolean,
   run: () => Promise<{ findings: Finding[] }>,
   severity: SeverityOption = 'info',
+  cwd: string = process.cwd(),
 ): Promise<void> {
   const log = console.log;
   console.log = (...args: unknown[]) => console.error(...args);
@@ -35,8 +38,10 @@ export async function asJson(
   }
   const result = summarizeFindings(findings, { strict });
   const counts = { errors: result.errors.length, warnings: result.warnings.length, info: result.infos.length };
+  const { mismatch } = blazonPinState(cwd);
+  const pinMismatch = mismatch && { pinned: mismatch.pinned, running: mismatch.running, message: mismatch.message };
   process.stdout.write(
-    `${JSON.stringify({ command, passed: result.passed, strict, counts, findings: result.all.filter((finding) => KEPT[severity].includes(finding.severity)).map((finding) => ({ ...finding, ...(fixOf(finding) && { fix: fixOf(finding) }) })) }, null, 2)}\n`,
+    `${JSON.stringify({ command, passed: result.passed, strict, counts, brandHasErrors: brandErrors(findings).length > 0, ...(pinMismatch && { pinMismatch }), findings: result.all.filter((finding) => KEPT[severity].includes(finding.severity)).map((finding) => ({ ...finding, ...(fixOf(finding) && { fix: fixOf(finding) }) })) }, null, 2)}\n`,
   );
   process.exitCode = result.passed ? 0 : 1;
 }

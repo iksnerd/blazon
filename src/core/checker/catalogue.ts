@@ -656,6 +656,13 @@ export interface FindingFields {
   fix?: string;
 }
 
+/**
+ * Whether a code is in the pin family: the findings that pair the blazon build with the book (blazon.lock). They say nothing about a token or a
+ * value, so a count of the brand's own errors leaves them out. The family is the `pin-` area of the catalogue; test/core/pin-family.test.ts fails when
+ * a code about blazon.lock is added outside it.
+ */
+export const isPinFinding = (code: string): boolean => code.startsWith('pin-');
+
 /** Build a finding of a core code. The severity is the catalogue's. */
 export function finding(code: CheckCode, fields: FindingFields): Finding {
   const { path, message, context, file, line, fix } = fields;

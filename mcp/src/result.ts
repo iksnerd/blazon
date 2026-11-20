@@ -48,6 +48,32 @@ export function stripInvisible<T>(value: T): { value: T; removed: number } {
 /** The line that tells the model its answer was cleaned. */
 export const removedNotice = (count: number): string => `Removed ${count} invisible character(s) from the brand's text in this answer.`;
 
+/** The pin a tool answer names when the book's blazon.lock is not met: blazon's own words. Absent from an answer when the pin is met. */
+export interface PinMismatch {
+  pinned: string;
+  running: string;
+  message: string;
+}
+
+/** The line `blazon list`, `get` and the other read commands print for a mismatch (src/core/blazon-pin.ts, pinMismatchLine). */
+const PIN_MISMATCH_LINE = /^blazon: pin mismatch \(pinned (\S+), running (.+?)\): (.+)$/;
+
+/** The mismatch in blazon's lines on standard error, or undefined. */
+export function pinMismatchIn(warnings: string[]): PinMismatch | undefined {
+  for (const line of warnings) {
+    const m = PIN_MISMATCH_LINE.exec(line);
+    if (m) return { pinned: m[1]!, running: m[2]!, message: m[3]! };
+  }
+  return undefined;
+}
+
+/**
+ * Whether the brand's own data has errors, so a value may be wrong. blazon says so: `check --json` in its `brandHasErrors` field, and a read
+ * command in an "N error(s)" line on standard error. A pin mismatch is neither: it is `pinMismatch`.
+ */
+export const hasBrandErrors = (document: Record<string, unknown>, warnings: string[]): boolean =>
+  typeof document.brandHasErrors === 'boolean' ? document.brandHasErrors : warnings.some((w) => /\b\d+ error\(s\)/.test(w));
+
 /**
  * A successful answer. `structuredContent` is blazon's document plus `warnings` (what blazon said on standard error) and `brandHasErrors`;
  * the text is the same JSON, compact, as the MCP spec asks for a client that reads only content. Warnings also come first as their own text
@@ -58,7 +84,7 @@ export function answerWith(
   document: Record<string, unknown>,
   warnings: string[],
   narrow: string = NARROW_BY_PATH,
-  brandHasErrors = warnings.some((w) => /\b\d+ error\(s\)/.test(w)),
+  brandHasErrors = hasBrandErrors(document, warnings),
 ): ToolResult {
   const structured = { ...document, warnings, brandHasErrors };
   const json = JSON.stringify(structured);
@@ -67,7 +93,7 @@ export function answerWith(
   // Cut on code points, so a surrogate pair is never split; every length here counts code points.
   const points = Array.from(json);
   const notice = `Truncated: the answer is ${points.length} characters (Unicode code points) and the limit is ${MAX_TEXT}; ${narrow}.`;
-  const whole = (['counts', 'passed'] as const).filter((key) => key in document).map((key) => [key, document[key]] as const);
+  const whole = (['counts', 'passed', 'pinMismatch'] as const).filter((key) => key in document).map((key) => [key, document[key]] as const);
   return {
     content: [...lead, { type: 'text', text: `${points.slice(0, MAX_TEXT).join('')}\n[${notice}]` }],
     structuredContent: { ...Object.fromEntries(whole), truncated: true, notice, warnings, brandHasErrors },

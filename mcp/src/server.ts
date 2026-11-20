@@ -10,7 +10,19 @@ import type { JsonSchema, Operation } from './generated/types.js';
 import { coerceArgs, commandFor, operationNamed, OPERATIONS, withDefaults } from './operations.js';
 import { buildPageText, INSTRUCTIONS } from './prompts.js';
 import { VERSIONS } from './version.js';
-import { answerWith, failure, limitItems, NARROW_FINDINGS, NARROW_NONE, NARROW_TOKENS, removedNotice, stripInvisible, type ToolResult } from './result.js';
+import {
+  answerWith,
+  failure,
+  hasBrandErrors,
+  limitItems,
+  pinMismatchIn,
+  NARROW_FINDINGS,
+  NARROW_NONE,
+  NARROW_TOKENS,
+  removedNotice,
+  stripInvisible,
+  type ToolResult,
+} from './result.js';
 
 /** Said after blazon's own message when a path is not a token, so the model knows the next call. */
 const FIND_PATH = 'To find a token path, call list_tokens.';
@@ -27,8 +39,6 @@ interface Lookup {
   reword?: (message: string, args: Record<string, unknown>) => string | undefined;
   /** What the server knows about the answer that blazon's output does not say: fields for the document and lines for `warnings`. */
   notes?: (brand: string) => { fields: Record<string, unknown>; warnings: string[] };
-  /** Whether the values read may be wrong. Default: blazon said so on standard error. */
-  brandHasErrors?: (document: Record<string, unknown>) => boolean;
 }
 
 /**
@@ -68,8 +78,8 @@ const LOOKUPS: Record<string, Lookup> = {
   check_brand: {
     narrow: NARROW_FINDINGS,
     notes: skippedPlugins,
-    shape: (document, args, warnings) => limitItems(document, 'findings', Number(args.limit), NARROW_FINDINGS, warnings),
-    brandHasErrors: (document) => ((document.counts as { errors?: number } | undefined)?.errors ?? 0) > 0,
+    // `counts` and the list keep the pin finding; `passed` is about the brand's own data, as `brandHasErrors` is
+    shape: (document, args, warnings) => ({ ...limitItems(document, 'findings', Number(args.limit), NARROW_FINDINGS, warnings), passed: document.brandHasErrors !== true }),
   },
   list_tokens: {
     hint: 'Call list_tokens with no arguments to see every path.',
@@ -115,16 +125,19 @@ export function createServer(target: BlazonTarget, runner: BlazonRunner = new Bl
 
   /** Runs a call; blazon's own error message becomes a tool error, and anything else is reported as one too. */
   async function answer(op: Operation, args: Record<string, unknown>): Promise<ToolResult> {
-    const { hint, narrow, shape, reword, brandHasErrors, notes } = LOOKUPS[op.name] ?? {};
+    const { hint, narrow, shape, reword, notes } = LOOKUPS[op.name] ?? {};
     try {
       const { argv, options } = commandFor(op, args);
       const run = await runner.run(argv, options);
       const cleaned = stripInvisible(run.document);
       const extra = notes?.(target.brand) ?? { fields: {}, warnings: [] };
       const warnings = [...run.warnings, ...(cleaned.removed > 0 ? [removedNotice(cleaned.removed)] : []), ...extra.warnings];
-      const shaped = shape ? shape({ ...cleaned.value, ...extra.fields }, args, warnings) : { ...cleaned.value, ...extra.fields };
-      // the notice above is ours, so it must not decide `brandHasErrors` when the lookup leaves that to blazon's own warnings
-      return answerWith(shaped, warnings, narrow, brandHasErrors ? brandHasErrors(shaped) : run.warnings.some((w) => /\b\d+ error\(s\)/.test(w)));
+      // `check` carries the mismatch in its document; a read command says it on standard error. Either way the answer has the one field.
+      const pin = cleaned.value.pinMismatch ?? pinMismatchIn(run.warnings);
+      const whole = { ...cleaned.value, ...extra.fields, ...(pin !== undefined && { pinMismatch: stripInvisible(pin).value }) };
+      const shaped = shape ? shape(whole, args, warnings) : whole;
+      // the notice above is ours, so it must not decide `brandHasErrors`: only blazon's own document and lines do
+      return answerWith(shaped, warnings, narrow, hasBrandErrors(cleaned.value, run.warnings));
     } catch (error) {
       if (error instanceof BlazonError) {
         const reworded = error.fromBlazon ? reword?.(error.message, args) : undefined;

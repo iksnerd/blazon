@@ -90,18 +90,32 @@ export function readBlazonPin(cwd: string): { pin?: BlazonPin; line?: number; pr
 
 const short = (commit: string): string => commit.slice(0, 12);
 
+/** A pin that is not met, as every tool and command reports it: both builds as blazon prints them, and one line saying why. */
+export interface PinMismatch {
+  /** The commit blazon.lock names, 12 digits */
+  pinned: string;
+  /** The blazon running: 12 digits, with "(uncommitted changes)" when its tree had edits, or "unknown" when it cannot say */
+  running: string;
+  message: string;
+  line?: number;
+}
+
 /**
- * The findings for blazon.lock in `cwd`: none without a pin, `pin-invalid` for a file that cannot be read, and
- * `pin-mismatch` when this blazon is not the pinned commit, was built from a tree with changes, or cannot say what it is.
- * A pin that cannot be checked is not met.
+ * What blazon.lock in `cwd` says about this blazon: the findings that are not a mismatch (`pin-invalid`), and the mismatch when there is
+ * one. Reads blazon.lock only and writes nothing. A pin that cannot be checked is not met.
  */
-export function blazonPinFindings(cwd: string, identity: BlazonIdentity | null = blazonIdentity(), root?: string): Finding[] {
+export function blazonPinState(cwd: string, identity: BlazonIdentity | null = blazonIdentity(), root?: string): { problems: Finding[]; mismatch?: PinMismatch } {
   const { pin, line, problems } = readBlazonPin(cwd);
-  if (problems.length > 0 || !pin) return problems;
-  const mismatch = (message: string): Finding[] => [finding('pin-mismatch', { path: BLAZON_LOCK, file: BLAZON_LOCK, ...(line !== undefined && { line }), message })];
+  if (problems.length > 0 || !pin) return { problems };
+  const pinned = short(pin.commit);
+  const mismatch = (running: string, message: string): { problems: Finding[]; mismatch: PinMismatch } => ({
+    problems: [],
+    mismatch: { pinned, running, message, ...(line !== undefined && { line }) },
+  });
   if (!identity) {
     return mismatch(
-      `this book is pinned to blazon ${short(pin.commit)}, but this blazon cannot say which commit it is (it is not a git checkout and carries no build stamp); build blazon from a git checkout of that commit`,
+      'unknown',
+      `this book is pinned to blazon ${pinned}, but this blazon cannot say which commit it is (it is not a git checkout and carries no build stamp); build blazon from a git checkout of that commit`,
     );
   }
   if (identity.commit !== pin.commit) {
@@ -109,15 +123,30 @@ export function blazonPinFindings(cwd: string, identity: BlazonIdentity | null =
     // The usual slip: the clone is at the pin, but the dist the `blazon` command runs was built before the checkout
     const clone = identity.from === 'build' ? gitState(root ?? packageRoot()) : undefined;
     const stale = clone && clone.commit === pin.commit ? `; the blazon clone is at the pinned commit, so run npm run build in it` : '';
-    return mismatch(`this book is pinned to blazon ${short(pin.commit)}, but the blazon running ${where} ${short(identity.commit)}${stale}`);
+    return mismatch(short(identity.commit), `this book is pinned to blazon ${pinned}, but the blazon running ${where} ${short(identity.commit)}${stale}`);
   }
   if (identity.dirty) {
     return mismatch(
-      `this book is pinned to blazon ${short(pin.commit)}, and the blazon running ${identity.from === 'build' ? 'was built from' : 'is at'} that commit with uncommitted changes, so it is not that commit; commit or discard them and ${identity.from === 'build' ? 'run npm run build' : 'run again'}`,
+      `${pinned} (uncommitted changes)`,
+      `this book is pinned to blazon ${pinned}, and the blazon running ${identity.from === 'build' ? 'was built from' : 'is at'} that commit with uncommitted changes, so it is not that commit; commit or discard them and ${identity.from === 'build' ? 'run npm run build' : 'run again'}`,
     );
   }
-  return [];
+  return { problems: [] };
 }
+
+/**
+ * The findings for blazon.lock in `cwd`: none without a pin, `pin-invalid` for a file that cannot be read, and
+ * `pin-mismatch` when this blazon is not the pinned commit, was built from a tree with changes, or cannot say what it is.
+ */
+export function blazonPinFindings(cwd: string, identity: BlazonIdentity | null = blazonIdentity(), root?: string): Finding[] {
+  const { problems, mismatch } = blazonPinState(cwd, identity, root);
+  return mismatch
+    ? [finding('pin-mismatch', { path: BLAZON_LOCK, file: BLAZON_LOCK, ...(mismatch.line !== undefined && { line: mismatch.line }), message: mismatch.message })]
+    : problems;
+}
+
+/** The one line a read command prints on standard error for a mismatch. The MCP server reads it back with PIN_MISMATCH_LINE, so the two stay together. */
+export const pinMismatchLine = (m: PinMismatch): string => `blazon: pin mismatch (pinned ${m.pinned}, running ${m.running}): ${m.message}`;
 
 /** Write blazon.lock for this blazon, replacing one that cannot be read, which is how a broken pin is mended. Throws an Error saying why not: an unknown or uncommitted blazon is not a version to pin. */
 export function writeBlazonPin(cwd: string, identity: BlazonIdentity | null = blazonIdentity()): string {

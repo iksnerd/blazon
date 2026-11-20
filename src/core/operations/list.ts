@@ -24,7 +24,23 @@ const COMMON: Record<string, JsonSchema> = {
     items: { type: 'string' },
     description: 'Lines blazon printed on standard error, such as a warning that the brand has errors. Empty when blazon said nothing',
   },
-  brandHasErrors: { type: 'boolean', description: 'True when the brand has errors, so values read from it may be wrong. Run check_brand to see them' },
+  brandHasErrors: {
+    type: 'boolean',
+    description:
+      "True when the brand's own data has error findings, so a value read from it may be wrong. Run check_brand to see them. A blazon.lock that names another blazon build does not set it: that is `pinMismatch`",
+  },
+  pinMismatch: {
+    type: 'object',
+    properties: {
+      pinned: { type: 'string', description: 'The blazon build blazon.lock names, as blazon prints it (12 hex digits)' },
+      running: { type: 'string', description: 'The blazon build running, as blazon prints it, or "unknown" when it cannot say' },
+      message: { type: 'string', description: 'One line: which build the book is pinned to, which is running, and what to do' },
+    },
+    required: ['pinned', 'running', 'message'],
+    additionalProperties: {},
+    description:
+      'Present only when blazon.lock names a different blazon build than the one running. The build and the book disagree; no token or value is wrong because of it, so there is no need to re-check values. Tell the user. `blazon check`, `build` and `tokens` refuse until it is fixed',
+  },
   truncated: { description: 'True when the answer was cut to fit the size limit. `notice` says how to narrow the question', type: 'boolean' },
   notice: { description: 'Present when the answer was cut: how much was kept and how to ask a narrower question', type: 'string' },
 };
@@ -46,7 +62,7 @@ export const OPERATIONS: readonly Operation[] = [
   {
     name: 'check_brand',
     title: 'Check the brand',
-    description: `Runs blazon check on the brand, without plugins, and returns its findings and counts. Plugins in blazon.json do not run, so the counts can be lower than \`blazon check\` prints, but only for a plugin with a check role; a build-only plugin adds no finding. \`pluginsSkipped\` and \`warnings\` list every configured plugin, since a role is known only by starting the plugin. \`passed\` is false when the brand has errors, and values read from such a brand can be wrong. Returns at most \`limit\` findings (default ${DEFAULT_LIMIT}, at most ${MAX_LIMIT}); \`counts\` stay whole. Not for reading a value: use get_token.`,
+    description: `Runs blazon check on the brand, without plugins, and returns its findings and counts. Plugins in blazon.json do not run, so the counts can be lower than \`blazon check\` prints, but only for a plugin with a check role; a build-only plugin adds no finding. \`pluginsSkipped\` and \`warnings\` list every configured plugin, since a role is known only by starting the plugin. \`passed\` is false when the brand's own data has errors (\`brandHasErrors\`), and values read from such a brand can be wrong; a \`pin-mismatch\` finding is listed and counted but does not make \`passed\` false, and is also in \`pinMismatch\`. Returns at most \`limit\` findings (default ${DEFAULT_LIMIT}, at most ${MAX_LIMIT}); \`counts\` stay whole. Not for reading a value: use get_token.`,
     annotations: READ_ONLY,
     inputSchema: input(
       {
@@ -69,7 +85,7 @@ export const OPERATIONS: readonly Operation[] = [
       {
         passed: {
           type: 'boolean',
-          description: 'True when the brand has no errors',
+          description: 'True when no finding other than the pin family is an error. A pin-mismatch alone leaves it true',
         },
         counts: {
           type: 'object',

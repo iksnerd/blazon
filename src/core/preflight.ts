@@ -1,5 +1,6 @@
 import type { Finding, BlazonConfig, BlazonData } from '../types/index.js';
 import { blazonPinFindings } from './blazon-pin.js';
+import { isPinFinding } from './checker/catalogue.js';
 import { outputDirProblems } from './outputs.js';
 
 // What has to be true before blazon writes anything, in one place. `blazon build` and `blazon tokens` ask it, and so do buildSite and
@@ -21,15 +22,12 @@ const SHOWN = 5;
 
 const describe = (finding: Finding): string => `${finding.code}${finding.path ? ` (${finding.path})` : ''}: ${finding.message}`;
 
-/** Whether a finding code is about blazon.lock; those refusals are read fresh from the lock file and never lifted. */
-const isPinCode = (code: string): boolean => code.startsWith('blazon-pin-');
-
 /** Why blazon may not write now, as sentences; empty when it may. */
 export function writeBlockers(data: BlazonData, config: BlazonConfig, cwd: string, options: WriteOptions = {}): string[] {
   const blockers = outputDirProblems(config, cwd);
   // The pin is read here as well as by the commands that show it, so a caller that never asked for it is still held to it
   const pin = blazonPinFindings(cwd).filter((finding) => finding.severity === 'error');
-  const errors = options.allowErrors ? [] : data.findings.filter((finding) => finding.severity === 'error' && !isPinCode(finding.code));
+  const errors = options.allowErrors ? [] : data.findings.filter((finding) => finding.severity === 'error' && !isPinFinding(finding.code));
   const refused = [...pin, ...errors];
   if (refused.length > 0) {
     const shown = refused.slice(0, SHOWN).map(describe).join('; ');
