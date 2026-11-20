@@ -134,11 +134,13 @@ What the brand has to map itself: `destructive` and `chart-1` to `chart-5` have 
 
 ```json
 {
-  "shadcn": { "destructive": "color.signal.hazard", "chart-1": "color.signal.orange", "ring": "text.primary" }
+  "plugins": [
+    { "name": "blazon.shadcn", "options": { "variables": { "destructive": "color.signal.hazard", "chart-1": "color.signal.orange", "ring": "text.primary" } } }
+  ]
 }
 ```
 
-A path that is not a token is a `theme-unresolved` error. Every variable in `unsupplied` is a question for the brand owner: do not pick a color for it. A shadcn project falls back to its own default for a variable you leave out, which is not the brand's.
+A path that is not a token is the `blazon.shadcn/token-missing` error, and the variable falls back to its role. A `shadcn` key of its own in `blazon.json` is refused with `config-invalid`. Every variable in `unsupplied` is a question for the brand owner: do not pick a color for it. A shadcn project falls back to its own default for a variable you leave out, which is not the brand's.
 
 When `pairs` is present, the brand declares contrast `pairs`, and each entry says whether one of them covers that shadcn pair (`declared`). A pair with `declared: false` is not an allowed pair: do not use it for text on a surface until the brand owner adds a rule or maps another token. This is a note in the data, not a finding, and the build does not fail on it. Where `pairs` is absent, the brand declares no pairs and there is nothing to compare.
 

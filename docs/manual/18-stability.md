@@ -79,7 +79,7 @@ This is the plan. None of it is a promise yet, and the table says what is met to
 | No open "Breaking" items | The newest CHANGELOG release has no entry under "Breaking" that is a known mistake still to fix | No: the 0.1.0 entry of the CHANGELOG still has a "Breaking" list |
 | The alias mechanism is built | An old config key, command or finding code works and warns with the new name | No |
 | The deprecation window is stated | This chapter gives the length | In minors, yes; in months, no |
-| Published | A version of `@iksnerd/blazon` is on npm and `npx @iksnerd/blazon` runs it | Yes: 0.1.0 |
+| Published | A version of `@iksnerd/blazon` is on npm and `npx @iksnerd/blazon` runs it | Yes, since 0.1.0 |
 
 At 1.0 a breaking change to a stable surface would need a major version, and the one-minor alias would apply to every rename. Until all five rows are met, blazon stays 0.x.
 
@@ -102,4 +102,4 @@ Blazon runs on macOS and Linux. The plugin host starts programs the POSIX way, s
 
 ## What is not promised
 
-Only the latest minor version gets fixes, 0.1.x today ([SECURITY.md](../../SECURITY.md)). While blazon is 0.x, a minor release may break a stable surface, as above. Windows, an older Node than `engines` asks for, and the unstable surfaces above are not promised.
+Only the latest minor version gets fixes ([SECURITY.md](../../SECURITY.md)). While blazon is 0.x, a minor release may break a stable surface, as above. Windows, an older Node than `engines` asks for, and the unstable surfaces above are not promised.

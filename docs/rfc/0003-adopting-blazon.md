@@ -158,7 +158,7 @@ Detectors read files inside the project root only, after following symlinks (the
 
 ## Status
 
-Sections 2 to 5 are not implemented. Section 1 is done as far as the name goes: the package is called `@iksnerd/blazon` and configs import from it, and 0.1.0 is on npm, published by hand from the tarball the tagged release built; CI publishing is not set up. This RFC stays a draft: sections 2 to 5 describe what a company would do and are not built. The walls of the motivation that were fixed since the run, each by its commit:
+Sections 2 to 5 are not implemented. Section 1 is done as far as the name goes: the package is called `@iksnerd/blazon`, and 0.1.0 is on npm, published by hand from the tarball the tagged release built; CI publishing is not set up. This RFC stays a draft: sections 2 to 5 describe what a company would do and are not built. The walls of the motivation that were fixed since the run, each by its commit:
 
 | # | Fixed by |
 |---|---|

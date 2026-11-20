@@ -14,7 +14,7 @@ Every word blazon uses for a thing, in alphabetical order, with the chapter that
 | Brand book | The static site blazon builds. It looks like the brand it documents | [7](07-theme-and-config.md) |
 | `brand.json` | The whole brand in one versioned file, which `blazon build` writes beside the site: tokens with their rules, pages, assets, categories and findings. It is for tools in any language, and a `check` plugin receives it | [11](11-brand-json.md) |
 | Breaker | The host's guard against a plugin that keeps failing: after repeated failures it stops calling that plugin for the rest of one blazon command. The dev server uses a cooldown instead | [12](12-plugins.md) |
-| Build role | The plugin role that turns the brand into something else (a deck, native color files, a press kit). Blazon calls it only in `blazon build`, after the site is written | [13](13-writing-a-plugin.md) |
+| Build role | The plugin role that turns the brand into something else (a deck, native color files, a press kit). Blazon calls it in `blazon build`, after the site is written, and in `blazon tokens`, with no site | [13](13-writing-a-plugin.md) |
 | Call | One run of a plugin's program for one request. A plugin starts fresh for each call | [13](13-writing-a-plugin.md) |
 | Check | The test of a brand against its own rules: the command `blazon check`, which prints findings and exits `1` on an error | [3](03-checks.md) |
 | Check role | The plugin role that adds findings. It receives `brand.json` and no files, and runs in `blazon check`, `blazon tokens`, `blazon build` and `blazon dev` | [13](13-writing-a-plugin.md) |

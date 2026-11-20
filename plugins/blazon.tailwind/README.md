@@ -20,4 +20,4 @@ A brand with no token in any namespace gets neither file. The plugin takes no op
 | Code | Severity | When |
 |---|---|---|
 | `blazon.tailwind/variable-duplicate` | error | Two tokens with different values write one Tailwind variable (`color.brand` and `colors.brand` are both `--color-brand`); `tailwind.css` keeps the first |
-| `blazon.tailwind/option-invalid` | error | The plugin is given an option, or options that are not an object |
+| `blazon.tailwind/option-invalid` | error | The entry gives an option, or `options` is not an object |

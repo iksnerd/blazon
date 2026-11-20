@@ -48,7 +48,7 @@ my-brand/
 └── blazon.json
 ```
 
-The brand book is named after the project folder: `blazon init acme-brand` titles it "Acme Brand Book": a folder name that ends in `brand`, `book`, `guide` or `guidelines` is not repeated. Its description is a plain line, not blazon's. `AGENTS.md` tells a coding agent how the folder works: the check-and-fix loop on `blazon check --json`, where the brand data lives and what is safe to change, the MCP server and its tools, what not to touch and when to ask you for a fact. It links this manual on the blazon website, where each page is also served as Markdown. It is guidance, not brand text, so `blazon check` does not note it as a starter file; keep it, edit it or delete it. Existing files are kept, so running `blazon init` in a project that has some of them is safe.
+The brand book is named after the project folder: `blazon init acme-brand` titles it "Acme Brand Book": a folder name that ends in `brand`, `book`, `guide` or `guidelines` is not repeated. Its description is a plain line, not blazon's. `AGENTS.md` tells a coding agent how the folder works: the check-and-fix loop on `blazon check --json`, where the brand data lives and what is safe to change, the MCP server and its tools, what not to touch and when to ask you for a fact. It names the manual by the `docs/manual/` folder of the blazon source repository and each chapter by its title: the manual is not in the installed package. It is guidance, not brand text, so `blazon check` does not note it as a starter file; keep it, edit it or delete it. Existing files are kept, so running `blazon init` in a project that has some of them is safe.
 
 Everything in the copy that is blazon's identity is blazon's until you replace it: its logo, its type scale and fonts, its colors and the pages written about blazon. `blazon check` notes each such file as `starter-file-unchanged` while it is byte for byte what `init` wrote, so the notes are the list of what is left to replace. The config is not noted: `init` sets its title and description, and the rest is yours to edit. It lists three plugins, all of which need only Node: `blazon.copy`, which holds the pages to blazon's own word rules (edit its `options` to your brand's, or remove it), `blazon.tailwind`, which writes a Tailwind v4 theme from the tokens, and `blazon.shadcn`, which writes the shadcn/ui variables, with a `variables` option that maps the shadcn variables the brand has no role for to tokens in the starter. Remove either of the last two if the site does not use it. The example's other plugins (the deck, social cards, favicons, logo kit, press kit, platform tokens and Office template) mostly draw in Google Chrome or write kits, and a first `blazon build` should not need a browser, so the config leaves them out; add the ones you want by name once Chrome is installed ([chapter 14](14-shipped-plugins.md)).
 
@@ -92,7 +92,7 @@ Run `blazon check acme-brand` straight away and it exits 0: it reports 0 errors,
 
 ## The smallest project
 
-Blazon needs less than the starter. Two files make a brand book. In a new folder, write `tokens/colors.json`:
+Blazon needs less than the starter. Three small files make a brand book: a token file, a page and a `blazon.json` that names a logo, which every brand must have. In a new folder, write `tokens/colors.json`:
 
 ```json
 {
@@ -116,6 +116,12 @@ title: Hello
 The brand color is `color.brand`.
 
 <!-- blazon:tokens color -->
+```
+
+and `blazon.json`, with any SVG or PNG of yours as `logo.svg` beside it (a brand with no `logo` fails `blazon check` with `logo-missing`):
+
+```json
+{ "logo": "./logo.svg" }
 ```
 
 Then run `blazon dev` in that folder. The page shows both colors as cards, and `color.brand` in the text links to its token and is drawn as a badge. `blazon check` prints one note, `theme-missing`: with no `theme` and no conventionally named tokens, the book uses blazon's neutral colors until you set one ([chapter 7](07-theme-and-config.md#theme-roles)).

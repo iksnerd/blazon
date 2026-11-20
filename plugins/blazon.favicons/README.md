@@ -11,3 +11,6 @@ The source is `src/shipped/favicons/`, and `npm run build` (`npm run build:plugi
 | Variable | Says | Secret |
 |---|---|---|
 | `BLAZON_CHROME` | The path to a Chrome or Chromium program. Without it the plugin uses the Google Chrome installed on the computer. It never downloads a browser | no |
+| `HOME`, `TMPDIR` | Listed in the manifest, for the browser the plugin starts | no |
+
+The manifest lists all three, so the entry in `blazon.json` approves them in its `env`: `["BLAZON_CHROME", "HOME", "TMPDIR"]`.

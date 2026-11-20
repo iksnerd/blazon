@@ -60,7 +60,7 @@ Blazon sends a `check` plugin one JSON object:
 { "v": 1, "type": "check", "options": { "headingFont": "Inter" }, "brand": { "format": "blazon-brand", "version": 2, "...": "the whole brand.json" } }
 ```
 
-`brand` is the [`brand.json`](11-brand-json.md) of your brand as blazon's own checks left it, and its schema says exactly what is in it. The plugin sees what `brand.json` states and no file paths, so a check cannot read the images. Before it reads anything else, a plugin checks that `format` is `"blazon-brand"` and `version` is `1`, and exits `2` with the reason when either is not: a check that cannot judge the brand must not answer with an empty list.
+`brand` is the [`brand.json`](11-brand-json.md) of your brand as blazon's own checks left it, and its schema says exactly what is in it. The plugin sees what `brand.json` states and no file paths, so a check cannot read the images. Before it reads anything else, a plugin checks that `format` is `"blazon-brand"` and `version` is `2`, and exits `2` with the reason when either is not: a check that cannot judge the brand must not answer with an empty list.
 
 It answers with findings:
 
