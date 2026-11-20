@@ -189,5 +189,5 @@ Blazon needs Node 24 or later. A manifest's `timeout_ms` must be an integer as w
 
 ## Where this is specified
 
-The plugin protocol, which says how blazon finds, trusts, starts and judges a plugin, is [RFC 0005](../rfc/0005-plugin-protocol.md). The roles a plugin can fill are [RFC 0002](../rfc/0002-extension-model.md) section 2. Blazon's host is tested against the protocol's conformance corpus, a set of JSON files kept in `test/spec/`.
+The plugin protocol, which says how blazon finds, trusts, starts and judges a plugin, is [RFC 0005](../rfc/0005-plugin-protocol.md). The roles a plugin can fill are [RFC 0002](../rfc/0002-extension-model.md) section 2. A call from the manifest to the answer is drawn in [ARCHITECTURE on GitHub](https://github.com/iksnerd/blazon/blob/main/ARCHITECTURE.md#a-plugin-call), which renders it; the manual's own pages would show the diagram as code. Blazon's host is tested against the protocol's conformance corpus, a set of JSON files kept in `test/spec/`.
 

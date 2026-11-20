@@ -142,6 +142,36 @@ npm run release -- <version>
 
 A change that a user can see records itself as a fragment, one file `changelog.d/<slug>.<kind>.md` holding the text of one bullet (`kind` is `breaking`, `added`, `changed` or `fixed`; see [changelog.d/README.md](changelog.d/README.md)). Nobody edits the `Unreleased` section, so branches do not conflict on `CHANGELOG.md`. The release lists the kinds in the CHANGELOG's order and the bullets of a kind in file-name order. It refuses a fragment with an unknown kind, an empty body, an em-dash or a name outside `[a-z0-9._-]`, text under `Unreleased` next to fragments, and a release with neither. `npm run changelog:preview` prints the section the next release would write. A commit needs no fragment.
 
+What runs where, as of today:
+
+```mermaid
+flowchart TB
+  subgraph local["On the maintainer's machine"]
+    R["npm run release -- X<br/>refuses a dirty tree, a branch other than main, a version not greater, an existing tag"] --> K["npm run check"]
+    K --> V["set the version, date the CHANGELOG heading,<br/>npm run docs:stats, npm run test:docs"]
+    V --> C["commit release vX and tag vX<br/>nothing is pushed"]
+    C --> P["git push origin main vX<br/>only the tag starts CI"]
+  end
+  subgraph ci["CI on the tag (ci.yml)"]
+    T["test: typecheck, lint, format, build, npm test"]
+    S["secret-scan: gitleaks"]
+    subgraph rel["release job, after test and secret-scan"]
+      direction TB
+      A["audit gate, tag matches package.json"] --> B["npm run build, npm pack"]
+      B --> CP["check-pack"] --> SM["smoke test of the installed tarball"]
+      SM --> SUM["SHA256SUMS"] --> AT["build provenance attestation"] --> GR["GitHub release<br/>tarball and SHA256SUMS"]
+    end
+    PUB["publish job: skipped until NPM_PUBLISH is true<br/>and a trusted publisher is set on npm"]
+    T --> A
+    S --> A
+    GR -.-> PUB
+  end
+  P --> T
+  P --> S
+  GR --> M["owner runs npm publish on the attested tarball"]
+  M --> W["website, in its own repo: BLAZON_SRC=checkout npm run sync<br/>copies docs/stats.json and the manual"]
+```
+
 On the tag, CI (`.github/workflows/ci.yml`) runs the tests and the secret scan, then the `release` job: `npm run build`, `npm pack`, `scripts/check-pack.mjs` (the tarball holds `dist/`, the starter, the ten plugin programs and `plugins/shipped.lock`), `scripts/smoke-tarball.mjs` (install the tarball in an empty folder; run `blazon --help`, `init`, `check`, `build`, `plugin check --core` and `doctor`), then `SHA256SUMS`, a build provenance attestation, and a GitHub release with both files. The release notes are GitHub's generated ones (`generate_release_notes`); CI does not read the CHANGELOG. `npm pack` and `npm publish` run `npm run build` first (`prepack`), so a local tarball is never made from a stale `dist/`. Run the same two scripts by hand on any tarball: `node scripts/check-pack.mjs --tarball <file>`.
 
 The first-run expectation: `test/first-run/expected.json` lists the finding codes (with their severity) that `blazon check --json` may report on a fresh `blazon init` project, errors 0, and the most findings of each severity. `test/build/first-run.test.ts` judges the starter as `blazon init` writes it, with its plugin list, and `scripts/smoke-tarball.mjs` judges the packed starter, both through `scripts/first-run-expectation.mjs`, so the two cannot drift. A starter change that adds a finding fails both and names the code and the file. If the new finding is intended, edit `expected.json` in the same commit; the diff is the review.

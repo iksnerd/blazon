@@ -1,0 +1,10 @@
+{
+  "types": [],
+  "core": ["types"],
+  "plugins": ["core", "types"],
+  "shipped": ["core", "types"],
+  "viewer": ["core", "types"],
+  "server": ["core", "plugins", "types"],
+  "builder": ["core", "server", "types"],
+  "cli": ["builder", "core", "plugins", "server", "types"]
+}

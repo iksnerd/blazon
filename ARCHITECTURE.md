@@ -20,18 +20,78 @@ tokens/ docs/ assets/ blazon.json
 
 ## Layers of `src/`
 
-| Folder | Holds | May import |
-|---|---|---|
-| `types` | The shapes shared by everything | nothing |
-| `core` | The compile, the checks, the emitters, the config, the asset scanner | `types` |
-| `plugins` | The plugin host: admission, calls, roles, pins | `core`, `types` |
-| `shipped` | The source of the plugins blazon ships; each is a standalone program | `core`, `types` |
-| `viewer` | The brand book's React app | `core`, `types` |
-| `server` | The dev server, and the plugin runs it drives | `core`, `types`, `plugins` |
-| `builder` | The static site build | `core`, `types`, `plugins`, `server` |
-| `cli` | The commands | anything but `viewer` |
+| Folder | Holds |
+|---|---|
+| `types` | The shapes shared by everything |
+| `core` | The compile, the checks, the emitters, the config, the asset scanner |
+| `plugins` | The plugin host: admission, calls, roles, pins |
+| `shipped` | The source of the plugins blazon ships; each is a standalone program |
+| `viewer` | The brand book's React app |
+| `server` | The dev server, and the plugin runs it drives |
+| `builder` | The static site build |
+| `cli` | The commands |
 
-`test/core/layers.test.ts` holds a row for every folder and fails on an import that crosses a line. A helper two layers need goes down into `core`.
+An arrow means "may import". An import with no arrow is refused by a test. The files directly in `src/` (the package's public entry) may import anything.
+
+<!-- layers:begin -->
+```mermaid
+flowchart TB
+  types["src/types"]
+  core["src/core"]
+  plugins["src/plugins"]
+  shipped["src/shipped"]
+  viewer["src/viewer"]
+  server["src/server"]
+  builder["src/builder"]
+  cli["src/cli"]
+  core --> types
+  plugins --> core
+  plugins --> types
+  shipped --> core
+  shipped --> types
+  viewer --> core
+  viewer --> types
+  server --> core
+  server --> plugins
+  server --> types
+  builder --> core
+  builder --> server
+  builder --> types
+  cli --> builder
+  cli --> core
+  cli --> plugins
+  cli --> server
+  cli --> types
+```
+<!-- layers:end -->
+
+The diagram is written from `scripts/layers.json` by `npm run layers-docs`. That file is the one table of rules: `test/core/layers.test.ts` enforces it, and `test/docs/layers-generated.test.ts` fails when the diagram above differs from it. A helper two layers need goes down into `core`.
+
+## A plugin call
+
+A plugin is a program that blazon starts once for each call. Only the operator's `blazon.json` names one. A call is either the manifest call or a request; the contract is [RFC 0005](docs/rfc/0005-plugin-protocol.md), and [Writing a plugin](docs/manual/13-writing-a-plugin.md) is the author's view.
+
+```mermaid
+sequenceDiagram
+  participant Op as blazon.json and blazon.plugins.lock
+  participant Host as blazon (src/plugins)
+  participant P as plugin program
+  Op->>Host: allowed names, options, approved env, pins
+  Note over Host: a pinned plugin is copied to a private folder, hashed and compared with the lock, and the copy runs
+  Host->>P: manifest call: argument --blazon-manifest, empty stdin, empty environment plus PATH
+  P-->>Host: exit 0, manifest with v 2, roles, timeout_ms, env
+  Note over Host: refused unless v is 2. Skipped if the role is not listed. Not started if a listed variable is set and not approved
+  Host->>P: request call: stdin is a private file, environment is PATH plus the approved variables
+  Note over Host,P: check request v 1 holds options and brand.json. Build request v 2 holds the same plus tokens_dir and out_dir, and site_dir unless blazon tokens runs it
+  alt exit 0
+    P-->>Host: answer on stdout, findings for a check
+  else exit 2
+    P-->>Host: first line of stdout says why it could not answer
+  else any other exit, timeout or too much output
+    Note over Host: a break, reported as plugin-failed
+  end
+  Note over Host: secret values are scrubbed from the answer and stderr. Three breaks in a row stop the plugin for the run
+```
 
 ## Code map
 
