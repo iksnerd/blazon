@@ -4,6 +4,10 @@
 # which is where a change that passes alone meets everyone else's. It is also the backstop for a commit made with --no-verify.
 # It tests the pushed commit's own tree, exported from git, not the working tree, and skips a step a tree already passed.
 #
+# Order: the cheap steps first, every one of them to the end, so all the errors show at once; the tests last, and only when every cheap
+# step passed. After a failure the hook says "tests not run: <steps> failed; fix those first" and exits non-zero. A skipped test is not a
+# passed one: nothing is remembered for it, and the next push runs it.
+#
 # What runs, on every pushed tree: typecheck, lint, and the Prettier check of the whole tree, each with the time it took. This is where
 # the whole-tree lint is guaranteed: pre-commit lints only the staged files when no change can alter the findings of others.
 # Then the tests the changed files ask for (classify_paths in lib.sh, the mapping pre-commit uses), where the changed files are those
@@ -65,12 +69,7 @@ for entry in "${refs[@]}"; do
     [ -f "$snap/package.json" ] || refuse pre-push 'git push --no-verify' "the commit $sha has no package.json, so there is nothing to check"
     ln -s "$REPO/node_modules" "$snap/node_modules"
 
-    # A tree that does not typecheck is not worth the minutes of the suite
-    cached_step "typecheck-$tree" "typecheck" bash -c "cd '$snap' && npm run -s typecheck" || continue
-    cached_step "lint-$tree" "lint" bash -c "cd '$snap' && npm run -s lint"
-    cached_step "format-$tree" "format" bash -c "cd '$snap' && npm run -s format:check"
-
-    # What the pushed commits changed decides how much of the suite to run
+    # What the pushed commits changed decides how much of the suite to run (worked out first, printed with the tests; it runs nothing)
     ask_full=0
     why=""
     # The tests of the hooks (test/hooks) take about a third of the suite and read only the hooks and the install script by path, so
@@ -91,6 +90,15 @@ for entry in "${refs[@]}"; do
         fi
     fi
 
+    # The cheap steps, all of them to the end so every error shows at once (a tree that does not typecheck is still linted and checked)
+    cached_step "typecheck-$tree" "typecheck" bash -c "cd '$snap' && npm run -s typecheck"
+    cached_step "lint-$tree" "lint" bash -c "cd '$snap' && npm run -s lint"
+    cached_step "format-$tree" "format" bash -c "cd '$snap' && npm run -s format:check"
+    # The tests that read the whole tree are cheap too (whole_tree_guards in lib.sh). The whole suite holds them already, so it skips them.
+    if [ "$ask_full" -eq 0 ]; then whole_tree_guards "$tree" "$snap"; fi
+
+    # The tests, only when every cheap step passed (tests_gate in lib.sh)
+    if ! tests_gate; then continue; fi
     if [ "$ask_full" -eq 1 ]; then
         echo "  – the whole suite runs: $why"
         if [ -n "$skip_hooks_tests" ]; then echo "  – without the tests of the hooks: no hook, script or dependency changed"; fi
@@ -113,9 +121,6 @@ for entry in "${refs[@]}"; do
         # shellcheck disable=SC2086
         cached_step "files-$tree-$files_key" "tests: hooks and scripts" bash -c "cd '$snap' && npm run -s test:files -- $TEST_ARGS $extra_tests"
     fi
-    # Not the whole suite (that path continued above, and the suite holds both guards): the tests that read the whole tree still run,
-    # whatever the changed paths (whole_tree_guards in lib.sh)
-    whole_tree_guards "$tree" "$snap"
 done
 
 finish pre-push 'git push --no-verify'

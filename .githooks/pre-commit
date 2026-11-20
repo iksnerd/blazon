@@ -8,6 +8,11 @@
 # Install:   npm run hooks   (runs `git config core.hooksPath .githooks`; not a prepare script, so the published package carries none)
 # Bypass:    git commit --no-verify
 #
+# Order: the cheap steps first (secret scan, typecheck, lint, format, shell and Python syntax, Ruff, the whole-tree guards), every one of
+# them to the end, so all the errors show at once. The test steps come last, and only when every cheap step passed: after a failure the
+# hook says "tests not run: <steps> failed; fix those first" and exits non-zero. A skipped test is not a passed one: nothing is
+# remembered for it, and the next attempt runs it.
+#
 # What runs, by what is staged (a deletion counts as staged):
 #   every commit        typecheck (whole tree); lint (ESLint, with the type-aware rules for src/); secret scan of the staged changes
 #                       (gitleaks); syntax of staged shell and Python files; Ruff on staged Python files (through uv); Prettier on
@@ -26,7 +31,8 @@
 #                       -> the manual and RFC tests
 #   .githooks/, scripts/install-hooks.mjs, shipped-lock.mjs, blazon-src.ts
 #                       -> the few tests that read them by name
-#   every commit also runs the whole-tree guards (no private name in any tracked file, the layers of src/), whatever the paths
+#   every commit also runs the whole-tree guards (no private name in any tracked file, the layers of src/), whatever the paths; they
+#                       take half a second and count as cheap steps
 #   the linters' and formatter's own config -> no test: the lint and format steps run on every commit
 #   examples/, package.json, other files under test/ (goldens, corpus, fixtures), build and test config
 #   and any path no rule names
@@ -127,29 +133,32 @@ for name in sys.argv[1:]:
     fi
 fi
 
-# --- the suites the staged paths ask for
+# The tests that read the whole tree (whole_tree_guards in lib.sh) run whatever the paths. They take about half a second and read the
+# snapshot like the steps above, so they are in the cheap group: a private name is reported together with a format error.
+whole_tree_guards "$TREE" "$SNAP"
+
+# --- the suites the staged paths ask for, only when every cheap step above passed (tests_gate in lib.sh)
 if [ "$full" -eq 1 ]; then
     echo "  – the full suite runs at push, not at commit"
 fi
-if [ -n "$related_files" ]; then
-    # The key holds the files too: the same tree reached by a different change has other files to cover.
-    list_key="$(printf '%s' "$related_files" | digest_of)"
-    # shellcheck disable=SC2086
-    cached_step "related-$TREE-$list_key" "tests: related to the staged files" bash -c "cd '$SNAP' && npm run -s test:related -- $TEST_ARGS $related_files"
+if tests_gate; then
+    if [ -n "$related_files" ]; then
+        # The key holds the files too: the same tree reached by a different change has other files to cover.
+        list_key="$(printf '%s' "$related_files" | digest_of)"
+        # shellcheck disable=SC2086
+        cached_step "related-$TREE-$list_key" "tests: related to the staged files" bash -c "cd '$SNAP' && npm run -s test:related -- $TEST_ARGS $related_files"
+    fi
+    if [ "$deck" -eq 1 ]; then
+        cached_step "deck-$TREE" "tests: deck and plugins" bash -c "cd '$SNAP' && npm run -s test:deck -- $TEST_ARGS"
+    fi
+    if [ "$docs" -eq 1 ]; then
+        cached_step "docs-$TREE" "tests: manual and RFC" bash -c "cd '$SNAP' && npm run -s test:docs -- $TEST_ARGS"
+    fi
+    if [ -n "$extra_tests" ]; then
+        files_key="$(printf '%s' "$extra_tests" | digest_of)"
+        # shellcheck disable=SC2086
+        cached_step "files-$TREE-$files_key" "tests: hooks and scripts" bash -c "cd '$SNAP' && npm run -s test:files -- $TEST_ARGS $extra_tests"
+    fi
 fi
-if [ "$deck" -eq 1 ]; then
-    cached_step "deck-$TREE" "tests: deck and plugins" bash -c "cd '$SNAP' && npm run -s test:deck -- $TEST_ARGS"
-fi
-if [ "$docs" -eq 1 ]; then
-    cached_step "docs-$TREE" "tests: manual and RFC" bash -c "cd '$SNAP' && npm run -s test:docs -- $TEST_ARGS"
-fi
-if [ -n "$extra_tests" ]; then
-    files_key="$(printf '%s' "$extra_tests" | digest_of)"
-    # shellcheck disable=SC2086
-    cached_step "files-$TREE-$files_key" "tests: hooks and scripts" bash -c "cd '$SNAP' && npm run -s test:files -- $TEST_ARGS $extra_tests"
-fi
-
-# Whatever the paths: the tests that read the whole tree (whole_tree_guards in lib.sh)
-whole_tree_guards "$TREE" "$SNAP"
 
 finish pre-commit 'git commit --no-verify'
