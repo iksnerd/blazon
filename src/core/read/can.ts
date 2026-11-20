@@ -1,9 +1,10 @@
 import type { ContrastLevel, BlazonData, TokenItem } from '../../types/index.js';
 import { allows } from '../checker/usage.js';
 import { CONTRAST_MINIMUM, contrastRatio, matchingPairs, parseColor } from '../checker/contrast.js';
-import { contextItems } from '../tokens/contexts.js';
+import { MAX_PAIRS } from '../operations/limits.js';
 import { findToken, LookupError } from './lookup.js';
 import { allPairs, usageOf } from './rules.js';
+import { inTheme } from './theme.js';
 
 export interface CanCheck {
   rule: 'usage' | 'pairs' | 'contrast';
@@ -70,19 +71,6 @@ function uiUsageCheck(data: BlazonData, item: TokenItem): CanCheck {
   return { rule: 'usage', ok: false, message: `no non-text use is open: ${checks.map((c) => c.message).join('; ')}`, from: checks[0]!.from };
 }
 
-/** The modifier `--theme` names a context of. */
-export const THEME_MODIFIER = 'theme';
-
-/** The brand as the `theme` context `name` resolves it: its changes put over the default tokens by `contextItems`. */
-function inTheme(data: BlazonData, name: string): BlazonData {
-  const modifier = data.tokens.modifiers?.find((m) => m.name === THEME_MODIFIER);
-  if (!modifier) throw new LookupError(`no theme "${name}": this brand has no resolver "${THEME_MODIFIER}" modifier, so it has no themes.`);
-  if (!modifier.contexts.includes(name)) throw new LookupError(`no theme "${name}". The themes are ${modifier.contexts.map((c) => `"${c}"`).join(', ')}.`);
-  const active = (data.tokens.contexts ?? []).filter((c) => c.modifier === THEME_MODIFIER && c.context === name);
-  const items = contextItems(data.tokens.items, active);
-  return { ...data, tokens: { ...data.tokens, items, byPath: new Map(items.map((t) => [t.path, t])) } };
-}
-
 const colorOf = (item: TokenItem, label: string) => {
   const color = item.type === 'color' ? parseColor(String(item.value)) : undefined;
   if (!color) throw new LookupError(`{${item.path}} (${label}) is not a color blazon can read: it is ${item.type ?? 'untyped'} with the value ${String(item.value)}.`);
@@ -141,7 +129,7 @@ export function canUse(data: BlazonData, typedFg: string, typedBg: string, role:
     checks.push({
       rule: 'pairs',
       ok: false,
-      message: `no pair lists {${fg.path}} on {${bg.path}}; the brand lists ${listed.length} pair${listed.length === 1 ? '' : 's'} and only those may sit together`,
+      message: `no pair lists {${fg.path}} on {${bg.path}}; the brand lists ${listed.length} pair${listed.length === 1 ? '' : 's'} and only those may sit together. Component tokens are not read for pairs: to allow this pair, declare it in \`pairs\` on a token group (docs/manual/02-tokens.md, "Contrast pairs")`,
     });
   } else {
     checks.push({ rule: 'pairs', ok: true, message: 'the brand lists no pairs, so contrast is the only measure left' });
@@ -156,4 +144,30 @@ export function canUse(data: BlazonData, typedFg: string, typedBg: string, role:
   const allowed = denied === undefined;
   const reason = denied ? denied.message : (checks.find((c) => c.rule === 'pairs' && c.from) ?? checks[checks.length - 1]!).message;
   return { fg: fg.path, bg: bg.path, role, allowed, reason, checks, contrast: { ratio: rounded, level } };
+}
+
+/** The answer without its `checks` when it is allowed: a denial keeps them, since they are the reason. */
+export function withoutChecks(answer: CanAnswer): Omit<CanAnswer, 'checks'> & { checks?: CanCheck[] } {
+  if (!answer.allowed) return answer;
+  const { checks: _checks, ...rest } = answer;
+  return rest;
+}
+
+/**
+ * `canUse` for a list of pairs, one answer each, in order, at most MAX_PAIRS. A pair with an unknown token fails the whole call, and the
+ * message starts with its place in the list (`pairs[1]: ...`), so no answer is a half answer.
+ */
+export function canUseMany(data: BlazonData, pairs: readonly { fg: string; bg: string }[], role: CanRole = 'text', theme?: string): CanAnswer[] {
+  if (pairs.length === 0) throw new LookupError('give at least one pair.');
+  if (pairs.length > MAX_PAIRS) throw new LookupError(`give at most ${MAX_PAIRS} pairs in one call; this call has ${pairs.length}.`);
+  const judged = theme === undefined ? data : inTheme(data, theme);
+  return pairs.map((pair, i) => {
+    try {
+      const answer = canUse(judged, pair.fg, pair.bg, role);
+      return theme === undefined ? answer : { ...answer, theme };
+    } catch (error) {
+      if (error instanceof LookupError) throw new LookupError(`pairs[${i}]: ${error.message}`);
+      throw error;
+    }
+  });
 }

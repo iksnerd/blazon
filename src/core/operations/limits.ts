@@ -6,3 +6,6 @@ export const MAX_TEXT = 40_000;
 /** The default and the largest number of findings `check_brand` returns. */
 export const DEFAULT_LIMIT = 50;
 export const MAX_LIMIT = 500;
+
+/** The most pairs one `can_use` call may carry. */
+export const MAX_PAIRS = 50;

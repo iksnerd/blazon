@@ -95,7 +95,13 @@ const LOOKUPS: Record<string, Lookup> = {
         : undefined,
   },
   get_rules: { hint: FIND_PATH },
-  can_use: { hint: FIND_PATH, narrow: NARROW_NONE },
+  can_use: {
+    hint: FIND_PATH,
+    narrow: 'send fewer pairs, or set verbose to false',
+    // a batch is cut to whole results; a single answer has no `results` and is left whole
+    shape: (document, _args, warnings) =>
+      Array.isArray(document.results) ? limitItems(document, 'results', Number.POSITIVE_INFINITY, 'send fewer pairs, or set verbose to false', warnings) : document,
+  },
   get_fonts: { narrow: NARROW_NONE },
   get_logo: { narrow: NARROW_NONE },
 };

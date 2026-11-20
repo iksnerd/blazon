@@ -59,7 +59,7 @@ describe('the operations list', () => {
       expect(tool.inputSchema.additionalProperties).toBe(false);
     }
     expect(JSON.stringify(OPERATIONS)).toBe(before);
-    expect(Object.keys(OPERATIONS.find((op) => op.name === 'get_token')!.inputSchema.properties)).toEqual(['path', 'dir']);
+    expect(Object.keys(OPERATIONS.find((op) => op.name === 'get_token')!.inputSchema.properties)).toEqual(['path', 'theme', 'dir']);
   });
 
   it('states the numbers the tools enforce, from one place', async () => {

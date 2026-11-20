@@ -65,6 +65,21 @@ describe('the blazon command a tool runs', () => {
     ['get_rules', {}, ['rules'], {}],
     ['can_use', { fg: 'a', bg: 'b' }, ['can', 'a', 'b'], { answers: [1] }],
     ['can_use', { fg: 'a', bg: 'b', role: 'ui' }, ['can', 'a', 'b', '--role=ui'], { answers: [1] }],
+    ['list_tokens', { tier: 'component', theme: 'dark' }, ['list', '--tier=component', '--theme=dark'], {}],
+    ['get_token', { path: 'a.b', theme: 'dark' }, ['get', 'a.b', '--theme=dark'], {}],
+    [
+      'can_use',
+      {
+        pairs: [
+          { fg: 'a', bg: 'b' },
+          { fg: 'c', bg: 'd' },
+        ],
+        verbose: false,
+      },
+      ['can', '--pair=a:b', '--pair=c:d', '--no-verbose'],
+      { answers: [1] },
+    ],
+    ['can_use', { fg: 'a', bg: 'b', verbose: true }, ['can', 'a', 'b'], { answers: [1] }],
     ['get_fonts', {}, ['fonts'], {}],
     ['get_logo', {}, ['logo'], {}],
     ['check_brand', { severity: 'error', limit: 5 }, ['check', '--no-plugins', '--severity=error'], { answers: [1], stderr: 'ignore' }],
@@ -83,6 +98,9 @@ describe('the blazon command a tool runs', () => {
     for (const [tool, prop] of [
       ['can_use', 'theme'],
       ['list_tokens', 'type'],
+      ['list_tokens', 'tier'],
+      ['list_tokens', 'theme'],
+      ['get_token', 'theme'],
     ] as const) {
       expect(pattern(tool, prop).test('--cwd=/other/dir'), `${tool}.${prop}`).toBe(false);
       expect(pattern(tool, prop).test('-x'), `${tool}.${prop}`).toBe(false);

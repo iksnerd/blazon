@@ -85,7 +85,7 @@
     {
       "name": "can",
       "usage": "blazon can [fg] [bg] [dir]",
-      "summary": "Ask whether the foreground token may be text (or, with --role ui, a border or focus ring) on the background token, by the brand rules; exits 0 allowed, 1 denied, 2 unknown token"
+      "summary": "Ask whether the foreground token may be text (or, with --role ui, a border or focus ring) on the background token, by the brand rules; exits 0 allowed, 1 denied, 2 unknown token. Several pairs: --pair fg:bg, repeated"
     },
     {
       "name": "fonts",
@@ -118,12 +118,12 @@
     {
       "name": "list_tokens",
       "title": "List the tokens",
-      "description": "Lists the design tokens of the brand, or of one group, or of one type, each with its path, type and value, in the order the token files write them. Use it to find a path or to read many values at once. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over 40000 characters is cut to whole tokens, and `tokensTotal` says how many matched: narrow with `group` or `type`."
+      "description": "Lists the design tokens of the brand, or of one group, type or tier, each with its path, type, tier and value, in the order the token files write them. Use it to find a path or to read many values at once. `tier` (primitive, semantic or component) keeps to one layer of the brand. `theme` gives the values as that theme resolves them, and `defaultValue` on a token the theme changes; `themes` names the themes the brand has. For a token's CSS variable names and rules use get_token; for the brand's usage rules use get_rules. An answer over 40000 characters is cut to whole tokens, and `tokensTotal` says how many matched: narrow with `group`, `type` or `tier`."
     },
     {
       "name": "get_token",
       "title": "Read a token",
-      "description": "Looks up one design token of the brand: its value, type, the CSS variable names it gets, and the rules that apply to it. Use it for the value of a path you know; a group path is refused. For a path you do not know use list_tokens."
+      "description": "Looks up one design token of the brand: its value, type, the CSS variable names it gets, and the rules that apply to it. Use it for the value of a path you know; a group path is refused. With `theme` the value is the one that theme resolves, and `defaultValue` is the default one when it differs. For a path you do not know use list_tokens."
     },
     {
       "name": "get_rules",
@@ -133,7 +133,7 @@
     {
       "name": "can_use",
       "title": "Can this color be used here",
-      "description": "Answers whether one color token may be text on another color token, by the brand rules. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. For a color you have not picked, find one with list_tokens and type color."
+      "description": "Answers whether one color token may be text on another color token, by the brand rules. Give `fg` and `bg` for one pair, or `pairs` (at most 50) for several in one call: the answer then has one result per pair, in order, and `allowed` is true only when every pair is. Exactly one of the two forms. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. `verbose` false leaves out the `checks` of an allowed answer; a denial keeps them. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. Pairs come only from the `pairs` rules of token groups; component tokens are not read for them. For a color you have not picked, find one with list_tokens and type color."
     },
     {
       "name": "get_fonts",
