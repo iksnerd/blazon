@@ -218,7 +218,7 @@ A change that follows this RFC is tested at these points:
 Blazon is 0.x, and nothing below has a shim.
 
 - `SectionId`, `LogoLockup` and `UsageRole` widen to `string`. Code that relied on the narrow unions needs `STANDARD_*` or a check.
-- `brand.json` gains `sections` and `vocabulary`, and `pages[].sections` stops being a fixed enumeration in the schema. The format stays `blazon-brand` version 1, because a reader already ignores keys it does not know. `brand.schema.json` gains the two keys and drops the enumeration. A reader that still holds the old schema rejects a brand that uses a custom section and reads every other brand as before.
+- `brand.json` gains `sections` and `vocabulary`, and `pages[].sections` stops being a fixed enumeration in the schema. The format stays `blazon-brand` at the version it has, because a reader already ignores keys it does not know. `brand.schema.json` gains the two keys and drops the enumeration. A reader that still holds the old schema rejects a brand that uses a custom section and reads every other brand as before.
 - `DIRECTIVES`, the built-in checks and the outputs are unchanged. A project with none of the new config keys behaves exactly as now.
 - The plugin messages carry their own `v`, as RFC 0005 section 8 says. A change that a plugin could notice is a new `v`. A schema for a version is frozen once any host has released with it.
 
@@ -234,7 +234,7 @@ The threat model is RFC 0005 section 10, and it applies to blazon as it does to 
 
 ## Status
 
-Implemented on `main` as of 2026-11-15, except what the last paragraph names.
+Implemented on `main` as of 2026-11-20, except what the last paragraph names.
 
 | Part | Where | Tests |
 |---|---|---|
@@ -245,7 +245,7 @@ Implemented on `main` as of 2026-11-15, except what the last paragraph names.
 | The interpreter of a pinned script (RFC 0005 sections 3.4 and 4): the `#!` line, the interpreter found only in `BLAZON_PLUGIN_PATH` and the system directories, owner and mode checked before every launch. Pinned plugins only | `src/plugins/pins/interpreter.ts`, `src/plugins/host/call.ts` | `test/plugins/host/interpreter.test.ts` |
 | The check role in `blazon dev`: checks run after each compile, one call at a time, stale results dropped, a 30-second cooldown for the dev server (a break starts it, exit `2` does not), the lock watched. `/brand.json` of the dev server has no plugin findings | `src/plugins/roles/dev.ts`, `gate.ts`, `src/server/plugin.ts` | `test/plugins/roles/dev-checks.test.ts`, `dev-server.test.ts` |
 | Plugins that ship in the package (RFC 0005 section 3.6): a folder `plugins/<name>/` with `bin/blazon-<name>.🔌`, pinned by `plugins/shipped.lock`, which `npm run build:plugins` writes after it bundles each program into its folder (`npm run build` and `prepack` run it). The plugin runs in place after blazon checks the lock entry, the owner and mode of the folder and the tree digest | `src/plugins/pins/shipped.ts`, `package-root.ts`, `scripts/build-plugins.mjs`, `scripts/shipped-lock.mjs` | `test/plugins/shipped/shipped.test.ts`, `conformance.test.ts` (finds the plugins from the folder, so a new one is held to it), `test/scripts/shipped-lock.test.ts` |
-| The brand refusal (section 2, check role): a shipped plugin reads `brand.json` through `requireBrand` and exits 2 with the reason unless `format` is `blazon-brand` and `version` is 1. Built in every shipped reader, `blazon.copy` and `blazon.favicons` included | `src/shipped/shared/plugin.ts` and each `src/shipped/<name>/` reader | `test/plugins/shipped/` |
+| The brand refusal (section 2, check role): a shipped plugin reads `brand.json` through `requireBrand` and exits 2 with the reason unless `format` is `blazon-brand` and `version` is 2. Built in every shipped reader, `blazon.copy` and `blazon.favicons` included | `src/shipped/shared/plugin.ts` and each `src/shipped/<name>/` reader | `test/plugins/shipped/` |
 | Plugin instances (section 2, Configuration): `as` on a `plugins` entry, an id for each use, one pin for each name, an output folder and a breaker for each id, the instance named in a finding | `src/core/config/validate.ts`, `src/plugins/roles/roles.ts`, `src/core/outputs.ts` | `test/plugins/roles/config.test.ts`, `test/plugins/roles/roles.test.ts`, `test/build/output-dirs.test.ts` |
 | The environment of a plugin (section 2, Environment): empty but for `PATH`; a variable reaches a plugin only when its manifest lists it and `plugins[n].env` approves it; a listed, set, unapproved name stops the plugin with a `plugin-failed` that names the variable and the key; `blazon plugin check` case 10. The shipped plugins that draw in a browser list `BLAZON_CHROME`, `HOME` and `TMPDIR` in their manifests | `src/plugins/wire/environment.ts`, `src/plugins/roles/roles.ts`, `src/plugins/host/check.ts`, `src/core/config/validate.ts` | `test/plugins/roles/env-approval.test.ts`, `test/plugins/host/call.test.ts`, `test/plugins/host/check.test.ts` |
 | Reference plugins: `acme.house-style` (Python, no dependency) and `blazon.cue-rules` (rules in CUE over `brand.json`, passed as `options.rules`; needs `cue` 0.17.1) | `examples/plugins/` | `test/plugins/examples/cue-rules.test.ts`, skipped with a notice when `cue` is missing |

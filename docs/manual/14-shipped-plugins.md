@@ -646,21 +646,21 @@ The `path` of each card finding is `<id>.png`, and its message starts with `card
 
 #### A logo on the text's edge
 
-Some surfaces cover one corner (a profile photo sits over the bottom left of a LinkedIn or X cover), so the brand needs the logo at the top right and the headline at the top left. Set `anchor: 'top'` and `logoCorner: 'top-right'`. The text then hangs from the same edge as the logo, which only happens when the card sets `anchor` itself and a `logoCorner` on that edge. Then:
+Some surfaces cover one corner (a profile photo sits over the bottom left of a LinkedIn or X cover), so the brand needs the logo at the top right and the headline at the top left. Set `"anchor": "top"` and `"logoCorner": "top-right"`. The text then hangs from the same edge as the logo, which only happens when the card sets `anchor` itself and a `logoCorner` on that edge. Then:
 
 - The text block stops short of the logo by the logo's clear space: left-aligned text is cut off at the logo, centered text gives up that room on both sides to stay centered. Text that fits already is not narrowed.
 - The logo no longer takes room from the text's height, since it sits beside the text and not under it.
 - The scrim hangs from the same edge and runs across the whole card, so it covers the text and the logo's surface alike; both are measured with it on.
 - If the text and the logo's clear space still overlap (a logo in the corner the text starts from, a headline that cannot be narrower, a very wide logo), the card is reported as `card-text-logo-overlap`.
 
-```ts
-{ id: 'cover', format: 'linkedinCover', background: 'plates/glow', headline: 'Brand work that keeps up.', anchor: 'top', logoCorner: 'top-right', logoWidth: '22%' }
+```json
+{ "id": "cover", "format": "linkedinCover", "background": "plates/glow", "headline": "Brand work that keeps up.", "anchor": "top", "logoCorner": "top-right", "logoWidth": "22%" }
 ```
 
-Add `keepClear: ['avatar']` to the same card and the plugin tells you when the headline has wrapped into the bottom left quarter, which a short headline avoids and a longer one does not:
+Add `"keepClear": ["avatar"]` to the same card and the plugin tells you when the headline has wrapped into the bottom left quarter, which a short headline avoids and a longer one does not:
 
-```ts
-{ id: 'cover', format: 'linkedinCover', background: 'plates/glow', headline: 'Brand work that keeps up.', anchor: 'top', logoCorner: 'top-right', logoWidth: '22%', keepClear: ['avatar'] }
+```json
+{ "id": "cover", "format": "linkedinCover", "background": "plates/glow", "headline": "Brand work that keeps up.", "anchor": "top", "logoCorner": "top-right", "logoWidth": "22%", "keepClear": ["avatar"] }
 ```
 
 With `logoCorner` and no `anchor`, the text takes the edge opposite the logo's corner, as it always did. With `anchor` and no `logoCorner`, the logo moves to the opposite edge, as it always did.
@@ -685,4 +685,4 @@ A brand with no token in any namespace gets neither file. The plugin has no opti
 | Finding | Severity | Means |
 |---|---|---|
 | `blazon.tailwind/variable-duplicate` | error | Two tokens with different values write one Tailwind variable (`color.brand` and `colors.brand` are both `--color-brand`); `tailwind.css` keeps the first. Rename one of them. Two tokens with one value, such as a semantic alias and its primitive, are not reported |
-| `blazon.tailwind/option-invalid` | error | The entry has an `options` key, which this plugin does not take |
+| `blazon.tailwind/option-invalid` | error | The entry gives an option, which this plugin does not take, or `options` is not an object |

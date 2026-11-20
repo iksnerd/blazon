@@ -162,6 +162,8 @@ The shipped plugins, and where each is described:
 | `blazon.platform-tokens` | The color and dimension tokens as Android XML, Swift, and Kotlin for Compose | [blazon.platform-tokens](14-shipped-plugins.md#blazonplatform-tokens) |
 | `blazon.press-kit` | A folder and a zip for people outside the brand | [blazon.press-kit](14-shipped-plugins.md#blazonpress-kit) |
 | `blazon.social-cards` | Marketing images | [Social cards](14-shipped-plugins.md#blazonsocial-cards) |
+| `blazon.tailwind` | A Tailwind v4 theme from the tokens: `tailwind.css` and `tailwind-reset.css` | [blazon.tailwind](14-shipped-plugins.md#blazontailwind) |
+| `blazon.shadcn` | Which token each shadcn/ui variable takes, and those variables as CSS | [blazon.shadcn](14-shipped-plugins.md#blazonshadcn) |
 
 ## Plugins in blazon dev
 

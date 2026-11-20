@@ -4,18 +4,20 @@ The plugin blazon ships to hold a brand book's text to the brand's copy rules: t
 
 The source is `src/shipped/copy/`, and `npm run build` (`npm run build:plugins`) bundles it, with the blazon code it uses, into `bin/blazon-blazon.copy.🔌`, the one file that holds the plugin's code and that `plugins/shipped.lock` pins. It loads nothing from `node_modules`, so the pin covers all the code it runs, apart from Node itself. Name it in `blazon.json` and give it the rules:
 
-```ts
-plugins: [
-  {
-    name: 'blazon.copy',
-    options: {
-      avoid: [{ terms: ['powerful', 'seamless', 'robust', 'effortless'], say: 'a number, or nothing' }],
-      headings: 'sentence',
-      sentences: { maxWords: 25 },
-      skip: ['11-voice.md'],
-    },
-  },
-],
+```json
+{
+  "plugins": [
+    {
+      "name": "blazon.copy",
+      "options": {
+        "avoid": [{ "terms": ["powerful", "seamless", "robust", "effortless"], "say": "a number, or nothing" }],
+        "headings": "sentence",
+        "sentences": { "maxWords": 25 },
+        "skip": ["11-voice.md"]
+      }
+    }
+  ]
+}
 ```
 
 With no options it checks nothing. The options and the findings are in [the manual](../../docs/manual/14-shipped-plugins.md#blazoncopy), and the design is [RFC 0006](../../docs/rfc/0006-copy-rules.md).

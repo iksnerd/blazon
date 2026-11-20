@@ -120,7 +120,7 @@ A blazon command is stopped after 30 seconds and its output is capped at 16 MB. 
 
 ## What is not built
 
-The package is not on npm. The server speaks stdio only: no HTTP and no sign-in. No tool writes, builds or runs a plugin. A list has no paging: it is cut to whole items and says how many were left out. An `offset` argument is proposed, not built.
+There is no separate npm package: the server ships inside `@iksnerd/blazon`. The server speaks stdio only: no HTTP and no sign-in. No tool writes, builds or runs a plugin. A list has no paging: it is cut to whole items and says how many were left out. An `offset` argument is proposed, not built.
 
 ## What the server will not do
 

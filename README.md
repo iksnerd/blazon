@@ -157,6 +157,8 @@ A plugin whose manifest lists a variable that is set, and that the entry does no
 | [`blazon.platform-tokens`](docs/manual/14-shipped-plugins.md#blazonplatform-tokens) | Android XML, Swift and Kotlin from the color and dimension tokens |
 | [`blazon.press-kit`](docs/manual/14-shipped-plugins.md#blazonpress-kit) | A folder and zip for people outside the brand: logos, colors, fonts, a one-page PDF |
 | [`blazon.social-cards`](docs/manual/14-shipped-plugins.md#blazonsocial-cards) | Marketing images from the tokens and logo, checked for contrast |
+| [`blazon.tailwind`](docs/manual/14-shipped-plugins.md#blazontailwind) | A Tailwind v4 theme from the tokens |
+| [`blazon.shadcn`](docs/manual/14-shipped-plugins.md#blazonshadcn) | The shadcn/ui variables, as a mapping and as CSS |
 
 Several need Chrome for their PDF or PNG output; the manual says which. The starter's config lists `blazon.copy` with blazon's own rules, and `blazon.tailwind` and `blazon.shadcn`, which need only Node and write the Tailwind and shadcn/ui files. It leaves out the other plugins of blazon's own book (the deck, the social cards, the favicons, the logo kit, the press kit and the platform and Office files), because most need Chrome and a new book has no use for the kits yet; add one by name when you want it. To write your own, see [Writing a plugin](docs/manual/13-writing-a-plugin.md). A plugin can be pinned, so one that changed on disk does not run.
 
@@ -197,7 +199,7 @@ getVar('interactive.primary'); // "var(--interactive-primary)"
 
 ## Configuration
 
-`blazon.json` is optional. The common options:
+`blazon.json` is optional only in name: a brand must name a `logo`, or `blazon check` fails with `logo-missing`. The common options:
 
 ```json
 {

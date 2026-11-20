@@ -31,16 +31,21 @@ It exits `2` with the reason and writes nothing when the request or its options 
 
 ## Use it
 
-```ts
-plugins: [{ name: 'blazon.print-book', options: { preset: 'essentials' } }],
+```json
+{
+  "plugins": [
+    { "name": "blazon.print-book", "env": ["BLAZON_CHROME", "HOME", "TMPDIR"], "options": { "preset": "essentials" } }
+  ]
+}
 ```
 
-The source is `src/shipped/print-book/`, and `npm run build` (`npm run build:plugins`) bundles it, with the blazon code it uses, into `bin/blazon-blazon.print-book.🔌`, the one file that holds the plugin's code and that `plugins/shipped.lock` pins. The program loads `playwright-core` and `pdf-lib` from `node_modules` when it runs; that is outside the pin. Naming it in `plugins` is all it takes: blazon finds the plugins it ships by itself, as the plugins chapter of the manual says.
+The source is `src/shipped/print-book/`, and `npm run build` (`npm run build:plugins`) bundles it, with the blazon code it uses, into `bin/blazon-blazon.print-book.🔌`, the one file that holds the plugin's code and that `plugins/shipped.lock` pins. The program loads `playwright-core` and `pdf-lib` from `node_modules` when it runs; that is outside the pin. Blazon finds the plugins it ships by itself, as the plugins chapter of the manual says, so there is nothing to install or pin. The entry must approve the three variables the manifest lists (`env` above), or a set `HOME` stops the plugin with a message that says what to add.
 
 ## Variables
 
 | Variable | Says | Secret |
 |---|---|---|
 | `BLAZON_CHROME` | The path to a Chrome or Chromium program. Without it the plugin uses the Google Chrome installed on the computer. It never downloads a browser | no |
+| `HOME`, `TMPDIR` | Listed in the manifest, for the browser the plugin starts | no |
 
 `BLAZON_PRINT_SECONDS` (how long to wait for the page to lay itself out: 30 by default, and at most 30) is read too, but blazon does not pass it. It is for running the plugin by hand and for its tests.

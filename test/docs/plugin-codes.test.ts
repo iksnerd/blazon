@@ -8,6 +8,8 @@ import { ROOT, read, walk } from '../support/spec-helpers.js';
 
 const lock = JSON.parse(read('plugins/shipped.lock')) as { plugins: Record<string, unknown> };
 const manual = read('docs/manual/14-shipped-plugins.md');
+const readme = read('README.md');
+const plugins = read('docs/manual/12-plugins.md');
 
 /** The text of one plugin's section: from its `### name` heading to the next heading of the same level. */
 function section(name: string): string {
@@ -35,10 +37,24 @@ describe.each(Object.keys(lock.plugins).sort())('%s', (name) => {
     expect(section(name), `docs/manual/14-shipped-plugins.md has no "### ${name}" section`).not.toBe('');
   });
 
+  it('is listed in the README and in the table of chapter 12', () => {
+    expect(readme, `README.md has no plugin table row for ${name}`).toContain(`[\`${name}\`](docs/manual/14-shipped-plugins.md#`);
+    expect(plugins, `docs/manual/12-plugins.md has no table row for ${name}`).toContain(`| \`${name}\` |`);
+  });
+
   it('describes every finding code it raises in that section', () => {
     const codes = codesOf(name);
     const text = section(name);
     expect(codes.length, `${name}: no finding codes found in its source, so the pattern or the folder moved`).toBeGreaterThan(0);
     expect(codes.filter((code) => !text.includes(`${name}/${code}`) && !text.includes(`\`${code}\``))).toEqual([]);
+  });
+});
+
+describe('the count of shipped plugins', () => {
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen'];
+  const word = words[Object.keys(lock.plugins).length]!;
+  it('is the word the README and chapter 12 use', () => {
+    expect(readme).toContain(`Blazon ships ${word},`);
+    expect(plugins).toContain(`carries ${word} plugins of its own`);
   });
 });
