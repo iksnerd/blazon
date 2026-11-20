@@ -1,0 +1,1 @@
+The `blazon.print-book` README gives a Ghostscript command that shrinks the PDF and keeps images at 300 ppi and about JPEG quality 91, with what it did on four books and a deck, and the README no longer claims a size ratio it had not measured.

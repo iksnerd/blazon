@@ -23,7 +23,22 @@ One more option, `layout`, is `"compact"` (the default) or `"roomy"`. `compact` 
 
 ## Output size
 
-The PDF is Chrome's own output, with lossless images, so it is large: a book can be 3 to 4 times the size of a compressed one. The plugin has no option to compress it and does not call another program. To shrink it, run a post-processing step such as Ghostscript on the file. Ghostscript's `-dJPEGQ` is ignored by its `pdfwrite` device; image quality changes only through `setdistillerparams` (a `QFactor` in the color image dictionary). That recipe has not been run against this plugin's output here, so it is not given.
+The PDF is Chrome's own output, with lossless images, so it is large. The plugin has no option to compress it and does not call another program. To shrink it, run Ghostscript on the file. Ghostscript's `-dJPEGQ` is ignored by its `pdfwrite` device: image quality changes only through `setdistillerparams` (a `QFactor` in the color image dictionary), and the `/ebook` preset resamples every image to 150 ppi at about JPEG quality 35.
+
+A recipe that keeps images sharp, run with Ghostscript 10.08.0 on four books and a deck of 111 to 198 pages:
+
+```sh
+gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dPDFSETTINGS=/ebook \
+  -dColorImageResolution=300 -dColorImageDownsampleThreshold=1.0 \
+  -dAutoFilterColorImages=false -dColorImageFilter=/DCTEncode \
+  -sOutputFile=out.pdf \
+  -c "<< /ColorImageDict << /QFactor 0.15 /Blend 1 /HSamples [1 1 1 1] /VSamples [1 1 1 1] >> >> setdistillerparams" \
+  -f in.pdf
+```
+
+What it did on those files: about JPEG quality 91, and no image resampled below 300 ppi. Page counts did not change, and the exported text equaled the printed text in all five. File size grew compared with the `/ebook` default (one deck went from 2.3 to 16.1 MB). Most of that growth comes from the resolution cap; a `QFactor` of 0.3 saves about a quarter. On one test page the raw Chrome PDF was 2.97 MB and 1.28 MB with this recipe. It was checked by eye on one chart page, not on every page.
+
+Chrome writes `fi` and `fl` ligature markers that Ghostscript can move out of the text object, so a reader may extract "ve surfaces" for "five surfaces". Add `-dPreserveMarkedContent=false` to stop that; the files above were made with it.
 
 A Markdown task list (`- [ ]`, `- [x]`) prints without a bullet, as a box with a border in the text color; a checked box is filled.
 
