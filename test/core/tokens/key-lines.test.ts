@@ -45,6 +45,54 @@ describe('keyLines', () => {
     expect(keyLines('').size).toBe(0);
   });
 
+  it('reads a number of any length, as JSON.parse does', () => {
+    const big = '1'.repeat(60);
+    expect(lines(`{\n"a": ${big},\n"b": 1.${big}e+${big}\n}`)).toMatchObject({ a: 2, b: 3 });
+  });
+
+  it('refuses a number JSON does not allow', () => {
+    for (const bad of ['01', '-', '1.', '.5', '+1', '0x1', '1e', 'NaN', 'Infinity']) {
+      expect(keyLines(`{"a": ${bad}}`).size, bad).toBe(0);
+    }
+    expect(lines('{"a": -0, "b": 0.5, "c": 10E-2}')).toMatchObject({ a: 1, b: 1, c: 1 });
+  });
+
+  it('reads nesting far deeper than the call stack allows', () => {
+    const depth = 50_000;
+    const text = `{"k":${'['.repeat(depth)}{"leaf":1}${']'.repeat(depth)}}`;
+    const found = keyLines(text);
+    expect(found.size).toBe(2);
+    expect(found.get('k')).toBe(1);
+    expect(found.get(`k.${'0.'.repeat(depth)}leaf`)).toBe(1);
+  });
+
+  it('gives nothing for text that JSON.parse refuses inside a string', () => {
+    for (const bad of ['"\\x"', '"\\u12"', '"a\tb"', '"a\\\nb"', '"a\nb"', '"abc', '"abc\\']) {
+      expect(keyLines(`{"a": ${bad}}`).size, bad).toBe(0);
+    }
+  });
+
+  it('accepts a lone surrogate escape, as JSON.parse does, and counts lines after any escape', () => {
+    expect(lines('{\n"a": "\\ud800",\n"b\\ud800\\u000a": "\\\\\\"",\n"c": 1}')).toMatchObject({ a: 2, 'b\ud800\n': 3, c: 4 });
+  });
+
+  it('refuses a trailing comma, a missing comma, trailing text, an empty member and a second value', () => {
+    for (const bad of ['{"a":1,}', '[1,]', '{"a":1 "b":2}', '{"a":1} x', '{"a"}', '{,}', '{"a":1}{"b":2}', '{"a":1]', '[1}', '{1:2}', "{'a':1}", '[', '{"a":[}']) {
+      expect(keyLines(bad).size, bad).toBe(0);
+    }
+  });
+
+  it('joins a key that holds a dot like a nested path, so the first of the two wins', () => {
+    expect(lines('{\n"a.b": 1,\n"a": { "b": 2 }\n}')).toMatchObject({ 'a.b': 2, a: 3 });
+  });
+
+  it('accepts a scalar or empty container at the top, and an empty key', () => {
+    expect(keyLines('{}').size).toBe(0);
+    expect(keyLines('[]').size).toBe(0);
+    expect(keyLines(' 12 ').size).toBe(0);
+    expect(lines('{\n"": { "": 1 }\n}')).toMatchObject({ '': 2, '.': 2 });
+  });
+
   it('does not treat a key called __proto__ specially', () => {
     expect(keyLines('{\n"__proto__": {"x": 1}}').get('__proto__.x')).toBe(2);
   });
