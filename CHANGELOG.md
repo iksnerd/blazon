@@ -6,6 +6,30 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.4.0 (2026-11-20)
+
+### Added
+
+- `can_use` takes `pairs` (up to 50 `{ fg, bg }`) and answers one result for each,
+  in order; `blazon can` takes `--pair fg:bg`, repeated. `verbose: false`
+  (`--no-verbose`) leaves out the `checks` of an allowed answer and keeps them
+  for a denial. A batch answer has `allowed` (true when every pair is) and
+  `results`, so `reason` is no longer required in the `can_use` output schema.
+- `list_tokens` and `blazon list` take `tier` (`--tier`: primitive, semantic or
+  component) and list the tier of each token. `list_tokens`, `get_token`,
+  `blazon list` and `blazon get` take `theme` (`--theme`) and give the values as
+  that resolver theme resolves them, with `defaultValue` where the theme changes
+  one. The `list_tokens` answer has `themes`, the names of the themes the brand
+  has.
+
+### Changed
+
+- The denial of a pair that no `pairs` rule lists now says that component tokens
+  are not read for pairs and where to declare the pair: `pairs` on a token group.
+  No verdict changes.
+- `brandHasErrors` now means one thing in all seven MCP tools: the brand's own data has error findings. A `blazon.lock` that names another blazon build no longer sets it, and `check_brand` no longer reports `passed: false` for that alone (the `pin-mismatch` finding is still listed). The mismatch is reported on its own as `pinMismatch` (`pinned`, `running`, `message`) in every tool. `blazon list`, `get`, `can`, `rules`, `fonts` and `logo` print it as one warning line and exit 0, and `check --json`, `build --json` and `tokens --json` carry `brandHasErrors` and `pinMismatch`; `check`, `build` and `tokens` refuse as before.
+- The `blazon.print-book` README gives a Ghostscript command that shrinks the PDF and keeps images at 300 ppi and about JPEG quality 91, with what it did on four books and a deck, and the README no longer claims a size ratio it had not measured.
+
 ## 0.3.3 (2026-11-20)
 
 ### Fixed
