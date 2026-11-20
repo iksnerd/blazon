@@ -40,4 +40,4 @@ Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a ty
 
 ## Writing
 
-Docs and RFCs are read by outsiders. No em-dashes, no hype words, no internal project or room names. Verify a claim against the code before writing it, and say "proposed" for anything not built.
+Docs and RFCs are read by outsiders. No em-dashes, no hype words, no internal project or room names. Examples, test fixtures and agent briefs use `Acme`, never a real client, employer or person name: `test/core/no-private-markers.test.ts` checks it against a list kept outside the repository, and both hooks run it on every commit and push. Verify a claim against the code before writing it, and say "proposed" for anything not built.
