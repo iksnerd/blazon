@@ -18,6 +18,7 @@ Compiles DTCG design tokens, Markdown guidelines and brand assets into CSS, a ty
 - `test/docs/manual.test.ts` fails when a command, flag, config key, directive, `dev.blazon` field or finding code is missing from `docs/manual/`. `test/docs/rfc.test.ts` does the same for RFC 0001, which must name every config key and finding code.
 - An RFC's Status section is a table of what is built and where, with an "as of" date. Keep history in CHANGELOG.
 - A plugin's README under `plugins/` is not a manual page: `plugins/shipped.lock` holds a digest of it, so editing one means `npm run build:plugins` (a vitest run does it when the lock is older). The programs and the lock are build output; the digest covers the bundle, so two builds must give the same bytes: no build stamp, no hashed names, no top-level `await` in a `main.ts` (the bundle is CommonJS).
+- A user-visible change adds a fragment `changelog.d/<slug>.<kind>.md` (changelog.d/README.md); never edit `Unreleased` in CHANGELOG.md. `test/docs/changelog-fragments.test.ts` checks them with the release script's reader.
 - Golden files change only on a deliberate output change: `UPDATE_GOLDEN=1 npx vitest run test/core/tokens/conformance.test.ts`, then review the diff.
 
 ## Traps
