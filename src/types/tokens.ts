@@ -101,7 +101,20 @@ export interface FontMeta {
   license?: string;
   /** An http(s) address of the license text */
   licenseUrl?: string;
+  /** What the typeface is for in the brand: one of FONT_ROLES */
+  role?: FontRole;
+  /** One line, up to 160 characters, on why the typeface has that role or why a fallback was chosen */
+  reason?: string;
+  /** On a `fallback` only: the family name, or the font token path, the typeface stands in for (up to 80 characters) */
+  fallbackFor?: string;
 }
+
+/** The roles a font token can state, closed: a brand's type page names a role for each typeface and a fallback with its reason */
+export const FONT_ROLES = ['primary', 'secondary', 'display', 'monospace', 'fallback'] as const;
+export type FontRole = (typeof FONT_ROLES)[number];
+/** The longest `reason` and `fallbackFor` of a font's meta, in characters */
+export const FONT_REASON_MAX = 160;
+export const FONT_FALLBACK_FOR_MAX = 80;
 
 export interface ProportionBucket {
   share: number;

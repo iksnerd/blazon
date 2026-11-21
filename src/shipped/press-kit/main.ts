@@ -7,6 +7,7 @@ import { colorsCss, colorsJson, colorsText, planColors } from './colors.js';
 import { pdfFallbacks, planFonts } from './fonts.js';
 import { chooseLogos, logoIds, logosText } from './logos.js';
 import { finding, parseOptions, type Finding } from './options.js';
+import { kitPage } from './html.js';
 import { drawPdf } from './pdf.js';
 import { jobFor, MANIFEST, NAME } from './request.js';
 import { siteFile } from '../shared/site.js';
@@ -50,7 +51,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   findings.push(...fonts.findings);
   if (fonts.text) files.set('fonts.txt', fonts.text);
 
-  const about = aboutText(brand, { company: options.company, note: options.note });
+  const about = aboutText(brand, { company: options.company, terms: options.terms, note: options.note });
   findings.push(...about.findings);
   if (about.text) files.set('about.txt', about.text);
 
@@ -64,6 +65,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
           logo: shown && { data: data.get(shown.asset.id)!, format: shown.asset.format, surface: shown.surface },
           company: options.company,
           note: options.note,
+          terms: options.terms,
         },
         process.env,
       );
@@ -85,7 +87,12 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
       findings.push(finding('pdf-skipped', 'warning', 'options.pdf', `${options.name}.pdf is not in the kit: ${reason}`));
     }
   }
-  files.set('README.txt', readmeText(brand.title, [...files.keys()], options.name, options.note));
+  // The page is drawn last, from the same data the files above were, and the README lists it with the rest
+  files.set(
+    'index.html',
+    kitPage({ brand, company: options.company, terms: options.terms, note: options.note, logos: present, colors: colors.colors, fonts: fonts.model, paths: [...files.keys()] }),
+  );
+  files.set('README.txt', readmeText(brand.title, [...files.keys()], options.name, options.note, options.terms !== undefined));
 
   // Written once, whole, after the work is done. The host empties out_dir before a build plugin runs (src/plugins/roles/roles.ts), so a
   // call that ends earlier leaves it empty, not as it was. The folder is the plugin's own, so a file from an earlier run, such as a

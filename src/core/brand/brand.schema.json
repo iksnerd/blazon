@@ -405,6 +405,25 @@
             "licenseUrl": {
               "type": "string",
               "minLength": 1
+            },
+            "role": {
+              "enum": [
+                "primary",
+                "secondary",
+                "display",
+                "monospace",
+                "fallback"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "fallbackFor": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
             }
           }
         },
@@ -715,6 +734,40 @@
           "type": "string",
           "minLength": 1
         },
+        "colorways": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "on": {
+                "type": "string",
+                "minLength": 1
+              },
+              "variant": {
+                "type": "string",
+                "minLength": 1
+              },
+              "min": {
+                "enum": [
+                  "AA",
+                  "AA-large",
+                  "AAA"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "on",
+              "min"
+            ],
+            "additionalProperties": false
+          }
+        },
         "unit": {
           "$ref": "#/$defs/dimension"
         },
@@ -762,6 +815,22 @@
         },
         "lockup": {
           "$ref": "#/$defs/name"
+        },
+        "misuse": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "stretch",
+              "squash",
+              "rotate",
+              "outline",
+              "recolor",
+              "shadow",
+              "crop",
+              "low-contrast",
+              "busy-background"
+            ]
+          }
         },
         "placement": {
           "type": "array",

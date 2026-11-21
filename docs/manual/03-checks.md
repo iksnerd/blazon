@@ -167,6 +167,7 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `asset-config-unused` | Warning | An asset category in the config matches no asset. |
 | `asset-id-duplicate` | Error | Two files in different folders have the same asset id. |
 | `asset-local-missing` | Note | A category kept out of git has no images on this machine. |
+| `asset-misuse-unknown` | Error | A logo misuse kind, in a sidecar or in a blazon:logo-misuse directive, is not one blazon draws. |
 | `asset-review-missing` | Warning | A generated asset has no review yet. |
 | `asset-rule-violated` | Error | An asset breaks the rules of its category. |
 | `asset-sidecar-invalid` | Error | An asset sidecar is not valid JSON or holds a field blazon does not know. |
@@ -175,9 +176,9 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `config-invalid` | Error | A key or value in blazon.json is not valid. |
 | `config-path-outside` | Error | A path in blazon.json, or a file linked from a brand folder, leads outside the project folder. |
 | `context-css-unchanged` | Note | A context leaves out tokens the default has, but the CSS cannot remove a custom property, so theme.css keeps the default value for them. |
-| `contrast-insufficient` | Error | A color pair has less contrast than its level asks for. |
+| `contrast-insufficient` | Error | A color pair, or a logo colorway, has less contrast than its level asks for. |
 | `contrast-pair-invalid` | Error | A contrast pair names no color tokens or has an unknown level. |
-| `contrast-unknown` | Warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
+| `contrast-unknown` | Warning | Blazon cannot read a color of a pair or of a logo colorway, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-duplicate` | Error | Two tokens write the same CSS custom property. |
 | `directive-deprecated` | Warning | A page has a `folio:` directive comment, the old name, which blazon ignores. |
 | `directive-invalid` | Error | A page directive has wrong arguments or names something that does not exist. |
@@ -187,6 +188,7 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `font-license-invalid` | Warning | A license file beside a font file was not read. |
 | `font-license-unknown` | Note | A font license is not a known SPDX id. |
 | `font-meta-invalid` | Error | The font fields on a token are not valid. |
+| `font-role-invalid` | Warning | A font reason or fallbackFor is not valid, so it is left out. |
 | `icon-set-invalid` | Error | An icon set in the config cannot be loaded. |
 | `icon-unknown` | Warning | An icon set category lists an icon the package does not have. |
 | `logo-contrast-insufficient` | Warning | A logo variant draws the color of the surface it is shown on. |

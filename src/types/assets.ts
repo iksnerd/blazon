@@ -1,4 +1,4 @@
-import type { Review } from './tokens.js';
+import type { ContrastLevel, Review } from './tokens.js';
 
 export type AssetFormat = 'svg' | 'png' | 'jpg' | 'gif' | 'webp' | 'avif';
 
@@ -24,6 +24,10 @@ export const STANDARD_LOGO_LOCKUPS = ['horizontal', 'stacked', 'mark', 'wordmark
 /** Where a logo may sit on a layout. */
 export type LogoCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 export const LOGO_CORNERS: readonly LogoCorner[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+/** The ways `blazon:logo-misuse` can draw a logo misused (RFC 0001 §10). */
+export const MISUSE_KINDS = ['stretch', 'squash', 'rotate', 'outline', 'recolor', 'shadow', 'crop', 'low-contrast', 'busy-background'] as const;
+export type MisuseKind = (typeof MISUSE_KINDS)[number];
 
 /** How the logo sits beside a partner's: the gap on each side of a divider, and the divider's height. */
 export interface LogoPartnership {
@@ -53,6 +57,18 @@ export interface LogoInitiative {
   markHeight?: AssetMeasure;
 }
 
+/** A named pairing of a logo with a background, for `blazon:logo-colorways` and the contrast check (RFC 0001 §10). */
+export interface LogoColorway {
+  /** The label of the figure: "Graphite on Bone" */
+  name: string;
+  /** The background: the path of a color token, written without braces */
+  on: string;
+  /** Another variant of the logo to draw on it, as an asset id written category/name; the logo itself when absent */
+  variant?: string;
+  /** The contrast the pair must reach, as a `pairs` level does; AA when absent */
+  min: ContrastLevel;
+}
+
 /** What a `<name>.json` sidecar beside an asset says about it (RFC 0001 §7, §10). */
 export interface AssetMeta {
   /** A name for the asset where the file name will not do: "Lifestyle" for `lifestyle-01.webp` */
@@ -63,6 +79,10 @@ export interface AssetMeta {
   /** What to do, and what not to do, as short plain statements */
   do?: string[];
   dont?: string[];
+  /** The misuses `blazon:logo-misuse` draws for this logo when the directive names none; the default six when absent */
+  misuse?: MisuseKind[];
+  /** The backgrounds the brand names for this logo, each with the contrast it must reach */
+  colorways?: LogoColorway[];
   /** The background the artwork is made for: `dark` for a white logo */
   background?: 'light' | 'dark';
   /** The artwork's main color as a CSS color (a token alias in the sidecar is resolved), so a logo can be chosen for a background by contrast */

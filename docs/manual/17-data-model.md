@@ -116,7 +116,7 @@ The `dev.blazon` fields of a token or group. Every field is optional.
 | `angle` | A gradient's direction in degrees |
 | `preview` | How the brand book previews the token, when its type and name do not say |
 | `webFont` | `false`, or a sentence, for a typeface the brand book cannot load |
-| `font` | On a font family token or group: `source`, `license` and `licenseUrl` |
+| `font` | On a font family token or group: `source`, `license`, `licenseUrl`, `role`, `reason` and, for a fallback, `fallbackFor` |
 | `proportion` | Group only: the documented share of a composition, by group path or by a label with its tokens |
 | `pairs` | Group only: contrast rules, each a foreground `fg`, a background `bg` and a minimum `min` |
 | `pattern` | Group only: marks the group as a pattern of one kind |
@@ -176,6 +176,8 @@ The front matter has `title`, `order`, `description`, `group` (the sidebar headi
 | `minSize`, `maxSize` | The smallest and the largest size it may be shown at |
 | `replacedBelow` | Below this width or height, the asset to use instead |
 | `lockup`, `placement` | The logo lockup this artwork is, and the corners it may sit in |
+| `misuse` | The misuse kinds `blazon:logo-misuse` draws for this logo when the directive names none |
+| `colorways` | The named backgrounds the logo is shown on, each a color token with the contrast it must reach and optionally another logo variant, for `blazon:logo-colorways` |
 | `partnership`, `initiative` | The layout of a partner lockup, and of a lockup with an initiative's mark |
 | `order` | Where the asset sits among the others of its category |
 | `extensions` | What a consumer records of its own, under a reverse-domain key. Kept as written and never read by blazon |

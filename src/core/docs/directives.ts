@@ -2,6 +2,7 @@ import type { AssetCatalog, AssetMeta, Finding, DocItem, IconSet, ParsedTokens, 
 import { formatsAt, patternsAt } from '../tokens/groups.js';
 import { finding } from '../checker/catalogue.js';
 import { pickRepresentation } from '../assets/representations.js';
+import { isMisuseKind, unknownMisuseMessage } from '../logo/misuse.js';
 
 /** Which tokens a directive argument may name. */
 export type TokenKind = 'any' | 'paint' | 'border' | 'paint-or-border';
@@ -25,6 +26,8 @@ export interface DirectiveSpec {
   assetRefs?: number;
   /** After the asset ids, one optional free-text argument: a URL, a name */
   text?: boolean;
+  /** After the one asset id, any number of misuse kinds (`stretch`, `rotate`, ...); a name that is not a kind is `asset-misuse-unknown` */
+  misuseKinds?: boolean;
   /**
    * Draws what an asset's sidecar states: at least one of these fields must be stated. For a folder
    * directive, by at least one asset it names; for asset ids, by the first.
@@ -52,6 +55,8 @@ export const DIRECTIVES = {
   'logo-partner': { assetRefs: 2, needsMeta: ['partnership'] },
   'logo-initiative': { assetRefs: 1, needsMeta: ['initiative'] },
   'logo-placement': { assetRefs: 1, text: true, needsMeta: ['placement'] },
+  'logo-misuse': { assetRefs: 1, misuseKinds: true },
+  'logo-colorways': { assetRefs: 1, needsMeta: ['colorways'] },
   cards: { tokens: 'paint' },
   strokes: { tokens: 'border' },
   spots: { tokens: 'paint-or-border' },
@@ -204,7 +209,7 @@ function problems(directive: PlacedDirective, context: DirectiveContext): string
   if (spec.assetRefs && args.length > 0) {
     const refs = args.slice(0, spec.assetRefs);
     const extra = args.length - spec.assetRefs;
-    if (spec.text ? args.length < spec.assetRefs || extra > 1 : args.length !== spec.assetRefs) {
+    if (spec.misuseKinds ? false : spec.text ? args.length < spec.assetRefs || extra > 1 : args.length !== spec.assetRefs) {
       found.push(spec.text ? 'takes an asset id and at most one text' : `needs ${spec.assetRefs} asset id${spec.assetRefs === 1 ? '' : 's'}, each written category/name`);
     }
     refs.forEach((ref, index) => {
@@ -294,15 +299,24 @@ export function directiveFindings(docs: readonly DocItem[], context: DirectiveCo
   return [...invalidDirectives(docs, context), ...reviewInUseFindings(docs, context.assets, context.ungated ?? new Set())];
 }
 
+/** The names a misuse directive gives after its asset id that are not misuse kinds. */
+function unknownKinds(directive: PlacedDirective): string[] {
+  if (!isDirective(directive.name) || !('misuseKinds' in DIRECTIVES[directive.name])) return [];
+  return [...new Set(directive.args.slice(1).filter((name) => !isMisuseKind(name)))];
+}
+
 function invalidDirectives(docs: readonly DocItem[], context: DirectiveContext): Finding[] {
   return docs.flatMap((doc) =>
-    directivesIn(doc.markdown).flatMap((directive) =>
-      (waitsForLocalArt(directive, context) ? [] : problems(directive, context)).map((message): Finding =>
+    directivesIn(doc.markdown).flatMap((directive) => [
+      ...(waitsForLocalArt(directive, context) ? [] : problems(directive, context)).map((message): Finding =>
         finding(isDirective(directive.name) ? 'directive-invalid' : 'directive-unknown', {
           path: doc.filePath,
           message: `${directive.text}: ${message}`,
         }),
       ),
-    ),
+      ...(unknownKinds(directive).length > 0
+        ? [finding('asset-misuse-unknown', { path: doc.filePath, message: `${directive.text}: ${unknownMisuseMessage(unknownKinds(directive))}` })]
+        : []),
+    ]),
   );
 }

@@ -162,8 +162,11 @@
       "min"
     ],
     "font": [
+      "fallbackFor",
       "license",
       "licenseUrl",
+      "reason",
+      "role",
       "source"
     ],
     "types": [
@@ -240,6 +243,7 @@
     "sidecar": [
       "background",
       "clearSpace",
+      "colorways",
       "description",
       "do",
       "dont",
@@ -250,6 +254,7 @@
       "lockup",
       "maxSize",
       "minSize",
+      "misuse",
       "order",
       "partnership",
       "placement",
@@ -334,6 +339,7 @@
       "asset-config-unused",
       "asset-id-duplicate",
       "asset-local-missing",
+      "asset-misuse-unknown",
       "asset-review-missing",
       "asset-rule-violated",
       "asset-sidecar-invalid",
@@ -354,6 +360,7 @@
       "font-license-invalid",
       "font-license-unknown",
       "font-meta-invalid",
+      "font-role-invalid",
       "icon-set-invalid",
       "icon-unknown",
       "logo-contrast-insufficient",
@@ -410,6 +417,7 @@
       "asset-config-unused": "warning",
       "asset-id-duplicate": "error",
       "asset-local-missing": "info",
+      "asset-misuse-unknown": "error",
       "asset-review-missing": "warning",
       "asset-rule-violated": "error",
       "asset-sidecar-invalid": "error",
@@ -430,6 +438,7 @@
       "font-license-invalid": "warning",
       "font-license-unknown": "info",
       "font-meta-invalid": "error",
+      "font-role-invalid": "warning",
       "icon-set-invalid": "error",
       "icon-unknown": "warning",
       "logo-contrast-insufficient": "warning",

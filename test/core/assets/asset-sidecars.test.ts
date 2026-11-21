@@ -117,7 +117,7 @@ describe('asset sidecars', () => {
   it.each([
     ['is not valid JSON', '{ nope', /not valid JSON/],
     ['is not an object', '[1]', /must be a JSON object/],
-    ['has an unknown field', { clearSpce: { value: 1, unit: 'px' } }, /unknown field "clearSpce"; known: title, traits, do, dont, description/],
+    ['has an unknown field', { clearSpce: { value: 1, unit: 'px' } }, /unknown field "clearSpce"; known: title, traits, do, dont, misuse, description/],
     ['has a bad background', { background: 'grey' }, /background must be "light" or "dark"/],
     ['has a bad unit', { clearSpace: { value: 1, unit: 'em' } }, /clearSpace: must be \{"value"/],
     ['has a negative size', { clearSpace: { value: -1, unit: 'px' } }, /clearSpace: must be/],

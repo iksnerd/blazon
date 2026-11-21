@@ -37,10 +37,17 @@
 #   every commit also runs the whole-tree guards (no private name in any tracked file, the layers of src/), whatever the paths; they
 #                       take half a second and count as cheap steps
 #   the linters' and formatter's own config -> no test: the lint and format steps run on every commit
-#   examples/, package.json, other files under test/ (goldens, corpus, fixtures), build and test config
+#   examples/, package.json, any other file under test/ (goldens, corpus, fixtures), build and test config
 #   and any path no rule names
 #                       -> nothing more at commit: they need the whole suite, which runs once, at push (.githooks/pre-push)
+#   a few data files under test/ with a small known set of readers (test/surface/public-surface.json, test/first-run/expected.json, the
+#                       conformance golden, the tokens-plugins fixtures, the logo-geometry oracle) -> those tests, not the whole suite
 # The mapping is classify_paths in lib.sh, and pre-push uses it too. A tree that already passed a step is not run through it again.
+#
+# Test lock: the test steps (not the cheap ones) run one gate at a time for each repository, across worktrees and sessions: a lock
+# directory in the common git folder, taken only when a test step is about to run (never on a cache hit) and released when the hook ends.
+# A gate that waits says who holds it; a holder that is gone is taken over; after BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) it runs without
+# the lock, never skipping a test. BLAZON_HOOK_NO_LOCK=1 does not use it. See lib.sh (acquire_test_lock) and CONTRIBUTING, "The hooks".
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -55,7 +62,10 @@ STAGED="$(git -c core.quotepath=off diff --cached --name-only --diff-filter=ACMR
 SNAP_PARENT="$(mktemp -d)"
 SNAP="$SNAP_PARENT/staged"
 mkdir -p "$SNAP"
-trap 'rm -rf "$SNAP_PARENT"' EXIT
+trap 'release_test_lock; rm -rf "$SNAP_PARENT"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 hook_log pre-commit
 
 echo "pre-commit: checking the staged snapshot"
@@ -152,18 +162,18 @@ if tests_gate; then
         browser_args="$(browser_excludes "$SNAP" | tr '\n' ' ')"
         list_key="$list_key-$(printf '%s' "$browser_args" | digest_of)"
         # shellcheck disable=SC2086
-        cached_step "related-$TREE-$list_key" "tests: related to the staged files" bash -c "cd '$SNAP' && npm run -s test:related -- $TEST_ARGS $browser_args $related_files"
+        test_step "related-$TREE-$list_key" "tests: related to the staged files" bash -c "cd '$SNAP' && npm run -s test:related -- $TEST_ARGS $browser_args $related_files"
     fi
     if [ "$deck" -eq 1 ]; then
-        cached_step "deck-$TREE" "tests: deck and plugins" bash -c "cd '$SNAP' && npm run -s test:deck -- $TEST_ARGS"
+        test_step "deck-$TREE" "tests: deck and plugins" bash -c "cd '$SNAP' && npm run -s test:deck -- $TEST_ARGS"
     fi
     if [ "$docs" -eq 1 ]; then
-        cached_step "docs-$TREE" "tests: manual and RFC" bash -c "cd '$SNAP' && npm run -s test:docs -- $TEST_ARGS"
+        test_step "docs-$TREE" "tests: manual and RFC" bash -c "cd '$SNAP' && npm run -s test:docs -- $TEST_ARGS"
     fi
     if [ -n "$extra_tests" ]; then
         files_key="$(printf '%s' "$extra_tests" | digest_of)"
         # shellcheck disable=SC2086
-        cached_step "files-$TREE-$files_key" "tests: hooks and scripts" bash -c "cd '$SNAP' && npm run -s test:files -- $TEST_ARGS $extra_tests"
+        test_step "files-$TREE-$files_key" "tests: hooks and scripts" bash -c "cd '$SNAP' && npm run -s test:files -- $TEST_ARGS $extra_tests"
     fi
 fi
 

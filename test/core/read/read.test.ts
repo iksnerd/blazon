@@ -248,6 +248,27 @@ describe('describeFonts', () => {
   });
 });
 
+describe('describeFonts with a role', () => {
+  it('carries role, reason and fallbackFor on the family, and drops a reason that is not valid', async () => {
+    const files = {
+      'tokens/a.json': {
+        font: {
+          $type: 'fontFamily',
+          main: { $value: ['Acme Sans', 'sans-serif'], ...blazon({ font: { license: 'OFL-1.1', role: 'primary', reason: 'Headlines' } }) },
+          slide: { $value: ['Arial'], ...blazon({ font: { role: 'fallback', reason: 'Works in Slides', fallbackFor: 'font.main' } }) },
+          bad: { $value: ['Acme Mono'], ...blazon({ font: { role: 'monospace', reason: 'one\ntwo' } }) },
+        },
+      },
+    };
+    const dir = tempProject(files);
+    const fonts = describeFonts(await compileBlazonData({ ...DEFAULT_CONFIG }, dir), { ...DEFAULT_CONFIG }, dir);
+    const byName = Object.fromEntries(fonts.families.map((f) => [f.family, f]));
+    expect(byName['Acme Sans']!.font).toEqual({ license: 'OFL-1.1', role: 'primary', reason: 'Headlines' });
+    expect(byName.Arial!.font).toEqual({ role: 'fallback', reason: 'Works in Slides', fallbackFor: 'font.main' });
+    expect(byName['Acme Mono']!.font).toEqual({ role: 'monospace' });
+  });
+});
+
 describe('describeLogo', () => {
   it('gives the configured variant, the asset it is, its sidecar rules and the backgrounds that forbid a variant', () => {
     const logo = describeLogo(data, config, root);

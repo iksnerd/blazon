@@ -17,6 +17,10 @@
 #   otherwise           only the suites those files ask for, on the pushed tree, and always the whole-tree guards (no private name
 #                       in any tracked file, the layers of src/); the whole suite holds them already
 #
+# Test lock: the test steps (not the cheap ones) run one gate at a time for each repository, across worktrees and sessions, behind a lock
+# directory in the common git folder (acquire_test_lock in lib.sh). A gate that waits says who holds it; a holder that is gone is taken
+# over; after BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) it runs without the lock, never skipping a test. BLAZON_HOOK_NO_LOCK=1 does not use it.
+#
 # Install:   npm run hooks   (runs `git config core.hooksPath .githooks`; not a prepare script, so the published package carries none)
 # Bypass:    git push --no-verify
 set -uo pipefail
@@ -41,7 +45,10 @@ echo "pre-push: checking the commits being pushed"
 [ -d "$REPO/node_modules" ] || refuse pre-push 'git push --no-verify' "node_modules is missing in $REPO: run npm install, then push again"
 
 SNAP_PARENT="$(mktemp -d)"
-trap 'rm -rf "$SNAP_PARENT"' EXIT
+trap 'release_test_lock; rm -rf "$SNAP_PARENT"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_PREFIX
 
 # The commit the remote holds, as far as this push is concerned: the old tip of the ref, else where a new ref leaves origin/main.
@@ -102,24 +109,24 @@ for entry in "${refs[@]}"; do
     if [ "$ask_full" -eq 1 ]; then
         echo "  – the whole suite runs: $why"
         if [ -n "$skip_hooks_tests" ]; then echo "  – without the tests of the hooks: no hook, script or dependency changed"; fi
-        cached_step "full-$tree${skip_hooks_tests:+-without-hooks}" "tests: full suite" bash -c "cd '$snap' && npm test -- $TEST_ARGS $skip_hooks_tests"
+        test_step "full-$tree${skip_hooks_tests:+-without-hooks}" "tests: full suite" bash -c "cd '$snap' && npm test -- $TEST_ARGS $skip_hooks_tests"
         continue
     fi
     if [ -n "$related_files" ]; then
         list_key="$(printf '%s' "$related_files" | digest_of)"
         # shellcheck disable=SC2086
-        cached_step "related-$tree-$list_key" "tests: related to the changed files" bash -c "cd '$snap' && npm run -s test:related -- $TEST_ARGS $related_files"
+        test_step "related-$tree-$list_key" "tests: related to the changed files" bash -c "cd '$snap' && npm run -s test:related -- $TEST_ARGS $related_files"
     fi
     if [ "$deck" -eq 1 ]; then
-        cached_step "deck-$tree" "tests: deck and plugins" bash -c "cd '$snap' && npm run -s test:deck -- $TEST_ARGS"
+        test_step "deck-$tree" "tests: deck and plugins" bash -c "cd '$snap' && npm run -s test:deck -- $TEST_ARGS"
     fi
     if [ "$docs" -eq 1 ]; then
-        cached_step "docs-$tree" "tests: manual and RFC" bash -c "cd '$snap' && npm run -s test:docs -- $TEST_ARGS"
+        test_step "docs-$tree" "tests: manual and RFC" bash -c "cd '$snap' && npm run -s test:docs -- $TEST_ARGS"
     fi
     if [ -n "$extra_tests" ]; then
         files_key="$(printf '%s' "$extra_tests" | digest_of)"
         # shellcheck disable=SC2086
-        cached_step "files-$tree-$files_key" "tests: hooks and scripts" bash -c "cd '$snap' && npm run -s test:files -- $TEST_ARGS $extra_tests"
+        test_step "files-$tree-$files_key" "tests: hooks and scripts" bash -c "cd '$snap' && npm run -s test:files -- $TEST_ARGS $extra_tests"
     fi
 done
 

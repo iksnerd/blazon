@@ -1,4 +1,5 @@
-import type { BlazonConfig, BlazonData, ThemeRole } from '../../types/index.js';
+import { cleanFontMeta } from '../font-roles.js';
+import type { BlazonConfig, BlazonData, FontMeta, ThemeRole } from '../../types/index.js';
 import { firstFamily, fontFaceRule, fontFormat, isLocalFont, loadFonts, SYSTEM_FAMILIES } from '../fonts.js';
 
 export interface FontFileEntry {
@@ -21,7 +22,7 @@ export interface FamilyUse {
   loaded: boolean | null;
   /** The token's own word on it: `webFont: false` or a sentence, and its `font` source and license */
   webFont?: false | string;
-  font?: { source?: string; license?: string; licenseUrl?: string };
+  font?: FontMeta;
 }
 
 export interface FontsDescription {
@@ -63,7 +64,7 @@ export function describeFonts(data: BlazonData, config: BlazonConfig, cwd: strin
       system: SYSTEM_FAMILIES.has(key),
       loaded: loaded.families.has(key) ? true : loaded.opaque ? null : false,
       ...(item.blazon.webFont !== undefined && { webFont: item.blazon.webFont }),
-      ...(item.blazon.font && { font: item.blazon.font }),
+      ...(item.blazon.font && { font: cleanFontMeta(item.blazon.font) }),
     });
   }
   const role = (name: 'fontDisplay' | 'fontBody') => (data.theme[name] || data.themeTokens?.[name] ? { token: data.themeTokens?.[name], value: data.theme[name] } : undefined);

@@ -91,7 +91,7 @@ Brand facts that DTCG has no slot for live under `$extensions["dev.blazon"]`, th
 | `angle` | number of degrees | Gradient direction, which DTCG gradients don't carry | Not in the deck; set as a decision |
 | `preview` | `radius`, `square`, `stroke`, `tracking`, `fontSize`, `frame`, `opacity`, `border` or `bar` | How the brand book previews a token, when its `$type` and name do not say it | Not set; the viewer infers every Auth0 preview from type and name |
 | `webFont` | `false`, or a sentence | On a `fontFamily` token: the brand book cannot load this typeface, as a commercial font with no web stylesheet, and the sentence says why or what to use. The Typography page then says the brand book does not load it, and that a specimen uses the first font of its stack the reader's computer has | Not set; Auth0's fonts load from Google Fonts. Slack sets `false` on its three commercial typefaces |
-| `font` | `{ source?: string, license?: string, licenseUrl?: string }` | On a `fontFamily` token or a group of them: where the typeface comes from (a name or an http(s) address), its license (an SPDX identifier or a name) and the address of the license text. At least one field; no other field. A malformed value, or `font` on a token that is not a `fontFamily`, is `font-meta-invalid`. The Typography page shows what is stated, and `blazon.press-kit` prints it in `fonts.txt` in place of `not stated`. The facts are the brand's word: blazon does not infer a license from a family name. A `license` that looks like an SPDX identifier but is not one on the list (`OFL-1.2`, `Apache2`, `mit`) is a `font-license-unknown` note, never an error; a name in words is left alone | Not set |
+| `font` | `{ source?: string, license?: string, licenseUrl?: string, role?: string, reason?: string, fallbackFor?: string }` | On a `fontFamily` token or a group of them: where the typeface comes from (a name or an http(s) address), its license (an SPDX identifier or a name), the address of the license text, its `role` in the brand (one of `primary`, `secondary`, `display`, `monospace`, `fallback`), a `reason` (one line, up to 160 characters: why it has that role, or why a fallback was chosen) and, for a `fallback` only, `fallbackFor` (up to 80 characters: the family name or the font token path it stands in for). At least one field; no other field. An unknown `role` is `font-meta-invalid`; a `reason` that has a line break, is over 160 characters or is not text, and a `fallbackFor` on another role, over 80 characters or with a line break, is a `font-role-invalid` warning, and that value is left out of what blazon prints. The new fields are additive (section 12: adding a field does not change `version`, and a reader MUST ignore keys it does not know), so `brand.json` carries them on the token's `blazon.font` and `version` stays 2. A malformed value, or `font` on a token that is not a `fontFamily`, is `font-meta-invalid`. The Typography page shows what is stated, `blazon fonts` prints the role and reason, and `blazon.press-kit` prints the source and license in `fonts.txt` in place of `not stated`, with a `Role:` line, a `Why:` line and, for a fallback, `Stands in for:`. The facts are the brand's word: blazon does not infer a license from a family name. A `license` that looks like an SPDX identifier but is not one on the list (`OFL-1.2`, `Apache2`, `mit`) is a `font-license-unknown` note, never an error; a name in words is left alone | Not set |
 
 #### The review fingerprint
 
@@ -225,6 +225,7 @@ A new command, which also runs at the start of `blazon build`:
 | `asset-config-unused` | warning | An asset category in the config matches no asset. |
 | `asset-id-duplicate` | error | Two files in different folders have the same asset id. |
 | `asset-local-missing` | info | A category kept out of git has no images on this machine. |
+| `asset-misuse-unknown` | error | A logo misuse kind, in a sidecar or in a blazon:logo-misuse directive, is not one blazon draws. |
 | `asset-review-missing` | warning | A generated asset has no review yet. |
 | `asset-rule-violated` | error | An asset breaks the rules of its category. |
 | `asset-sidecar-invalid` | error | An asset sidecar is not valid JSON or holds a field blazon does not know. |
@@ -233,9 +234,9 @@ A new command, which also runs at the start of `blazon build`:
 | `config-invalid` | error | A key or value in blazon.json is not valid. |
 | `config-path-outside` | error | A path in blazon.json, or a file linked from a brand folder, leads outside the project folder. |
 | `context-css-unchanged` | info | A context leaves out tokens the default has, but the CSS cannot remove a custom property, so theme.css keeps the default value for them. |
-| `contrast-insufficient` | error | A color pair has less contrast than its level asks for. |
+| `contrast-insufficient` | error | A color pair, or a logo colorway, has less contrast than its level asks for. |
 | `contrast-pair-invalid` | error | A contrast pair names no color tokens or has an unknown level. |
-| `contrast-unknown` | warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
+| `contrast-unknown` | warning | Blazon cannot read a color of a pair or of a logo colorway, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-duplicate` | error | Two tokens write the same CSS custom property. |
 | `directive-deprecated` | warning | A page has a `folio:` directive comment, the old name, which blazon ignores. |
 | `directive-invalid` | error | A page directive has wrong arguments or names something that does not exist. |
@@ -245,6 +246,7 @@ A new command, which also runs at the start of `blazon build`:
 | `font-license-invalid` | warning | A license file beside a font file was not read. |
 | `font-license-unknown` | info | A font license is not a known SPDX id. |
 | `font-meta-invalid` | error | The font fields on a token are not valid. |
+| `font-role-invalid` | warning | A font reason or fallbackFor is not valid, so it is left out. |
 | `icon-set-invalid` | error | An icon set in the config cannot be loaded. |
 | `icon-unknown` | warning | An icon set category lists an icon the package does not have. |
 | `logo-contrast-insufficient` | warning | A logo variant draws the color of the surface it is shown on. |
@@ -319,6 +321,7 @@ What each code means:
 - `pin-mismatch`: `blazon.lock` pins a blazon commit and the blazon running is not it: it was built from, or is at, another commit; the tree it was built from had uncommitted changes; or it cannot say which commit it is (no git checkout, no build stamp). A pin that cannot be checked is not met. A book with no `blazon.lock` is not checked
 - `font-file-invalid`: A font file in `fonts` is missing or is not a format blazon embeds
 - `font-license-unknown`: A font's `license` is shaped like an SPDX identifier or expression (one word with a digit, a hyphen or a plus, a known id in the wrong case, or ids joined by `AND`, `OR` or `WITH`) and an id in it is not on the SPDX license list. The note names the closest listed ids. `blazon` carries a dated snapshot of the list (`src/core/checker/spdx-ids.json`, rewritten by `scripts/update-spdx-ids.mjs`) and never goes to the network
+- `font-role-invalid`: A font's `reason` has a line break, is over 160 characters or is not text, or its `fallbackFor` is on a role that is not `fallback`, is over 80 characters or has a line break. A warning, not an error: the typeface is fine, and the value is left out of `blazon fonts`, `fonts.txt` and the press kit page. An unknown `role` is `font-meta-invalid`, an error
 - `font-family-missing`: A project that lists `fonts` has a token whose first family none of them loads
 - `asset-review-missing`: An asset has `generated` in its sidecar and no `review` (section 7), once for each id; not reported for an asset in an experimental or reference category (section 11)
 - `icon-set-invalid`: An icon set cannot be read: its name, package, folder or categories file is wrong (section 9)
@@ -480,6 +483,8 @@ A brand writes its logo rules in terms of a unit: "clear space equals the height
 | `unit` | The length the brand measures this artwork in, a dimension in the artwork's own pixels: the star, say. For an SVG that is its own coordinates, so it holds at any size. For a raster file it holds only at the size the file was exported at |
 | `clearSpace` | A measure (below) |
 | `lockup` | The shape this artwork is: one of `horizontal`, `stacked`, `mark`, `wordmark`, or a name the brand added in `vocabulary.lockups` (section 14) |
+| `misuse` | A list of the misuse kinds `blazon:logo-misuse` draws when the directive names none, from `stretch`, `squash`, `rotate`, `outline`, `recolor`, `shadow`, `crop`, `low-contrast`, `busy-background`; the default is `stretch`, `rotate`, `outline`, `recolor`, `shadow`, `low-contrast`. A name outside the set is `asset-misuse-unknown` |
+| `colorways` | A list of at least one `{ name, on, variant?, min? }`: a logo variant on a color token, with the contrast it MUST reach. `name` is unique in the list. `on` is an alias to a color token. `variant` is an asset id written `category/name` (the logo itself when absent); an id that names no asset is an `asset-sidecar-invalid` error. `min` is `AA`, `AA-large` or `AAA` as for a `pairs` entry, and `AA-large` (3:1, the level for a logo as a graphical object) when absent. The artwork is measured as the `ink` of the file drawn, else black on a `light` background and white on a `dark` one. A colorway below its level is `contrast-insufficient`; one that cannot be measured is `contrast-unknown` |
 | `placement` | A list of the corners the logo may sit in: `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `partnership` | How the logo sits beside a partner's: `gap` (the space on each side of the divider), and optionally `dividerHeight` and `partnerHeight`, all measures. Without `dividerHeight` there is no divider, and `gap` is the space between the two logos |
 | `initiative` | A program the brand runs, drawn with the logo as the program lockup: `name` (a non-empty string, the lockup's label), `mark` (the program's artwork, an asset id written `category/name`) and `gap` (a measure), all required; optionally `position`, `beside` (the default: right of the logo, one baseline) or `below` (under it, left edges aligned), and `markHeight`, a measure (the logo's own height when absent). The mark is an asset and not text, so the lockup is drawn from artwork and needs no font |
@@ -488,12 +493,14 @@ A **measure** is a dimension (`{"value": 20, "unit": "px"}`, or an alias to a di
 
 `blazon check` reports, as `asset-sidecar-invalid` errors: a multiple with no `unit`; `units` that is not a number above 0 or a multiple with another key; a `unit` taller than the artwork, which is a unit measured in the wrong size; a `lockup` not in the list; a `placement` that is not a non-empty list of distinct known corners; a `partnership` that is not an object, lacks a `gap`, or has an unknown field; an `initiative` that is not an object, lacks a `name`, a `mark` or a `gap`, has a `mark` that is not an asset id or names no asset, a `position` other than `beside` or `below`, or an unknown field.
 
-Four directives draw them, in the same table as the others (`src/core/docs/directives.ts`), where `needsMeta` now lists the sidecar fields a directive needs, any one of them:
+Five directives draw them, in the same table as the others (`src/core/docs/directives.ts`), where `needsMeta` now lists the sidecar fields a directive needs, any one of them:
 
 - `blazon:logo-lockups <folder> [name ...]` groups the logos by `lockup`, each with its clear space.
 - `blazon:logo-partner <logo> <partner>` lays the logo, a divider and the partner on one baseline. The gap and the divider's height come from the logo's `partnership`; a partnership with no `dividerHeight` is drawn with no divider and one gap.
 - `blazon:logo-initiative <logo>` lays the logo and the `mark` of its `initiative` on one baseline, or the mark under the logo. The gap, the position and the mark's height come from the rule; with no `markHeight` the mark is as tall as the logo.
 - `blazon:logo-placement <logo> [url]` draws a sample frame for each corner in `placement`.
+- `blazon:logo-misuse <logo> [kind ...]` draws the logo's own image misused in each named way, captioned "Do not ..." and marked as not allowed without relying on color. The kinds are the arguments, else `misuse`, else the default six. The sidecar's `dont` list is shown under the figures. An unknown kind, in the argument list or in `misuse`, is an `asset-misuse-unknown` error.
+- `blazon:logo-colorways <logo>` draws each of the logo's `colorways`: the logo, or the variant the colorway names, on its background token, the name as the caption, the measured ratio and whether it reaches the level, in words and a mark and not by color alone. A reader that needs one file for a variant id uses the choosing rule of section 7.
 
 A directive that names a logo that states none of the fields it draws is a `directive-invalid` error.
 
@@ -739,7 +746,7 @@ Implemented on `main` as of 2026-11-21. The sections of this RFC are all built; 
 | Section | Where |
 |---|---|
 | 1. Token files are DTCG | `src/core/tokens/` (`walk.ts`, `merge.ts`, `alias.ts`, `resolve.ts`, `values/`). The `$path` alias form was dropped; DTCG has only `{path}`. Composite outputs: typography, gradient, shadow, border, transition |
-| 2. The `dev.blazon` extension | `src/core/tokens/`, `src/core/checker/`. Usage, contrast, tier, duplicate and review checks; `review` with `by`, `at` and `value`; `font` facts; `source.cssVar` |
+| 2. The `dev.blazon` extension | `src/core/tokens/`, `src/core/checker/`. Usage, contrast, tier, duplicate and review checks; `review` with `by`, `at` and `value`; `font` facts, including `role`, `reason` and `fallbackFor` (built as of 2026-11-21: `src/core/checker/font-meta.ts`, `src/core/font-roles.ts`; printed by `blazon fonts`, the Typography page and `blazon.press-kit`); `source.cssVar` |
 | 3. Contexts | Resolver contexts, with locale variants in the third-party fixture (Japanese: Kinto; German and French: H1 56/64). A context records the tokens and groups it leaves out or changes beyond value (`removed`, `groupChanges`, `removedGroups`; `src/core/tokens/contexts.ts`), so `contextItems` and `contextGroups` rebuild it as the checker saw it. CSS and `tokens.ts` cannot express a removal: the known limit, reported by `context-css-unchanged` (`src/core/index.ts`, `removalFallback`) |
 | 4. `blazon check` | `src/core/checker/`, run before `blazon tokens` and `blazon build`. The finding codes, with severity and summary, are in the catalogue, `src/core/checker/catalogue.ts`; the code table in this section is written from it. Findings are sorted by `compareFindings` (`src/core/order.ts`), the order the section states |
 | 5. Outputs | `theme.css`, `typography.css`, `tokens.ts`, `tokens.json`. `blazon.tailwind` writes `tailwind.css` and `tailwind-reset.css` into its own folder (RFC 0002). `blazon drift` (`src/core/drift/`, `src/cli/commands/drift.ts`) compares `source.cssVar` with a live site |
@@ -747,7 +754,7 @@ Implemented on `main` as of 2026-11-21. The sections of this RFC are all built; 
 | 7. Assets | One id with several files is one asset: `src/core/assets/representations.ts` picks a file, and the approval and its findings are for the id (`src/core/checker/approvals.ts`, `review.ts`). `src/core/assets/` catalogs SVG and raster files (PNG, JPEG, GIF, WebP, AVIF) and reads their size from the file header. The dev server streams them (`src/server/assets.ts`); `blazon build` copies them to `brand-assets/` |
 | 8. Layout groups | Social formats and patterns, drawn by `blazon:formats` and `blazon:patterns` |
 | 9. Icon sets | Read from installed packages, with categories |
-| 10. Logo rules | `unit`, `lockup`, `placement`, `partnership`, `initiative` and `ink` in sidecars, drawn by the `blazon:logo-*` directives |
+| 10. Logo rules | `unit`, `lockup`, `placement`, `partnership`, `initiative`, `misuse` (as of 2026-11-21), `colorways` (as of 2026-11-21) and `ink` in sidecars, drawn by the `blazon:logo-*` directives |
 | 11. Asset categories | The operator's approval of a `dir` outside the project (`--allow-dir`, `BLAZON_ALLOW_DIRS`; `src/core/confine.ts`, `src/core/assets/categories.ts`). The `assets` block, including `experimental: true`, which shows an asset labelled "Experiment", and `reference: true`, which shows it labelled "Reference"; both exempt it from the review-gating findings |
 | 12. `brand.json` | The rule for choosing one file of an id (`src/core/assets/representations.ts`) is used by every reader in `src/core/`, the viewer and the shipped plugins. `src/core/brand/` (`theme.fontLicenses`, read by `src/core/fonts.ts`; additive, so `version` stays 2), with a JSON Schema beside it, the per-context `removed`, `groupChanges` and `removedGroups` (additive, `version` stays 2) and a `generator` that records the blazon commit. Read by `scripts/read-brand.py` and drawn by `blazon.brand-deck` |
 | 13. Sections | `customSections`, `section-invalid`, `section-missing`, the `blazon:section` directive |
