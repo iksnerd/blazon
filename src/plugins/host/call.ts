@@ -94,13 +94,16 @@ export function requestFile(data: Uint8Array): { path: string; cleanup: () => vo
   return { path: file, cleanup };
 }
 
-/** Signal every process in the group. A group with no members left is the normal case on the second kill. */
+/**
+ * Signal every process in the group. A group with no members left is the normal case on the second kill. It runs from
+ * timers and event handlers, where a throw would be an uncaught exception and break the contract that a call never
+ * throws, so any failure to signal is ignored: the group is gone, or not ours to signal, and the call ends the same way.
+ */
 function killGroup(pgid: number, signal: NodeJS.Signals = 'SIGKILL'): void {
   try {
     process.kill(-pgid, signal);
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    if (code !== 'ESRCH' && code !== 'EPERM') throw err;
+  } catch {
+    // ESRCH (no members left), EPERM (not ours any more) or anything else: nothing more can be done
   }
 }
 
@@ -197,16 +200,23 @@ function start(call: Call, program: string, directory: string | undefined, reque
     const out: Buffer[] = [];
     let err = Buffer.alloc(0);
     let keptOut = 0;
-    let timedOut = false;
-    let over = false;
-    let pipesHeld = false;
+    // The state of the call. `running` until a timeout or too much output asks the group to stop (`stopping`), and
+    // `done` once finish() has run, which is the only transition out of the other two and runs once.
+    let phase: 'running' | 'stopping' | 'done' = 'running';
+    // Why the call is not an answer, apart from how the program exited. They can hold together: a timeout that is
+    // followed by too much output is still a timeout, which is the order finish() reads them in.
+    const cause = { timedOut: false, over: false, pipesHeld: false };
     let exited: { code: number | null; signal: NodeJS.Signals | null } | undefined;
-    let done = false;
-    // eslint-disable-next-line prefer-const -- finish() below reads it, so it is declared first and set where the child starts
-    let timer: NodeJS.Timeout | undefined;
-    let grace: NodeJS.Timeout | undefined;
-    let hardKill: NodeJS.Timeout | undefined;
-    let asked = false;
+    // Every timer this call armed, so finish() clears them all and none can outlive it
+    const timers = new Set<NodeJS.Timeout>();
+    const after = (ms: number, then: () => void) => {
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        then();
+      }, ms);
+      timers.add(timer);
+      return timer;
+    };
 
     // A child that failed to start has no pid, and no group to kill
     const kill = () => {
@@ -215,67 +225,75 @@ function start(call: Call, program: string, directory: string | undefined, reque
 
     // A call that ran out of time or wrote too much is asked to stop (SIGTERM to the group), and killed when the grace is over
     const stop = () => {
-      if (child.pid === undefined || asked) return;
-      asked = true;
+      if (child.pid === undefined || phase !== 'running') return;
+      phase = 'stopping';
       killGroup(child.pid, 'SIGTERM');
-      hardKill = setTimeout(kill, KILL_GRACE_MS);
+      after(KILL_GRACE_MS, kill);
     };
 
+    // The one way out: clear every timer and listener, kill what a plugin that was asked to stop left running, and resolve
     const finish = (result?: Result) => {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      clearTimeout(grace);
-      if (hardKill) {
-        clearTimeout(hardKill);
-        kill(); // whatever the plugin left running after it was asked to stop
-      }
+      if (phase === 'done') return;
+      const asked = phase === 'stopping';
+      phase = 'done';
+      for (const timer of timers) clearTimeout(timer);
+      timers.clear();
+      child.stdout!.off('data', onStdout);
+      child.stderr!.off('data', onStderr);
+      child.off('exit', onExit);
+      child.off('close', onClose);
+      if (asked) kill();
       if (result) return resolve(result);
       const stdout = Buffer.concat(out);
       const stderr = err;
-      if (timedOut) return resolve(broke(`timed out after ${timeout}s`, 'timeout', stdout, stderr));
-      if (over) return resolve(broke(`output over the limit of ${limit} bytes`, 'output', stdout, stderr));
-      if (pipesHeld) return resolve(broke('the call did not finish cleanly: an output pipe stayed open', 'pipe', stdout, stderr));
+      if (cause.timedOut) return resolve(broke(`timed out after ${timeout}s`, 'timeout', stdout, stderr));
+      if (cause.over) return resolve(broke(`output over the limit of ${limit} bytes`, 'output', stdout, stderr));
+      if (cause.pipesHeld) return resolve(broke('the call did not finish cleanly: an output pipe stayed open', 'pipe', stdout, stderr));
       if (exited && exited.code !== null && answers.includes(exited.code)) return resolve({ answered: true, code: exited.code, stdout, stderr, breakReason: '' });
       resolve(broke(exited?.code === null || exited?.code === undefined ? `killed by signal ${exited?.signal}` : `exited with ${exited.code}`, 'exit', stdout, stderr));
     };
 
-    child.on('error', (failure) => finish(broke(startFailure(program, failure), 'start')));
-
-    child.stdout!.on('data', (chunk: Buffer) => {
-      if (over) return;
+    const onStdout = (chunk: Buffer) => {
+      if (cause.over) return;
       const room = limit - keptOut;
       if (chunk.length > room) {
         out.push(chunk.subarray(0, room));
-        over = true;
+        cause.over = true;
         stop(); // stop a plugin that writes forever; do not buffer it
         return;
       }
       out.push(chunk);
       keptOut += chunk.length;
-    });
-    child.stderr!.on('data', (chunk: Buffer) => {
+    };
+    const onStderr = (chunk: Buffer) => {
       // The last `keep` bytes: the end of a trace is what says why a plugin broke
       err = Buffer.concat([err, chunk]);
       if (err.length > keep) err = Buffer.from(err.subarray(err.length - keep));
-    });
-
-    timer = setTimeout(() => {
-      timedOut = true;
-      stop();
-    }, timeout * 1000);
-
-    child.on('exit', (code, signal) => {
+    };
+    const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
       exited = { code, signal };
-      clearTimeout(timer);
-      if (!asked) kill(); // again, for anything the plugin left running; after SIGTERM, the grace decides
-      grace = setTimeout(() => {
-        pipesHeld = true;
+      if (!timeoutTimer) return;
+      clearTimeout(timeoutTimer);
+      timers.delete(timeoutTimer);
+      if (phase === 'running') kill(); // again, for anything the plugin left running; after SIGTERM, the grace decides
+      after(KILL_GRACE_MS, () => {
+        cause.pipesHeld = true;
         child.stdout!.destroy();
         child.stderr!.destroy();
         finish();
-      }, KILL_GRACE_MS);
+      });
+    };
+    const onClose = () => finish();
+
+    // An error after the call has ended (a late one from the child) has no one to tell, and must not be uncaught
+    child.on('error', (failure) => finish(broke(startFailure(program, failure), 'start')));
+    child.stdout!.on('data', onStdout);
+    child.stderr!.on('data', onStderr);
+    const timeoutTimer = after(timeout * 1000, () => {
+      cause.timedOut = true;
+      stop();
     });
-    child.on('close', () => finish());
+    child.on('exit', onExit);
+    child.on('close', onClose);
   });
 }
