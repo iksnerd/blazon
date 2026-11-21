@@ -177,6 +177,7 @@ The front matter has `title`, `order`, `description`, `group` (the sidebar headi
 | `replacedBelow` | Below this width or height, the asset to use instead |
 | `lockup`, `placement` | The logo lockup this artwork is, and the corners it may sit in |
 | `misuse` | The misuse kinds `blazon:logo-misuse` draws for this logo when the directive names none |
+| `colorways` | The named backgrounds the logo is shown on, each a color token with the contrast it must reach and optionally another logo variant, for `blazon:logo-colorways` |
 | `partnership`, `initiative` | The layout of a partner lockup, and of a lockup with an initiative's mark |
 | `order` | Where the asset sits among the others of its category |
 | `extensions` | What a consumer records of its own, under a reverse-domain key. Kept as written and never read by blazon |

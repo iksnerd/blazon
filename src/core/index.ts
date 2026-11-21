@@ -27,6 +27,7 @@ import {
   unusedFindings,
 } from './assets/categories.js';
 import { scanAssets } from './assets/scanner.js';
+import { colorwayFindings } from './logo/colorways.js';
 import { initiativeFindings, replacementFindings } from './assets/sidecar.js';
 import { checkTokens } from './checker/index.js';
 import { withoutCascade } from './checker/cascade.js';
@@ -105,6 +106,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
     ...absentLocalFindings(absentLocal, categories.configs),
     ...replacementFindings(assets.all, absentLocal),
     ...initiativeFindings(assets.all, absentLocal),
+    ...colorwayFindings(assets.all, resolvedTokens.items, absentLocal),
     ...assetProblems.filter((f) => !(f.code === 'asset-sidecar-orphaned' && absentLocal.has(f.path.split('/')[0]!))),
   ];
 

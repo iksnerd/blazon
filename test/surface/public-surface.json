@@ -240,6 +240,7 @@
     "sidecar": [
       "background",
       "clearSpace",
+      "colorways",
       "description",
       "do",
       "dont",

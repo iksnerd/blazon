@@ -56,6 +56,7 @@ export const DIRECTIVES = {
   'logo-initiative': { assetRefs: 1, needsMeta: ['initiative'] },
   'logo-placement': { assetRefs: 1, text: true, needsMeta: ['placement'] },
   'logo-misuse': { assetRefs: 1, misuseKinds: true },
+  'logo-colorways': { assetRefs: 1, needsMeta: ['colorways'] },
   cards: { tokens: 'paint' },
   strokes: { tokens: 'border' },
   spots: { tokens: 'paint-or-border' },

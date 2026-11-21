@@ -5,6 +5,7 @@ import {
   LOGO_CORNERS,
   STANDARD_LOGO_LOCKUPS,
   type Asset,
+  type LogoColorway,
   type AssetDimension,
   type AssetMeasure,
   type AssetMeta,
@@ -14,6 +15,8 @@ import {
   type Review,
   type ParsedTokens,
 } from '../../types/index.js';
+import { DEFAULT_COLORWAY_LEVEL } from '../logo/colorways.js';
+import { CONTRAST_MINIMUM } from '../checker/contrast.js';
 import { isMisuseKind, unknownMisuseMessage } from '../logo/misuse.js';
 import { cleanReview, reviewProblem } from '../checker/review.js';
 import { isObject, isSource, isStringList, listMessage, SOURCE_MESSAGE } from './fields.js';
@@ -28,6 +31,7 @@ const FIELDS = [
   'description',
   'background',
   'ink',
+  'colorways',
   'unit',
   'clearSpace',
   'minSize',
@@ -46,6 +50,7 @@ const FIELDS = [
 const GENERATED_FIELDS = ['by', 'prompt', 'licence'];
 const PARTNERSHIP_FIELDS = ['gap', 'dividerHeight', 'partnerHeight'];
 const INITIATIVE_FIELDS = ['name', 'mark', 'gap', 'position', 'markHeight'];
+const COLORWAY_FIELDS = ['name', 'on', 'variant', 'min'];
 const REPLACED_BELOW_FIELDS = ['width', 'height', 'by'];
 const ASSET_ID = /^[^/]+\/[^/]+$/;
 /** An extension key as DTCG asks for it: a reverse domain name, such as "com.acme.contrast" */
@@ -157,6 +162,38 @@ function validate(raw: unknown, tokens: ParsedTokens | undefined, lockups: reado
     const ink = inkColor(raw.ink, tokens);
     if ('error' in ink) errors.push(ink.error);
     else meta.ink = ink.color;
+  }
+  if (raw.colorways !== undefined) {
+    const list = raw.colorways;
+    if (!Array.isArray(list) || list.length === 0) {
+      errors.push('colorways must be a non-empty list of {"name", "on", "variant"?, "min"?}');
+    } else {
+      const valid: LogoColorway[] = [];
+      const before = errors.length;
+      list.forEach((entry, at) => {
+        const own = `colorways[${at}]`;
+        if (!isObject(entry)) {
+          errors.push(`${own} must be an object with a name and an on`);
+          return;
+        }
+        for (const key of Object.keys(entry)) if (!COLORWAY_FIELDS.includes(key)) errors.push(`${own} has unknown field "${key}"; known: ${COLORWAY_FIELDS.join(', ')}`);
+        const name = typeof entry.name === 'string' && entry.name.trim() !== '' ? entry.name : undefined;
+        if (!name) errors.push(`${own} needs a name: the label of the figure, as a non-empty string`);
+        else if (valid.some((c) => c.name === name)) errors.push(`colorways names ${JSON.stringify(name)} twice`);
+        const alias = typeof entry.on === 'string' ? entry.on.match(/^\{([^{}]+)\}$/)?.[1] : undefined;
+        let on: string | undefined;
+        if (!alias) errors.push(`${own}.on must be an alias to a color token ("{color.paper}"), got ${JSON.stringify(entry.on)}`);
+        else if (!tokens?.byPath.get(alias)) errors.push(`${own}.on: {${alias}} is not a token`);
+        else if (tokens.byPath.get(alias)!.type !== 'color') errors.push(`${own}.on: {${alias}} is not a color token`);
+        else on = alias;
+        const variant = entry.variant === undefined ? undefined : typeof entry.variant === 'string' && ASSET_ID.test(entry.variant) ? entry.variant : null;
+        if (variant === null) errors.push(`${own}.variant must be an asset id written category/name`);
+        const min = entry.min === undefined ? DEFAULT_COLORWAY_LEVEL : typeof entry.min === 'string' && entry.min in CONTRAST_MINIMUM ? (entry.min as LogoColorway['min']) : null;
+        if (min === null) errors.push(`${own}.min must be one of ${Object.keys(CONTRAST_MINIMUM).join(', ')}`);
+        if (name && on && variant !== null && min !== null) valid.push({ name, on, ...(variant && { variant }), min });
+      });
+      if (errors.length === before) meta.colorways = valid;
+    }
   }
   if (raw.clearSpace !== undefined) {
     const clearSpace = measure('clearSpace', raw.clearSpace);

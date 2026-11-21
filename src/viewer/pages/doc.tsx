@@ -12,6 +12,7 @@ import { AssetFigures, AssetSection } from '@/components/blazon/asset-figures';
 import { IconRows, LogoContrast, LogoOn, LogoSpace, SampleCards, SpotTiles, StrokeSamples } from '@/components/blazon/built-previews';
 import { FormatFrames, PatternTiles } from '@/components/blazon/layout-previews';
 import { IconSetBrowser } from '@/components/blazon/icon-sets';
+import { LogoColorways } from '@/components/blazon/logo-colorways';
 import { LogoInitiative, LogoLockups, LogoMisuse, LogoPartner, LogoPlacement } from '@/components/blazon/logo-rules';
 import { badgeColorCodes } from '@/lib/theme/color-badges';
 import { linkTokenPaths } from '@/lib/tokens/token-links';
@@ -92,6 +93,7 @@ const RENDERERS: Record<Argued, Renderer> = {
   'logo-initiative': LogoInitiative,
   'logo-placement': LogoPlacement,
   'logo-misuse': LogoMisuse,
+  'logo-colorways': LogoColorways,
   cards: SampleCards,
   strokes: StrokeSamples,
   spots: SpotTiles,
