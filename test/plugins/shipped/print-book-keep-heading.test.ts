@@ -6,7 +6,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // A heading is never the last thing on a printed slide, in a real browser. A page's Markdown between directives is one
 // block of the page, so a sub-heading at its end was never seen by the packer and was left at the foot of a slide with

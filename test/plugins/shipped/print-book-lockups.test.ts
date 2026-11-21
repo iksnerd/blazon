@@ -6,7 +6,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // A page of prose followed by a long list of lockup cards, in a real browser. The list is taller than a slide and was
 // one block, so a slide was drawn smaller and wider to fit it; a card's height does not shrink with its width, the

@@ -3,7 +3,8 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { REPO } from '../../test/support/paths.js';
-import { starterProject, tempDir } from '../../test/support/project.js';
+import { tempDir } from '../../test/support/project.js';
+import { starterProject } from '../../test/support/init-project.js';
 
 // Shared by the server-*.test.ts files: the server against the real blazon CLI, run from source on a project `blazon init` wrote. The SDK's
 // in-memory pair stands in for stdio; one test in server-process.test.ts starts the real entry point over stdio.

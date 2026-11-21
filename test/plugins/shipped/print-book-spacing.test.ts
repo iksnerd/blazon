@@ -6,7 +6,8 @@ import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { jobFor } from '../../../src/shipped/print-book/request.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // The `layout` option of blazon.print-book, in a real browser: `compact` (the default) squeezes pictures and sets the prose
 // tighter, `roomy` is the book as it was before commit 9a41346. The page says which layout it used, and the page count of the

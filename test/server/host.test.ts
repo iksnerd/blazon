@@ -5,7 +5,8 @@ import { describe, it, expect } from 'vitest';
 import { DEFAULT_CONFIG } from '../../src/core/config/index.js';
 import { startDevServer } from '../../src/server/dev-server.js';
 import { runPreview } from '../../src/cli/commands/preview.js';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // `blazon dev` and `blazon preview` listen on this machine only, unless `--host` says otherwise: the dev server answers
 // `/__blazon/mcp-config` with absolute paths, and a brand's files are not for everyone on the network.

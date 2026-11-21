@@ -6,7 +6,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // Print layout defects a production review found in a printed brand book, in a real browser (the jsdom tests measure every
 // block as 0px high): the web page's copy button on a code block, a table column of numbers left aligned, and a logo

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { loadConfig } from '../../src/core/config/index.js';
 import { startDevServer } from '../../src/server/dev-server.js';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The dev server answers /brand.json with the brand as it is now, so a tool can be written against it.
 

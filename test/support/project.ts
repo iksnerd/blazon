@@ -2,11 +2,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll } from 'vitest';
-import { runInit } from '../../src/cli/commands/init.js';
 import { setApprovedDirs } from '../../src/core/confine.js';
 
 // Temporary folders for tests. Every folder made here is removed after the test file that made it, so a test writes no
 // cleanup of its own: the module is loaded once for each test file, and this registers the removal with that file.
+// This module must not import `src/cli/commands/init.ts`: that would put init into the import closure of every test that
+// makes a temp folder, and `vitest related` would select them all for a change to any core file. The starter helpers
+// (`starterProject`, `initStarter`) are in `init-project.ts`, which a test imports only when it runs `blazon init`.
 
 const made = new Set<string>();
 
@@ -73,17 +75,4 @@ export function setPlugins(root: string, plugins: StarterPlugins): void {
   delete next['plugins'];
   if (plugins !== 'none' && plugins.length > 0) next['plugins'] = plugins.map(entryValue);
   fs.writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
-}
-
-/** Runs `blazon init` in `dir` and sets the plugins the project allows (none unless the test says). */
-export async function initStarter(dir: string, { plugins = 'none' }: { plugins?: StarterPlugins } = {}): Promise<void> {
-  await runInit(dir);
-  setPlugins(dir, plugins);
-}
-
-/** A temporary project that `blazon init` wrote: the starter brand, with the plugins the test names and none by default. */
-export async function starterProject(options: { plugins?: StarterPlugins } = {}): Promise<string> {
-  const root = tempDir('blazon-starter-');
-  await initStarter(root, options);
-  return root;
 }

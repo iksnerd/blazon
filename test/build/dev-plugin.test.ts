@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createServer, type ViteDevServer } from 'vite';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { loadConfig } from '../../src/core/config/index.js';
 import { createBlazonVitePlugin } from '../../src/server/plugin.js';
 

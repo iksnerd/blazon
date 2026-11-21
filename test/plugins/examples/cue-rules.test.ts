@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ROOT_DIR } from '../support/spec.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // The second reference plugin, examples/plugins/blazon.cue-rules: a brand writes its rules in CUE, over the brand's
 // brand.json, and the plugin turns what the rules compute into findings. CUE is the language of the rules; the program

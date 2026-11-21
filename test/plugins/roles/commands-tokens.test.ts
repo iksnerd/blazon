@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { starterProject } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 import { blazon, output, manifest, plugin, answer, finding, project } from '../../support/plugin-roles';
 
 // The roles through the real commands (RFC 0002 of blazon, section 2), the part on blazon tokens: plugins pinned in the lock and allowed by the

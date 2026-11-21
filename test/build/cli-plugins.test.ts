@@ -3,7 +3,7 @@ import { spawnSync } from '../support/spawn';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO } from '../support/paths';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { shippedPluginNames } from '../support/starter-facts';
 
 // A plugin named in the config that blazon cannot find: the message says which plugin it thinks was meant.

@@ -7,7 +7,8 @@ import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { jobFor } from '../../../src/shipped/print-book/request.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // The title and subtitle options of blazon.print-book, in a real browser: the request puts them in the viewer hash, the
 // viewer reads them back, and the cover and the footer of a content slide show them as text, whatever characters they hold.

@@ -8,7 +8,7 @@ import { LOCK_FILE, recordPin } from '../../../src/plugins/pins/lock.js';
 import { createBlazonVitePlugin } from '../../../src/server/plugin.js';
 import type { Finding } from '../../../src/types/index.js';
 import { TEST_VARIABLES, answer, cleanup, dirs, install, script } from '../support/fixtures.js';
-import { initStarter } from '../../support/project';
+import { initStarter } from '../../support/init-project';
 
 // blazon dev runs the check plugins (RFC 0002 of blazon, section 2). The viewer gets the core's findings at once, as it
 // always did, and a second update with the plugins' findings when they have finished. A real Vite dev server on a real

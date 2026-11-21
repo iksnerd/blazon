@@ -3,7 +3,7 @@ import { spawnSync } from '../support/spawn';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO } from '../support/paths';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // blazon.lock through the real command: another blazon is refused by check and build, and no lock means no check.
 

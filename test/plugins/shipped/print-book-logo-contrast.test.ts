@@ -6,7 +6,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // The logo contrast grid, printed in a real browser: eight background tokens, two configured logos and four more that
 // declare an ink, so a tile has six rows. A slide is drawn smaller and wider when its content is too tall, and the

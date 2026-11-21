@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from '../support/spawn';
 import { REPO } from '../support/paths';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // `--severity` cuts the list that `--json` prints, so without `--json` it has nothing to cut: that is a mistake to say, not to ignore.
 // `tokens` and `init` print JSON like `check` and `build` do: one document on standard output, the human text on standard error.

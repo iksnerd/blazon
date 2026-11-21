@@ -7,7 +7,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // A page that places four wide pictures with one directive, under a heading and a paragraph of five lines: the list of
 // figures is taller than a slide, so each figure goes on a slide of its own (or as many as fit), and none is out of frame.

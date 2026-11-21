@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { blazon } from '../support/blazon-src';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The read commands `rules` and `can`: the rules of a group or brand, and whether a foreground and background pair is allowed. Split from the read-command tests.
 

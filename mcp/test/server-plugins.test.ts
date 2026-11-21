@@ -4,7 +4,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { starterProject, tempDir } from '../../test/support/project.js';
+import { tempDir } from '../../test/support/project.js';
+import { starterProject } from '../../test/support/init-project.js';
 import { connect, installed, startShared, structured, textOf } from './support.js';
 
 describe.skipIf(!installed)('blazon-mcp', () => {

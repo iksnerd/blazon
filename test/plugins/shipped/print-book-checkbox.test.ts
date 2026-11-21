@@ -7,7 +7,8 @@ import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { jobFor } from '../../../src/shipped/print-book/request.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // A Markdown task list (`- [ ]`, `- [x]`) in the print book: the native checkbox was drawn pale grey and nearly invisible, after a
 // bullet. In print the bullet is gone and the box has a border in the text colour; a checked box is filled, so it differs from an

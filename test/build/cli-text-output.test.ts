@@ -5,7 +5,8 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { REPO } from '../support/paths';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The text a person reads, run from the folder above the brand as a newcomer does after `blazon init a`: every path is one
 // they can click (file:line, as tsc and eslint print it) and every command is one that works from where they are.

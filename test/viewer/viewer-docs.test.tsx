@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { hasReference, referencePath } from '../support/reference';
 import { REPO } from '../support/paths';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { loadConfig } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';

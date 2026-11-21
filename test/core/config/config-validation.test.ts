@@ -35,7 +35,7 @@ describe('the config keys the checker knows', () => {
 describe('compileBlazonData reports a config that is wrong', () => {
   it('accepts every real config and a config with keys set to undefined', async () => {
     expect(await configFindings({ logo: undefined, theme: undefined, sections: undefined })).toEqual([]);
-    const { starterProject } = await import('../../support/project.js');
+    const { starterProject } = await import('../../support/init-project.js');
     const { hasReference, referencePath } = await import('../../support/reference.js');
     const reference = hasReference('examples/auth0') ? [referencePath('examples/auth0')] : [];
     for (const dir of [...reference, 'examples/blazon', await starterProject()]) {

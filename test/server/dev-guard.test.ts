@@ -6,7 +6,8 @@ import { DEFAULT_CONFIG } from '../../src/core/config/index.js';
 import { packageRoot } from '../../src/core/package-root.js';
 import { startDevServer, viewerFsOptions } from '../../src/server/dev-server.js';
 import { runPreview } from '../../src/cli/commands/preview.js';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // Vite's `/__open-in-editor?file=...` makes a running editor open a local path and any web page can request it; and Vite's default
 // `server.fs.allow` is the workspace root above the viewer. Blazon refuses the first and sets the second to the viewer's own folder.

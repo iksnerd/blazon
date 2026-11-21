@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from '../support/spawn';
 import { REPO } from '../support/paths';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { checkBuilt, checkBlazon, checkRegistered, expectedTools, handshake, runMcpCheck } from '../../src/cli/commands/mcp-check';
 
 // `blazon mcp --check`: the four checks (built, blazon found, a real handshake, registered), each failing alone. The handshake is tried on

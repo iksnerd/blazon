@@ -4,6 +4,8 @@ import { spawnSync } from '../support/spawn';
 import { REPO } from '../support/paths';
 import { tempDir } from '../support/project';
 import { colorWanted } from '../../src/core/colors.js';
+// The init tests below run `init` in a child process, which `vitest related` cannot follow. This import keeps the test selected when init changes.
+import '../../src/cli/commands/init.js';
 
 // Color is for a terminal. A piped run is plain unless FORCE_COLOR asks, and the `--color <hex>` of `init` is a color for the brand: a
 // color library that reads any `--color` as "force color" once made `blazon init --color 26e | cat` print escape codes.

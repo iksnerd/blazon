@@ -3,7 +3,7 @@ import { spawnSync } from '../support/spawn';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO } from '../support/paths';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // --cwd through the real command: the same as running from that folder, resolved once, and a missing folder is exit 2.
 

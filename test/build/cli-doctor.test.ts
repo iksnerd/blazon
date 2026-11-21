@@ -3,7 +3,8 @@ import { spawnSync } from '../support/spawn';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO } from '../support/paths';
-import { setPlugins, starterProject, tempDir } from '../support/project';
+import { setPlugins, tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { doctorChecks, CHROME_PLUGINS, type DoctorCheck, type DoctorEnv } from '../../src/cli/commands/doctor';
 import { BLAZON_LOCK } from '../../src/core/blazon-pin';
 

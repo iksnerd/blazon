@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from './spawn';
-import { starterProject } from './project';
+import { starterProject } from './init-project';
 import { REPO } from './paths';
 
 /** Runs the CLI from source, with no colour and an empty standard input. */

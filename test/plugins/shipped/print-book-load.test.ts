@@ -6,7 +6,8 @@ import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { jobFor } from '../../../src/shipped/print-book/request.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // The page count of a printed book is a property of the brand and the options, not of how fast the computer is. The same
 // book is laid out with the processor slowed down (Chrome DevTools Protocol, not a busy loop), so a measurement that

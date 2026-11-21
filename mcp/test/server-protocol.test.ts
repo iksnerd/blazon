@@ -4,7 +4,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { starterProject, tempDir } from '../../test/support/project.js';
+import { tempDir } from '../../test/support/project.js';
+import { starterProject } from '../../test/support/init-project.js';
 import { TOKEN_PATH } from '../src/blazon.js';
 import { buildPageText } from '../src/prompts.js';
 import { type Content, connect, fakeBlazon, installed, lastText, refused, startShared, structured, textOf } from './support.js';

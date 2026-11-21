@@ -5,7 +5,8 @@ import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { spawnSync } from '../support/spawn';
 import { REPO } from '../support/paths';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // A person types the brand folder first (`blazon list acme`). The read commands take it last, so the folder is read as a group, path or token.
 // The parse stays as it is; the failure says what happened, in one extra line on standard error.

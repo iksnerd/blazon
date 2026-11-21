@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { initStarter, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { initStarter } from '../support/init-project';
 import { DEFAULT_CONFIG, loadConfig } from '../../src/core/config/index.js';
 import { startDevServer } from '../../src/server/dev-server.js';
 import { buildSite } from '../../src/builder/site-builder.js';

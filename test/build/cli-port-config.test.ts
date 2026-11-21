@@ -4,7 +4,7 @@ import net from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO } from '../support/paths';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The port of `blazon dev` and `blazon preview` is the `port` in blazon.json, else 3000, and `-p` wins over both. The option
 // once carried a default of 3000 of its own, so a port passed on the command line always won and the config's was never read.

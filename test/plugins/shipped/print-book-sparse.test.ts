@@ -6,7 +6,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // A narrow table and a grid of wide marks, split over slides: how much of each slide they fill. The fill of a slide is
 // the lowest y of its content over the frame's height, read from the DOM.

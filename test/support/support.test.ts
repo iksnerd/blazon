@@ -6,7 +6,8 @@ import path from 'node:path';
 import { loadConfig } from '../../src/core/config/index.js';
 import { copyProject, exampleProject, exampleRoot, hasExample, EXAMPLES } from './examples.js';
 import { REPO } from './paths.js';
-import { removeAll, setPlugins, starterProject, tempDir, tempProject } from './project.js';
+import { removeAll, setPlugins, tempDir, tempProject } from './project.js';
+import { starterProject } from './init-project.js';
 
 // The shared test fixtures: a temporary project that is removed after the test file that made it, a fresh starter, and
 // a copy of an example without the folders a build writes. Each test file used to write its own copy of this code.

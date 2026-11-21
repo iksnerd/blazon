@@ -15,7 +15,8 @@ import { PDFDocument } from 'pdf-lib';
 import { REPO } from '../support/paths';
 import { hasReference, referencePath } from '../support/reference';
 import { spawnSync } from '../support/spawn';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The deck of the real brands: the starter `blazon init` writes, and Auth0's, which has pages, sections, grids, print values and
 // 78 slides. These are the cases of test/deck/brand-deck.test.ts that read the PDF of a real brand, which tested the Python deck

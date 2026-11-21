@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { initStarter } from '../../support/project';
+import { initStarter } from '../../support/init-project';
 import { compileBlazonData } from '../../../src/core/index.js';
 import { DevChecks } from '../../../src/plugins/roles/dev.js';
 import { LOCK_FILE, recordPin } from '../../../src/plugins/pins/lock.js';

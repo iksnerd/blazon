@@ -6,7 +6,7 @@ import { compileBlazonData } from '../../src/core/index.js';
 import { starterFiles } from '../../src/core/starter.js';
 import { OPERATIONS, toolOf, toolOperations } from '../../src/core/operations/index.js';
 import { REPO } from '../support/paths';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The starter carries notes for a coding agent (examples/blazon/AGENTS.md). They are guidance, not brand text, so a fresh
 // copy must not be told to replace them, and every command and flag they name must exist.

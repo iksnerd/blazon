@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ROOT_DIR } from '../plugins/support/spec.js';
-import { starterProject } from './project';
+import { starterProject } from './init-project';
 
 // Shared by test/plugins/examples/reference*.test.ts: the reference plugin, examples/plugins/acme.house-style, copied into a starter
 // project and run through the real commands.

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { blazon } from '../support/blazon-src';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // `list`, `get` and `can` with --tier, --theme, --pair and --no-verbose. Split from the read-command tests.
 

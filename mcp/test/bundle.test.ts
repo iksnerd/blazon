@@ -5,7 +5,8 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { REPO } from '../../test/support/paths.js';
-import { starterProject, tempDir } from '../../test/support/project.js';
+import { tempDir } from '../../test/support/project.js';
+import { starterProject } from '../../test/support/init-project.js';
 
 // The server as it ships: the one built file mcp/dist/index.js, with the MCP SDK and zod bundled in. These tests build it into a
 // temporary folder and run it from there, where no node_modules can be found, so a package the bundle forgot to carry fails here

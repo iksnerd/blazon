@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { recordPin } from '../../src/plugins/pins/lock.js';
 import { ROOT_DIR } from '../plugins/support/spec.js';
-import { starterProject } from './project';
+import { starterProject } from './init-project';
 
 // Shared by test/plugins/roles/commands-*.test.ts: blazon check, tokens and build run as processes against a starter project
 // with pinned plugins (RFC 0002 of blazon, section 2).

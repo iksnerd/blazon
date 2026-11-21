@@ -16,7 +16,7 @@ import {
   type FindingKey,
 } from '../../scripts/pin-compare.js';
 import { REPO } from '../support/paths.js';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // scripts/pin-compare.ts builds a brand with two builds of blazon and reports what differs. The pure parts are tested on made-up builds; the
 // real comparison builds a new starter twice with this checkout (it needs dist/, so it is skipped where there is none, as in the commit hook).

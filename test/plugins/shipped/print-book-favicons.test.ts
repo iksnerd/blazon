@@ -7,7 +7,8 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { ROOT_DIR } from '../support/spec.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // The Favicons chapter of the printed book, with the real viewer in a real browser: the site as `blazon build` writes it, the
 // copy blazon.favicons leaves in it, then the blazon.print-book plugin. The viewer asks the site for favicons/favicons.json

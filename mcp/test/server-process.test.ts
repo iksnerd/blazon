@@ -5,7 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { starterProject, tempDir } from '../../test/support/project.js';
+import { tempDir } from '../../test/support/project.js';
+import { starterProject } from '../../test/support/init-project.js';
 import { BlazonRunner, CACHE_MAX, childEnv, targetFrom } from '../src/blazon.js';
 import { blazonFromSource, connect, fakeBlazon, installed, jsonOf, startShared, structured, textOf, TSX, loadServer } from './support.js';
 

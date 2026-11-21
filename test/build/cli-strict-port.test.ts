@@ -4,7 +4,7 @@ import net from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO } from '../support/paths';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // Without --strict-port a busy port moves on to the next one (and says so). With it, a busy port is a wrong use of the
 // command line: exit 2, one line on standard error, nothing started.

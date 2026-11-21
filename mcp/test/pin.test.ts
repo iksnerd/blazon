@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { starterProject } from '../../test/support/project.js';
+import { starterProject } from '../../test/support/init-project.js';
 import { PINNED, TOOLS, pinHarness } from './pin-support.js';
 import { installed } from './support.js';
 

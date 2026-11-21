@@ -12,7 +12,8 @@ import { findShipped, shippedDirectory, shippedProblem } from '../../../src/plug
 import type { BlazonConfig } from '../../../src/types/index.js';
 import { BRAND, answer, script as shell } from '../support/fixtures.js';
 import { ROOT_DIR } from '../support/spec.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // Plugins that ship inside blazon's package (RFC 0005 section 3.6). Each test builds a fake install, a plugins
 // folder with a lock beside it, and runs a real fixture plugin through PluginRun. The install is made where every

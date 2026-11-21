@@ -7,7 +7,8 @@ import { compileBlazonData } from '../../src/core/index.js';
 import { buildBrandExport, formatBrandJson } from '../../src/core/brand/export.js';
 import { buildSite } from '../../src/builder/site-builder.js';
 import type { BlazonConfig, BlazonData } from '../../src/types/index.js';
-import { starterProject, tempDir, tempProject } from '../support/project';
+import { tempDir, tempProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { hasReference, referencePath } from '../support/reference';
 import { REPO } from '../support/paths';
 

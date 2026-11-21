@@ -198,7 +198,7 @@ describe('check on a family that nothing loads', () => {
   it('is quiet about the shipped examples and the starter that load what they name', async () => {
     const { loadConfig } = await import('../../src/core/config/index.js');
     const { ROOT } = await import('../support/spec-helpers.js');
-    const { starterProject } = await import('../support/project.js');
+    const { starterProject } = await import('../support/init-project.js');
     const { hasReference, referencePath } = await import('../support/reference.js');
     const reference = hasReference('examples/slack') ? [referencePath('examples/slack')] : [];
     for (const dir of ['examples/blazon', ...reference, await starterProject()]) {

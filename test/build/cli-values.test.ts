@@ -3,7 +3,8 @@ import { spawnSync } from '../support/spawn';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO } from '../support/paths';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The value of an option is the text typed. An empty one is a mistake (an unset variable in a script), and a number-looking one
 // is still text: the parser turned both into numbers, so `--name ""` became the title "0".

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { initStarter, tempDir as makeTempDir } from '../support/project';
+import { tempDir as makeTempDir } from '../support/project';
+import { initStarter } from '../support/init-project';
 import { runInit } from '../../src/cli/commands/init.js';
 import { runTokens } from '../../src/cli/commands/tokens.js';
 import { compileBlazonData } from '../../src/core/index.js';

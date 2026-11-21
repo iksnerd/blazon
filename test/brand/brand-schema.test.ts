@@ -9,7 +9,7 @@ import { BRAND_SCHEMA, BRAND_SCHEMA_FILE } from '../../src/core/brand/schema.js'
 import { buildSite } from '../../src/builder/site-builder.js';
 import { startDevServer } from '../../src/server/dev-server.js';
 import { LOGO_CORNERS } from '../../src/types/index.js';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { REPO } from '../support/paths';
 import { hasReference, referencePath } from '../support/reference';
 

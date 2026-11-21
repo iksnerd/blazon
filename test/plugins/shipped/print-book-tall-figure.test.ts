@@ -6,7 +6,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // A figure taller than a slide, in a real browser. The web book frames a figure at its image's real ratio, so its height
 // grows with its width, and the print book's "draw the frame smaller" widened it again: a 2400x2160 overview printed

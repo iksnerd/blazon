@@ -5,7 +5,8 @@ import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 import { writePalette } from '../../support/palette';
 
 // A grid of colour swatches drawn from tokens (the `blazon:tokens` directive), split over slides: each slide holds as many

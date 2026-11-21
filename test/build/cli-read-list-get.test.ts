@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { blazon } from '../support/blazon-src';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The read commands `list` and `get`: the token listing, one token by path, and their refusals. Split from the read-command tests; each prints what the brand says and writes nothing.
 

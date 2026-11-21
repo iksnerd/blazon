@@ -4,7 +4,8 @@ import path from 'node:path';
 import { createServer, type ViteDevServer } from 'vite';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { createBlazonVitePlugin } from '../../../src/server/plugin.js';
-import { initStarter, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { initStarter } from '../../support/init-project';
 
 // blazon dev on a real project: a token file that breaks is said in the terminal, with where, and so is the fix. A real Vite dev server
 // and a real file change, with console.error watched. The viewer gets the findings either way; this is for whoever watches the terminal.

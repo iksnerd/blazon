@@ -5,7 +5,7 @@ import { loadConfig } from '../../../src/core/config/index.js';
 import { compileBlazonData } from '../../../src/core/index.js';
 import { summarizeFindings } from '../../../src/core/checker/index.js';
 import { starterFiles as allStarterFiles } from '../../../src/core/starter.js';
-import { starterProject } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 import { REPO } from '../../support/paths';
 import { hasReference, referencePath } from '../../support/reference';
 

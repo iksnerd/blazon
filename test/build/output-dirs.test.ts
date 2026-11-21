@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { loadConfig } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';
 import { buildSite } from '../../src/builder/site-builder.js';

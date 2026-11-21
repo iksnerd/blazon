@@ -6,7 +6,8 @@ import { compileBlazonData } from '../../../src/core/index.js';
 import { DIRECTIVES } from '../../../src/core/docs/directives.js';
 import { buildBrandExport } from '../../../src/core/brand/export.js';
 import { STANDARD_SECTION_IDS as SECTION_IDS, type BlazonConfig } from '../../../src/types/index.js';
-import { starterProject, tempDir } from '../../support/project';
+import { tempDir } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 import { REPO } from '../../support/paths';
 import { hasReference, referencePath } from '../../support/reference';
 

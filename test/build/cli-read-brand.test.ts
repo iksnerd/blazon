@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { blazon } from '../support/blazon-src';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // The read commands `fonts`, `logo` and `brand`: the fonts the brand loads, the logo variants, and the compiled brand.json. Split from the read-command tests.
 

@@ -5,7 +5,7 @@ import { withoutCascade } from '../../../src/core/checker/cascade.js';
 import { compileBlazonData } from '../../../src/core/index.js';
 import { loadConfig } from '../../../src/core/config/index.js';
 import type { Finding } from '../../../src/types/index.js';
-import { starterProject } from '../../support/project';
+import { starterProject } from '../../support/init-project';
 
 // A token file that does not parse holds tokens nobody can see. Every finding that says a token "does not exist" is then a guess, and
 // one broken file used to produce a screenful of them. The broken file is the finding; what follows from it is left out until it is fixed.

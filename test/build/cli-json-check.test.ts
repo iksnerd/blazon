@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { starterProject } from '../support/project';
+import { starterProject } from '../support/init-project';
 import { blazon, brokenProject } from '../support/blazon-src';
 
 // check and build output, as JSON and as text: findings, --strict, failures, and the line of a finding. Split from the --json tests.

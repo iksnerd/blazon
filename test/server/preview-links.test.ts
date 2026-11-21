@@ -3,7 +3,8 @@ import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { describe, it, expect } from 'vitest';
 import { runPreview } from '../../src/cli/commands/preview.js';
-import { starterProject, tempDir } from '../support/project';
+import { tempDir } from '../support/project';
+import { starterProject } from '../support/init-project';
 
 // `blazon preview` serves a built folder that may come from anywhere (a repository can ship its dist/). A link in it that leaves the folder
 // is not a file of the site.
