@@ -25,7 +25,7 @@ function print(logo: LogoDescription): void {
     console.log(`  ${v.variant.padEnd(8)}  ${v.file}${v.found ? '' : pc.red('  (not found)')}${v.ink ? `  ink ${v.ink}` : ''}${v.asset ? pc.dim(`  ${v.asset}`) : ''}`);
   for (const asset of logo.assets) {
     const r = asset.rules;
-    console.log(`\n  ${pc.bold(asset.id)}  ${asset.file}${asset.variants.length ? pc.dim(`  used as ${asset.variants.join(', ')}`) : ''}`);
+    console.log(`\n  ${pc.bold(asset.id)}  ${asset.files.join(', ')}${asset.variants.length ? pc.dim(`  used as ${asset.variants.join(', ')}`) : ''}`);
     const rows: [string, string | undefined][] = [
       ['lockup', r.lockup],
       ['ink', r.ink],

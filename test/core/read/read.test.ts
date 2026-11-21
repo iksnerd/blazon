@@ -255,7 +255,7 @@ describe('describeLogo', () => {
     expect(logo.assets).toEqual([
       {
         id: 'logos/mark',
-        file: 'assets/logos/mark.svg',
+        files: ['assets/logos/mark.svg'],
         variants: ['onLight'],
         rules: expect.objectContaining({ lockup: 'mark', clearSpace: { value: 8, unit: 'px' }, ink: '#0033cc' }),
       },

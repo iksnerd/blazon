@@ -1,5 +1,6 @@
 import type { AssetMeta } from '../../types/index.js';
 import { artworkSize } from '../../core/assets/measure.js';
+import { keepRepresentation } from '../../core/assets/representations.js';
 import { isObject, requireBrand } from '../shared/plugin.js';
 import { readBaseAsset, readMeta, text } from '../shared/brand.js';
 
@@ -32,7 +33,7 @@ export function readBrand(brand: unknown): BrandRead {
     if (!base) continue;
     const { id, file, format, category } = base;
     const size = artworkSize({ width: raw.width as number | undefined, height: raw.height as number | undefined, viewBox: text(raw.viewBox) });
-    assets.set(id, {
+    keepRepresentation(assets, {
       id,
       name: text(raw.name) ?? id.split('/').pop()!,
       category,

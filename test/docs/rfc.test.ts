@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import type { TokenType } from '../../src/types/index.js';
 import { CHECKS, type CheckCode } from '../../src/core/checker/catalogue.js';
 import { read, interfaceKeys, findingCodes, rfcSection } from '../support/spec-helpers.js';
-import { assetFingerprint, fingerprintInput, tokenFingerprint } from '../../src/core/checker/review.js';
+import { assetFingerprint, assetSetFingerprint, assetSetInput, fingerprintInput, tokenFingerprint } from '../../src/core/checker/review.js';
 
 // RFC 0001 is the normative text. It must name every config key and every finding code the code has, so a reader
 // who has only the RFC is not told less than the manual is. Expectations are read from the source; this does not
@@ -89,7 +89,8 @@ describe('RFC 0001', () => {
         });
     };
     const tokenRows = () => rows().filter((r) => !r.name.startsWith('asset'));
-    const assetRows = () => rows().filter((r) => r.name.startsWith('asset'));
+    const assetRows = () => rows().filter((r) => r.name.startsWith('asset') && !r.name.startsWith('asset id'));
+    const setRows = () => rows().filter((r) => r.name.startsWith('asset id'));
 
     it('has at least four token vectors, and the asset vectors', () => {
       expect(tokenRows().length).toBeGreaterThanOrEqual(4);
@@ -109,6 +110,34 @@ describe('RFC 0001', () => {
 
     it('reproduces each asset vector from its bytes', () => {
       for (const r of assetRows()) expect(assetFingerprint(Buffer.from(r.value, 'hex')), r.name).toBe(r.fingerprint);
+    });
+
+    it('reproduces each asset id vector: the files and bytes give the text, the text hashes to the digits, and shasum agrees', () => {
+      expect(setRows().length).toBeGreaterThanOrEqual(2);
+      let earlier: string[] = [];
+      for (const r of setRows()) {
+        const files = [...r.value.matchAll(/`?([^`;\s]+)`: `([0-9a-f]+)`?/g)].map((m) => ({ name: m[1]!, bytes: Buffer.from(m[2]!, 'hex') }));
+        // the input text cell lists each line as name, NUL, 64 hex digits, LF; the lines the RFC writes in words are rebuilt from the
+        // digests it prints, which are the sha-256 of the bytes above
+        const own = [...r.input.matchAll(/`?([^`\s]+)`, NUL, `([0-9a-f]{64})`, LF/g)].map((m) => `${m[1]}\0${m[2]}\n`);
+        // "the two lines above" stands for the lines of the vector before it
+        const printed = r.input.includes('the two lines above') ? [...earlier, ...own] : own;
+        earlier = printed;
+        const text = assetSetInput(files);
+        for (const line of printed) expect(text, r.name).toContain(line);
+        expect(assetSetFingerprint(files), r.name).toBe(r.fingerprint);
+        // the hash a second implementation computes from the text alone
+        expect(createHash('sha256').update(Buffer.from(text, 'utf-8')).digest('hex').slice(0, 12), r.name).toBe(r.fingerprint);
+        for (const file of files)
+          expect(
+            printed.some((line) => line.startsWith(`${file.name}\0${createHash('sha256').update(file.bytes).digest('hex')}`)),
+            `${r.name}: ${file.name}`,
+          ).toBe(true);
+      }
+      // the three-file vector is the two-file one with a third line, and a list of one file is the file's own fingerprint
+      const [two, three] = setRows();
+      expect(three!.input).toContain('the two lines above');
+      expect(two!.fingerprint).not.toBe(three!.fingerprint);
     });
   });
 });

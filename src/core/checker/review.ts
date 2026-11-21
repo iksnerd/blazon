@@ -84,8 +84,30 @@ export function tokenFingerprint(item: Pick<TokenItem, 'type' | 'resolvedValue'>
   return digest(fingerprintInput(item));
 }
 
-/** The fingerprint of an asset: its file's bytes. The sidecar is where the approval is written, so editing it does not void it. */
+/** The fingerprint of an asset file: its bytes. The sidecar is where the approval is written, so editing it does not void it. */
 export const assetFingerprint = (bytes: Uint8Array): string => digest(bytes);
+
+/** One file of an asset id, for its fingerprint. */
+export interface AssetFileBytes {
+  /** The file name, such as `mark.svg` */
+  name: string;
+  bytes: Uint8Array;
+}
+
+/**
+ * The text that is hashed for an asset id with several files (RFC 0001 section 2): the files in byte order of their names (UTF-8),
+ * one line each: the file name, a NUL, the full lowercase sha-256 hex of the file's bytes, and a line feed.
+ */
+export function assetSetInput(files: readonly AssetFileBytes[]): string {
+  const ordered = [...files].sort((a, b) => Buffer.compare(Buffer.from(a.name, 'utf-8'), Buffer.from(b.name, 'utf-8')));
+  return ordered.map((file) => `${file.name}\0${createHash('sha256').update(file.bytes).digest('hex')}\n`).join('');
+}
+
+/**
+ * The fingerprint of an asset id: for one file exactly `assetFingerprint` of its bytes, so an approval recorded before an id had a
+ * second file stays valid; for several, the digest of `assetSetInput`.
+ */
+export const assetSetFingerprint = (files: readonly AssetFileBytes[]): string => (files.length === 1 ? assetFingerprint(files[0]!.bytes) : digest(assetSetInput(files)));
 
 /** One approval to compare: a recorded fingerprint against the current one. */
 export interface Approval {
@@ -93,6 +115,8 @@ export interface Approval {
   review: Review;
   /** Undefined when the value cannot be read (an unresolved alias, a missing file): nothing to compare */
   current: string | undefined;
+  /** For an asset id: the names of its files in byte order, so a person sees what the one fingerprint covers */
+  files?: string[];
 }
 
 /**
@@ -105,7 +129,7 @@ export function staleFindings(approvals: readonly Approval[]): Finding[] {
     .map((a): Finding =>
       finding('approval-stale', {
         path: a.path,
-        message: `The value changed after review.status was set to ok${a.review.by ? ` by ${a.review.by}` : ''}${a.review.at ? ` on ${a.review.at}` : ''} (fingerprint ${a.review.value}, now ${a.current}): confirm it again, then set review.value to ${a.current}`,
+        message: `The value${a.files && a.files.length > 1 ? ` (${a.files.join(', ')})` : ''} changed after review.status was set to ok${a.review.by ? ` by ${a.review.by}` : ''}${a.review.at ? ` on ${a.review.at}` : ''} (fingerprint ${a.review.value}, now ${a.current}): confirm it again, then set review.value to ${a.current}`,
       }),
     );
 }
