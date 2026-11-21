@@ -221,6 +221,7 @@ classify_paths() {
             .githooks/*|scripts/install-hooks.mjs) extra_tests="$extra_tests test/hooks" ;;
             # The generators write the finding tables of the manual and RFC 0001 and the layers diagram of ARCHITECTURE.md; their tests are in the docs run
             scripts/gen-checks-docs.ts|scripts/gen-layers-docs.ts|scripts/layers.json) docs=1 ;;
+            scripts/linux-check.sh) extra_tests="$extra_tests test/scripts/linux-check.test.ts" ;;
             scripts/shipped-lock.mjs) extra_tests="$extra_tests test/scripts/shipped-lock.test.ts" ;;
             # The build of the plugins' programs: what the conformance test and the print-book test hold them to
             scripts/build-plugins.mjs|scripts/plugin-externals.ts) extra_tests="$extra_tests test/scripts/shipped-lock.test.ts test/plugins/shipped/conformance test/plugins/shipped/print-book.test.ts" ;;
