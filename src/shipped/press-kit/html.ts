@@ -1,6 +1,7 @@
 import { contrast, parseColor } from '../shared/color.js';
 import type { BrandRead } from './brand.js';
 import type { KitColor } from './colors.js';
+import { fallbackLine, fontRows, type KitFonts } from './fonts.js';
 import { dimensionsText, measureText, type Chosen, type Surface } from './logos.js';
 import type { Company, Terms } from './options.js';
 import { contactLines } from './text.js';
@@ -19,8 +20,8 @@ export interface Kit {
   /** The logos in the kit, each with the path it has there */
   logos: Chosen[];
   colors: KitColor[];
-  /** The text of fonts.txt */
-  fonts?: string;
+  /** What fonts.txt says, as data: the page is drawn from it, not from the text */
+  fonts?: KitFonts;
   /** Every path in the kit, to link a file only when it is there */
   paths: string[];
 }
@@ -84,35 +85,6 @@ function colorBlock(color: KitColor): string {
   return `<li class="color">${swatch}<p class="name"><strong>${esc(name)}</strong>${color.review ? ' (unreviewed)' : ''}</p>${dl(rows)}</li>`;
 }
 
-interface FontBlock {
-  name: string;
-  rows: { label: string; value: string }[];
-}
-
-/** fonts.txt read back: the one text that says what the fonts are, so the page cannot say anything else. The fallback line stays whole. */
-function readFonts(text: string): { families: FontBlock[]; fallback?: string } {
-  const families: FontBlock[] = [];
-  let fallback: string | undefined;
-  for (const block of text
-    .trim()
-    .split(/\n\s*\n/)
-    .slice(1)) {
-    const lines = block.split('\n');
-    if (lines[0]!.startsWith('Fallback fonts')) {
-      fallback = lines[0];
-      continue;
-    }
-    const rows: FontBlock['rows'] = [];
-    for (const line of lines.slice(1)) {
-      const row = /^ {2}(\S[^:]*):\s*(.*)$/.exec(line);
-      if (row && !line.startsWith('    ')) rows.push({ label: row[1]!, value: row[2]! });
-      else if (rows.length > 0) rows[rows.length - 1]!.value = [rows[rows.length - 1]!.value, line.trim()].filter(Boolean).join('\n');
-    }
-    families.push({ name: lines[0]!, rows });
-  }
-  return { families, fallback };
-}
-
 const STYLE = `*{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:#ffffff;color:#1a1a1a;font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
@@ -174,8 +146,22 @@ export function kitPage(kit: Kit): string {
     );
   }
   if (kit.fonts) {
-    const { families, fallback } = readFonts(kit.fonts);
-    const body = families.map((family) => `<div class="fonts"><h3>${esc(family.name)}</h3>${dl(family.rows.map((row) => ({ label: row.label, html: esc(row.value) })))}</div>`);
+    const body = kit.fonts.families.map((font) => {
+      const rows = fontRows(font).map((row) => ({
+        label: row.label,
+        html: esc(
+          row.block
+            ? row.value
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .join('\n')
+            : row.value,
+        ),
+      }));
+      return `<div class="fonts"><h3>${esc(font.name)}</h3>${dl(rows)}</div>`;
+    });
+    const fallback = fallbackLine(kit.fonts);
     if (fallback) body.push(`<p>${esc(fallback)}</p>`);
     if (body.length > 0) parts.push(section('Fonts', body.join('')));
   }

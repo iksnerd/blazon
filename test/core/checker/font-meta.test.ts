@@ -59,6 +59,52 @@ describe('fontMetaFindings', () => {
   });
 });
 
+describe('role, reason and fallbackFor', () => {
+  const found = async (meta: unknown) => {
+    const { items, groupMeta } = await compile(brand(meta));
+    return fontMetaFindings(items, groupMeta).map((f) => `${f.code}:${f.severity}`);
+  };
+
+  it('accepts a role from the closed set, alone or with a reason, and a fallback that says what it stands in for', async () => {
+    for (const role of ['primary', 'secondary', 'display', 'monospace', 'fallback']) expect(await found({ role })).toEqual([]);
+    expect(await found({ role: 'primary', reason: 'Headlines and running text', source: 'Acme Type' })).toEqual([]);
+    expect(await found({ role: 'fallback', reason: 'Works in Slides', fallbackFor: 'Acme Sans' })).toEqual([]);
+    expect(await found({ role: 'fallback', fallbackFor: 'font.family.display' })).toEqual([]);
+  });
+
+  it('refuses a role that is not in the set, or not text, as an error', async () => {
+    expect(await found({ role: 'tertiary' })).toEqual(['font-meta-invalid:error']);
+    expect(await found({ role: 3 })).toEqual(['font-meta-invalid:error']);
+  });
+
+  it('warns on a reason with a line break, a reason over 160 characters, and a reason that is not text', async () => {
+    expect(await found({ role: 'primary', reason: 'one\ntwo' })).toEqual(['font-role-invalid:warning']);
+    expect(await found({ role: 'primary', reason: 'x'.repeat(161) })).toEqual(['font-role-invalid:warning']);
+    expect(await found({ role: 'primary', reason: 'x'.repeat(160) })).toEqual([]);
+    expect(await found({ role: 'primary', reason: 7 })).toEqual(['font-role-invalid:warning']);
+  });
+
+  it('warns on fallbackFor on a role that is not fallback, and on one over 80 characters or with a line break', async () => {
+    expect(await found({ role: 'primary', fallbackFor: 'Acme Sans' })).toEqual(['font-role-invalid:warning']);
+    expect(await found({ reason: 'only a reason', fallbackFor: 'Acme Sans' })).toEqual(['font-role-invalid:warning']);
+    expect(await found({ role: 'fallback', fallbackFor: 'x'.repeat(81) })).toEqual(['font-role-invalid:warning']);
+    expect(await found({ role: 'fallback', fallbackFor: 'a\nb' })).toEqual(['font-role-invalid:warning']);
+  });
+
+  it('carries a valid role, reason and fallbackFor in the token data, as authored', async () => {
+    const data = await compileTokens({
+      'type.json': {
+        font: {
+          $type: 'fontFamily',
+          sub: { $value: ['Arial'], $extensions: { 'dev.blazon': { font: { role: 'fallback', reason: 'Works in Slides', fallbackFor: 'Acme Sans' } } } },
+        },
+      },
+    });
+    expect(data.findings.filter((f) => f.code.startsWith('font-'))).toEqual([]);
+    expect(data.tokens.byPath.get('font.sub')!.blazon.font).toEqual({ role: 'fallback', reason: 'Works in Slides', fallbackFor: 'Acme Sans' });
+  });
+});
+
 describe('in a compiled project', () => {
   it('reports a bad font fact with the file and line of the token, and carries a good one in the data', async () => {
     const data = await compileTokens({

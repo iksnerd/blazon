@@ -1,4 +1,5 @@
-import type { AssetMeta } from '../../types/index.js';
+import type { AssetMeta, FontRole } from '../../types/index.js';
+import { fontRoleFields } from '../../core/font-roles.js';
 import { isObject, requireBrand } from '../shared/plugin.js';
 import { keepRepresentation } from '../../core/assets/representations.js';
 import { readBaseAsset, readLogo, readMeta, readRoles, text } from '../shared/brand.js';
@@ -35,6 +36,10 @@ export interface FontToken {
   license?: string;
   /** The `dev.blazon` `font`'s license address */
   licenseUrl?: string;
+  /** The role, the reason and, for a fallback, what it stands in for, from the token's `dev.blazon` `font`: only the valid ones (blazon check warns about the rest) */
+  role?: FontRole;
+  reason?: string;
+  fallbackFor?: string;
   /** Where the typeface comes from, from the token's `dev.blazon` `font`: a name or an address */
   source?: string;
 }
@@ -105,6 +110,7 @@ export function readBrand(brand: unknown): BrandRead {
           ...(license && { license }),
           ...(text(font.licenseUrl) && { licenseUrl: font.licenseUrl as string }),
           ...(text(font.source) && { source: font.source as string }),
+          ...fontRoleFields(font),
         });
       }
     }

@@ -36,6 +36,8 @@ function print(fonts: FontsDescription): void {
             : 'not loaded';
     console.log(`  ${use.family}  ${pc.dim(`${state}; ${use.tokens.join(', ')}`)}`);
     if (use.stack && use.stack.length > 1) console.log(pc.dim(`    stack: ${use.stack.join(', ')}`));
+    if (use.font?.role) console.log(pc.dim(`    role: ${use.font.role}${use.font.fallbackFor ? `, stands in for ${use.font.fallbackFor}` : ''}`));
+    if (use.font?.reason) console.log(pc.dim(`    why: ${use.font.reason}`));
   }
   console.log();
 }

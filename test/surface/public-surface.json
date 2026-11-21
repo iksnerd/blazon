@@ -162,8 +162,11 @@
       "min"
     ],
     "font": [
+      "fallbackFor",
       "license",
       "licenseUrl",
+      "reason",
+      "role",
       "source"
     ],
     "types": [
@@ -357,6 +360,7 @@
       "font-license-invalid",
       "font-license-unknown",
       "font-meta-invalid",
+      "font-role-invalid",
       "icon-set-invalid",
       "icon-unknown",
       "logo-contrast-insufficient",
@@ -434,6 +438,7 @@
       "font-license-invalid": "warning",
       "font-license-unknown": "info",
       "font-meta-invalid": "error",
+      "font-role-invalid": "warning",
       "icon-set-invalid": "error",
       "icon-unknown": "warning",
       "logo-contrast-insufficient": "warning",

@@ -899,7 +899,7 @@ const kitOf = (over: Partial<Kit> = {}): Kit => {
     brand,
     logos: chooseLogos(brand, {}).chosen,
     colors: planColors(brand).colors,
-    fonts: planFonts(brand).text,
+    fonts: planFonts(brand).model,
     paths: ['colors/colors.css', 'colors/colors.json'],
     ...over,
   };
@@ -1032,7 +1032,10 @@ describe('index.html: the page', () => {
       brand,
       logos: chooseLogos(brand, {}).chosen,
       colors: planColors(brand).colors,
-      fonts: `Fonts\n\n${evil('family')}\n  Used for: ${evil('used')}\n  License: ${evil('license')}\n\nFallback fonts, not shipped: ${evil('fallback')}\n`,
+      fonts: {
+        families: [{ name: evil('family'), usedFor: [evil('used')], source: 'not stated', license: { kind: 'text', text: evil('license') } }],
+        fallbacks: [evil('fallback')],
+      },
       paths: [],
       company: {
         description: evil('companydesc'),

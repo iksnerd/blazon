@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { blazon } from '../support/blazon-src';
+import { createHash } from 'node:crypto';
 import { starterProject } from '../support/init-project';
 
 // The read commands `fonts`, `logo` and `brand`: the fonts the brand loads, the logo variants, and the compiled brand.json. Split from the read-command tests.
@@ -42,6 +43,36 @@ describe('blazon fonts and blazon logo', () => {
 
   it('exit 2 for a folder with no brand book in it', () => {
     expect(blazon('fonts', '/nonexistent-blazon-folder').status).toBe(2);
+  }, 120_000);
+});
+
+describe('blazon fonts with roles', () => {
+  const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+
+  it('prints the same bytes as before for a brand that sets no role, reason or fallbackFor', () => {
+    expect(sha(blazon('fonts', root).stdout)).toBe('0e8a9bb7095726407b0cb3def0be66f998795f6884acca31c5a94f0cb08dffd8');
+    expect(sha(blazon('fonts', root, '--json').stdout)).toBe('bfb0308c0656d5fdd4ddc692d369c9a2fc72bfa122cfb1bfeea389e1fa736a9b');
+  }, 120_000);
+
+  it('prints each family role and reason, and what a fallback stands in for, in text and in --json', async () => {
+    const dir = await starterProject();
+    const file = path.join(dir, 'tokens/typography.json');
+    const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    const family = data.font.family;
+    family.display.$extensions['dev.blazon'].font.role = 'primary';
+    family.display.$extensions['dev.blazon'].font.reason = 'Headlines only';
+    family.body.$extensions['dev.blazon'].font.role = 'secondary';
+    family.slides = { $value: ['Arial'], $extensions: { 'dev.blazon': { font: { role: 'fallback', reason: 'Works in Slides', fallbackFor: 'Big Shoulders Display' } } } };
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+    const text = blazon('fonts', dir).stdout;
+    expect(text).toContain('Big Shoulders Display  loaded; font.family.display');
+    expect(text).toContain('    role: primary\n    why: Headlines only\n');
+    expect(text).toContain('    role: secondary\n');
+    expect(text).toContain('    role: fallback, stands in for Big Shoulders Display\n    why: Works in Slides\n');
+    const json = JSON.parse(blazon('fonts', dir, '--json').stdout);
+    const byName = Object.fromEntries(json.families.map((f: { family: string }) => [f.family, f]));
+    expect(byName['Big Shoulders Display'].font).toMatchObject({ role: 'primary', reason: 'Headlines only' });
+    expect(byName.Arial.font).toEqual({ role: 'fallback', reason: 'Works in Slides', fallbackFor: 'Big Shoulders Display' });
   }, 120_000);
 });
 

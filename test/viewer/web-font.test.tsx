@@ -88,3 +88,24 @@ describe('where a typeface comes from and its license', () => {
     expect(card('font.mono').querySelector('[data-font-facts]')).toBeNull();
   });
 });
+
+describe('the role and reason of a typeface', () => {
+  it('shows them on its card with the other font facts, and escapes nothing by hand', async () => {
+    const root = writeProject({
+      'tokens/type.json': {
+        font: {
+          $type: 'fontFamily',
+          headline: { $value: ['Kinto', 'sans-serif'], $extensions: { 'dev.blazon': { font: { role: 'primary', reason: '<b>Headlines</b>' } } } },
+          slide: { $value: ['Arial'], $extensions: { 'dev.blazon': { font: { role: 'fallback', fallbackFor: 'Kinto' } } } },
+          mono: { $value: ['Menlo', 'monospace'] },
+        },
+      },
+    });
+    data = await compileBlazonData({ ...TEST_CONFIG }, root);
+    open();
+    expect(within(card('font.headline')).getByText('Role: primary')).toBeTruthy();
+    expect(within(card('font.headline')).getByText('Why: <b>Headlines</b>')).toBeTruthy();
+    expect(within(card('font.slide')).getByText('Stands in for: Kinto')).toBeTruthy();
+    expect(card('font.mono').querySelector('[data-font-facts]')).toBeNull();
+  });
+});

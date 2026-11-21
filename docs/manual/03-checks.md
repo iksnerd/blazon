@@ -188,6 +188,7 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `font-license-invalid` | Warning | A license file beside a font file was not read. |
 | `font-license-unknown` | Note | A font license is not a known SPDX id. |
 | `font-meta-invalid` | Error | The font fields on a token are not valid. |
+| `font-role-invalid` | Warning | A font reason or fallbackFor is not valid, so it is left out. |
 | `icon-set-invalid` | Error | An icon set in the config cannot be loaded. |
 | `icon-unknown` | Warning | An icon set category lists an icon the package does not have. |
 | `logo-contrast-insufficient` | Warning | A logo variant draws the color of the surface it is shown on. |
