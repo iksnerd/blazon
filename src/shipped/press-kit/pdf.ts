@@ -4,7 +4,8 @@ import { luminance, parseColor } from '../shared/color.js';
 import { fontOf } from '../shared/font-stack.js';
 import type { BrandRead } from './brand.js';
 import type { KitColor } from './colors.js';
-import type { Company } from './options.js';
+import type { Company, Terms } from './options.js';
+import { contactLines } from './text.js';
 
 // press-kit.pdf: one page with the brand's name, its description, its colors as swatches and a logo, drawn in Chrome. The page is a local
 // string with no network: the logo is a data: address, and the only fonts are the ones the brand embeds. A page that cannot be drawn is
@@ -27,6 +28,8 @@ export interface PageInput {
   company?: Company;
   /** The `note` option */
   note?: string;
+  /** The `terms` option: one short block, with the rest in about.txt */
+  terms?: Terms;
 }
 
 export interface Swatch {
@@ -60,7 +63,10 @@ export function pickSwatches(colors: KitColor[]): { swatches: Swatch[]; more: nu
   return { swatches, more: colors.length - swatches.length };
 }
 
-export function pageHtml({ brand, colors, logo, company, note }: PageInput): string {
+/** The most of the terms' text the PDF holds: it is one page, and about.txt has the whole */
+const TERMS_PDF_CHARS = 300;
+
+export function pageHtml({ brand, colors, logo, company, note, terms }: PageInput): string {
   const display = fontOf(brand.roles.fontDisplay);
   const body = fontOf(brand.roles.fontBody);
   const stack = (name: string | undefined, generic: string) => [name && quoted(name), generic].filter(Boolean).join(', ');
@@ -78,6 +84,12 @@ export function pageHtml({ brand, colors, logo, company, note }: PageInput): str
     description ? `<p>${escape(description)}</p>` : '',
     company?.boilerplate ? `<p class="boiler">${escape(company.boilerplate)}</p>` : '',
     company?.facts ? `<dl class="facts">${company.facts.map((fact) => `<dt>${escape(fact.label)}</dt><dd>${escape(fact.value)}</dd>`).join('')}</dl>` : '',
+    company?.contact
+      ? `<p class="contact">${contactLines(company.contact)
+          .map(({ label, value }) => `<span>${escape(label)}: ${escape(value)}</span>`)
+          .join('')}</p>`
+      : '',
+    terms ? termsBlock(terms) : '',
   ].join('');
   return `<!doctype html><meta charset="utf-8"><title>${escape(brand.title)}</title>${sheets.join('')}<style>
 @page{size:${PAGE.width}px ${PAGE.height}px;margin:0}
@@ -94,8 +106,15 @@ li b{font-weight:600}
 small{display:block;margin-top:12px;color:#666;font-size:13px}
 p+p{margin-top:12px}.boiler{font-size:14px}
 .facts{margin:16px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;font-size:13px;line-height:1.4}.facts dt{color:#666}.facts dd{margin:0}
+.contact{margin:16px 0 0;display:flex;flex-wrap:wrap;gap:2px 16px;font-size:13px;line-height:1.4}.terms{margin:12px 0 0;font-size:12px;line-height:1.4;color:#444}.terms b{color:#161616}
 .note{margin-top:16px;padding:8px 12px;border-left:3px solid #999;background:#f4f4f2;font-size:13px}
 </style><body><section class="logo">${image}</section><main><div><h1>${escape(brand.title)}</h1>${about}</div><div><ul>${chips.join('')}</ul>${more > 0 ? `<small>${more} more in colors/colors.txt</small>` : ''}${note ? `<p class="note">${escape(note)}</p>` : ''}</div></main>`;
+}
+
+/** The terms as one short block: the start of the text and the address, with a pointer to about.txt when the text is cut */
+function termsBlock(terms: Terms): string {
+  const text = terms.text && terms.text.length > TERMS_PDF_CHARS ? `${terms.text.slice(0, TERMS_PDF_CHARS).replace(/\s+\S*$/, '')}... (all of it in about.txt)` : terms.text;
+  return `<p class="terms"><b>Terms of use</b> ${text ? escape(text.replace(/\s+/g, ' ')) : ''}${terms.url ? ` ${escape(terms.url)}` : ''}</p>`;
 }
 
 /** The page as a PDF, with the dates and the producer fixed so the same brand gives the same bytes */

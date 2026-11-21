@@ -1,9 +1,10 @@
 import type { BrandRead } from './brand.js';
-import { finding, type Company, type Finding } from './options.js';
+import { finding, type Company, type Contact, type Finding, type Terms } from './options.js';
 
 /** What the options add to the brand's own title and description */
 export interface Extras {
   company?: Company;
+  terms?: Terms;
   note?: string;
 }
 
@@ -14,19 +15,37 @@ export interface Extras {
  */
 export function aboutText(brand: Pick<BrandRead, 'title' | 'named' | 'description'>, extras: Extras = {}): { text?: string; findings: Finding[] } {
   if (!brand.named) return { findings: [] };
-  const { company, note } = extras;
+  const { company, terms, note } = extras;
   const description = company?.description ?? brand.description;
   const findings: Finding[] = [];
   const blocks = [brand.title, description ?? 'No description is set in blazon.json.'];
   if (!description) findings.push(finding('about-no-description', 'warning', 'brand.description', 'the brand has no description, so about.txt says none is set'));
   if (company?.boilerplate) blocks.push(company.boilerplate);
   if (company?.facts) blocks.push(company.facts.map((fact) => `${fact.label}: ${fact.value}`).join('\n'));
+  if (company?.contact) blocks.push(contactText(company.contact));
+  if (terms) blocks.push(termsText(terms));
   if (note) blocks.push(`Note: ${note}`);
   return { text: `${blocks.join('\n\n')}\n`, findings };
 }
 
+const CONTACT_LABELS: [key: keyof Contact, label: string][] = [
+  ['name', 'Name'],
+  ['role', 'Role'],
+  ['email', 'Email'],
+  ['phone', 'Phone'],
+  ['url', 'Web'],
+];
+
+/** The contact's keys that are set, in a fixed order, as labelled lines: the page, the PDF and about.txt all print these */
+export const contactLines = (contact: Contact): { label: string; value: string }[] =>
+  CONTACT_LABELS.flatMap(([key, label]) => (contact[key] ? [{ label, value: contact[key]! }] : []));
+
+const contactText = (contact: Contact): string => ['Contact:', ...contactLines(contact).map(({ label, value }) => `  ${label}: ${value}`)].join('\n');
+const termsText = (terms: Terms): string => ['Terms of use:', ...(terms.text ? [terms.text] : []), ...(terms.url ? [`Full terms: ${terms.url}`] : [])].join('\n');
+
 /** What each part of the kit is for, in the order the README lists them; a part is listed when a file of the kit starts or ends as `match` says */
 const PARTS: { match: (path: string) => boolean; says: string }[] = [
+  { match: (path) => path === 'index.html', says: 'The kit as one web page: open it in a browser.' },
   {
     match: (path) => path.startsWith('logos/'),
     says: 'The logo files as they are. Use the ones in on-light-backgrounds/ on a light background and the ones in on-dark-backgrounds/ on a dark one. logos.txt says what the brand states about each.',
@@ -41,9 +60,10 @@ const PARTS: { match: (path: string) => boolean; says: string }[] = [
 ];
 
 /** README.txt: what is in the kit, in plain words. It names only the parts that are there, and holds no date. */
-export function readmeText(title: string, paths: string[], name: string, note?: string): string {
+export function readmeText(title: string, paths: string[], name: string, note?: string, hasTerms = false): string {
   const lines = [`${title}: press kit`, ''];
   if (note) lines.push(`Note: ${note}`, '');
+  if (hasTerms) lines.push('Terms of use: see about.txt', '');
   lines.push('What is in this folder', '');
   const listed = PARTS.flatMap(({ match, says }) => {
     const hit = paths.find(match);
