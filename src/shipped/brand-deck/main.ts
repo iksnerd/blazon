@@ -6,6 +6,7 @@ import { readOptions, type Finding } from './checks.js';
 import { DeckError, readFavicons } from './favicons.js';
 import { FontTable, fontFolders } from './fonts.js';
 import { drawDeck, type Deck } from './render.js';
+import { writeFolder } from '../shared/folder.js';
 import { skippedForNoSite, NeedsSite } from '../shared/plugin.js';
 import { Cannot, jobFor, MANIFEST, NAME } from './request.js';
 
@@ -37,12 +38,6 @@ async function draw(brand: Brand, siteDir: string, favicons: ReturnType<typeof r
   }
 }
 
-/** Written once, whole, after the browser is done: a call that ends earlier leaves nothing behind */
-function write(file: string, pdf: Buffer): void {
-  fs.writeFileSync(`${file}.part`, pdf);
-  fs.renameSync(`${file}.part`, file);
-}
-
 async function build(text: string): Promise<{ findings: Finding[] }> {
   const job = jobFor(text);
   const brand = readBrand(job.brand);
@@ -63,7 +58,8 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
       message: `the deck planned ${deck.slides.length} slides, and the PDF has ${deck.pages} pages`,
     });
   }
-  write(path.join(job.outDir, 'brand-deck.pdf'), deck.pdf);
+  // Written once, whole, after the browser is done: a call that ends earlier leaves nothing behind
+  writeFolder(job.outDir, [['brand-deck.pdf', deck.pdf]]);
   return { findings };
 }
 
@@ -122,7 +118,7 @@ async function cli(args: string[]): Promise<number> {
   try {
     const table = fontsFor(brand, folders);
     const deck = await draw(brand, path.dirname(path.resolve(brandFile)), favicons ? readFavicons(favicons, brand, say) : null, table, left);
-    write(output, deck.pdf);
+    writeFolder(path.dirname(path.resolve(output)), [[path.basename(output), deck.pdf]]);
     process.stdout.write(`wrote ${output} (${deck.slides.length} slides)\n`);
     return 0;
   } catch (error) {

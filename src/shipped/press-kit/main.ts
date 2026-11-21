@@ -1,6 +1,6 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { runPlugin } from '../shared/plugin.js';
+import { replaceFolder, writeFolder } from '../shared/folder.js';
 import { zipOf } from '../shared/zip.js';
 import { readBrand } from './brand.js';
 import { colorsCss, colorsJson, colorsText, planColors } from './colors.js';
@@ -87,16 +87,13 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   }
   files.set('README.txt', readmeText(brand.title, [...files.keys()], options.name, options.note));
 
-  // Written once, whole, after the work is done: a call that ends earlier leaves out_dir as it was. The folder is the plugin's own, so a
-  // file from an earlier run, such as a logo that is no longer ready, does not stay in it.
+  // Written once, whole, after the work is done. The host empties out_dir before a build plugin runs (src/plugins/roles/roles.ts), so a
+  // call that ends earlier leaves it empty, not as it was. The folder is the plugin's own, so a file from an earlier run, such as a
+  // logo that is no longer ready, does not stay in it, and the folder is swapped in only when the whole kit is written.
   const entries = [...files].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const folder = path.join(job.outDir, options.name);
-  fs.rmSync(folder, { recursive: true, force: true });
-  for (const [file, content] of entries) {
-    fs.mkdirSync(path.dirname(path.join(folder, file)), { recursive: true });
-    fs.writeFileSync(path.join(folder, file), content);
-  }
-  fs.writeFileSync(path.join(job.outDir, `${options.name}.zip`), zipOf(entries.map(([file, content]) => [`${options.name}/${file}`, content])));
+  replaceFolder(folder, entries);
+  writeFolder(job.outDir, [[`${options.name}.zip`, zipOf(entries.map(([file, content]) => [`${options.name}/${file}`, content]))]]);
   return { findings };
 }
 

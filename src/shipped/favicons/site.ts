@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { replaceFolder, type Entry } from '../shared/folder.js';
 import { Cannot } from './request.js';
 import { VIEWS } from './views.js';
 
@@ -38,7 +39,8 @@ export function checkSite(siteDir: string): void {
 /** Replaces the site's favicons/ with the files the Favicons page shows, taken from the set just made. */
 export function copyToSite(siteDir: string, files: ReadonlyMap<string, Buffer | string>): void {
   const dir = path.join(siteDir, SITE_FOLDER);
-  fs.rmSync(dir, { recursive: true, force: true });
-  fs.mkdirSync(dir, { recursive: true });
-  for (const file of [...SITE_FILES].sort()) fs.writeFileSync(path.join(dir, file), files.get(file)!);
+  replaceFolder(
+    dir,
+    [...SITE_FILES].sort().map((file): Entry => [file, files.get(file)!]),
+  );
 }

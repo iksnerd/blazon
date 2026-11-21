@@ -1,11 +1,10 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { launch } from './browser.js';
 import { checks, safeZones, type Finding } from './check.js';
 import { headSnippet, previewData, webManifest } from './files.js';
 import { planFor, type Plan } from './plan.js';
 import { ico, png, reach, sheet } from './raster.js';
 import { MANIFEST, requestFrom, NAME } from './request.js';
+import { writeFolder } from '../shared/folder.js';
 import { OptionError, optionFinding, runPlugin } from '../shared/plugin.js';
 import { checkSite, copyToSite } from './site.js';
 import { tileSvg } from './symbol.js';
@@ -85,7 +84,10 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   findings.push(...safeZones(plan, far));
   for (const file of supplied)
     findings.push({ code: `${NAME}/supplied`, severity: 'info', path: file, message: `${file} is the project's own file, used in place of the one drawn from ${plan.symbolId}` });
-  for (const [file, data] of [...files].sort(([a], [b]) => (a < b ? -1 : 1))) fs.writeFileSync(path.join(request.outDir, file), data);
+  writeFolder(
+    request.outDir,
+    [...files].sort(([a], [b]) => (a < b ? -1 : 1)),
+  );
   // After out_dir, the one thing written outside it: the copy the web book's Favicons page reads
   copyToSite(request.siteDir, files);
   return { findings };
