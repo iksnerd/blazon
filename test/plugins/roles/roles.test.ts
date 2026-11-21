@@ -454,6 +454,41 @@ describe('the build role', () => {
     expect(fs.readdirSync(outDir)).toEqual([]);
   });
 
+  describe('a plugin that is refused before it starts', () => {
+    const oldFile = (installed: Installed) => {
+      const outDir = path.join(installed.cwd, 'dist', 'tokens', 'acme.deck');
+      fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(path.join(outDir, 'old.txt'), 'old');
+      return path.join(outDir, 'old.txt');
+    };
+
+    it('keeps its earlier output when the request is over the cap', async () => {
+      const installed = install({ 'acme.deck': { script: BUILD('exit 0') } });
+      const old = oldFile(installed);
+      const found = await make(installed).build({ ...BRAND, blob: 'x'.repeat(5 * 1024 * 1024) }, path.join(installed.cwd, 'dist', 'site'));
+      expect(found[0]!.message).toContain('over the cap');
+      expect(fs.existsSync(old)).toBe(true);
+    });
+
+    it('keeps its earlier output when a variable its manifest lists is set and not approved', async () => {
+      const installed = install({ 'acme.deck': { script: BUILD('exit 0', { env: ['ACME_FONT_DIR'] }), approve: [] } });
+      const old = oldFile(installed);
+      const found = await make(installed, { env: { PATH: process.env.PATH, ACME_FONT_DIR: '/fonts' } }).build(BRAND, path.join(installed.cwd, 'dist', 'site'));
+      expect(found[0]!.message).toContain('not approved');
+      expect(fs.existsSync(old)).toBe(true);
+    });
+  });
+
+  it('says so with a finding, and still reports the others, when its folder cannot be made', async () => {
+    const installed = install({ 'acme.a': { script: BUILD('exit 0') }, 'acme.b': { script: BUILD(answer([{ code: 'acme.b/x', severity: 'info', path: 'p', message: 'ran' }])) } });
+    // dist/tokens is a file, so no plugin folder can be made under it
+    fs.mkdirSync(path.join(installed.cwd, 'dist'), { recursive: true });
+    fs.writeFileSync(path.join(installed.cwd, 'dist', 'tokens'), 'not a folder');
+    const found = await make(installed).build(BRAND, path.join(installed.cwd, 'dist', 'site'));
+    expect(codes(found)).toEqual(['plugin-failed', 'plugin-failed']);
+    expect(found[0]!.message).toMatch(/output folder/);
+  });
+
   it('may answer with nothing, or with findings under the same rules', async () => {
     const quiet = install({ 'acme.deck': { script: BUILD('exit 0') } });
     expect(await make(quiet).build(BRAND, '/site')).toEqual([]);

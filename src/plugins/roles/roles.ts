@@ -322,6 +322,7 @@ export class PluginRun {
     if (admission.warn) this.log(`  warning: ${name} runs unpinned because it was named on the command line`);
 
     // The request. A build plugin gets a directory of its own, emptied for each run.
+    let outFolder: string | undefined;
     const request: Record<string, unknown> = { v: REQUEST_VERSIONS[role], type: role, options: target.options, brand };
     if (role === 'build') {
       const outDir = path.resolve(this.cwd, this.config.tokensOutDir, id);
@@ -330,10 +331,7 @@ export class PluginRun {
       const held = inputsWithin(this.config, this.cwd, outDir);
       if (held.length > 0)
         return [failed(`its output folder ("${path.relative(this.cwd, outDir) || outDir}") holds ${held.map((i) => `${i.name} ("${i.as}")`).join(', ')}, which the brand reads: blazon empties that folder before a build plugin runs and would delete ${held.length === 1 ? 'it' : 'them'}. Move the file, or move tokensOutDir`, OUT_DIR_FIX)];
-      // With a site (`blazon build`) the folder is emptied and the plugin makes it again. Without one (`blazon tokens`) it is kept as it is:
-      // a plugin that needs the site writes nothing there, and must not lose what the last build made. What a plugin does write overwrites.
-      if (siteDir !== undefined) fs.rmSync(outDir, { recursive: true, force: true });
-      fs.mkdirSync(outDir, { recursive: true });
+      outFolder = outDir;
       // tokens_dir: where `blazon build` has already written the token files (theme.css, tokens.json...), which are the plugin's input when it works from the tokens
       Object.assign(request, { ...(siteDir !== undefined && { site_dir: siteDir }), tokens_dir: path.resolve(this.cwd, this.config.tokensOutDir), out_dir: outDir });
     }
@@ -345,6 +343,18 @@ export class PluginRun {
     const present = this.presentEnv(manifest);
     const refused = this.unapproved(target, manifest);
     if (refused.length > 0) return refused;
+    // Every refusal is behind us: only now is the folder touched, so a plugin that is not started keeps what its last run made. With a site
+    // (`blazon build`) the folder is emptied and the plugin makes it again. Without one (`blazon tokens`) it is kept as it is: a plugin that
+    // needs the site writes nothing there, and must not lose what the last build made. What a plugin does write overwrites. A folder that
+    // cannot be made is a finding about this plugin, not an error that stops the others.
+    if (outFolder !== undefined) {
+      try {
+        if (siteDir !== undefined) fs.rmSync(outFolder, { recursive: true, force: true });
+        fs.mkdirSync(outFolder, { recursive: true });
+      } catch (err) {
+        return [failed(`its output folder ("${path.relative(this.cwd, outFolder) || outFolder}") could not be emptied and made: ${err instanceof Error ? err.message : String(err)}, so it is not started`, OUT_DIR_FIX)];
+      }
+    }
     const env = Object.fromEntries(present.map((variable) => [variable, this.env[variable]!]));
     const secrets = labelled.flatMap((variable) => (env[variable] ? [env[variable]] : []));
     const result = await run(this.callFor(located, { stdin: body, env, timeout: manifestTimeout(manifest, BLAZON_CORE_PROFILE), stdoutLimit: runtime.stdoutLimit, answers: runtime.answers }));
