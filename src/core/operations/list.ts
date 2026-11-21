@@ -652,7 +652,8 @@ export const OPERATIONS: readonly Operation[] = [
           items: {},
         },
         assets: {
-          description: 'The logo assets, each with its id, file, the variants it serves and its rules: clear space, minimum size, lockups',
+          description:
+            'The logo assets, each once, with its id, its files (a list; the first is the one a reader with no preference takes), the variants it serves and its rules: clear space, minimum size, lockups',
           type: 'array',
           items: {},
         },
