@@ -1,4 +1,5 @@
 import { isObject, requireBrand } from '../shared/plugin.js';
+import { keepRepresentation } from '../../core/assets/representations.js';
 import { readBaseAsset, text } from '../shared/brand.js';
 
 // What the plugin reads from brand.json (the `brand` of the request): the logos, and the brand's accent color for the figure. It trusts none
@@ -26,7 +27,7 @@ export function readBrand(brand: unknown): BrandRead {
   const assets: BrandRead['assets'] = new Map();
   for (const raw of Array.isArray(root.assets) ? root.assets : []) {
     const asset = readBaseAsset(raw);
-    if (asset) assets.set(asset.id, asset);
+    if (asset) keepRepresentation(assets, asset, { formats: MEASURED });
   }
   const roles = isObject(root.theme) && isObject(root.theme.roles) ? root.theme.roles : {};
   const accent = text(roles.accent);

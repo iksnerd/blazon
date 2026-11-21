@@ -24,6 +24,7 @@ const data = {
   themeTokens: { text: 'color.ink' },
   findings: [],
   tokens: {
+    groupMeta: [],
     items: [token('color.ink', '#000', 'Base ink'), token('color.paper', '#fff', 'Base paper')],
     contexts: [
       {
@@ -57,6 +58,7 @@ describe('effectiveData', () => {
       themeTokens: { text: 'color.ink' },
       findings: [],
       tokens: {
+        groupMeta: [],
         items: [token('color.ink', '#000000', 'Base ink')],
         contexts: [
           { modifier: 'theme', context: 'dark', selector: '[data-theme="dark"]', tokens: [token('color.ink', '#ffffff', 'Base ink')] },

@@ -1,5 +1,6 @@
 import { parseColor, type RGB } from './contrast.js';
 import { requireBrand } from '../shared/plugin.js';
+import { keepRepresentation } from '../../core/assets/representations.js';
 import { readLogo, text } from '../shared/brand.js';
 
 // What the plugin reads from brand.json (the `brand` of the request): the social formats, the display type, the theme
@@ -118,7 +119,7 @@ export function readBrand(brand: unknown): BrandRead {
   const assets = new Map<string, BrandAsset>();
   for (const item of list(root.assets)) {
     if (!isObject(item) || typeof item.id !== 'string' || typeof item.file !== 'string') continue;
-    assets.set(item.id, {
+    keepRepresentation(assets, {
       id: item.id,
       category: text(item.category) ?? '',
       file: item.file,

@@ -1,10 +1,14 @@
 import type { AssetMeta } from '../../types/index.js';
 import { artworkSize } from '../../core/assets/measure.js';
+import { keepRepresentation } from '../../core/assets/representations.js';
 import { isObject, requireBrand } from '../shared/plugin.js';
 import { readBaseAsset, readLogo, readMeta, readRoles, text } from '../shared/brand.js';
 
 // What the plugin reads from brand.json (the `brand` of the request): the title, the theme roles, the color tokens and the logo assets
 // with their sidecar rules. It trusts none of it: a field of the wrong shape is a field that is not there.
+
+/** The formats an Office template takes, best first (`logoFor` in main.ts: SVG, PNG, JPEG, GIF); an id with none of them still keeps one file, so the plugin can say it is not supported. */
+const OFFICE_FORMATS = ['svg', 'png', 'jpg', 'gif'];
 
 export interface LogoAsset {
   id: string;
@@ -90,7 +94,7 @@ export function readBrand(brand: unknown): BrandRead {
     if (!base || !isObject(raw)) continue;
     const { id, file, format } = base;
     const size = artworkSize({ width: raw.width as number | undefined, height: raw.height as number | undefined, viewBox: text(raw.viewBox) });
-    assets.set(id, { id, file, format, ...(size && { size }), meta: readMeta(raw) });
+    keepRepresentation(assets, { id, file, format, ...(size && { size }), meta: readMeta(raw) }, { formats: OFFICE_FORMATS });
   }
 
   const title = isObject(root.brand) ? text(root.brand.title) : undefined;

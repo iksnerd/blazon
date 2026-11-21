@@ -86,12 +86,13 @@ const colorOf = (item: TokenItem, label: string) => {
  * rule is read for the roles `border`, `icon` and `interactive`, and `pairs` do not apply, because they are text pairs.
  *
  * With `theme` the pair is judged in that context of the resolver's `theme` modifier: its colors, not the default's.
+ * `inThemeNamed` is only for the message: data already put in a theme names it when a token is missing.
  */
-export function canUse(data: BlazonData, typedFg: string, typedBg: string, role: CanRole = 'text', theme?: string): CanAnswer {
-  if (theme !== undefined) return { ...canUse(inTheme(data, theme), typedFg, typedBg, role), theme };
+export function canUse(data: BlazonData, typedFg: string, typedBg: string, role: CanRole = 'text', theme?: string, inThemeNamed?: string): CanAnswer {
+  if (theme !== undefined) return { ...canUse(inTheme(data, theme), typedFg, typedBg, role, undefined, theme), theme };
   if (!CAN_ROLES.includes(role)) throw new LookupError(`"${String(role)}" is not a role blazon can judge. Use ${CAN_ROLES.map((r) => `"${r}"`).join(' or ')}.`);
-  const fg = findToken(data, typedFg);
-  const bg = findToken(data, typedBg);
+  const fg = findToken(data, typedFg, inThemeNamed);
+  const bg = findToken(data, typedBg, inThemeNamed);
   const ratio = contrastRatio(colorOf(fg, 'foreground'), colorOf(bg, 'background'));
   const level = LEVELS.find((l) => ratio >= CONTRAST_MINIMUM[l]) ?? 'fail';
   const shown = `${ratio.toFixed(2)}:1`;
@@ -163,7 +164,7 @@ export function canUseMany(data: BlazonData, pairs: readonly { fg: string; bg: s
   const judged = theme === undefined ? data : inTheme(data, theme);
   return pairs.map((pair, i) => {
     try {
-      const answer = canUse(judged, pair.fg, pair.bg, role);
+      const answer = canUse(judged, pair.fg, pair.bg, role, undefined, theme);
       return theme === undefined ? answer : { ...answer, theme };
     } catch (error) {
       if (error instanceof LookupError) throw new LookupError(`pairs[${i}]: ${error.message}`);

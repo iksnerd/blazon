@@ -1,5 +1,5 @@
 import type { BlazonData } from '../../types/index.js';
-import { contextItems } from '../tokens/contexts.js';
+import { contextGroups, contextItems } from '../tokens/contexts.js';
 import { LookupError } from './lookup.js';
 
 /** The modifier `--theme` names a context of. */
@@ -10,12 +10,13 @@ export function themeNames(data: BlazonData): string[] {
   return data.tokens.modifiers?.find((m) => m.name === THEME_MODIFIER)?.contexts ?? [];
 }
 
-/** The brand as the `theme` context `name` resolves it: its changes put over the default tokens by `contextItems`. */
+/** The brand as the `theme` context `name` resolves it: its changes put over the default tokens by `contextItems` and over the default's groups by `contextGroups`. A token the theme removed is not in it. */
 export function inTheme(data: BlazonData, name: string): BlazonData {
   const modifier = data.tokens.modifiers?.find((m) => m.name === THEME_MODIFIER);
   if (!modifier) throw new LookupError(`no theme "${name}": this brand has no resolver "${THEME_MODIFIER}" modifier, so it has no themes.`);
   if (!modifier.contexts.includes(name)) throw new LookupError(`no theme "${name}". The themes are ${modifier.contexts.map((c) => `"${c}"`).join(', ')}.`);
   const active = (data.tokens.contexts ?? []).filter((c) => c.modifier === THEME_MODIFIER && c.context === name);
   const items = contextItems(data.tokens.items, active);
-  return { ...data, tokens: { ...data.tokens, items, byPath: new Map(items.map((t) => [t.path, t])) } };
+  const groupMeta = contextGroups(data.tokens.groupMeta, active);
+  return { ...data, tokens: { ...data.tokens, items, groupMeta, byPath: new Map(items.map((t) => [t.path, t])) } };
 }

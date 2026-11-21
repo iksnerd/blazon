@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Asset, BlazonData, LogoCorner } from '../../../types/index.js';
 import { planInitiative, planPartnership } from '../../../core/logo/lockup.js';
+import { pickRepresentation } from '../../../core/assets/representations.js';
 import { ClearSpaceDrawing, SPACE_PREVIEW_WIDTH, surfaceOf } from '@/components/blazon/logo-drawing';
 import { assetCategories, assetKind, categoryKind } from '@/lib/brand';
 import { CategoryLabel } from '@/components/blazon/category-label';
@@ -16,7 +17,7 @@ function Missing({ children }: { children: ReactNode }) {
   return <p className="col-span-full text-[13px] text-destructive">{children}</p>;
 }
 
-const findAsset = (data: BlazonData, id: string | undefined): Asset | undefined => data.assets.all.find((a) => a.id === id);
+const findAsset = (data: BlazonData, id: string | undefined): Asset | undefined => (id === undefined ? undefined : pickRepresentation(data.assets.all, id));
 
 const LOCKUP_LABEL = (kind: string) => `${kind[0]!.toUpperCase()}${kind.slice(1)}`;
 
@@ -76,7 +77,7 @@ export function LogoLockups({ data, args }: { data: BlazonData; args: string[] }
                       {replacedBelow && (
                         <span className="text-muted-foreground">
                           {replacementText(replacedBelow, (id) => {
-                            const target = data.assets.all.find((a) => a.id === id);
+                            const target = pickRepresentation(data.assets.all, id);
                             return target && assetTitle(target);
                           })}
                         </span>

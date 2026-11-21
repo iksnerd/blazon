@@ -128,7 +128,7 @@ describe('the favicons plugin: what the options and the brand say', () => {
 
   it('refuses a symbol that is not an SVG, or whose file leaves the site', () => {
     const png = project({}, [{ id: 'logos/dot', file: 'brand-assets/logos/dot.png', format: 'png', width: 8, height: 8, meta: {} }]);
-    planFails({ symbol: 'logos/dot' }, 'the symbol logos/dot is a png file; the plugin draws from an SVG', png);
+    planFails({ symbol: 'logos/dot' }, 'the symbol logos/dot needs an SVG: it has png only', png);
     const outside = project();
     (outside.brand.assets[0] as { file: string }).file = '../../etc/hosts';
     planFails({}, 'the symbol logos/mark is not a file in the built site', outside);

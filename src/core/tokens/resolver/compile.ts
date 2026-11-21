@@ -7,6 +7,7 @@ import { resolveTokenTree } from '../resolve.js';
 import { parseResolver, ResolverError, type Resolver } from './parse.js';
 import { SourceReader, type Selection } from './sources.js';
 import { finding } from '../../checker/catalogue.js';
+import { contextRemovals } from '../contexts.js';
 
 export interface ContextCompilation {
   /** The default context, with `contexts` listing what each other context changes */
@@ -76,6 +77,7 @@ export function compileWithResolver(file: string, root: string, cssPrefix: strin
               ...(tokens.items.some((t) => metadataOnly(base.byPath.get(t.path), t)) && {
                 metadataChanges: tokens.items.filter((t) => metadataOnly(base.byPath.get(t.path), t)),
               }),
+              ...contextRemovals(base, tokens),
             },
             tokens,
           };

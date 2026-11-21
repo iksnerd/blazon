@@ -1,6 +1,7 @@
 import type { AssetCatalog, AssetMeta, Finding, DocItem, IconSet, ParsedTokens, TokenItem } from '../../types/index.js';
 import { formatsAt, patternsAt } from '../tokens/groups.js';
 import { finding } from '../checker/catalogue.js';
+import { pickRepresentation } from '../assets/representations.js';
 
 /** Which tokens a directive argument may name. */
 export type TokenKind = 'any' | 'paint' | 'border' | 'paint-or-border';
@@ -211,7 +212,7 @@ function problems(directive: PlacedDirective, context: DirectiveContext): string
         found.push(`"${ref}" is not an asset id; write category/name`);
         return;
       }
-      const asset = context.assets.all.find((candidate) => candidate.id === ref);
+      const asset = pickRepresentation(context.assets.all, ref);
       if (!asset) {
         found.push(`no asset at ${ref}`);
         return;
@@ -255,7 +256,7 @@ function problems(directive: PlacedDirective, context: DirectiveContext): string
 function assetsDrawnBy(directive: PlacedDirective, assets: AssetCatalog): AssetCatalog['all'] {
   if (!isDirective(directive.name)) return [];
   const spec: DirectiveSpec = DIRECTIVES[directive.name];
-  if (spec.assetRefs) return directive.args.slice(0, spec.assetRefs).flatMap((ref) => assets.all.filter((a) => a.id === ref));
+  if (spec.assetRefs) return directive.args.slice(0, spec.assetRefs).flatMap((ref) => pickRepresentation(assets.all, ref) ?? []);
   const [folder, ...names] = directive.args;
   if (!spec.folder || !folder) return [];
   return (folders(assets)[folder] ?? []).filter((a) => names.length === 0 || names.includes(a.name));

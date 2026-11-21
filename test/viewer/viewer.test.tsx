@@ -533,7 +533,7 @@ describe.skipIf(!PRESENT)('resolver contexts', () => {
 
   it('lists context findings on the Review page with their context', () => {
     openViewer('#review');
-    expect(main().getByText('needs-review, only in locale=ja')).toBeTruthy();
+    expect(main().getByText('review-pending, only in locale=ja')).toBeTruthy();
   });
 
   it('shows no switcher for a brand without a resolver document', () => {

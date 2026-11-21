@@ -1,0 +1,1 @@
+The DTCG export (`tokens.json` and the context files) keeps a group's `$extensions` again. A vendor key such as `com.acme.tool` on `space` was dropped while the same key on `space.small` survived. A group's `dev.blazon` key is still not written.
