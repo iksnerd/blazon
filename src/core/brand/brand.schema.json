@@ -763,6 +763,22 @@
         "lockup": {
           "$ref": "#/$defs/name"
         },
+        "misuse": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "stretch",
+              "squash",
+              "rotate",
+              "outline",
+              "recolor",
+              "shadow",
+              "crop",
+              "low-contrast",
+              "busy-background"
+            ]
+          }
+        },
         "placement": {
           "type": "array",
           "minItems": 1,

@@ -146,6 +146,14 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
+  'asset-misuse-unknown': {
+    severity: 'error',
+    summary: 'A logo misuse kind, in a sidecar or in a blazon:logo-misuse directive, is not one blazon draws.',
+    fix: 'Use only the kinds the message lists: stretch, squash, rotate, outline, recolor, shadow, crop, low-contrast, busy-background.',
+    appliesTo: ['asset'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
   'asset-review-missing': {
     severity: 'warning',
     summary: 'A generated asset has no review yet.',

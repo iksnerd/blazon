@@ -104,8 +104,8 @@
     }
   ],
   "checks": {
-    "total": 74,
-    "error": 46,
+    "total": 75,
+    "error": 47,
     "warning": 20,
     "info": 8
   },

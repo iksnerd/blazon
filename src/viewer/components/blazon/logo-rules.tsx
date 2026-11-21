@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
-import type { Asset, BlazonData, LogoCorner } from '../../../types/index.js';
+import { useId, type CSSProperties, type ReactNode } from 'react';
+import type { Asset, BlazonData, LogoCorner, MisuseKind } from '../../../types/index.js';
+import { misuseCaption, misuseEffect, resolveMisuse } from '../../../core/logo/misuse.js';
 import { planInitiative, planPartnership } from '../../../core/logo/lockup.js';
 import { pickRepresentation } from '../../../core/assets/representations.js';
 import { ClearSpaceDrawing, SPACE_PREVIEW_WIDTH, surfaceOf } from '@/components/blazon/logo-drawing';
@@ -273,6 +274,153 @@ export function LogoPlacement({ data, args }: { data: BlazonData; args: string[]
           <CategoryLabel kind={assetKind(data, logo)} />
         </figcaption>
       </figure>
+    </div>
+  );
+}
+
+/** The artwork's height in a misuse figure, and the share of the stage it may fill across. */
+const MISUSE_HEIGHT_REM = 3.25;
+const MISUSE_FILL = 70;
+const OUTLINE = 'var(--blazon-accent, currentColor)';
+
+/** The widest a crop figure draws the whole artwork, so the box that clips it stays inside the stage. */
+const CROP_WIDTH_REM = 11;
+/** The share of the artwork's width the crop box keeps, and how far the artwork starts left of the box. */
+const CROP_KEPT = 0.7;
+const CROP_SHIFT = 0.15;
+
+/**
+ * How a kind that distorts the artwork scales it across and down, by a transform: an SVG keeps its own proportions inside the box
+ * the image is given (preserveAspectRatio), so setting another box would not distort it, and a transform distorts every format.
+ */
+const SCALE: Partial<Record<MisuseKind, { x: number; y: number; fill: number }>> = {
+  stretch: { x: 1.6, y: 1, fill: 50 },
+  squash: { x: 0.55, y: 1, fill: MISUSE_FILL },
+};
+
+/** The width the artwork is drawn at in a figure whose kind does not distort or crop it. */
+const artworkWidth = (ratio: number, fill = MISUSE_FILL): string => `min(${fill}%, ${MISUSE_HEIGHT_REM * ratio}rem)`;
+
+const cropWidth = (ratio: number): string => `min(${MISUSE_HEIGHT_REM * ratio}rem, ${CROP_WIDTH_REM}rem)`;
+
+/** The artwork, drawn at the size a correct use would have and then misused by CSS alone: the asset's own file, any format the viewer shows. */
+function misusedImage(kind: MisuseKind, ratio: number): CSSProperties {
+  const scale = SCALE[kind];
+  const base: CSSProperties = { width: artworkWidth(ratio, scale?.fill), height: 'auto', aspectRatio: `${ratio}` };
+  switch (kind) {
+    case 'stretch':
+    case 'squash':
+      return { ...base, transform: `scale(${scale!.x}, ${scale!.y})` };
+    case 'rotate':
+      return { ...base, transform: 'rotate(-14deg)' };
+    case 'outline':
+      // Four zero-blur shadows, one a side, trace the artwork's alpha: an outline on any image, drawn by the browser
+      return { ...base, filter: ['2px 0', '-2px 0', '0 2px', '0 -2px'].map((at) => `drop-shadow(${at} 0 ${OUTLINE})`).join(' ') };
+    case 'recolor':
+      // Flatten to mid tones so a black or white logo takes a tint, then turn the hue to something off-brand
+      return { ...base, filter: 'contrast(0.45) brightness(1.15) sepia(1) saturate(6) hue-rotate(300deg)' };
+    case 'shadow':
+      return { ...base, filter: 'drop-shadow(0.4rem 0.5rem 0.35rem color-mix(in srgb, currentColor 60%, transparent))' };
+    case 'crop':
+      // Drawn whole inside a narrower box that clips it: the box is the wrapper (MisuseFigure) and this is the artwork inside it
+      return { width: cropWidth(ratio), maxWidth: 'none', height: 'auto', aspectRatio: `${ratio}`, marginLeft: `calc(${cropWidth(ratio)} * -${CROP_SHIFT})` };
+    default:
+      return base;
+  }
+}
+
+/** The stage a misuse figure is drawn on: the surface the logo is made for, or for the two background kinds one it should not be on. */
+function misuseStage(kind: MisuseKind, asset: Asset): CSSProperties {
+  const surface = surfaceOf(asset.meta?.background);
+  const ink = asset.meta?.ink;
+  if (kind === 'low-contrast') {
+    // Nearly the logo's own ink; without one, the surface the logo is not made for, where it all but disappears
+    const other = surfaceOf(asset.meta?.background === 'dark' ? 'light' : 'dark');
+    return { color: surface.ink, background: ink ? `color-mix(in srgb, ${ink} 88%, ${surface.fill})` : other.fill };
+  }
+  if (kind === 'busy-background') {
+    return {
+      color: surface.ink,
+      background: [
+        `repeating-linear-gradient(45deg, color-mix(in srgb, ${OUTLINE} 45%, transparent) 0 6px, transparent 6px 14px)`,
+        'repeating-linear-gradient(-45deg, color-mix(in srgb, currentColor 30%, transparent) 0 3px, transparent 3px 11px)',
+        surface.fill,
+      ].join(', '),
+    };
+  }
+  return { color: surface.ink, background: surface.fill };
+}
+
+/** The cross before a figure's caption: a shape and a hidden label, so "not allowed" does not rest on its colour. */
+function NotAllowed() {
+  return (
+    <span data-misuse-mark="" className="flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-current text-destructive">
+      <svg aria-hidden="true" viewBox="0 0 16 16" className="size-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+        <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+      </svg>
+      <span className="sr-only">Not allowed</span>
+    </span>
+  );
+}
+
+function MisuseFigure({ asset, kind }: { asset: Asset; kind: MisuseKind }) {
+  const captionId = useId();
+  const size = naturalSize(asset);
+  const ratio = size.width / size.height;
+  const image = <img src={asset.url} alt={`${assetTitle(asset)}, ${misuseEffect(kind)}`} className="block shrink-0" style={misusedImage(kind, ratio)} />;
+  return (
+    <figure data-misuse-kind={kind} aria-labelledby={captionId} className="m-0 flex min-w-0 flex-col gap-2 rounded-lg border-2 border-dashed p-2">
+      <div data-misuse-stage="" className="flex aspect-[16/10] items-center justify-center overflow-hidden rounded-sm p-4" style={misuseStage(kind, asset)}>
+        {kind === 'crop' ? (
+          // The box that clips: it keeps only part of the artwork's width, and its edge is drawn
+          <div data-misuse-clip="" className="overflow-hidden outline-1 outline-[var(--blazon-accent,currentColor)]" style={{ width: `calc(${cropWidth(ratio)} * ${CROP_KEPT})` }}>
+            {image}
+          </div>
+        ) : (
+          image
+        )}
+      </div>
+      <div className="flex items-start gap-2">
+        <NotAllowed />
+        <figcaption id={captionId} className="text-[13px] font-semibold">
+          {misuseCaption(kind)}
+        </figcaption>
+      </div>
+    </figure>
+  );
+}
+
+/**
+ * The `<!-- blazon:logo-misuse <logo> [kind ...] -->` directive: the real logo, misused one named way in each figure, captioned
+ * "Do not ...". The kinds are the directive's own, else the sidecar's `misuse`, else the default six. The sidecar's own `dont` rules
+ * are listed under the grid, not matched to a figure. Each misuse is a CSS transform of the asset's image, so it works for every format.
+ */
+export function LogoMisuse({ data, args }: { data: BlazonData; args: string[] }) {
+  const [logoId, ...named] = args;
+  const logo = findAsset(data, logoId);
+  if (!logo) return <Missing>No asset at {logoId}</Missing>;
+  const { kinds } = resolveMisuse(named, logo.meta?.misuse);
+  const rules = logo.meta?.dont ?? [];
+  return (
+    <div data-logo-misuse={logo.id} className="not-prose my-4 flex flex-col gap-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
+        {kinds.map((kind) => (
+          <MisuseFigure key={kind} asset={logo} kind={kind} />
+        ))}
+      </div>
+      <CategoryLabel kind={assetKind(data, logo)} />
+      {rules.length > 0 && (
+        <div data-misuse-rules="" className="flex flex-col gap-1 text-[13px]">
+          <h3 className="font-semibold">Never</h3>
+          <ul className="m-0 list-disc pl-5">
+            {rules.map((rule) => (
+              <li key={rule}>
+                <ColorText text={rule} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

@@ -225,6 +225,7 @@ A new command, which also runs at the start of `blazon build`:
 | `asset-config-unused` | warning | An asset category in the config matches no asset. |
 | `asset-id-duplicate` | error | Two files in different folders have the same asset id. |
 | `asset-local-missing` | info | A category kept out of git has no images on this machine. |
+| `asset-misuse-unknown` | error | A logo misuse kind, in a sidecar or in a blazon:logo-misuse directive, is not one blazon draws. |
 | `asset-review-missing` | warning | A generated asset has no review yet. |
 | `asset-rule-violated` | error | An asset breaks the rules of its category. |
 | `asset-sidecar-invalid` | error | An asset sidecar is not valid JSON or holds a field blazon does not know. |
@@ -480,6 +481,7 @@ A brand writes its logo rules in terms of a unit: "clear space equals the height
 | `unit` | The length the brand measures this artwork in, a dimension in the artwork's own pixels: the star, say. For an SVG that is its own coordinates, so it holds at any size. For a raster file it holds only at the size the file was exported at |
 | `clearSpace` | A measure (below) |
 | `lockup` | The shape this artwork is: one of `horizontal`, `stacked`, `mark`, `wordmark`, or a name the brand added in `vocabulary.lockups` (section 14) |
+| `misuse` | A list of the misuse kinds `blazon:logo-misuse` draws when the directive names none, from `stretch`, `squash`, `rotate`, `outline`, `recolor`, `shadow`, `crop`, `low-contrast`, `busy-background`; the default is `stretch`, `rotate`, `outline`, `recolor`, `shadow`, `low-contrast`. A name outside the set is `asset-misuse-unknown` |
 | `placement` | A list of the corners the logo may sit in: `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `partnership` | How the logo sits beside a partner's: `gap` (the space on each side of the divider), and optionally `dividerHeight` and `partnerHeight`, all measures. Without `dividerHeight` there is no divider, and `gap` is the space between the two logos |
 | `initiative` | A program the brand runs, drawn with the logo as the program lockup: `name` (a non-empty string, the lockup's label), `mark` (the program's artwork, an asset id written `category/name`) and `gap` (a measure), all required; optionally `position`, `beside` (the default: right of the logo, one baseline) or `below` (under it, left edges aligned), and `markHeight`, a measure (the logo's own height when absent). The mark is an asset and not text, so the lockup is drawn from artwork and needs no font |
@@ -488,12 +490,13 @@ A **measure** is a dimension (`{"value": 20, "unit": "px"}`, or an alias to a di
 
 `blazon check` reports, as `asset-sidecar-invalid` errors: a multiple with no `unit`; `units` that is not a number above 0 or a multiple with another key; a `unit` taller than the artwork, which is a unit measured in the wrong size; a `lockup` not in the list; a `placement` that is not a non-empty list of distinct known corners; a `partnership` that is not an object, lacks a `gap`, or has an unknown field; an `initiative` that is not an object, lacks a `name`, a `mark` or a `gap`, has a `mark` that is not an asset id or names no asset, a `position` other than `beside` or `below`, or an unknown field.
 
-Four directives draw them, in the same table as the others (`src/core/docs/directives.ts`), where `needsMeta` now lists the sidecar fields a directive needs, any one of them:
+Five directives draw them, in the same table as the others (`src/core/docs/directives.ts`), where `needsMeta` now lists the sidecar fields a directive needs, any one of them:
 
 - `blazon:logo-lockups <folder> [name ...]` groups the logos by `lockup`, each with its clear space.
 - `blazon:logo-partner <logo> <partner>` lays the logo, a divider and the partner on one baseline. The gap and the divider's height come from the logo's `partnership`; a partnership with no `dividerHeight` is drawn with no divider and one gap.
 - `blazon:logo-initiative <logo>` lays the logo and the `mark` of its `initiative` on one baseline, or the mark under the logo. The gap, the position and the mark's height come from the rule; with no `markHeight` the mark is as tall as the logo.
 - `blazon:logo-placement <logo> [url]` draws a sample frame for each corner in `placement`.
+- `blazon:logo-misuse <logo> [kind ...]` draws the logo's own image misused in each named way, captioned "Do not ..." and marked as not allowed without relying on color. The kinds are the arguments, else `misuse`, else the default six. The sidecar's `dont` list is shown under the figures. An unknown kind, in the argument list or in `misuse`, is an `asset-misuse-unknown` error.
 
 A directive that names a logo that states none of the fields it draws is a `directive-invalid` error.
 
@@ -747,7 +750,7 @@ Implemented on `main` as of 2026-11-21. The sections of this RFC are all built; 
 | 7. Assets | One id with several files is one asset: `src/core/assets/representations.ts` picks a file, and the approval and its findings are for the id (`src/core/checker/approvals.ts`, `review.ts`). `src/core/assets/` catalogs SVG and raster files (PNG, JPEG, GIF, WebP, AVIF) and reads their size from the file header. The dev server streams them (`src/server/assets.ts`); `blazon build` copies them to `brand-assets/` |
 | 8. Layout groups | Social formats and patterns, drawn by `blazon:formats` and `blazon:patterns` |
 | 9. Icon sets | Read from installed packages, with categories |
-| 10. Logo rules | `unit`, `lockup`, `placement`, `partnership`, `initiative` and `ink` in sidecars, drawn by the `blazon:logo-*` directives |
+| 10. Logo rules | `unit`, `lockup`, `placement`, `partnership`, `initiative`, `misuse` (as of 2026-11-21) and `ink` in sidecars, drawn by the `blazon:logo-*` directives |
 | 11. Asset categories | The operator's approval of a `dir` outside the project (`--allow-dir`, `BLAZON_ALLOW_DIRS`; `src/core/confine.ts`, `src/core/assets/categories.ts`). The `assets` block, including `experimental: true`, which shows an asset labelled "Experiment", and `reference: true`, which shows it labelled "Reference"; both exempt it from the review-gating findings |
 | 12. `brand.json` | The rule for choosing one file of an id (`src/core/assets/representations.ts`) is used by every reader in `src/core/`, the viewer and the shipped plugins. `src/core/brand/` (`theme.fontLicenses`, read by `src/core/fonts.ts`; additive, so `version` stays 2), with a JSON Schema beside it, the per-context `removed`, `groupChanges` and `removedGroups` (additive, `version` stays 2) and a `generator` that records the blazon commit. Read by `scripts/read-brand.py` and drawn by `blazon.brand-deck` |
 | 13. Sections | `customSections`, `section-invalid`, `section-missing`, the `blazon:section` directive |

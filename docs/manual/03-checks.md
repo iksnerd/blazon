@@ -167,6 +167,7 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `asset-config-unused` | Warning | An asset category in the config matches no asset. |
 | `asset-id-duplicate` | Error | Two files in different folders have the same asset id. |
 | `asset-local-missing` | Note | A category kept out of git has no images on this machine. |
+| `asset-misuse-unknown` | Error | A logo misuse kind, in a sidecar or in a blazon:logo-misuse directive, is not one blazon draws. |
 | `asset-review-missing` | Warning | A generated asset has no review yet. |
 | `asset-rule-violated` | Error | An asset breaks the rules of its category. |
 | `asset-sidecar-invalid` | Error | An asset sidecar is not valid JSON or holds a field blazon does not know. |
