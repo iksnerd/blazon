@@ -1,5 +1,6 @@
 import type { AssetMeta } from '../../types/index.js';
 import { isObject, requireBrand } from '../shared/plugin.js';
+import { keepRepresentation } from '../../core/assets/representations.js';
 import { readBaseAsset, readLogo, readMeta, readRoles, text } from '../shared/brand.js';
 
 // What the plugin reads from brand.json (the `brand` of the request): the title and description, the color and font tokens, the font
@@ -112,7 +113,7 @@ export function readBrand(brand: unknown): BrandRead {
   const assets = new Map<string, PressAsset>();
   for (const raw of Array.isArray(root.assets) ? root.assets : []) {
     const base = readBaseAsset(raw);
-    if (base && isObject(raw)) assets.set(base.id, { ...base, meta: readMeta(raw) });
+    if (base && isObject(raw)) keepRepresentation(assets, { ...base, meta: readMeta(raw) });
   }
 
   const about = isObject(root.brand) ? root.brand : {};

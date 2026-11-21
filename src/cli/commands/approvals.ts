@@ -9,7 +9,7 @@ import { approvals } from '../../core/checker/approvals.js';
 type Standing = 'recorded' | 'stale' | 'not recorded';
 
 /**
- * Prints every token and asset marked `review.status: ok` with the fingerprint of its value today and whether `review.value` holds
+ * Prints every token and asset id marked `review.status: ok` with the fingerprint of its value today and whether `review.value` holds
  * it, so a person who has confirmed a value can copy the fingerprint into the review. It writes nothing. Returns the exit status.
  */
 export async function runApprovals(dir: string = process.cwd(), options: { json?: boolean } = {}): Promise<number> {
@@ -18,8 +18,8 @@ export async function runApprovals(dir: string = process.cwd(), options: { json?
   const found = approvals(data.tokens, data.assets.all, { assetsDir: path.resolve(dir, config.assetsDir), dirs: categoryDirs(config.assets, dir) });
   const standing = (a: (typeof found)[number]): Standing => (a.review.value === undefined ? 'not recorded' : a.review.value === a.current ? 'recorded' : 'stale');
   if (options.json) {
-    // fingerprint is the value today (null for a token with no value); state says whether review.value holds it
-    const approvals = found.map((a) => ({ path: a.path, fingerprint: a.current ?? null, state: standing(a) }));
+    // fingerprint is the value today (null for a token with no value); state says whether review.value holds it; an asset id lists its files
+    const approvals = found.map((a) => ({ path: a.path, fingerprint: a.current ?? null, state: standing(a), ...(a.files && { files: a.files }) }));
     process.stdout.write(`${JSON.stringify({ command: 'approvals', passed: true, approvals })}\n`);
     return 0;
   }
@@ -32,7 +32,8 @@ export async function runApprovals(dir: string = process.cwd(), options: { json?
   for (const a of found) {
     const state = standing(a);
     const paint = state === 'recorded' ? pc.green : state === 'stale' ? pc.yellow : pc.dim;
-    console.log(`  ${a.path.padEnd(width)}  ${(a.current ?? '(no value)').padEnd(12)}  ${paint(state)}`);
+    const files = a.files ? `  ${pc.dim(a.files.join(', '))}` : '';
+    console.log(`  ${a.path.padEnd(width)}  ${(a.current ?? '(no value)').padEnd(12)}  ${paint(state)}${' '.repeat(12 - state.length)}${files}`.trimEnd());
   }
   console.log();
   console.log(pc.dim('  Set review.value to the fingerprint once a person has confirmed the value.\n'));

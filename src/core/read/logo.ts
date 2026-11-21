@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { AssetMeta, BlazonConfig, BlazonData } from '../../types/index.js';
 import { assetSourcePath, categoryDirs } from '../assets/categories.js';
+import { representationsOf } from '../assets/representations.js';
 import { logoPaths, sameFile } from '../logo.js';
 import { ruleEntries } from './rules.js';
 
@@ -18,9 +19,9 @@ export interface LogoVariant {
 
 export interface LogoAsset {
   id: string;
-  /** From the project root */
-  file: string;
-  /** The configured variants that use this file */
+  /** Every file of the id, from the project root, in the default order of its representations (RFC 0001 section 12): the first is the one a reader without a preference takes */
+  files: string[];
+  /** The configured variants that use one of these files */
   variants: ('onLight' | 'onDark')[];
   /** What the sidecar says, as brand.json carries it: clearSpace, minSize, maxSize, replacedBelow, lockup, placement, partnership, initiative, unit, ink, background, do, dont */
   rules: AssetMeta;
@@ -50,13 +51,16 @@ export function describeLogo(data: BlazonData, config: BlazonConfig, cwd: string
     const ink = variant === 'onLight' ? data.logo?.onLightInk : data.logo?.onDarkInk;
     return [{ variant, file, found: Boolean(variant === 'onLight' ? data.logo?.onLight : data.logo?.onDark), ...(asset && { asset }), ...(ink && { ink }) }];
   });
-  const assets = data.assets.logos.map((asset): LogoAsset => {
-    const source = assetSourcePath(asset, assetsDir, dirs);
+  // one entry for an id: its files are its representations, and its sidecar is one
+  const ids = [...new Set(data.assets.logos.map((asset) => asset.id))];
+  const assets = ids.map((id): LogoAsset => {
+    const records = representationsOf(data.assets.logos, id);
+    const sources = records.map((asset) => assetSourcePath(asset, assetsDir, dirs));
     return {
-      id: asset.id,
-      file: fileOf(asset),
-      variants: variants.filter((v) => (paths[v.variant] ? sameFile(path.resolve(cwd, paths[v.variant]!), source) : false)).map((v) => v.variant),
-      rules: asset.meta ?? {},
+      id,
+      files: records.map(fileOf),
+      variants: variants.filter((v) => (paths[v.variant] ? sources.some((source) => sameFile(path.resolve(cwd, paths[v.variant]!), source)) : false)).map((v) => v.variant),
+      rules: records[0]!.meta ?? {},
     };
   });
   const forbidden = ruleEntries(data, '').flatMap((entry) =>

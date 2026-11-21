@@ -1,4 +1,5 @@
 import { type Brand, dimensionPx, has, isNumber, isObject, measurePx, type Obj } from '../brand.js';
+import { pickRepresentation } from '../../../core/assets/representations.js';
 import { assetTitle, backgroundOf } from './assets.js';
 import { number, textOrNull } from './format.js';
 import { type LogoSlide, type Rule } from './types.js';
@@ -61,8 +62,10 @@ export function logoRules(meta: Obj, titleOf: (id: string) => string | undefined
 }
 
 export function logoSlides(brand: Brand, skip: readonly string[] = []): LogoSlide[] {
-  const byId = new Map(brand.assets.map((asset) => [asset.id, asset]));
-  const titleOf = (id: string) => (byId.has(id) ? assetTitle(byId.get(id)!) : undefined);
+  const titleOf = (id: string) => {
+    const asset = pickRepresentation(brand.assets, id);
+    return asset ? assetTitle(asset) : undefined;
+  };
   const slides: LogoSlide[] = [];
   for (const asset of brand.assets) {
     if (asset.category !== 'logos' || skip.includes('logos')) continue;

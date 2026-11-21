@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Finding, BlazonConfig, BlazonData, LogoSet, ParsedTokens, Vocabulary } from '../types/index.js';
+import type { Asset, Finding, BlazonConfig, BlazonData, LogoSet, ParsedTokens, Vocabulary } from '../types/index.js';
 import { loadTokenTree } from './tokens/load.js';
 import { resolveTokenTree } from './tokens/resolve.js';
 import { DEFAULT_RESOLVER_FILE } from './tokens/resolver/parse.js';
@@ -30,7 +30,8 @@ import { scanAssets } from './assets/scanner.js';
 import { initiativeFindings, replacementFindings } from './assets/sidecar.js';
 import { checkTokens } from './checker/index.js';
 import { withoutCascade } from './checker/cascade.js';
-import { staleApprovals } from './checker/approvals.js';
+import { fileNameOf } from './assets/representations.js';
+import { onePerAssetId, staleApprovals } from './checker/approvals.js';
 import { resolveTheme } from './brand-theme.js';
 import { starterFileFindings, starterLogoFindings } from './starter.js';
 import { declareInks, loadLogo, logoFiles } from './logo.js';
@@ -93,6 +94,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
     lockups: vocabulary.lockups,
   });
   // An experimental category holds explorations and a reference category holds material kept for comparison: a sidecar's review is data there, and its warnings do not gate the book
+  assetProblems.splice(0, assetProblems.length, ...onePerAssetId(assetProblems, assets.all));
   const ungated = ungatedAssetIds(assets, categories.configs);
   assetProblems.splice(0, assetProblems.length, ...assetProblems.filter((f) => !((f.code === 'review-pending' || f.code === 'asset-review-missing') && ungated.has(f.path))));
   assetProblems.push(...categories.problems, ...unusedFindings(assets, categories.configs), ...ruleFindings(assets, categories.configs), ...unitFindings(assets.all));
@@ -128,7 +130,14 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
   // Every token file is named from the project root, whichever loader read it; a source written inside a resolver document is the resolver
   const resolverFile = path.relative(cwd, resolverPath).split(path.sep).join('/');
   for (const item of resolvedTokens.items) files.set(item.path, item.file.replace(/ \(inline\)$/, ''));
-  for (const asset of assets.all) files.set(asset.id, inProject(assetsDirPath, asset.filePath));
+  // an id with several files is one asset: its findings name the first file in byte order of the file names, the order its fingerprint uses
+  const firstFile = new Map<string, Asset>();
+  const nameBytes = (asset: Asset) => Buffer.from(fileNameOf(asset));
+  for (const asset of assets.all) {
+    const held = firstFile.get(asset.id);
+    if (!held || Buffer.compare(nameBytes(asset), nameBytes(held)) < 0) firstFile.set(asset.id, asset);
+  }
+  for (const [id, asset] of firstFile) files.set(id, inProject(assetsDirPath, asset.filePath));
   // and a token's finding also says which line of that file its key is on
   const keys = new Map<string, Map<string, number>>();
   const lineIn = (file: string, tokenPath: string): number | undefined => {

@@ -3,6 +3,7 @@ import path from 'node:path';
 import Color from 'colorjs.io';
 import { Cannot, isObject, OptionError, type Request } from './request.js';
 import { readSymbol, type Glyph } from './symbol.js';
+import { pickRepresentation, type Representation } from '../../core/assets/representations.js';
 
 // What the options and the brand say, settled once: which drawing is the symbol, the colors, how large the symbol sits,
 // and which files the project supplies. Nothing here touches the browser.
@@ -94,9 +95,10 @@ export function planFor(request: Request): Plan {
   for (const key of Object.keys(options)) if (!KEYS.includes(key)) throw new OptionError(`unknown option ${JSON.stringify(key)}; known: ${KEYS.join(', ')}`);
 
   const assets = Array.isArray(brand.assets) ? brand.assets.filter(isObject) : [];
+  const records = assets.filter((asset): asset is typeof asset & Representation => typeof asset.id === 'string' && typeof asset.format === 'string');
   const named = asString(options.symbol, 'symbol');
   const marks = assets.filter((asset) => isObject(asset.meta) && asset.meta.lockup === 'mark' && asset.format === 'svg');
-  const symbol = named ? assets.find((asset) => asset.id === named) : marks.length === 1 ? marks[0] : undefined;
+  const symbol = named ? (pickRepresentation(records, named, { formats: ['svg'] }) ?? pickRepresentation(records, named)) : marks.length === 1 ? marks[0] : undefined;
   if (!symbol) {
     if (named) throw new OptionError(`symbol names the asset ${named}, and the brand has none with that id`);
     throw new Cannot(
@@ -104,7 +106,13 @@ export function planFor(request: Request): Plan {
     );
   }
   const symbolId = String(symbol.id);
-  if (symbol.format !== 'svg') throw new Cannot(`the symbol ${symbolId} is a ${String(symbol.format)} file; the plugin draws from an SVG`);
+  if (symbol.format !== 'svg')
+    throw new Cannot(
+      `the symbol ${symbolId} needs an SVG: it has ${records
+        .filter((asset) => asset.id === symbolId)
+        .map((asset) => asset.format)
+        .join(', ')} only`,
+    );
   const symbolSize = { width: Number(symbol.width), height: Number(symbol.height) };
   const glyph =
     request.type === 'build' ? readSymbol(readAsset(request.siteDir, String(symbol.file), `the symbol ${symbolId}`).toString('utf-8'), `the symbol ${symbolId}`) : undefined;
@@ -141,7 +149,7 @@ export function planFor(request: Request): Plan {
   const category = asString(options.supplied, 'supplied');
   if (category && request.type === 'build') {
     for (const [stem, want] of Object.entries(SUPPLIED)) {
-      const asset = assets.find((item) => item.id === `${category}/${stem}`);
+      const asset = pickRepresentation(records, `${category}/${stem}`, { formats: [want.format] }) ?? pickRepresentation(records, `${category}/${stem}`);
       if (!asset) continue;
       const id = String(asset.id);
       if (asset.format !== want.format) throw new Cannot(`the supplied ${id} is a ${String(asset.format)} file; ${want.file} must be a ${want.format.toUpperCase()}`);

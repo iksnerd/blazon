@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from '../support/spawn';
 import { REPO } from '../support/paths';
@@ -74,5 +75,20 @@ describe('blazon approvals', () => {
     const ran = blazon('approvals', tempProject({ 'tokens/a.json': { color: { $type: 'color', ink: token('#111111') } } }));
     expect(ran.status).toBe(0);
     expect(ran.stdout).toContain('No token or asset is marked review.status: ok.');
+  }, 120_000);
+
+  it('prints one row for an asset in two formats, with its files, and the same as JSON', () => {
+    const root = tempProject({
+      'tokens/a.json': { color: { $type: 'color', ink: token('#111111') } },
+      'assets/logos/mark.svg': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"/>',
+      'assets/logos/mark.json': { review: { status: 'ok', by: 'Acme design lead', at: '2026-11-21' } },
+    });
+    fs.writeFileSync(path.join(root, 'assets/logos/mark.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    const ran = blazon('approvals', root);
+    const rows = ran.stdout.split('\n').filter((line) => line.includes('logos/mark'));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatch(/^\s+logos\/mark\s+[0-9a-f]{12}\s+not recorded\s+mark\.png, mark\.svg$/);
+    const out = JSON.parse(blazon('approvals', root, '--json').stdout);
+    expect(out.approvals).toEqual([{ path: 'logos/mark', fingerprint: expect.stringMatching(/^[0-9a-f]{12}$/), state: 'not recorded', files: ['mark.png', 'mark.svg'] }]);
   }, 120_000);
 });
