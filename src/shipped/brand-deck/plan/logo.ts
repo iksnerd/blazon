@@ -1,6 +1,6 @@
 import { type Brand, dimensionPx, has, isNumber, isObject, measurePx, type Obj } from '../brand.js';
 import { pickRepresentation } from '../../../core/assets/representations.js';
-import { assetTitle, backgroundOf } from './assets.js';
+import { assetTitle, backgroundOf, onePerId } from './assets.js';
 import { number, textOrNull } from './format.js';
 import { type LogoSlide, type Rule } from './types.js';
 
@@ -67,8 +67,8 @@ export function logoSlides(brand: Brand, skip: readonly string[] = []): LogoSlid
     return asset ? assetTitle(asset) : undefined;
   };
   const slides: LogoSlide[] = [];
-  for (const asset of brand.assets) {
-    if (asset.category !== 'logos' || skip.includes('logos')) continue;
+  for (const asset of onePerId(brand.assets.filter((candidate) => candidate.category === 'logos'))) {
+    if (skip.includes('logos')) continue;
     const meta = asset.meta ?? {};
     const { rules, clearPx } = logoRules(meta, titleOf);
     slides.push({
