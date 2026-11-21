@@ -27,6 +27,8 @@ export function loadTokenDocuments(documents: TokenDocument[], options: LoadOpti
     for (const [key, value] of Object.entries(source)) {
       if (key.startsWith('$')) {
         target[key] = value;
+        // A group's findings are about its `$` keys, so the group is attributed to the document that last wrote one
+        sources.set(target, name);
         continue;
       }
       const existing = Object.hasOwn(target, key) ? target[key] : undefined;

@@ -73,6 +73,16 @@ describe('compileBlazonData: token model (RFC 0001 §1)', () => {
     expect(data.tokens.problems.filter((p) => p.message.includes('com.acme.x'))).toEqual([]);
   });
 
+  it('names the document that wrote a group-level key, not the one that created the group', async () => {
+    const data = await compileTokens({
+      'a.json': { color: { $type: 'color', ink: { $value: '#111111' } } },
+      'b.json': { color: { $type: 'spacing', $extensions: { 'dev.folio': { tier: 'primitive' } }, paper: { $value: '#ffffff' } } },
+    });
+    const type = data.tokens.problems.find((p) => p.code === 'token-type-unknown' || p.code === 'token-extension-deprecated');
+    expect(type).toMatchObject({ file: 'tokens/b.json' });
+    expect(data.tokens.problems.filter((p) => p.code === 'token-extension-deprecated').map((p) => p.file)).toEqual(['tokens/b.json']);
+  });
+
   it('keeps $extensions and merges dev.blazon fields down from groups', async () => {
     const data = await compileTokens({
       'a.json': {
