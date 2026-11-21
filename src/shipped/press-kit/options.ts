@@ -14,6 +14,23 @@ export interface Options {
   company?: Company;
   /** A short line printed in README.txt, about.txt, colors.txt and the PDF, such as that the colors are proposed */
   note?: string;
+  /** What a recipient may do with the logos, in the brand's own words */
+  terms?: Terms;
+}
+
+/** The brand's terms of use: its words, an address, or both. blazon writes no wording of its own. */
+export interface Terms {
+  text?: string;
+  url?: string;
+}
+
+/** Who a journalist writes to; every key optional, at least one set */
+export interface Contact {
+  name?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  url?: string;
 }
 
 export interface Fact {
@@ -28,13 +45,30 @@ export interface Company {
   boilerplate?: string;
   /** Labelled lines such as the legal name, in the order given */
   facts?: Fact[];
+  /** The person or desk to write to */
+  contact?: Contact;
 }
 
 /** What each text may hold, in characters, and how many facts there may be */
-export const LIMITS = { description: 1000, boilerplate: 2000, facts: 20, label: 60, value: 300, note: 280 };
+export const LIMITS = {
+  description: 1000,
+  boilerplate: 2000,
+  facts: 20,
+  label: 60,
+  value: 300,
+  note: 280,
+  contactName: 80,
+  contactRole: 80,
+  contactPhone: 40,
+  contactEmail: 120,
+  url: 300,
+  terms: 1000,
+};
 
-const KEYS = ['name', 'pdf', 'unreviewed', 'logos', 'company', 'note'];
-const COMPANY_KEYS = ['description', 'boilerplate', 'facts'];
+const KEYS = ['name', 'pdf', 'unreviewed', 'logos', 'company', 'note', 'terms'];
+const COMPANY_KEYS = ['description', 'boilerplate', 'facts', 'contact'];
+const CONTACT_KEYS = ['name', 'role', 'email', 'phone', 'url'] as const;
+const TERMS_KEYS = ['text', 'url'] as const;
 const FACT_KEYS = ['label', 'value'];
 
 export type { Finding };
@@ -48,6 +82,27 @@ function textProblem(value: unknown, max: number, oneLine: boolean): string | un
   if (value.length > max) return `must be at most ${max} characters, not ${value.length}`;
   if (oneLine && /[\r\n]/.test(value)) return 'must be on one line';
   return undefined;
+}
+
+/** An http or https address on one line, up to the cap, or the reason it is not */
+function urlProblem(value: unknown, max: number): string | undefined {
+  const problem = textProblem(value, max, true);
+  if (problem) return problem;
+  const text = (value as string).trim();
+  if (/\s/.test(text)) return 'must not contain spaces';
+  try {
+    if (!['http:', 'https:'].includes(new URL(text).protocol)) return 'must be an http or https address';
+  } catch {
+    return 'must be an http or https address';
+  }
+  return undefined;
+}
+
+/** An address of one `@` with something on each side and no spaces, on one line */
+function emailProblem(value: unknown, max: number): string | undefined {
+  const problem = textProblem(value, max, true);
+  if (problem) return problem;
+  return /^[^\s@]+@[^\s@]+$/.test((value as string).trim()) ? undefined : 'must be an email address of one @ and no spaces';
 }
 
 /** A text as a file name: letters, digits, dots, hyphens and underscores, so it is plain ASCII and cannot leave the folder. */
@@ -94,6 +149,7 @@ export function parseOptions(raw: unknown, logoIds: ReadonlySet<string>): { opti
     if (problem) findings.push(invalid(`note ${problem}`, 'options.note'));
     else options.note = (raw.note as string).trim();
   }
+  if (raw.terms !== undefined) readTerms(raw.terms, options, findings);
   return { options, findings };
 }
 
@@ -131,5 +187,57 @@ function readCompany(raw: unknown, options: Options, findings: Finding[]): void 
       if (facts.length > 0) company.facts = facts;
     }
   }
+  if (raw.contact !== undefined) {
+    const contact = readContact(raw.contact, findings);
+    if (contact) company.contact = contact;
+  }
   if (Object.keys(company).length > 0) options.company = company;
+}
+
+/** company.contact: each value checked on its own; the contact is set when at least one key is good */
+function readContact(raw: unknown, findings: Finding[]): Contact | undefined {
+  const at = 'options.company.contact';
+  if (!isObject(raw) || Array.isArray(raw) || Object.keys(raw).length === 0) {
+    findings.push(invalid(`company.contact must be an object with at least one of ${CONTACT_KEYS.join(', ')}`, at));
+    return undefined;
+  }
+  for (const key of Object.keys(raw))
+    if (!(CONTACT_KEYS as readonly string[]).includes(key)) findings.push(invalid(`unknown key "company.contact.${key}"; contact takes ${CONTACT_KEYS.join(', ')}`, at));
+  const checks: Record<(typeof CONTACT_KEYS)[number], (value: unknown) => string | undefined> = {
+    name: (value) => textProblem(value, LIMITS.contactName, true),
+    role: (value) => textProblem(value, LIMITS.contactRole, true),
+    email: (value) => emailProblem(value, LIMITS.contactEmail),
+    phone: (value) => textProblem(value, LIMITS.contactPhone, true),
+    url: (value) => urlProblem(value, LIMITS.url),
+  };
+  const contact: Contact = {};
+  for (const key of CONTACT_KEYS) {
+    if (raw[key] === undefined) continue;
+    const problem = checks[key](raw[key]);
+    if (problem) findings.push(invalid(`company.contact.${key} ${problem}`, `${at}.${key}`));
+    else contact[key] = (raw[key] as string).trim();
+  }
+  return Object.keys(contact).length > 0 ? contact : undefined;
+}
+
+/** The terms option: a text, an address, or both */
+function readTerms(raw: unknown, options: Options, findings: Finding[]): void {
+  if (!isObject(raw) || Array.isArray(raw) || Object.keys(raw).length === 0) {
+    findings.push(invalid('terms must be an object with at least one of text, url', 'options.terms'));
+    return;
+  }
+  for (const key of Object.keys(raw))
+    if (!(TERMS_KEYS as readonly string[]).includes(key)) findings.push(invalid(`unknown key "terms.${key}"; terms takes ${TERMS_KEYS.join(', ')}`, 'options.terms'));
+  const terms: Terms = {};
+  if (raw.text !== undefined) {
+    const problem = textProblem(raw.text, LIMITS.terms, false);
+    if (problem) findings.push(invalid(`terms.text ${problem}`, 'options.terms.text'));
+    else terms.text = (raw.text as string).trim();
+  }
+  if (raw.url !== undefined) {
+    const problem = urlProblem(raw.url, LIMITS.url);
+    if (problem) findings.push(invalid(`terms.url ${problem}`, 'options.terms.url'));
+    else terms.url = (raw.url as string).trim();
+  }
+  if (Object.keys(terms).length > 0) options.terms = terms;
 }

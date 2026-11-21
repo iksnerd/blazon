@@ -78,12 +78,12 @@ export function chooseLogos(brand: BrandRead, options: Pick<Options, 'logos'>): 
   return { chosen, findings };
 }
 
-function measureText(measure: AssetMeasure, meta: AssetMeta): string {
+export function measureText(measure: AssetMeasure, meta: AssetMeta): string {
   if ('units' in measure) return `${measure.units} unit${measure.units === 1 ? '' : 's'}${meta.unit ? ` (one unit is ${dimensionToPx(meta.unit)} px)` : ''}`;
   return `${measure.value} ${measure.unit}`;
 }
 
-const dimensionsText = (size: NonNullable<AssetMeta['minSize']>): string =>
+export const dimensionsText = (size: NonNullable<AssetMeta['minSize']>): string =>
   [size.width && `${dimensionToPx(size.width)} px wide`, size.height && `${dimensionToPx(size.height)} px high`].filter(Boolean).join(' and ');
 
 /** The logos as a page of plain text: which file is for which background, and the rules its sidecar states. Only what a sidecar says. */

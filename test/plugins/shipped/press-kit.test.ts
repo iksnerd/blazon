@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from '../../support/spawn';
 import { readBrand as readBrandRaw } from '../../../src/shipped/press-kit/brand.js';
 import { colorsCss, colorsText, planColors, type KitColor } from '../../../src/shipped/press-kit/colors.js';
+import { kitPage, type Kit } from '../../../src/shipped/press-kit/html.js';
+import { contrast, parseColor } from '../../../src/shipped/shared/color.js';
 import { pageHtml, pickSwatches } from '../../../src/shipped/press-kit/pdf.js';
 import { pdfFallbacks, planFonts } from '../../../src/shipped/press-kit/fonts.js';
 import { chooseLogos, logoIds, logosText } from '../../../src/shipped/press-kit/logos.js';
@@ -599,6 +602,7 @@ describe('the entry', () => {
         'colors/colors.json',
         'colors/colors.txt',
         'fonts.txt',
+        'index.html',
         'logos/logos.txt',
         'logos/on-dark-backgrounds/ai-ok.svg',
         'logos/on-dark-backgrounds/mark-dark.svg',
@@ -695,7 +699,7 @@ describe('the entry', () => {
     const ran = plugin(made.request);
     expect(ran.status, ran.out + ran.err).toBe(0);
     expect(findingsOf(ran.out).map((f) => f.code)).toEqual([`${NAME}/logo-none`, `${NAME}/color-none`, `${NAME}/font-none`, `${NAME}/about-no-description`]);
-    expect(walk(path.join(made.outDir, 'press-kit'))).toEqual(['README.txt', 'about.txt']);
+    expect(walk(path.join(made.outDir, 'press-kit'))).toEqual(['README.txt', 'about.txt', 'index.html']);
     expect(fs.readFileSync(path.join(made.outDir, 'press-kit/about.txt'), 'utf-8')).toBe('Bare\n\nNo description is set in blazon.json.\n');
   });
 });
@@ -715,5 +719,419 @@ describe.skipIf(!CHROME)('the PDF, in a real browser', () => {
     const zip = fs.readFileSync(path.join(made.outDir, 'press-kit.zip'));
     expect(plugin(made.request, { BLAZON_CHROME: CHROME }).status).toBe(0);
     expect(fs.readFileSync(path.join(made.outDir, 'press-kit.zip')).equals(zip)).toBe(true);
+  }, 120_000);
+});
+
+// Contact, terms and the page (index.html). The contact and the terms are the brand's words; blazon writes no wording of its own.
+
+describe('the company.contact option', () => {
+  const none = new Set<string>();
+  const contact = { name: 'Ada Example', role: 'Press lead', email: 'press@acme.example', phone: '+44 20 0000 0000', url: 'https://acme.example/press' };
+
+  it('takes every key, or any one of them', () => {
+    expect(parseOptions({ company: { contact } }, none)).toMatchObject({ options: { company: { contact } }, findings: [] });
+    expect(parseOptions({ company: { contact: { email: 'a@b.example' } } }, none).options.company?.contact).toEqual({ email: 'a@b.example' });
+  });
+
+  it('trims the values', () => {
+    expect(parseOptions({ company: { contact: { name: '  Ada  ' } } }, none).options.company?.contact).toEqual({ name: 'Ada' });
+  });
+
+  it.each([
+    [{ contact: 'x' }, 'options.company.contact'],
+    [{ contact: [] }, 'options.company.contact'],
+    [{ contact: {} }, 'options.company.contact'],
+    [{ contact: { bogus: 'x' } }, 'options.company.contact'],
+    [{ contact: { name: 3 } }, 'options.company.contact.name'],
+    [{ contact: { name: ' ' } }, 'options.company.contact.name'],
+    [{ contact: { name: 'x'.repeat(81) } }, 'options.company.contact.name'],
+    [{ contact: { name: 'two\nlines' } }, 'options.company.contact.name'],
+    [{ contact: { role: '' } }, 'options.company.contact.role'],
+    [{ contact: { role: 'x'.repeat(81) } }, 'options.company.contact.role'],
+    [{ contact: { phone: 'x'.repeat(41) } }, 'options.company.contact.phone'],
+    [{ contact: { phone: 5 } }, 'options.company.contact.phone'],
+    [{ contact: { email: 'no-at-sign' } }, 'options.company.contact.email'],
+    [{ contact: { email: 'a@b@c.example' } }, 'options.company.contact.email'],
+    [{ contact: { email: 'a b@c.example' } }, 'options.company.contact.email'],
+    [{ contact: { email: `${'x'.repeat(115)}@b.example` } }, 'options.company.contact.email'],
+    [{ contact: { email: 7 } }, 'options.company.contact.email'],
+    [{ contact: { url: 'ftp://acme.example' } }, 'options.company.contact.url'],
+    [{ contact: { url: 'javascript:alert(1)' } }, 'options.company.contact.url'],
+    [{ contact: { url: 'acme.example/press' } }, 'options.company.contact.url'],
+    [{ contact: { url: `https://acme.example/${'x'.repeat(300)}` } }, 'options.company.contact.url'],
+    [{ contact: { url: 'https://acme.example/a b' } }, 'options.company.contact.url'],
+  ])('refuses %j with one option-invalid finding at %s and leaves the contact unset', (company, at) => {
+    const { options, findings } = parseOptions({ company }, none);
+    expect(findings.map((f) => [f.code, f.path])).toEqual([[`${NAME}/option-invalid`, at]]);
+    expect(findings[0]!.message).toContain(at.replace('options.', ''));
+    expect(options.company?.contact).toBeUndefined();
+  });
+
+  it('keeps the good keys and names only the bad one', () => {
+    const r = parseOptions({ company: { contact: { name: 'Ada', email: 'nope' } } }, none);
+    expect(r.options.company?.contact).toEqual({ name: 'Ada' });
+    expect(r.findings.map((f) => f.path)).toEqual(['options.company.contact.email']);
+  });
+
+  it('accepts exactly the caps', () => {
+    const edge = { name: 'n'.repeat(80), role: 'r'.repeat(80), phone: '1'.repeat(40), email: `${'x'.repeat(110)}@b.example`, url: `https://acme.example/${'x'.repeat(279)}` };
+    expect(edge.email).toHaveLength(120);
+    expect(edge.url).toHaveLength(300);
+    expect(parseOptions({ company: { contact: edge } }, none).findings).toEqual([]);
+  });
+});
+
+describe('the terms option', () => {
+  const none = new Set<string>();
+
+  it('takes text, a url, or both, and text may span lines', () => {
+    expect(parseOptions({ terms: { text: 'Use the logos as they are.\nDo not recolor them.', url: 'https://acme.example/terms' } }, none)).toMatchObject({
+      options: { terms: { text: 'Use the logos as they are.\nDo not recolor them.', url: 'https://acme.example/terms' } },
+      findings: [],
+    });
+    expect(parseOptions({ terms: { url: 'http://acme.example/terms' } }, none).options.terms).toEqual({ url: 'http://acme.example/terms' });
+    expect(parseOptions({ terms: { text: 'x'.repeat(1000) } }, none).findings).toEqual([]);
+  });
+
+  it('is unset by default', () => {
+    expect(parseOptions({}, none).options.terms).toBeUndefined();
+  });
+
+  it.each([
+    [{ terms: 'x' }, 'options.terms'],
+    [{ terms: {} }, 'options.terms'],
+    [{ terms: { bogus: 1 } }, 'options.terms'],
+    [{ terms: { text: 3 } }, 'options.terms.text'],
+    [{ terms: { text: '  ' } }, 'options.terms.text'],
+    [{ terms: { text: 'x'.repeat(1001) } }, 'options.terms.text'],
+    [{ terms: { url: 'mailto:a@b.example' } }, 'options.terms.url'],
+    [{ terms: { url: 'not a url' } }, 'options.terms.url'],
+    [{ terms: { url: 7 } }, 'options.terms.url'],
+  ])('refuses %j with one option-invalid finding at %s and leaves terms unset', (raw, at) => {
+    const { options, findings } = parseOptions(raw, none);
+    expect(findings.map((f) => [f.code, f.path])).toEqual([[`${NAME}/option-invalid`, at]]);
+    expect(findings[0]!.message).toContain(at.replace('options.', ''));
+    expect(options.terms).toBeUndefined();
+  });
+
+  it('names terms among the known options', () => {
+    expect(parseOptions({ bogus: 1 }, none).findings[0]!.message).toContain('terms');
+  });
+});
+
+describe('contact and terms in about.txt and README.txt', () => {
+  const base = { title: 'Acme Brand Book', named: true, description: 'A book.' };
+  const company = { facts: [{ label: 'Legal name', value: 'Acme Ltd' }], contact: { name: 'Ada Example', role: 'Press lead', email: 'press@acme.example', phone: '+44 20 0000 0000', url: 'https://acme.example/press' } };
+  const terms = { text: 'Use the logos as supplied.\nNo recoloring.', url: 'https://acme.example/terms' };
+
+  it('prints a Contact block after the facts and a Terms of use block after it, before the note', () => {
+    expect(aboutText(base, { company, terms, note: 'N' }).text).toBe(
+      [
+        'Acme Brand Book',
+        '',
+        'A book.',
+        '',
+        'Legal name: Acme Ltd',
+        '',
+        'Contact:',
+        '  Name: Ada Example',
+        '  Role: Press lead',
+        '  Email: press@acme.example',
+        '  Phone: +44 20 0000 0000',
+        '  Web: https://acme.example/press',
+        '',
+        'Terms of use:',
+        'Use the logos as supplied.',
+        'No recoloring.',
+        'Full terms: https://acme.example/terms',
+        '',
+        'Note: N',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('prints only the contact keys that are set, and terms with only a url', () => {
+    expect(aboutText(base, { company: { contact: { email: 'a@b.example' } }, terms: { url: 'https://acme.example/t' } }).text).toBe(
+      'Acme Brand Book\n\nA book.\n\nContact:\n  Email: a@b.example\n\nTerms of use:\nFull terms: https://acme.example/t\n',
+    );
+  });
+
+  it('lists index.html first in README.txt, and the terms line only when terms are set', () => {
+    const paths = ['index.html', 'about.txt'];
+    const plain = readmeText('Acme Co', paths, 'press-kit');
+    expect(plain).toContain('What is in this folder\n\n  index.html      ');
+    expect(plain.indexOf('index.html')).toBeLessThan(plain.indexOf('about.txt'));
+    expect(plain).not.toContain('Terms of use');
+    expect(readmeText('Acme Co', paths, 'press-kit', 'Proposed.', true).split('\n').slice(0, 6)).toEqual([
+      'Acme Co: press kit',
+      '',
+      'Note: Proposed.',
+      '',
+      'Terms of use: see about.txt',
+      '',
+    ]);
+    expect(readmeText('Acme Co', paths, 'press-kit', undefined, true).split('\n').slice(0, 4)).toEqual(['Acme Co: press kit', '', 'Terms of use: see about.txt', '']);
+  });
+});
+
+describe('the PDF page with contact and terms', () => {
+  it('shows the contact and the terms, escaped, and a short block for long terms', () => {
+    const html = pageHtml({
+      brand: { title: 'T', description: 'D', roles: {}, stylesheets: [] },
+      colors: [],
+      company: { contact: { name: 'CONTACTNAME <i>', email: 'press@acme.example' } },
+      terms: { text: 'TERMS '.repeat(200), url: 'https://acme.example/terms' },
+    });
+    expect(html).toContain('CONTACTNAME &#60;i&#62;');
+    expect(html).toContain('press@acme.example');
+    expect(html).toContain('TERMS');
+    expect(html).toContain('https://acme.example/terms');
+    expect(html).toContain('about.txt');
+    expect(html.length).toBeLessThan(6000);
+  });
+});
+
+/** The kit the page is drawn from, with every section that BRAND has data for */
+const kitOf = (over: Partial<Kit> = {}): Kit => {
+  const brand = readBrand(BRAND);
+  return {
+    brand,
+    logos: chooseLogos(brand, {}).chosen,
+    colors: planColors(brand).colors,
+    fonts: planFonts(brand).text,
+    paths: ['colors/colors.css', 'colors/colors.json'],
+    ...over,
+  };
+};
+const headings = (html: string) => [...html.matchAll(/<h([1-6])[ >]/g)].map((m) => Number(m[1]));
+const sections = (html: string) => [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>/g)].map((m) => m[1]);
+
+describe('index.html: the page', () => {
+  const full = (): Kit =>
+    kitOf({
+      company: {
+        description: 'We make anvils.',
+        boilerplate: 'Acme Ltd is an anvil maker.',
+        facts: [{ label: 'Legal name', value: 'Acme Ltd' }],
+        contact: { name: 'Ada', role: 'Press lead', email: 'press@acme.example', phone: '+44 1', url: 'https://acme.example/press' },
+      },
+      terms: { text: 'Use as supplied.', url: 'https://acme.example/terms' },
+      note: 'Colors are proposed.',
+    });
+
+  it('is one semantic HTML5 document: lang, a title, one h1, headings that never skip a level', () => {
+    const html = kitPage(full());
+    expect(html.startsWith('<!doctype html>')).toBe(true);
+    expect(html).toMatch(/<html lang="en">/);
+    expect(html).toMatch(/<title>Acme Co: press kit<\/title>/);
+    expect(html).toContain('<meta name="viewport"');
+    expect(html.match(/<h1[ >]/g)).toHaveLength(1);
+    const levels = headings(html);
+    expect(levels[0]).toBe(1);
+    levels.forEach((level, at) => {
+      if (at > 0) expect(level - levels[at - 1]!).toBeLessThanOrEqual(1);
+    });
+    expect(html).toMatch(/<main>[^]*<\/main>/);
+  });
+
+  it('has the sections in order when all the data is there', () => {
+    expect(sections(kitPage(full()))).toEqual(['About', 'Facts', 'Contact', 'Logos', 'Colors', 'Fonts', 'Terms of use', 'Note']);
+  });
+
+  it('leaves a section out when its data is absent', () => {
+    expect(sections(kitPage(kitOf()))).toEqual(['Logos', 'Colors', 'Fonts']);
+    expect(sections(kitPage(kitOf({ logos: [], colors: [], fonts: undefined })))).toEqual([]);
+    const some = kitPage(kitOf({ company: { contact: { email: 'a@b.example' } } }));
+    expect(sections(some)).toEqual(['Contact', 'Logos', 'Colors', 'Fonts']);
+    expect(some).not.toContain('>Facts<');
+    expect(some).not.toContain('Terms of use');
+  });
+
+  it("is self-contained: no script, no remote font or image, no absolute src or href but the brand's own addresses", () => {
+    const html = kitPage(full());
+    expect(html).not.toMatch(/<script/i);
+    expect(html).not.toMatch(/<link\b/i);
+    expect(html).not.toMatch(/@import|url\(/i);
+    expect(html).not.toMatch(/\son[a-z]+=/i);
+    const refs = [...html.matchAll(/\s(?:src|href)="([^"]*)"/g)].map((m) => m[1]!);
+    const absolute = refs.filter((ref) => /^[a-z][a-z0-9+.-]*:/i.test(ref));
+    expect(new Set(absolute)).toEqual(new Set(['https://acme.example/press', 'https://acme.example/terms', 'mailto:press@acme.example']));
+    expect((html.match(/https?:\/\/[^\s"'<]+/g) ?? []).every((url) => url.startsWith('https://acme.example/') || url.startsWith('https://fonts.googleapis.com/'))).toBe(true);
+  });
+
+  it('refers to the logos by relative paths, with alt text and a download link for each', () => {
+    const html = kitPage(full());
+    const images = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+    expect(images).toHaveLength(3);
+    for (const image of images) {
+      expect(image).toMatch(/src="logos\/on-(light|dark)-backgrounds\/(mark-light|mark-dark|ai-ok)\.svg"/);
+      expect(image).toMatch(/alt="[^"]+"/);
+    }
+    expect(images[0]).toContain('alt="For light surfaces."');
+    expect(images.find((image) => image.includes('mark-dark'))).toContain('alt="mark-dark"');
+    expect(html).toMatch(/<a href="logos\/on-light-backgrounds\/mark-light\.svg" download aria-label="Download mark-light\.svg">Download<\/a>/);
+    expect(html).toMatch(/<a href="logos\/on-dark-backgrounds\/mark-dark\.svg" download aria-label="Download mark-dark\.svg">Download<\/a>/);
+    expect(html).toContain('<dt>Clear space on every side</dt><dd>24 px</dd>');
+    expect(html).toContain('For light backgrounds');
+  });
+
+  it("lists do and don't as short lists", () => {
+    const brand = readBrand({ ...BRAND, assets: [asset('logos/mark-light', {}, { background: 'light', do: ['Keep the clear space'], dont: ['Stretch it'] })] });
+    const html = kitPage(kitOf({ logos: chooseLogos(brand, {}).chosen }));
+    expect(html).toMatch(/<h4>Do<\/h4><ul><li>Keep the clear space<\/li><\/ul>/);
+    expect(html).toMatch(/<h4>Do not<\/h4><ul><li>Stretch it<\/li><\/ul>/);
+  });
+
+  it('shows each color with its hex, and CMYK, Pantone and RAL only where the token states them', () => {
+    const html = kitPage(kitOf());
+    expect(html).toContain('#FF5A1F');
+    expect(html).toContain('0, 80, 100, 0');
+    expect(html).toContain('1665 C');
+    expect(html).toContain('2004');
+    expect(html.match(/CMYK/g)).toHaveLength(1);
+    expect(html.match(/Pantone/g)).toHaveLength(1);
+  });
+
+  it('shows the fonts as fonts.txt prints them: the license line and the fallback line', () => {
+    const html = kitPage(kitOf());
+    expect(html).toContain('Big Shoulders Display');
+    expect(html).toContain('License');
+    expect(html).toContain('not stated');
+    expect(html).toContain('Fallback fonts, not shipped: sans-serif, Arial');
+  });
+
+  it('chooses a swatch label color that has at least 4.5:1 contrast with the swatch, whatever the color', () => {
+    const swatch = (hex: string): KitColor => ({ path: `color.x${hex.slice(1)}`, hex, value: hex, rgb: parseColor(hex)!, cssVariable: '--x', usedAs: [] });
+    const hexes = ['#000000', '#FFFFFF', '#777777', '#808080', '#767676', '#FF5A1F', '#FFD700', '#0000FF', '#00FF00', '#E5E5E5', '#1E1F21', '#949494', '#8A8A8A'];
+    const html = kitPage(kitOf({ colors: hexes.map(swatch) }));
+    for (const hex of hexes) {
+      const row = html.match(new RegExp(`<div class="swatch" style="background:${hex};color:(#[0-9a-f]{3,6})">`, 'i'));
+      expect(row, hex).not.toBeNull();
+      expect(contrast(parseColor(hex)!, parseColor(row![1]!)!), hex).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('uses fixed neutral text colors that pass 4.5:1 on the page background', () => {
+    const style = kitPage(full()).match(/<style>([^]*?)<\/style>/)![1]!;
+    const background = style.match(/body\{[^}]*background:(#[0-9a-f]{6})/i)![1]!;
+    const inks = new Set([...style.matchAll(/(?<![-a-z])color:(#[0-9a-f]{6})/gi)].map((m) => m[1]!));
+    expect(inks.size).toBeGreaterThan(0);
+    for (const ink of inks) expect(contrast(parseColor(ink)!, parseColor(background)!), ink).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('escapes every string that comes from the brand', () => {
+    const evil = (label: string) => `<script>alert(1)</script>"${label}'&`;
+    const brand = readBrand({
+      ...BRAND,
+      brand: { title: evil('title'), description: evil('desc') },
+      tokens: [token('color.ink', '#1E1F21', { description: evil('cdesc') })],
+      assets: [asset('logos/mark-light', {}, { background: 'light', description: evil('alt'), lockup: 'horizontal', do: [evil('do')], dont: [evil('dont')] })],
+    });
+    const html = kitPage({
+      brand,
+      logos: chooseLogos(brand, {}).chosen,
+      colors: planColors(brand).colors,
+      fonts: `Fonts\n\n${evil('family')}\n  Used for: ${evil('used')}\n  License: ${evil('license')}\n\nFallback fonts, not shipped: ${evil('fallback')}\n`,
+      paths: [],
+      company: {
+        description: evil('companydesc'),
+        boilerplate: evil('boiler'),
+        facts: [{ label: evil('flabel'), value: evil('fvalue') }],
+        contact: { name: evil('cname'), role: evil('crole'), email: evil('cemail'), phone: evil('cphone'), url: evil('curl') },
+      },
+      terms: { text: evil('tterms'), url: evil('turl') },
+      note: evil('note'),
+    });
+    expect(html.match(/<script/gi)).toBeNull();
+    for (const label of ['title', 'cdesc', 'alt', 'do', 'dont', 'family', 'used', 'license', 'fallback', 'companydesc', 'boiler', 'flabel', 'fvalue', 'cname', 'crole', 'cemail', 'cphone', 'curl', 'tterms', 'turl', 'note'])
+      expect(html, label).toContain(`&#60;script&#62;alert(1)&#60;/script&#62;&#34;${label}&#39;&#38;`);
+    // a quote in an attribute cannot end it
+    expect(html).not.toMatch(/(?:src|href|alt)="[^"]*"[^>\s]*alert/);
+  });
+});
+
+describe('the kit with no contact and no terms', () => {
+  // The files as the plugin wrote them before the contact, the terms and index.html: every one is the same bytes now
+  const OLD_SHA: Record<string, string> = {
+    'about.txt': '826e13724b9ea087ae2c5674a432c47a36726bbc8580bdffc55f7861adc85d24',
+    'colors/colors.css': '6c6030c2a25f4d9977aec1473cb3530813a8ece3b42fc81b63da7a3edd90df43',
+    'colors/colors.json': 'c5cffec94a5f1ef326ceff8872c55ba9b49e6c74a3cc57ed7a142f882d3de677',
+    'colors/colors.txt': '830b0a24a587d2f7790ee73bddc61f74c1157197f82c896ffe8b0e8d8ad9acd0',
+    'fonts.txt': 'e0b10efcfac0987c98f81350ab919b2e66f5301835bbc5b18f39d96d07a90f4c',
+    'logos/logos.txt': '17dec4cb055cc56947ae42bcd39fb3a908a0d187683ab9417be9593ffe5ad894',
+    'logos/on-dark-backgrounds/mark-dark.svg': '47255e24108165e401cbe957ada22f3e80ef95cae7e7d3c940ef294dcaf45544',
+    'logos/on-light-backgrounds/mark-light.svg': '60a29e6d75e78cd0097b9b6cbfbabeee9ad904b31046d34d6d116db388e12f86',
+  };
+  const OLD_README =
+    "Acme Co: press kit\n\nWhat is in this folder\n\n  logos/          The logo files as they are. Use the ones in on-light-backgrounds/ on a light background and the ones in on-dark-backgrounds/ on a dark one. logos.txt says what the brand states about each.\n  colors/         The brand colors: colors.txt to read, colors.css for a web page, colors.json for a program.\n  fonts.txt       The fonts the brand uses, where each comes from, and under what license, where the brand states one.\n  about.txt       The brand name and a short description, to quote.\n\npress-kit.zip holds the same files.\n\nThe logos are the brand's own files, not redrawn.\n";
+  const sha = (body: Buffer | string) => createHash('sha256').update(body).digest('hex');
+  const trimmed = { tokens: BRAND.tokens.slice(0, 3), assets: BRAND.assets.slice(0, 2) };
+
+  it('has the same bytes in every existing file, README.txt with one new line, and gains only index.html', () => {
+    const made = world({ brand: trimmed, options: { pdf: false } });
+    const ran = plugin(made.request);
+    expect(ran.status, ran.out + ran.err).toBe(0);
+    const folder = path.join(made.outDir, 'press-kit');
+    const files = walk(folder);
+    expect(files.filter((file) => !(file in OLD_SHA) && file !== 'README.txt')).toEqual(['index.html']);
+    for (const [file, hash] of Object.entries(OLD_SHA)) expect(sha(fs.readFileSync(path.join(folder, file))), file).toBe(hash);
+    const readme = fs.readFileSync(path.join(folder, 'README.txt'), 'utf-8');
+    const line = readme.split('\n').find((row) => row.startsWith('  index.html'))!;
+    expect(line).toMatch(/^ {2}index\.html {6}\S/);
+    expect(readme.replace(`${line}\n`, '')).toBe(OLD_README);
+    expect(readme.indexOf(line)).toBe(OLD_README.indexOf('  logos/'));
+    expect(readme).not.toContain('Terms of use');
+  });
+});
+
+describe('the entry with contact, terms and the page', () => {
+  const options = {
+    pdf: false,
+    company: { contact: { name: 'Ada Example', email: 'press@acme.example' }, facts: [{ label: 'Legal name', value: 'Acme Ltd' }] },
+    terms: { text: 'Use the logos as supplied.', url: 'https://acme.example/terms' },
+  };
+
+  it('writes index.html at the root of the folder and the zip, and the contact and terms into about.txt and README.txt', () => {
+    const made = world({ options });
+    const ran = plugin(made.request);
+    expect(ran.status, ran.out + ran.err).toBe(0);
+    const folder = path.join(made.outDir, 'press-kit');
+    const page = fs.readFileSync(path.join(folder, 'index.html'), 'utf-8');
+    expect(page).toContain('press@acme.example');
+    expect(page).toContain('Use the logos as supplied.');
+    const zipped = unzip(path.join(made.outDir, 'press-kit.zip')).find(([name]) => name === 'press-kit/index.html')!;
+    expect(zipped[1].equals(fs.readFileSync(path.join(folder, 'index.html')))).toBe(true);
+    const about = fs.readFileSync(path.join(folder, 'about.txt'), 'utf-8');
+    expect(about).toContain('Contact:\n  Name: Ada Example\n  Email: press@acme.example\n');
+    expect(about).toContain('Terms of use:\nUse the logos as supplied.\nFull terms: https://acme.example/terms\n');
+    const readme = fs.readFileSync(path.join(folder, 'README.txt'), 'utf-8');
+    expect(readme).toContain('Terms of use: see about.txt');
+    expect(readme.indexOf('  index.html')).toBeLessThan(readme.indexOf('  logos/'));
+    // every relative link of the page is a file of the kit
+    const relative = [...page.matchAll(/\s(?:src|href)="([^"#:]+)"/g)].map((m) => m[1]!);
+    expect(relative.length).toBeGreaterThan(0);
+    for (const ref of relative) expect(fs.existsSync(path.join(folder, ref)), ref).toBe(true);
+  });
+
+  it('names a wrong contact key without losing the kit or the page', () => {
+    const made = world({ options: { pdf: false, company: { contact: { email: 'nope' } } } });
+    const ran = plugin(made.request);
+    expect(ran.status).toBe(0);
+    expect(findingsOf(ran.out).filter((f) => f.code === `${NAME}/option-invalid`).map((f) => f.path)).toEqual(['options.company.contact.email']);
+    expect(fs.existsSync(path.join(made.outDir, 'press-kit/index.html'))).toBe(true);
+  });
+});
+
+describe.skipIf(!CHROME)('the PDF with contact and terms, in a real browser', () => {
+  it('has the contact and the terms in its text', () => {
+    const made = world({ options: { company: { contact: { name: 'Ada Example', email: 'press@acme.example' } }, terms: { text: 'Use the logos as supplied.' } } });
+    const ran = plugin(made.request, { BLAZON_CHROME: CHROME });
+    expect(ran.status, ran.out + ran.err).toBe(0);
+    const words = spawnSync('pdftotext', [path.join(made.outDir, 'press-kit/press-kit.pdf'), '-'], { encoding: 'utf-8' });
+    expect(words.status, 'pdftotext (poppler) reads the PDF').toBe(0);
+    expect(words.stdout).toContain('Ada Example');
+    expect(words.stdout).toContain('press@acme.example');
+    expect(words.stdout).toContain('Use the logos as supplied.');
   }, 120_000);
 });
