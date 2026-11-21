@@ -8,6 +8,8 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 ## 0.5.0 (2026-11-21)
 
+Tagged, not released and not published to npm: its CI run failed on Linux (a hook lock test and a dev server test). Everything in it is part of 0.5.1.
+
 ### Breaking
 
 - `blazon logo` and the MCP `get_logo` list each logo id once, with `files` (a list, in the default order: SVG, then PNG, WebP, JPEG, GIF, then other formats) in place of `file`. A reader that took `file` from a logo entry must take the first of `files`, or choose by format.
