@@ -258,6 +258,30 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
     fail: { files: tokens(), config: { docsDir: '../docs-elsewhere' } },
     near: { files: tokens(), config: { docsDir: './docs' } },
   },
+  'context-css-unchanged': {
+    fail: {
+      files: {
+        'blazon.resolver.json': {
+          version: '2025.10',
+          modifiers: { theme: { contexts: { light: [{ $ref: 'tokens/light.json' }], dark: [{ $ref: 'tokens/dark.json' }] }, default: 'light' } },
+          resolutionOrder: [{ $ref: '#/modifiers/theme' }],
+        },
+        'tokens/light.json': COLORS,
+        'tokens/dark.json': { color: { $type: 'color', ink: { $value: '#ffffff' } } },
+      },
+    },
+    near: {
+      files: {
+        'blazon.resolver.json': {
+          version: '2025.10',
+          modifiers: { theme: { contexts: { light: [{ $ref: 'tokens/light.json' }], dark: [{ $ref: 'tokens/dark.json' }] }, default: 'light' } },
+          resolutionOrder: [{ $ref: '#/modifiers/theme' }],
+        },
+        'tokens/light.json': COLORS,
+        'tokens/dark.json': { color: { $type: 'color', ink: { $value: '#ffffff' }, paper: { $value: '#000000' } } },
+      },
+    },
+  },
   'output-dirs-overlap': {
     fail: { files: tokens(), config: { outDir: './tokens' } },
     near: { files: tokens(), config: { outDir: './dist/site' } },

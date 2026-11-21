@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Asset, Finding, BlazonConfig, BlazonData, LogoSet, ParsedTokens, Vocabulary } from '../types/index.js';
+import type { Asset, Finding, BlazonConfig, BlazonData, LogoSet, ParsedTokens, TokenContext, Vocabulary } from '../types/index.js';
 import { loadTokenTree } from './tokens/load.js';
 import { resolveTokenTree } from './tokens/resolve.js';
 import { DEFAULT_RESOLVER_FILE } from './tokens/resolver/parse.js';
@@ -176,7 +176,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
         ...outside,
         ...noTokens,
         ...outputDirFindings(config, cwd),
-        ...contextFindings(resolvedTokens, compiled.resolved, vocabulary, [...CONFIGURED_LOGO_VARIANTS, ...assets.logos.map((a) => a.id)]),
+        ...contextFindings(resolvedTokens, compiled.resolved, vocabulary, [...CONFIGURED_LOGO_VARIANTS, ...assets.logos.map((a) => a.id)], resolverFile),
         ...missingResolver,
         ...docProblems,
         ...starterFileFindings(cwd, { docs: config.docsDir, tokens: config.tokensDir, assets: config.assetsDir }),
@@ -230,11 +230,35 @@ function logoContextFindings(
   return [...baseFindings, ...extra];
 }
 
+/** How many removed paths the note names before it says "and N more" */
+const REMOVED_SHOWN = 5;
+
+/**
+ * `context-css-unchanged`: the default's tokens a context leaves out keep the default's value in the CSS, which cannot remove a custom property.
+ * theme.css is written for every project, so there is one note per context that removes tokens, filed under the resolver that declares the context.
+ */
+function removalFallback(context: TokenContext, resolverFile: string): Finding[] {
+  const removed = context.removed ?? [];
+  if (removed.length === 0) return [];
+  const name = `${context.modifier}=${context.context}`;
+  const shown = removed.slice(0, REMOVED_SHOWN).join(', ');
+  const more = removed.length > REMOVED_SHOWN ? ` ... and ${removed.length - REMOVED_SHOWN} more` : '';
+  const count = removed.length === 1 ? '1 token' : `${removed.length} tokens`;
+  return [
+    finding('context-css-unchanged', {
+      path: resolverFile,
+      context: name,
+      file: resolverFile,
+      message: `the ${context.context} context of the ${context.modifier} modifier leaves out ${count} the default has (${shown}${more}), but theme.css and the other CSS keep the default value for them under \`${context.selector}\``,
+    }),
+  ];
+}
+
 /**
  * Check findings for the default context, plus those that occur only in another context,
  * tagged with it ("locale=ja"). A finding the default already has is not repeated per context.
  */
-function contextFindings(base: ParsedTokens, resolved: ContextCompilation['resolved'], vocabulary: Vocabulary, logoVariants: readonly string[]): Finding[] {
+function contextFindings(base: ParsedTokens, resolved: ContextCompilation['resolved'], vocabulary: Vocabulary, logoVariants: readonly string[], resolverFile: string): Finding[] {
   const findingsOf = (tokens: ParsedTokens) => [
     ...checkTokens({ tokens, vocabulary }).all,
     ...fontMetaFindings(tokens.items, tokens.groupMeta),
@@ -252,5 +276,5 @@ function contextFindings(base: ParsedTokens, resolved: ContextCompilation['resol
         return { ...f, context: `${context.modifier}=${context.context}`, ...(f.file === undefined && file !== undefined && { file }) };
       }),
   );
-  return [...baseFindings, ...extra];
+  return [...baseFindings, ...extra, ...resolved.flatMap(({ context }) => removalFallback(context, resolverFile))];
 }

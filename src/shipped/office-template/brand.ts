@@ -44,6 +44,8 @@ export interface BrandRead {
   /** The typography tokens that are not aliases, in token order */
   typography: TypeStyle[];
   assets: Map<string, LogoAsset>;
+  /** Every file of every asset, for a logo that names a file and not an id (`findByFile`): `assets` keeps one for each id */
+  files: LogoAsset[];
   /** The files brand.json names as the logo for a light and for a dark surface */
   logo: { onLight?: string; onDark?: string };
 }
@@ -89,14 +91,17 @@ export function readBrand(brand: unknown): BrandRead {
   }
 
   const assets = new Map<string, LogoAsset>();
+  const files: LogoAsset[] = [];
   for (const raw of Array.isArray(root.assets) ? root.assets : []) {
     const base = readBaseAsset(raw);
     if (!base || !isObject(raw)) continue;
     const { id, file, format } = base;
     const size = artworkSize({ width: raw.width as number | undefined, height: raw.height as number | undefined, viewBox: text(raw.viewBox) });
-    keepRepresentation(assets, { id, file, format, ...(size && { size }), meta: readMeta(raw) }, { formats: OFFICE_FORMATS });
+    const read: LogoAsset = { id, file, format, ...(size && { size }), meta: readMeta(raw) };
+    files.push(read);
+    keepRepresentation(assets, read, { formats: OFFICE_FORMATS });
   }
 
   const title = isObject(root.brand) ? text(root.brand.title) : undefined;
-  return { title: title ?? 'Brand', roles, colors, named, typography, assets, logo: readLogo(root) };
+  return { title: title ?? 'Brand', roles, colors, named, typography, assets, files, logo: readLogo(root) };
 }

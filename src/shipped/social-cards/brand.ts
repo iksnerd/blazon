@@ -49,6 +49,8 @@ export interface BrandRead {
   fonts: string[];
   tokens: Map<string, BrandToken>;
   assets: Map<string, BrandAsset>;
+  /** Every file of every asset, for a logo that names a file and not an id (`findByFile`): `assets` keeps one for each id */
+  files: BrandAsset[];
   logo: { onLight?: string; onDark?: string };
 }
 
@@ -117,9 +119,10 @@ export function readBrand(brand: unknown): BrandRead {
   if (display.floor >= display.start) display.floor = Math.max(20, Math.round(display.start / 2));
 
   const assets = new Map<string, BrandAsset>();
+  const files: BrandAsset[] = [];
   for (const item of list(root.assets)) {
     if (!isObject(item) || typeof item.id !== 'string' || typeof item.file !== 'string') continue;
-    keepRepresentation(assets, {
+    const read: BrandAsset = {
       id: item.id,
       category: text(item.category) ?? '',
       file: item.file,
@@ -127,7 +130,9 @@ export function readBrand(brand: unknown): BrandRead {
       ...(typeof item.width === 'number' && { width: item.width }),
       ...(typeof item.height === 'number' && { height: item.height }),
       ...(isObject(item.meta) && { meta: item.meta }),
-    });
+    };
+    files.push(read);
+    keepRepresentation(assets, read);
   }
 
   return {
@@ -138,6 +143,7 @@ export function readBrand(brand: unknown): BrandRead {
     fonts: list(theme.fonts).filter((url): url is string => typeof url === 'string' && /^(https?:\/\/|data:text\/css[;,])/.test(url)),
     tokens,
     assets,
+    files,
     logo: readLogo(root),
   };
 }
