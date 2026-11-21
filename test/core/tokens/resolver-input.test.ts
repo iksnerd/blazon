@@ -111,3 +111,20 @@ describe('a pointer to an inline modifier', () => {
     expect(parsed.modifiers.map((m) => m.name)).toEqual(['density']);
   });
 });
+
+describe('a resolver that reads a broken file', () => {
+  const broken = (res: unknown) => writeProject({ 'blazon.resolver.json': res as Record<string, unknown>, 'tokens/base.json': '{ "color": ', 'tokens/dark.json': DARK });
+
+  it('keeps the file problem when a later context fails with a resolver-invalid error', async () => {
+    const root = broken(resolver({ modifiers: { theme: { contexts: { light: [], dark: [{ $ref: 'tokens/missing.json' }] }, default: 'light' } } }));
+    const data = await compileBlazonData({ ...TEST_CONFIG }, root);
+    expect(data.findings.filter((f) => f.code === 'resolver-invalid')).toHaveLength(1);
+    expect(data.findings.filter((f) => f.code === 'token-file-invalid')).toHaveLength(1);
+  });
+
+  it('reports a file once when references spell its path differently', async () => {
+    const root = broken(resolver({ sets: { base: { sources: [{ $ref: 'tokens/base.json' }, { $ref: './tokens/base.json' }, { $ref: 'tokens/../tokens/base.json' }] } } }));
+    const data = await compileBlazonData({ ...TEST_CONFIG }, root);
+    expect(data.findings.filter((f) => f.code === 'token-file-invalid')).toHaveLength(1);
+  });
+});

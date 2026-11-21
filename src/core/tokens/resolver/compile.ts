@@ -36,8 +36,9 @@ function metadataOnly(a: TokenItem | undefined, b: TokenItem): boolean {
   return a !== undefined && !differs(a, b) && metadata(a) !== metadata(b);
 }
 
-function invalid(file: string, message: string): ContextCompilation {
-  const problems: Finding[] = [finding('resolver-invalid', { path: path.basename(file), message })];
+/** `collected` is what the reader already found in token files before the resolver failed: those findings are still true. */
+function invalid(file: string, message: string, collected: Finding[] = []): ContextCompilation {
+  const problems: Finding[] = [finding('resolver-invalid', { path: path.basename(file), message }), ...collected];
   return { tokens: resolveTokenTree({ tokens: [], groupMeta: [], problems }), resolved: [] };
 }
 
@@ -85,7 +86,7 @@ export function compileWithResolver(file: string, root: string, cssPrefix: strin
     const modifiers = resolver.modifiers.map((m) => ({ name: m.name, default: m.default, contexts: Object.keys(m.contexts) }));
     return { tokens: { ...base, contexts: resolved.map((r) => r.context), modifiers }, resolved };
   } catch (err) {
-    if (err instanceof ResolverError) return invalid(file, err.message);
+    if (err instanceof ResolverError) return invalid(file, err.message, reader.problems);
     throw err;
   }
 }
