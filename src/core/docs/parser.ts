@@ -82,9 +82,11 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
       // `<!-- folio:name -->` is the old spelling: not read, so say so at its line (the lines of the file: the body starts after the front matter)
       const bodyStart = parsed.content === '' ? 0 : rawContent.lastIndexOf(parsed.content);
       const firstLine = rawContent.slice(0, Math.max(bodyStart, 0)).split('\n').length;
+      // Findings of this page wait here and join `problems` only once the page is kept: a page left out reports only why
+      const pageProblems: Finding[] = [];
       for (const old of legacyDirectivesIn(parsed.content)) {
         const now = isDirective(old.name) ? `write <!-- blazon:${old.name} ... -->` : `write blazon: and a known directive name, as the table in the manual lists`;
-        problems.push(
+        pageProblems.push(
           finding('directive-deprecated', {
             path: file,
             line: firstLine + old.line - 1,
@@ -102,10 +104,11 @@ export function parseDocs(docsDir: string, problems: Finding[] = [], validSectio
         title,
         order,
         meta,
-        sections: pageSections(meta.section, file, validSections, problems),
+        sections: pageSections(meta.section, file, validSections, pageProblems),
         markdown: parsed.content,
         html,
       });
+      problems.push(...pageProblems);
     } catch (err) {
       // The reason is the error's code (EISDIR, EACCES) when it has one: its message holds the absolute path, which differs by machine
       const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;

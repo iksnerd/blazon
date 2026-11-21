@@ -136,6 +136,24 @@ describe('parseDocs: slugs, titles and unreadable pages', () => {
     expect(docs.map((d) => d.slug)).toEqual(['ok']);
     expect(problems).toMatchObject([{ code: 'page-unreadable', severity: 'error', path: 'folder.md' }]);
   });
+
+  it('reports only page-unreadable for a page whose parse throws after a folio: directive, not the earlier warning', async () => {
+    const { marked } = await import('marked');
+    const dir = write({
+      'ok.md': '# Fine\n',
+      'bad.md': '---\ntitle: Bad\n---\n\n<!-- folio:tokens color.ink -->\nAcme\n',
+    });
+    const real = marked.parse.bind(marked);
+    const spy = vi.spyOn(marked, 'parse').mockImplementation(((src: string, opts?: never) => {
+      if (src.includes('Acme')) throw new Error('boom');
+      return real(src, opts);
+    }) as typeof marked.parse);
+    const problems: Finding[] = [];
+    const docs = parseDocs(dir, problems);
+    spy.mockRestore();
+    expect(docs.map((d) => d.slug)).toEqual(['ok']);
+    expect(problems.map((p) => p.code)).toEqual(['page-unreadable']);
+  });
 });
 
 describe('compileBlazonData: guideline pages with broken front matter', () => {
