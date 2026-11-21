@@ -10,7 +10,7 @@ Blazon's package carries plugins of its own. To use one, allow it by name in `bl
 
 ### blazon.brand-deck
 
-`blazon.brand-deck` draws the brand as a PDF deck of 16:9 slides, `brand-deck.pdf` in its `out_dir`: the cover and contents, each logo with its clear space and rules, the palette with its print values, the gradients, the typefaces and type scale, the brand book's pages with the asset slides and figure grids their directives list, and the Favicons part. It has the `build` role. Drawing needs Google Chrome on the computer (or `BLAZON_CHROME`), as `blazon.print-book` does. It is TypeScript on blazon's own npm dependencies, so it needs no Python, no uv and no network, and it runs offline on a page made in memory. Chapter 11 says what each slide shows and how the deck fits an asset's text to its slide ([Drawing a deck](11-brand-json.md#drawing-a-deck)).
+`blazon.brand-deck` draws the brand as a PDF deck of 16:9 slides, `brand-deck.pdf` in its `out_dir`: the cover and contents, each logo with its clear space and rules, the palette with its print values, the gradients, the typefaces and type scale, the brand book's pages with the asset slides and figure grids their directives list, and the Favicons part. It has the `build` role. Drawing needs Google Chrome on the computer (or `BLAZON_CHROME`), as `blazon.print-book` does. It is TypeScript on blazon's own npm dependencies, so it needs no Python, no uv and no network, and it runs offline on a page made in memory. A logo with several files is one slide, drawn from the best format the deck can embed (SVG, then PNG, WebP, JPEG, GIF and AVIF). Chapter 11 says what each slide shows and how the deck fits an asset's text to its slide ([Drawing a deck](11-brand-json.md#drawing-a-deck)).
 
 ```json
 {

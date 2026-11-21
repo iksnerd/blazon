@@ -8,7 +8,7 @@ The source is `src/shipped/brand-deck/`, and `npm run build` (`npm run build:plu
 
 The slide plan (`src/shipped/brand-deck/plan/`) is plain data from `brand.json`: which slides, in which order, with what on them. The drawing (`src/shipped/brand-deck/paint/`) turns each slide into HTML placed in points, and `render.ts` prints that page to PDF with Chrome, one slide to a page. Text and SVG stay vector. Every line of text is broken by the plugin and not by the browser, using the browser's own measure of each word, so an asset's text is fitted to its slide, and a long one continues on slides titled "(continued)", by the same arithmetic that draws it.
 
-Images are read from `site_dir`, beside `brand.json`. A file that cannot be read is exit `2` naming it, unless its category is kept out of git (`local` in the category): then the slide shows the category's sentence in place of the picture.
+A logo with several files (`logos/mark.svg` and `logos/mark.png`) is one slide, drawn from the best format the deck can embed: SVG, then PNG, WebP, JPEG, GIF and AVIF. Images are read from `site_dir`, beside `brand.json`. A file that cannot be read is exit `2` naming it, unless its category is kept out of git (`local` in the category): then the slide shows the category's sentence in place of the picture.
 
 ## Fonts
 
