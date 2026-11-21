@@ -176,9 +176,9 @@ The table lists each code with its severity and a one-line summary. It is writte
 | `config-invalid` | Error | A key or value in blazon.json is not valid. |
 | `config-path-outside` | Error | A path in blazon.json, or a file linked from a brand folder, leads outside the project folder. |
 | `context-css-unchanged` | Note | A context leaves out tokens the default has, but the CSS cannot remove a custom property, so theme.css keeps the default value for them. |
-| `contrast-insufficient` | Error | A color pair has less contrast than its level asks for. |
+| `contrast-insufficient` | Error | A color pair, or a logo colorway, has less contrast than its level asks for. |
 | `contrast-pair-invalid` | Error | A contrast pair names no color tokens or has an unknown level. |
-| `contrast-unknown` | Warning | Blazon cannot read a color of a pair, or its background is translucent, so it cannot measure the contrast. |
+| `contrast-unknown` | Warning | Blazon cannot read a color of a pair or of a logo colorway, or its background is translucent, so it cannot measure the contrast. |
 | `css-variable-duplicate` | Error | Two tokens write the same CSS custom property. |
 | `directive-deprecated` | Warning | A page has a `folio:` directive comment, the old name, which blazon ignores. |
 | `directive-invalid` | Error | A page directive has wrong arguments or names something that does not exist. |
