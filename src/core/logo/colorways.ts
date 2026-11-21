@@ -7,7 +7,7 @@ import { finding } from '../checker/catalogue.js';
 // The ratio is the one `blazon check`, `pairs` and `blazon can` use, so the brand book and the check never disagree.
 
 /** The level a colorway must reach when its sidecar names none. */
-export const DEFAULT_COLORWAY_LEVEL = 'AA' as const;
+export const DEFAULT_COLORWAY_LEVEL = 'AA-large' as const;
 
 export interface ColorwayResult {
   name: string;

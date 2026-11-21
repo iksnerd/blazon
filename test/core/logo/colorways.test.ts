@@ -4,7 +4,7 @@ import path from 'node:path';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { compileBlazonData } from '../../../src/core/index.js';
 import { contrastBetween, parseColor, CONTRAST_MINIMUM, ratioMessage } from '../../../src/core/checker/contrast.js';
-import { colorwayResults } from '../../../src/core/logo/colorways.js';
+import { colorwayResults, DEFAULT_COLORWAY_LEVEL } from '../../../src/core/logo/colorways.js';
 import { BRAND_SCHEMA } from '../../../src/core/brand/schema.js';
 import { exampleProject } from '../../support/examples';
 
@@ -38,11 +38,11 @@ const ON_BONE = { name: 'Graphite on Bone', on: '{color.base.bone}' };
 const BONE_ON_ORANGE = { name: 'Bone on Orange', on: '{color.signal.orange}', variant: 'logos/blazon-bone' };
 
 describe('colorways in a sidecar', () => {
-  it('are read as written, with the level AA when none is given and the token path without braces', async () => {
-    const data = await compile([ON_BONE, { ...BONE_ON_ORANGE, min: 'AA-large' }]);
+  it('are read as written, with the level AA-large (3:1, as for a logo) when none is given and the token path without braces', async () => {
+    const data = await compile([ON_BONE, { ...BONE_ON_ORANGE, min: 'AAA' }]);
     expect(graphiteOf(data).meta!.colorways).toEqual([
-      { name: 'Graphite on Bone', on: 'color.base.bone', min: 'AA' },
-      { name: 'Bone on Orange', on: 'color.signal.orange', variant: 'logos/blazon-bone', min: 'AA-large' },
+      { name: 'Graphite on Bone', on: 'color.base.bone', min: 'AA-large' },
+      { name: 'Bone on Orange', on: 'color.signal.orange', variant: 'logos/blazon-bone', min: 'AAA' },
     ]);
     expect(data.findings.filter((f) => f.code === 'asset-sidecar-invalid')).toEqual([]);
   });
@@ -116,7 +116,7 @@ describe('the finding for a colorway below its level', () => {
     expect(found[0]!.path).toBe('logos/blazon-graphite.json');
     expect(found[0]!.message).toContain('Bone on Orange');
     expect(found[0]!.message).toContain(`${ratioMessage(ratio(BONE, ORANGE))}:1`);
-    expect(found[0]!.message).toContain(`AA needs ${CONTRAST_MINIMUM.AA}:1`);
+    expect(found[0]!.message).toContain(`${DEFAULT_COLORWAY_LEVEL} needs ${CONTRAST_MINIMUM[DEFAULT_COLORWAY_LEVEL]}:1`);
   });
 
   it('is contrast-unknown, a warning, when the logo has no ink and no background to judge it by', async () => {

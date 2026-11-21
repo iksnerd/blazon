@@ -80,8 +80,8 @@ describe.skipIf(!CHROME)('a page with logo colorways, printed', () => {
       expect(slides.flatMap((s) => s.names).sort()).toEqual(['Acme light on Signal', 'Acme on Paper']);
       expect(slides.reduce((n, s) => n + s.clipped, 0)).toBe(0);
       const text = slides.map((s) => s.text).join('\n');
-      expect(text).toMatch(/Passes AA: \d+\.\d\d:1/);
-      expect(text).toMatch(/Fails AA: \d+\.\d\d:1, needs 4\.5:1/);
+      expect(text).toMatch(/Passes AA-large: \d+\.\d\d:1/);
+      expect(text).toMatch(/Fails AA-large: \d+\.\d\d:1, needs 3:1/);
     } finally {
       await page.close();
     }
