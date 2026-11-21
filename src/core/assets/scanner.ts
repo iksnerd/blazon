@@ -127,6 +127,8 @@ export function scanAssets(assetsDir: string, options: ScanOptions = {}): AssetC
   };
 
   const sidecars: string[] = [];
+  /** Image paths (no extension) that exist but could not be read: their sidecar is not orphaned */
+  const unreadable = new Set<string>();
   /** `sourcePrefix` is how the config wrote the folder, for messages; empty for `assets/` itself. */
   const walk = (root: string, dir: string, key: string | undefined, category: string | undefined, sourcePrefix: string) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort(byName)) {
@@ -144,6 +146,7 @@ export function scanAssets(assetsDir: string, options: ScanOptions = {}): AssetC
           // The code (EACCES) rather than the message, which holds an absolute path that differs by machine
           const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
           const reason = code ?? (err instanceof Error ? err.message.split('\n')[0]! : String(err));
+          unreadable.add(virtualPath(root, fullPath, key).replace(/\.[^./]*$/, ''));
           const shown = key ? `${sourcePrefix}${path.relative(root, fullPath).split(path.sep).join('/')}` : virtualPath(root, fullPath, key);
           options.problems?.push(finding('asset-unreadable', { path: shown, message: `Cannot read this file (${reason}); it is left out of the book` }));
         }
@@ -157,7 +160,7 @@ export function scanAssets(assetsDir: string, options: ScanOptions = {}): AssetC
     walk(dir, dir, key, key, `${label.replace(/\/+$/, '')}/`);
   }
 
-  const named = new Set(catalog.all.map((a) => a.filePath.slice(0, a.filePath.lastIndexOf('.'))));
+  const named = new Set([...catalog.all.map((a) => a.filePath.slice(0, a.filePath.lastIndexOf('.'))), ...unreadable]);
   for (const file of sidecars) {
     if (!named.has(file.slice(0, -'.json'.length))) {
       options.problems?.push(finding('asset-sidecar-orphaned', { path: file, message: 'No image of this name sits beside it, so it describes nothing' }));

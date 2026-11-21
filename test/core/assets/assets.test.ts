@@ -75,6 +75,25 @@ describe('a file that cannot be read', () => {
   });
 });
 
+describe('a sidecar beside a file that cannot be read', () => {
+  it('is not reported as orphaned: its image exists, only the read failed', () => {
+    const dir = tempDir('blazon-unreadable-sidecar-');
+    fs.mkdirSync(path.join(dir, 'logos'));
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1z"/></svg>';
+    fs.writeFileSync(path.join(dir, 'logos/acme.svg'), svg);
+    fs.writeFileSync(path.join(dir, 'logos/acme.json'), JSON.stringify({ description: 'Acme mark' }));
+    fs.chmodSync(path.join(dir, 'logos/acme.svg'), 0o000);
+    const problems: Finding[] = [];
+    try {
+      const catalog = scanAssets(dir, { problems });
+      expect(catalog.all).toEqual([]);
+      expect(problems).toMatchObject([{ code: 'asset-unreadable', path: 'logos/acme.svg' }]);
+    } finally {
+      fs.chmodSync(path.join(dir, 'logos/acme.svg'), 0o644);
+    }
+  });
+});
+
 describe('folders named like Object.prototype members', () => {
   it('are ordinary categories and leave Object.prototype alone', () => {
     const dir = tempDir('blazon-proto-folders-');
