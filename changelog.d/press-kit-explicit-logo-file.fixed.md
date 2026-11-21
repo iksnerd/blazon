@@ -1,0 +1,1 @@
+A logo that `logo` in blazon.json names by file is now that file in `blazon.press-kit`, even when its asset has other files. With `logos/mark.svg` and `logos/mark.png`, `"logo": "./assets/logos/mark.png"` shipped the SVG, filed under `background-not-stated`; the kit now ships the PNG under `on-light-backgrounds`. A logo that names an id still takes the default order.

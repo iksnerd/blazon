@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { findByFile } from '../../../src/core/assets/representations.js';
 import { readBrand as officeTemplate } from '../../../src/shipped/office-template/brand.js';
+import { readBrand as pressKit } from '../../../src/shipped/press-kit/brand.js';
+import { chooseLogos as pressKitLogos } from '../../../src/shipped/press-kit/logos.js';
 import { chooseLogos } from '../../../src/shipped/office-template/logo.js';
 import { readBrand as socialCards } from '../../../src/shipped/social-cards/brand.js';
 import { logoOf } from '../../../src/shipped/social-cards/render.js';
@@ -57,6 +59,36 @@ describe('a logo that names a file is that file, for every set and every order',
       });
     }
   }
+
+  for (const [label, formats] of Object.entries(SETS)) {
+    for (const named of formats) {
+      it(`blazon.press-kit, ${label}, onLight names ${named}: that file goes out, as a logo for light backgrounds`, () => {
+        for (const order of orders(formats)) {
+          const { chosen } = pressKitLogos(pressKit(brandOf(order, { onLight: fileOf(named) }, 'light')), {});
+          expect(chosen.map((item) => [item.asset.file, item.surface, item.kitPath]), order.join()).toEqual([[fileOf(named), 'light', `logos/on-light-backgrounds/mark.${named}`]]);
+        }
+      });
+    }
+  }
+
+  it('blazon.press-kit: a file name with # ? % or spaces reaches the kit as a path that needs no percent-encoding in a link', () => {
+    for (const name of ['mark #1', 'mark?v=2', '100% mark', 'mark one']) {
+      const brand = {
+        ...brandOf(['svg'], { onLight: `brand-assets/logos/${name}.svg` }),
+        assets: [{ id: `logos/${name}`, name, category: 'logos', file: `brand-assets/logos/${name}.svg`, format: 'svg', mediaType: 'image/svg+xml', bytes: 40, width: 10, height: 10, meta: { background: 'light' } }],
+      };
+      const { chosen } = pressKitLogos(pressKit(brand), {});
+      expect(chosen, name).toHaveLength(1);
+      expect(chosen[0]!.kitPath, name).toMatch(/^logos\/on-light-backgrounds\/[A-Za-z0-9._-]+\.svg$/);
+    }
+  });
+
+  it('blazon.press-kit: a logo that names no file, or an id, takes the default order', () => {
+    for (const order of orders(SETS['png, svg and webp']!)) {
+      const { chosen } = pressKitLogos(pressKit(brandOf(order, {})), {});
+      expect(chosen.map((item) => item.asset.format), order.join()).toEqual(['svg']);
+    }
+  });
 
   it('blazon.office-template takes onDark by file too', () => {
     const read = officeTemplate(brandOf(['svg', 'png'], { onDark: fileOf('png') }, 'dark'));

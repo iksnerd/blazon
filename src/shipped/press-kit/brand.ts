@@ -1,7 +1,7 @@
 import type { AssetMeta, FontRole } from '../../types/index.js';
 import { fontRoleFields } from '../../core/font-roles.js';
 import { isObject, requireBrand } from '../shared/plugin.js';
-import { keepRepresentation } from '../../core/assets/representations.js';
+import { findByFile, keepRepresentation } from '../../core/assets/representations.js';
 import { readBaseAsset, readLogo, readMeta, readRoles, text } from '../shared/brand.js';
 
 // What the plugin reads from brand.json (the `brand` of the request): the title and description, the color and font tokens, the font
@@ -116,11 +116,25 @@ export function readBrand(brand: unknown): BrandRead {
     }
   }
 
-  const assets = new Map<string, PressAsset>();
+  // One record for each id. A logo that brand.json names by file (`logo.onLight`, `logo.onDark`) is that file, whatever else the id has;
+  // any other id takes the default order (RFC 0001 section 12).
+  const logo = readLogo(root);
+  const named = [logo.onLight, logo.onDark].filter((file): file is string => file !== undefined);
+  const records: PressAsset[] = [];
   for (const raw of Array.isArray(root.assets) ? root.assets : []) {
     const base = readBaseAsset(raw);
-    if (base && isObject(raw)) keepRepresentation(assets, { ...base, meta: readMeta(raw) });
+    if (base && isObject(raw)) records.push({ ...base, meta: readMeta(raw) });
   }
+  const assets = new Map<string, PressAsset>();
+  const fixed = new Set<string>();
+  for (const file of named) {
+    const record = findByFile(records, file);
+    if (record && !fixed.has(record.id)) {
+      assets.set(record.id, record);
+      fixed.add(record.id);
+    }
+  }
+  for (const record of records) if (!fixed.has(record.id)) keepRepresentation(assets, record);
 
   const about = isObject(root.brand) ? root.brand : {};
   return {
@@ -137,6 +151,6 @@ export function readBrand(brand: unknown): BrandRead {
         : [],
     ),
     assets,
-    logo: readLogo(root),
+    logo,
   };
 }
