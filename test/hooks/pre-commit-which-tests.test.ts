@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { BASE, commit, repo, stage, which } from '../support/hook-commit';
 
+// Which tests the pre-commit hook runs for staged paths, part 1 of 3: files in src/, test/, test/support/, examples/ and package.json.
+// The table is split with pre-commit-which-tests-scripts and pre-commit-which-tests-docs so that vitest runs the three on separate workers.
+
 describe('the pre-commit hook', () => {
   describe('which tests a commit runs, by what is staged', () => {
     it.each([
@@ -11,23 +14,6 @@ describe('the pre-commit hook', () => {
       ['a golden under test/, which a test reads by path and imports never reach', { 'test/examples/golden/x/check.json': '{}\n' }, []],
       ['a fixture under test/support/', { 'test/support/fixture.json': '{}\n' }, []],
       ['package.json', { 'package.json': BASE['package.json']!.replace('throwaway', 'throwaway2') }, []],
-      ['a script in TypeScript', { 'scripts/x.ts': '// script\n' }, []],
-      ['the generator of the finding tables, whose output the docs tests compare', { 'scripts/gen-checks-docs.ts': '// generator\n' }, ['docs']],
-      ['the generator of the layers diagram and its rules', { 'scripts/layers.json': '{}\n' }, ['docs']],
-      ['a file the mapping does not know', { 'mystery.bin': 'x\n' }, []],
-      ['a Python script', { 'scripts/x.py': 'print(1)\n' }, ['deck']],
-      ['a Python launcher with no extension', { 'scripts/blazon-blazon.x': '#!/usr/bin/env python3\nprint(1)\n' }, ['deck']],
-      ['a file in test/deck/python/', { 'test/deck/python/x.py': 'print(1)\n' }, ['deck']],
-      ['a page in docs/', { 'docs/manual/x.md': '# x\n' }, ['docs']],
-      ['the README', { 'README.md': '# changed\n' }, ['docs']],
-      ['CONTRIBUTING.md', { 'CONTRIBUTING.md': '# contributing\n' }, ['docs']],
-      ['a file in .github/', { '.github/pull_request_template.md': 'x\n' }, ['docs']],
-      ['docs and a Python script', { 'README.md': '# again\n', 'scripts/y.py': 'print(2)\n' }, ['deck', 'docs']],
-      ['source and docs', { 'src/a.ts': 'export const a: number = 6;\n', 'README.md': '# again\n' }, ['related', 'docs']],
-      ['a test and a Python script', { 'test/x.test.ts': '// t\n', 'scripts/y.py': 'print(2)\n' }, ['related', 'deck']],
-      ['source and an example', { 'src/a.ts': 'export const a: number = 6;\n', 'examples/x/blazon.json': '// c\n' }, ['related', 'docs']],
-      ['the ESLint config, which no test reads', { 'eslint.config.js': '// cfg\n' }, []],
-      ['the Prettier ignore file', { '.prettierignore': 'dist/\n' }, []],
     ])(
       '%s runs %j',
       (_what, files, expected) => {

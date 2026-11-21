@@ -5,7 +5,7 @@ import path from 'node:path';
 import { REPO } from '../support/paths';
 import { tempDir } from '../support/project';
 
-// Shared by the pre-push-*.test.ts files, which are one suite split in two so that vitest runs them on separate workers.
+// Shared by the pre-push*.test.ts files, which are one suite split by topic so that vitest runs them on separate workers.
 // .githooks/pre-push checks the tree being pushed, once, before a commit leaves the machine: typecheck, lint and format, then the
 // suites the changed files ask for, or the whole suite when a changed file asks for it. It tests the pushed commit's own tree,
 // exported from git, not the working tree, and skips a step a tree already passed. A push to a remote that holds nothing yet has no
@@ -87,3 +87,11 @@ export const push = (dir: string, args: string[] = ['origin', 'main'], extra: st
   return { status: result.status, out: result.stdout + result.stderr };
 };
 export const remoteHead = (remote: string, ref = 'main') => git(remote, ['rev-parse', '--verify', '-q', ref]).stdout.trim();
+
+/** A clone whose remote already has the base commit, so the push has a base to compare with. */
+export function seeded(counter: string) {
+  const made = clone(counter);
+  const sent = git(made.dir, ['push', '--no-verify', '-q', 'origin', 'main']);
+  expect(sent.status, sent.stderr).toBe(0);
+  return made;
+}

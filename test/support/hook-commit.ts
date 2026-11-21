@@ -95,6 +95,18 @@ export const commit = (dir: string, env: Record<string, string> = {}, extra: str
   return { status: result.status, out: result.stdout + result.stderr };
 };
 export const ran = (out: string, label: string) => out.includes(`✓ ${label}`);
+
+// A stand-in for the related suite that counts its runs in a file, for the tests of the hook's memory of a tree that passed.
+export const counting = (counter: string, exit = 0) => {
+  const manifest = JSON.parse(BASE['package.json']!);
+  manifest.scripts['test:related'] = `node -e "require('fs').appendFileSync('${counter}', 'r'); process.exit(${exit})" --`;
+  return JSON.stringify(manifest);
+};
+export const count = (counter: string) => (fs.existsSync(counter) ? fs.readFileSync(counter, 'utf-8').length : 0);
+export const counterFile = () => path.join(tempDir('blazon-hook-count-'), 'count');
+
+// The stand-in for the whole-tree ESLint finds this mistake; the stand-in for `eslint <files>` finds it only when handed the file
+export const LINT_BROKEN = { 'src/broken.ts': 'export const x: number = 1; // LINT_ERROR\n' };
 const labels = {
   full: 'tests: full suite',
   related: 'tests: related to the staged files',

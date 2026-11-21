@@ -1,16 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { git, counterFile, count, suiteArgs, manifest, write, clone, commit, push, remoteHead } from '../support/hook-push';
+import { git, counterFile, count, manifest, write, commit, push, remoteHead, seeded } from '../support/hook-push';
+
+// The pre-push hook on a remote that already holds the branch (part 1 of 2; the tests of the hooks themselves are in pre-push-remote-hooks): which suites a push runs.
 
 describe('the pre-push hook', () => {
   describe('on a remote that already holds the branch', () => {
-    /** A clone whose remote already has the base commit, so the push has a base to compare with. */
-    function seeded(counter: string) {
-      const made = clone(counter);
-      const sent = git(made.dir, ['push', '--no-verify', '-q', 'origin', 'main']);
-      expect(sent.status, sent.stderr).toBe(0);
-      return made;
-    }
-
     it('runs only the suites the changed files ask for, and not the whole suite', () => {
       const counter = counterFile();
       const { dir, remote } = seeded(counter);
@@ -51,49 +45,6 @@ describe('the pre-push hook', () => {
       expect(result.out).toContain('the whole suite runs: a changed file asks for it');
       expect(count(counter)).toBe(1);
     }, 120_000);
-
-    describe('the tests of the hooks themselves, which take about a third of the suite', () => {
-      // test/hooks reads .githooks/ and the install script by path. The suite re-runs them only when what they read, or they, changed.
-      const HOOKS_EXCLUDED = '--exclude=test/hooks/**';
-
-      it('are left out of the whole suite when no hook, script, test of theirs or dependency changed', () => {
-        const counter = counterFile();
-        const { dir } = seeded(counter);
-        commit(dir, { 'examples/x/blazon.json': '// a brand\n' });
-        const result = push(dir);
-        expect(result.status, result.out).toBe(0);
-        expect(result.out).toContain('✓ tests: full suite');
-        expect(suiteArgs(counter).join('\n')).toContain(HOOKS_EXCLUDED);
-      }, 120_000);
-
-      it.each([
-        ['a hook', { 'examples/x/blazon.json': '// a brand\n', '.githooks/note.sh': '#!/bin/sh\necho hi\n' }],
-        ['the install script', { 'examples/x/blazon.json': '// a brand\n', 'scripts/install-hooks.mjs': '// install\n' }],
-        ['a test of the hooks', { 'examples/x/blazon.json': '// a brand\n', 'test/hooks/x.test.ts': '// t\n' }],
-        ['package.json, which can change the tools they run', { 'examples/x/blazon.json': '// a brand\n', 'package-lock.json': '{}\n' }],
-      ])(
-        'are in the whole suite when %s changed',
-        (_what, files) => {
-          const counter = counterFile();
-          const { dir } = seeded(counter);
-          commit(dir, files);
-          const result = push(dir);
-          expect(result.status, result.out).toBe(0);
-          expect(result.out).toContain('✓ tests: full suite');
-          expect(suiteArgs(counter).join('\n')).not.toContain(HOOKS_EXCLUDED);
-        },
-        120_000,
-      );
-
-      it('are in the whole suite that BLAZON_PUSH_FULL asks for', () => {
-        const counter = counterFile();
-        const { dir } = seeded(counter);
-        commit(dir, { 'src/a.ts': 'export const a: number = 21;\n' });
-        const result = git(dir, ['push', 'origin', 'main'], { BLAZON_PUSH_FULL: '1' });
-        expect(result.status, result.stdout + result.stderr).toBe(0);
-        expect(suiteArgs(counter).join('\n')).not.toContain(HOOKS_EXCLUDED);
-      }, 120_000);
-    });
 
     it('runs the whole suite when a changed file asks for it', () => {
       const counter = counterFile();
