@@ -9,7 +9,7 @@ import { starterProject, tempDir } from '../../test/support/project.js';
 
 // The server as it ships: the one built file mcp/dist/index.js, with the MCP SDK and zod bundled in. These tests build it into a
 // temporary folder and run it from there, where no node_modules can be found, so a package the bundle forgot to carry fails here
-// and not on a user's machine. server.test.ts covers the same behaviour from the TypeScript sources.
+// and not on a user's machine. The `server-*.test.ts` files cover the same behaviour from the TypeScript sources.
 
 const TSX = pathToFileURL(path.join(REPO, 'node_modules/tsx/dist/esm/index.mjs')).href;
 
