@@ -202,6 +202,14 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
+  'context-css-unchanged': {
+    severity: 'info',
+    summary: 'A context leaves out tokens the default has, but the CSS cannot remove a custom property, so theme.css keeps the default value for them.',
+    fix: "Either give the token a value in the context file, so it is not removed, or accept the fallback and do not use the token's variable in that context.",
+    appliesTo: ['project'],
+    rfc: '1#3',
+    manual: '04-contexts',
+  },
   'contrast-insufficient': {
     severity: 'error',
     summary: 'A color pair has less contrast than its level asks for.',
