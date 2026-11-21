@@ -8,7 +8,7 @@ import { formatBrandJson } from '../../src/core/brand/export.js';
 import { BRAND_SCHEMA, BRAND_SCHEMA_FILE } from '../../src/core/brand/schema.js';
 import { buildSite } from '../../src/builder/site-builder.js';
 import { startDevServer } from '../../src/server/dev-server.js';
-import { LOGO_CORNERS } from '../../src/types/index.js';
+import { LOGO_CORNERS, MISUSE_KINDS } from '../../src/types/index.js';
 import { starterProject } from '../support/init-project';
 import { REPO } from '../support/paths';
 import { hasReference, referencePath } from '../support/reference';
@@ -156,6 +156,7 @@ describe('the schema', () => {
   it('lists the logo corners, which are geometry and stay closed, and no longer lists sections or lockups, which a brand extends', () => {
     const s = JSON.stringify(BRAND_SCHEMA);
     expect(BRAND_SCHEMA.$defs.assetMeta.properties.placement.items.enum).toEqual([...LOGO_CORNERS]);
+    expect(BRAND_SCHEMA.$defs.assetMeta.properties.misuse.items.enum).toEqual([...MISUSE_KINDS]);
     expect(BRAND_SCHEMA.$defs.page.properties.sections.items).toEqual({ $ref: '#/$defs/sectionId' });
     expect(BRAND_SCHEMA.$defs.assetMeta.properties.lockup).toEqual({ $ref: '#/$defs/name' });
     expect(s).not.toContain('"file":true');

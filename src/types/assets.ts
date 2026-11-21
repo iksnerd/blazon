@@ -25,6 +25,10 @@ export const STANDARD_LOGO_LOCKUPS = ['horizontal', 'stacked', 'mark', 'wordmark
 export type LogoCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 export const LOGO_CORNERS: readonly LogoCorner[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
+/** The ways `blazon:logo-misuse` can draw a logo misused (RFC 0001 §10). */
+export const MISUSE_KINDS = ['stretch', 'squash', 'rotate', 'outline', 'recolor', 'shadow', 'crop', 'low-contrast', 'busy-background'] as const;
+export type MisuseKind = (typeof MISUSE_KINDS)[number];
+
 /** How the logo sits beside a partner's: the gap on each side of a divider, and the divider's height. */
 export interface LogoPartnership {
   /** The space on each side of the divider, or between the logos when there is none */
@@ -63,6 +67,8 @@ export interface AssetMeta {
   /** What to do, and what not to do, as short plain statements */
   do?: string[];
   dont?: string[];
+  /** The misuses `blazon:logo-misuse` draws for this logo when the directive names none; the default six when absent */
+  misuse?: MisuseKind[];
   /** The background the artwork is made for: `dark` for a white logo */
   background?: 'light' | 'dark';
   /** The artwork's main color as a CSS color (a token alias in the sidecar is resolved), so a logo can be chosen for a background by contrast */

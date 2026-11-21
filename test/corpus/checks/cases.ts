@@ -89,6 +89,10 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
     fail: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { bogus: 1 } } },
     near: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { order: 1 } } },
   },
+  'asset-misuse-unknown': {
+    fail: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { misuse: ['melt'] } } },
+    near: { files: { ...tokens(), ...logoAsset, 'assets/logos/mark.json': { misuse: ['stretch'] } } },
+  },
   'asset-unreadable': {
     fail: { files: { ...tokens(), ...logoAsset }, unreadable: ['assets/logos/mark.svg'] },
     near: { files: { ...tokens(), ...logoAsset } },

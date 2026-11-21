@@ -14,6 +14,7 @@ import {
   type Review,
   type ParsedTokens,
 } from '../../types/index.js';
+import { isMisuseKind, unknownMisuseMessage } from '../logo/misuse.js';
 import { cleanReview, reviewProblem } from '../checker/review.js';
 import { isObject, isSource, isStringList, listMessage, SOURCE_MESSAGE } from './fields.js';
 import { finding } from '../checker/catalogue.js';
@@ -23,6 +24,7 @@ const FIELDS = [
   'traits',
   'do',
   'dont',
+  'misuse',
   'description',
   'background',
   'ink',
@@ -88,10 +90,11 @@ function inkColor(value: unknown, tokens: ParsedTokens | undefined): { color: st
 }
 
 /** The validated metadata in a sidecar's JSON, or one message per mistake. Unknown fields are mistakes, so a typo shows. */
-function validate(raw: unknown, tokens: ParsedTokens | undefined, lockups: readonly string[]): { meta: AssetMeta; errors: string[] } {
+function validate(raw: unknown, tokens: ParsedTokens | undefined, lockups: readonly string[]): { meta: AssetMeta; errors: string[]; unknownMisuse: string[] } {
   const errors: string[] = [];
   const meta: AssetMeta = {};
-  if (!isObject(raw)) return { meta, errors: ['must be a JSON object'] };
+  const unknownMisuse: string[] = [];
+  if (!isObject(raw)) return { meta, errors: ['must be a JSON object'], unknownMisuse };
 
   for (const key of Object.keys(raw)) if (!FIELDS.includes(key)) errors.push(`unknown field "${key}"; known: ${FIELDS.join(', ')}`);
 
@@ -134,6 +137,13 @@ function validate(raw: unknown, tokens: ParsedTokens | undefined, lockups: reado
     if (raw[name] === undefined) continue;
     if (isStringList(raw[name])) meta[name] = raw[name];
     else errors.push(listMessage(name));
+  }
+  if (raw.misuse !== undefined) {
+    if (isStringList(raw.misuse)) {
+      // A name that is not a kind is its own finding (asset-misuse-unknown); the known kinds are still kept
+      for (const name of raw.misuse) if (!isMisuseKind(name) && !unknownMisuse.includes(name)) unknownMisuse.push(name);
+      meta.misuse = [...new Set(raw.misuse.filter(isMisuseKind))];
+    } else errors.push(listMessage('misuse'));
   }
   if (raw.description !== undefined) {
     if (typeof raw.description === 'string') meta.description = raw.description;
@@ -277,7 +287,7 @@ function validate(raw: unknown, tokens: ParsedTokens | undefined, lockups: reado
       };
     }
   }
-  return { meta, errors };
+  return { meta, errors, unknownMisuse };
 }
 
 /**
@@ -308,10 +318,11 @@ export function readSidecar(
   } catch (err) {
     return invalid(`is not valid JSON: ${err instanceof Error ? err.message : String(err)}`);
   }
-  const { meta, errors } = validate(raw, tokens, lockups);
+  const { meta, errors, unknownMisuse } = validate(raw, tokens, lockups);
   if (errors.length > 0) return { problems: errors.map((message) => finding('asset-sidecar-invalid', { path: where, message })) };
 
   const problems: Finding[] = [];
+  if (unknownMisuse.length > 0) problems.push(finding('asset-misuse-unknown', { path: where, message: `misuse: ${unknownMisuseMessage(unknownMisuse)}` }));
   if (meta.review?.status === 'needs-review') {
     problems.push(finding('review-pending', { path: assetId, message: meta.review.note ?? 'Marked needs-review' }));
   } else if (meta.generated && !meta.review) {
