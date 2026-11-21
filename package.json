@@ -69,6 +69,7 @@
     "blazon:src": "tsx scripts/blazon-src.ts",
     "build:viewer": "vite build -c vite.viewer.config.ts",
     "dev:blazon": "tsx scripts/blazon-src.ts dev examples/blazon",
+    "check:linux": "bash scripts/linux-check.sh",
     "hooks": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
