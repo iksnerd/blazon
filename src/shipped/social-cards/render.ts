@@ -1,5 +1,6 @@
 import type { Browser, BrowserContext, Page } from 'playwright-core';
 import { serve } from '../print-book/site.js';
+import { findByFile } from '../../core/assets/representations.js';
 import { colorOf, type BrandAsset, type BrandRead } from './brand.js';
 import {
   backgroundFindings,
@@ -40,9 +41,9 @@ interface Logo {
   asset?: BrandAsset;
 }
 
-const logoOf = (brand: BrandRead, which: 'onLight' | 'onDark'): Logo | undefined => {
+export const logoOf = (brand: BrandRead, which: 'onLight' | 'onDark'): Logo | undefined => {
   const src = brand.logo[which];
-  return src === undefined ? undefined : { src, asset: [...brand.assets.values()].find((asset) => asset.file === src) };
+  return src === undefined ? undefined : { src, asset: findByFile(brand.files, src) };
 };
 
 const dark = '#1E1F21';

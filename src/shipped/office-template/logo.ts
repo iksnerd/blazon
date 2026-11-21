@@ -1,4 +1,5 @@
 import { dimensionToPx, measurePx } from '../../core/assets/measure.js';
+import { findByFile } from '../../core/assets/representations.js';
 import type { BrandRead, LogoAsset } from './brand.js';
 import { finding, type Finding, type Options } from './options.js';
 
@@ -19,7 +20,7 @@ export function madeFor(asset: LogoAsset, brand: Pick<BrandRead, 'logo'>): Surfa
 
 /** The logo for each kind of surface: the one `logo` names first, then the pair brand.json names, then the logos folder. */
 export function chooseLogos(brand: BrandRead, options: Pick<Options, 'logo'>): { light?: LogoAsset; dark?: LogoAsset } {
-  const byFile = (file?: string) => (file ? [...brand.assets.values()].find((asset) => asset.file === file) : undefined);
+  const byFile = (file?: string) => (file ? findByFile(brand.files, file) : undefined);
   const pool = [
     options.logo ? brand.assets.get(options.logo) : undefined,
     byFile(brand.logo.onLight),

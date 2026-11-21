@@ -73,3 +73,12 @@ export function keepRepresentation<T extends Representation>(map: Map<string, T>
   const held = map.get(record.id);
   if (!held || compareRepresentations(record, held, options) < 0) map.set(record.id, record);
 }
+
+/**
+ * The record of one named file among all the records, for a logo or other setting that names a FILE and not an id: the file is that
+ * one, whatever else its id has, so the lookup runs over every record and never over the one a reader kept for the id. `file` is a
+ * path as brand.json writes it (`file`) or as the catalog does (`filePath`).
+ */
+export function findByFile<T extends Representation>(records: readonly T[], file: string): T | undefined {
+  return records.find((record) => record.file === file || record.filePath === file);
+}
