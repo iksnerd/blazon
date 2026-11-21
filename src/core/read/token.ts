@@ -51,7 +51,7 @@ export interface TokenDescription {
 
 /** Everything the brand says about one token, from the same compile every other command uses. */
 export function describeToken(data: BlazonData, typedPath: string, theme?: string): TokenDescription {
-  const item = findToken(theme === undefined ? data : inTheme(data, theme), typedPath);
+  const item = findToken(theme === undefined ? data : inTheme(data, theme), typedPath, theme);
   const was = theme === undefined ? undefined : findToken(data, typedPath);
   const contexts = (data.tokens.contexts ?? []).flatMap((c) =>
     c.tokens.filter((t) => t.path === item.path).map((t) => ({ modifier: c.modifier, context: c.context, selector: c.selector, value: t.value })),

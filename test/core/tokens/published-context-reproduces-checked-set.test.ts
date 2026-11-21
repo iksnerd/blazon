@@ -2,20 +2,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { buildBrandExport } from '../../../src/core/brand/export.js';
-import { contextItems } from '../../../src/core/tokens/contexts.js';
+import { contextGroups, contextItems } from '../../../src/core/tokens/contexts.js';
 import { compileWithResolver } from '../../../src/core/tokens/resolver/compile.js';
 import { compileBlazonData, planTokenOutputs } from '../../../src/core/index.js';
-import type { TokenItem } from '../../../src/types/index.js';
+import type { GroupMeta, TokenItem } from '../../../src/types/index.js';
 import { writeProject, TEST_CONFIG } from '../../support/helpers.js';
+import { EXAMPLES, exampleProject, hasExample } from '../../support/examples.js';
 
 // Property: applying a published context to the default reproduces the token membership and the group rules the checker saw.
 //
 // For each non-default context there are three views, and they must agree:
 //  - checked:  what the resolver produced for that context, the set `blazon check` ran its rules on (compile.ts `resolved`)
 //  - emitted:  the tokens in the context's DTCG file, `tokens.<modifier>.<context>.json` (emit.ts)
-//  - published: what a plugin gets by reading brand.json: the default tokens with the context's `tokens` and `metadataChanges` applied through
-//    `contextItems`, and the default's groups (brand.json has no groups per context)
-// A context that leaves out a token the default has is what the stored changes cannot say: they list additions and edits, never removals.
+//  - published: what a plugin gets by reading brand.json: the default tokens with the context's `tokens`, `metadataChanges` and `removed`
+//    applied through `contextItems`, and the default's groups with the context's `groupChanges` and `removedGroups` applied through `contextGroups`
 
 type Memberships = { checked: string[]; emitted: string[]; published: string[] };
 type GroupRules = Record<string, { description?: string; pairs?: unknown }>;
@@ -42,6 +42,7 @@ async function build(root: string) {
 }
 
 /** The membership of every non-default context, by `modifier.context`, in the three views. */
+/** The three views of every non-default context, by `modifier.context`; used by the property test over the examples too. */
 export async function contextMemberships(root: string): Promise<Record<string, Memberships>> {
   const { compiled, files, brand } = await build(root);
   const out: Record<string, Memberships> = {};
@@ -76,8 +77,8 @@ export async function contextGroupRules(root: string): Promise<Record<string, { 
     const name = `${context.modifier}.${context.context}`;
     out[name] = {
       checked: fromMeta(tokens.groupMeta),
-      // brand.json carries the default's groups only; no context has a group of its own
-      published: fromMeta(brand.groups),
+      // Put back together the way a reader of brand.json does
+      published: fromMeta(contextGroups(brand.groups as GroupMeta[], [brand.contexts.find((c) => c.modifier === context.modifier && c.context === context.context) as never])),
     };
   }
   return out;
@@ -150,30 +151,63 @@ describe('applying a published context to the default reproduces the token membe
   });
 
   // The review's scenario: contexts that replace each other, with no base set
-  it.fails('exclusive contexts: ja holds only space.large, and the emitted file and brand.json agree', async () => {
+  it('exclusive contexts: ja holds only space.large, in the checker and in the emitted file', async () => {
     const root = exclusiveLocaleProject();
     const { 'locale.ja': ja } = await contextMemberships(root);
     expect(ja?.checked).toEqual(['space.large']);
     expect(ja?.emitted).toEqual(ja?.checked);
-    expect(ja?.published).toEqual(ja?.checked);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('exclusive contexts: ja holds only space.large when brand.json is put back together', async () => {
+    const root = exclusiveLocaleProject();
+    const { 'locale.ja': ja } = await contextMemberships(root);
+    expect(ja?.published).toEqual(['space.large']);
     fs.rmSync(root, { recursive: true, force: true });
   });
 
   // A context file that leaves out a token the default has
-  it.fails('a context that leaves a token out does not publish it', async () => {
+  it('a context that leaves a token out does not emit it', async () => {
     const root = removalOverBaseProject();
     const { 'theme.dark': dark } = await contextMemberships(root);
     expect(dark?.checked).toEqual(['color.ink']);
-    expect(dark?.emitted).toEqual(dark?.checked);
-    expect(dark?.published).toEqual(dark?.checked);
+    expect(dark?.emitted).toEqual(['color.ink']);
     fs.rmSync(root, { recursive: true, force: true });
   });
 
-  it.fails('a context-specific group description and contrast pair reach brand.json', async () => {
+  it('a context that leaves a token out does not publish it in brand.json', async () => {
+    const root = removalOverBaseProject();
+    const { 'theme.dark': dark } = await contextMemberships(root);
+    expect(dark?.published).toEqual(['color.ink']);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('a context-specific group description and contrast pair reach brand.json', async () => {
     const root = groupRulesProject();
     const { 'theme.dark': dark } = await contextGroupRules(root);
     expect(dark?.checked.color).toEqual({ description: 'Acme dark surfaces', pairs: [{ fg: '{color.ink}', bg: '{color.paper}', min: 'AAA' }] });
     expect(dark?.published).toEqual(dark?.checked);
     fs.rmSync(root, { recursive: true, force: true });
   });
+});
+
+describe('the same property over every example brand that has a resolver', () => {
+  for (const name of EXAMPLES) {
+    it.skipIf(!hasExample(name))(
+      `${name}: checker, emitted file and brand.json agree on every context's tokens and group rules`,
+      async () => {
+        const root = exampleProject(name);
+        if (!fs.existsSync(path.join(root, 'blazon.resolver.json'))) return;
+        const members = await contextMemberships(root);
+        const rules = await contextGroupRules(root);
+        expect(Object.keys(members).length).toBeGreaterThan(0);
+        for (const [context, view] of Object.entries(members)) {
+          expect(view.emitted, `${context} emitted`).toEqual(view.checked);
+          expect(view.published, `${context} published`).toEqual(view.checked);
+          expect(rules[context]?.published, `${context} group rules`).toEqual(rules[context]?.checked);
+        }
+      },
+      120_000,
+    );
+  }
 });
