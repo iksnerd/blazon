@@ -1,1 +1,0 @@
-`blazon.press-kit` takes a `company.contact` (name, role, email, phone, url) and a `terms` option (the brand's own text and an address), prints them in `about.txt`, the PDF and the new `index.html`, and writes `index.html` at the root of the kit folder and zip: the kit as one static page, with no script and no remote files, for a person who opens it in a browser.

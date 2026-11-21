@@ -1,1 +1,0 @@
-`blazon logo` and the MCP `get_logo` list each logo id once, with `files` (a list, in the default order: SVG, then PNG, WebP, JPEG, GIF, then other formats) in place of `file`. A reader that took `file` from a logo entry must take the first of `files`, or choose by format.

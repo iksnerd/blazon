@@ -1,1 +1,0 @@
-A resolver pointer such as `#/modifiers/density` finds only a modifier declared under `modifiers`. Before, it also found an inline modifier of that name when the inline item came earlier in `resolutionOrder`, listed it twice, and failed when the inline item came later. It is now a `resolver-invalid` error in both orders.

@@ -6,6 +6,59 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.5.0 (2026-11-21)
+
+### Breaking
+
+- `blazon logo` and the MCP `get_logo` list each logo id once, with `files` (a list, in the default order: SVG, then PNG, WebP, JPEG, GIF, then other formats) in place of `file`. A reader that took `file` from a logo entry must take the first of `files`, or choose by format.
+
+### Added
+
+- `CHANGELOG.md` ships in the npm package, so an agent or a user can read what changed between versions in `node_modules/@iksnerd/blazon/CHANGELOG.md`. `npm run check-pack` requires it.
+- A check now notes, once per resolver context, that the context leaves out tokens the default has while `theme.css` and the other CSS keep the default value for them (`context-css-unchanged`, info). It names the context, how many tokens it removes and the first five paths, and it never fails a check. Give the token a value in the context file, or do not use its variable in that context.
+- A font token can state its `role` (`primary`, `secondary`, `display`,
+  `monospace` or `fallback`), a one-line `reason`, and for a fallback what it
+  `fallbackFor`. `blazon fonts`, the Typography page, the press kit's
+  `fonts.txt` and its `index.html` show them. The new finding
+  `font-role-invalid` (a warning) covers a bad `reason` or `fallbackFor`.
+- A logo sidecar can list named `colorways`: each is a logo variant on a color token, with the contrast it must reach (`AA-large`, 3:1, by default, as for a logo). A new `blazon:logo-colorways` directive draws each one as a labelled figure with its measured ratio and a pass or fail in words and a mark. `blazon check` reports a colorway below its level as `contrast-insufficient`, and one it cannot measure as `contrast-unknown`. It draws in the brand book and in the print book.
+- A new `blazon:logo-misuse` directive draws the logo misused in named ways, one captioned figure for each (stretch, rotate, outline, recolor, shadow, low contrast, and squash, crop and busy background on request), each marked as not allowed without relying on color. A sidecar can list its kinds in `misuse`, and an unknown kind is an `asset-misuse-unknown` error. It draws in the brand book and in the print book.
+- `blazon.press-kit` takes a `company.contact` (name, role, email, phone, url) and a `terms` option (the brand's own text and an address), prints them in `about.txt`, the PDF and the new `index.html`, and writes `index.html` at the root of the kit folder and zip: the kit as one static page, with no script and no remote files, for a person who opens it in a browser.
+
+### Changed
+
+- `blazon list`, `get`, `rules` and `can` now explain a brand folder typed first. When one fails because the current folder has no brand, or a token is not found, and a leading argument is a brand folder, a line says it was read as the group, path, fg or bg, and shows the corrected command, such as `blazon list <group> acme` or `blazon list --cwd acme`. The parse, the exit status and the output of a success are unchanged.
+- `blazon mcp --check` compares the `blazon` entry in the client config with this install: it says when the registered entry runs a different `mcp/dist/index.js` (a source clone, an older install), naming both files, and says it could not tell when the entry does not name a script file. `--json` adds `state` and `sameServer` to the `registered` check. Only the script path is read from an entry; no other argument or environment value is printed.
+
+### Fixed
+
+- An asset in two formats (`logos/mark.svg` and `logos/mark.png`, one sidecar) is now one asset with one approval.
+  `review.value` is a fingerprint of the id, made from all its files; an id with one file keeps its old fingerprint.
+  Approving it no longer makes the other file stale, `blazon approvals` prints one row for the id with its files, and
+  `approval-stale`, `asset-review-missing` and `review-pending` are reported once for each id. Every reader now takes the
+  same file for an id (SVG, then PNG, WebP, JPEG, GIF, then other formats), so the favicons symbol works for `mark.svg`
+  beside `mark.png`.
+- The brand deck draws a logo with several files (`logos/mark.svg` and
+  `logos/mark.png`) as one slide, from the best format it can embed, instead of
+  one slide for each file. Guideline slides and figure grids choose their file the
+  same way, whatever order the files are in.
+- A resolver context that leaves out a token the default has no longer publishes it. `tokens.<modifier>.<context>.json`, `brand.json`, `blazon get`, `list` and `can` with `--theme`, and the brand book now leave the token out, and a context's changed group description or contrast pairs reach `brand.json`. `brand.json` stays at version 2: each context gains `removed`, `groupChanges` and `removedGroups`, present only when there is something to say. CSS and `tokens.ts` cannot express a removal, so a removed token keeps the default's value there.
+- A finding about a group's `$type`, `$extensions` or `$deprecated` now names the file that wrote it, not the first file that mentioned the group.
+- `blazon init --from <url>` reads a font name written with a CSS escape (`"Acme \"Sans\""`, `Acme\ Sans`) and keeps a
+  `var(--x, "A, B")` fallback in one piece, instead of cutting the font list at the wrong comma.
+- A logo that `logo` in blazon.json names by file is now that file in `blazon.office-template` and `blazon.social-cards`,
+  even when its asset has other files. With `logos/mark.svg` and `logos/mark.png`, `"logo": "./assets/logos/mark.png"`
+  drew the SVG in the Office template and sized the social cards' logo as the default 4:1 shape. A logo that names an id
+  still takes the default order.
+- A build plugin that is refused before it starts (its request is over the cap, or its manifest lists a variable the config does not approve) keeps the files its last run made in `<tokensOutDir>/<id>/`; blazon empties the folder only once the plugin is about to run. A folder that cannot be emptied or made is now a `plugin-failed` finding for that plugin, and the other plugins still run.
+- A resolver document that fails partway no longer drops the `token-file-invalid` findings already collected, and a token file reached by two spellings of one path (`a.json` and `./a.json`) is read and reported once.
+- A resolver pointer such as `#/modifiers/density` finds only a modifier declared under `modifiers`. Before, it also found an inline modifier of that name when the inline item came earlier in `resolutionOrder`, listed it twice, and failed when the inline item came later. It is now a `resolver-invalid` error in both orders.
+- The help of `blazon can`, `list` and `get` showed `--theme <<name>>`, with the angle brackets doubled; it now shows `--theme <name>`.
+- The DTCG export (`tokens.json` and the context files) keeps a group's `$extensions` again. A vendor key such as `com.acme.tool` on `space` was dropped while the same key on `space.small` survived. A group's `dev.blazon` key is still not written.
+- A sidecar beside an image that could not be read is no longer also reported as `asset-sidecar-orphaned`; only `asset-unreadable` is reported.
+- A page that cannot be read now reports only `page-unreadable`. It no longer
+  also reports an old `folio:` directive found in it before the failure.
+
 ## 0.4.0 (2026-11-20)
 
 ### Added

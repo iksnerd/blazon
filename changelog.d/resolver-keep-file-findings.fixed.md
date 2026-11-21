@@ -1,1 +1,0 @@
-A resolver document that fails partway no longer drops the `token-file-invalid` findings already collected, and a token file reached by two spellings of one path (`a.json` and `./a.json`) is read and reported once.
