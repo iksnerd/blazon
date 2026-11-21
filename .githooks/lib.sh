@@ -56,6 +56,110 @@ tests_gate() {
     return 1
 }
 
+# --- the test lock. Test steps run one gate at a time for each repository: every session's hook builds the viewer and starts Chrome,
+# so two or three gates at once oversubscribe the cores and each takes several times longer. The lock is a directory in the COMMON git
+# folder (every worktree of the checkout queues on it, like the hook cache); mkdir is atomic and macOS has no flock. Its `owner` file
+# records pid, hook, worktree, start time and the process start time (`ps lstart`, so a reused pid is not taken for the holder).
+# Only the test steps are behind it (test_step), so format and lint errors show at once; it is taken lazily, when a test step is
+# about to run, never on a cache hit; held across the test steps of one hook run and released when the hook ends, however it ends
+# (release_test_lock, from the hooks' EXIT trap). A holder that is gone is taken over. After BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) a
+# gate runs its tests without the lock: the lock costs time and never skips a test. BLAZON_HOOK_NO_LOCK=1 does not use it.
+# BLAZON_HOOK_LOCK_POLL_SECONDS (2) and BLAZON_HOOK_LOCK_NOTICE_SECONDS (30) exist for the tests of the hooks.
+TEST_LOCK_DIR=""      # set while this hook holds the lock
+LOCK_WAITED=0         # seconds this hook waited for it, for the line at the end
+
+lock_dir() {
+    local common
+    common="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
+    echo "$common/blazon-hook-test.lock"
+}
+# fmt_dur SECONDS: 4m10s
+fmt_dur() {
+    local s="$1"
+    if [ "$s" -ge 3600 ]; then printf '%dh%02dm' $(( s / 3600 )) $(( s % 3600 / 60 ))
+    elif [ "$s" -ge 60 ]; then printf '%dm%02ds' $(( s / 60 )) $(( s % 60 ))
+    else printf '%ds' "$s"; fi
+}
+# proc_start PID: when the process started, as ps prints it; empty when there is no such process
+proc_start() { echo $(ps -o lstart= -p "$1" 2>/dev/null); }
+# owner_field DIR KEY
+owner_field() { sed -n "s/^$2=//p" "$1/owner" 2>/dev/null | head -n 1; }
+# lock_is_stale DIR: succeeds when nobody holds it any more
+lock_is_stale() {
+    local dir="$1" pid recorded current mtime
+    pid="$(owner_field "$dir" pid)"
+    if [ -z "$pid" ]; then
+        # mkdir is done and the record is not written yet; a holder that died between the two leaves a bare directory
+        mtime="$(stat -f %m "$dir" 2>/dev/null || stat -c %Y "$dir" 2>/dev/null || date +%s)"
+        [ $(( $(date +%s) - mtime )) -gt 10 ]
+        return
+    fi
+    kill -0 "$pid" 2>/dev/null || return 0
+    recorded="$(owner_field "$dir" lstart)"
+    current="$(proc_start "$pid")"
+    # the pid is alive but is another process than the one that took the lock: the pid was reused
+    [ -n "$recorded" ] && [ -n "$current" ] && [ "$recorded" != "$current" ]
+}
+
+# acquire_test_lock: wait for the lock and take it; returns 0 either way (a gate that cannot take it still runs its tests)
+acquire_test_lock() {
+    [ -n "$TEST_LOCK_DIR" ] && return 0
+    [ -n "${BLAZON_HOOK_NO_LOCK:-}" ] && return 0
+    local dir limit poll notice start now waited last="" pid since
+    dir="$(lock_dir)"
+    limit="${BLAZON_HOOK_LOCK_WAIT_SECONDS:-2400}"
+    poll="${BLAZON_HOOK_LOCK_POLL_SECONDS:-2}"
+    notice="${BLAZON_HOOK_LOCK_NOTICE_SECONDS:-30}"
+    start="$(date +%s)"
+    until mkdir "$dir" 2>/dev/null; do
+        [ -d "$dir" ] || return 0   # the folder cannot be written: no lock, the tests still run
+        if lock_is_stale "$dir"; then
+            pid="$(owner_field "$dir" pid)"
+            printf '  – tests: the test lock was left by pid %s, which is not running; taking it over\n' "${pid:-unknown}"
+            # the record is read again just before the removal, so a lock another gate took in between is not removed
+            if [ "$(owner_field "$dir" pid)" = "$pid" ]; then rm -rf "$dir"; fi
+            continue
+        fi
+        now="$(date +%s)"; waited=$(( now - start ))
+        if [ "$waited" -ge "$limit" ]; then
+            LOCK_WAITED="$waited"
+            printf '  – tests: waited %s for the test lock; running the tests without it\n' "$(fmt_dur "$waited")"
+            return 0
+        fi
+        if [ -z "$last" ] || [ $(( waited - last )) -ge "$notice" ]; then
+            last="$waited"
+            since="$(owner_field "$dir" started)"
+            printf '  – tests: waiting for another gate to finish: %s in %s, pid %s, running for %s\n' \
+                "$(owner_field "$dir" hook)" "$(owner_field "$dir" worktree)" "$(owner_field "$dir" pid)" \
+                "$(fmt_dur $(( now - ${since:-$now} )))"
+        fi
+        sleep "$poll"
+    done
+    {
+        echo "pid=$$"
+        echo "hook=$(basename "$0")"
+        echo "worktree=$(git rev-parse --show-toplevel)"
+        echo "started=$(date +%s)"
+        echo "lstart=$(proc_start $$)"
+    } > "$dir/owner.tmp" && mv "$dir/owner.tmp" "$dir/owner"
+    TEST_LOCK_DIR="$dir"
+    LOCK_WAITED=$(( $(date +%s) - start ))
+}
+
+# release_test_lock: give it back, when this hook holds it (the record names this process). Safe to call twice.
+release_test_lock() {
+    [ -n "$TEST_LOCK_DIR" ] || return 0
+    if [ "$(owner_field "$TEST_LOCK_DIR" pid)" = "$$" ]; then rm -rf "$TEST_LOCK_DIR"; fi
+    TEST_LOCK_DIR=""
+}
+
+# test_step KEY LABEL COMMAND...: cached_step for a test step; the lock is taken here, only when the step is about to run
+test_step() {
+    local key="$1" label="$2"
+    if ! passed_before "$key"; then acquire_test_lock; fi
+    cached_step "$@"
+}
+
 # --- trees that passed. A step that passed on a tree is not run again on the same tree: a reset and a second commit, or a push of
 # a tree that pre-commit already ran in full. The key names the kind of run and what it was given; a failure is never kept.
 # BLAZON_HOOK_NO_CACHE=1 ignores the memory. It lives in the common git folder, so every worktree of the repository shares it.
@@ -93,7 +197,8 @@ cached_step() {
 
 # classify_paths ROOT: reads paths, one on a line, and sets what they ask for. ROOT holds the tree they are in, so a path that is
 # gone is not handed to a run. The same mapping serves pre-commit (the staged paths) and pre-push (the paths of the pushed commits).
-#   full           the whole suite: a path nothing names, one that configures the build or the tests, or a fixture a test reads by path
+#   full           the whole suite: a path nothing names, one that configures the build or the tests, or a data file under test/ whose
+#                  readers are not a small known set
 #   deck, docs     the deck and plugin tests; the manual and RFC tests
 #   related_files  the .ts and .tsx files of src/ and test/, for `vitest related`
 #   extra_tests    test files and folders that read a hook, a script or a plugin folder by name
@@ -126,7 +231,14 @@ classify_paths() {
             mcp/src/*|mcp/test/*) ;;
             mcp/*.md) docs=1 ;;
             src/*) docs=1; [ -f "$root/$path" ] && related_files="$related_files $path" ;;
-            # Only code is found through imports. A golden, a corpus file or a fixture is read by path, so it asks for the full suite.
+            # Data files whose readers are a small, known set (test/hooks/data-file-mapping.test.ts greps the repository for them and fails when
+            # a reader appears outside this list). A file read through a folder loader or by many tests stays in the full suite below.
+            test/surface/public-surface.json) extra_tests="$extra_tests test/surface" ;;
+            test/first-run/expected.json) extra_tests="$extra_tests test/build/first-run.test.ts" ;;   # scripts/smoke-tarball.mjs reads it too, at release
+            test/examples/golden/conformance/*) extra_tests="$extra_tests test/core/tokens/conformance.test.ts" ;;
+            test/plugins/shipped/fixtures/tokens-plugins/*) extra_tests="$extra_tests test/plugins/shipped/shadcn.test.ts test/plugins/shipped/tailwind.test.ts" ;;
+            test/plugins/shipped/logo-geometry/oracle/*) extra_tests="$extra_tests test/plugins/shipped/logo-geometry/oracle.test.ts" ;;
+            # Only code is found through imports. Any other golden, corpus file or fixture is read by path, so it asks for the full suite.
             test/*.ts|test/*.tsx) [ -f "$root/$path" ] && related_files="$related_files $path" ;;
             # The starter is what `blazon init` copies, and many tests start from it (a page count, a note count, a plugin list). The whole suite
             # runs at push; these are the ones that break first, so a commit runs them too, and not the third failed push of the day.
@@ -197,6 +309,8 @@ classify_lint() {
 # finish HOOKNAME: the ending of a hook.
 finish() {
     local hook="$1" bypass="$2"
+    release_test_lock
+    if [ "$LOCK_WAITED" -gt 0 ]; then echo "  waited $(fmt_dur "$LOCK_WAITED") for the test lock"; fi
     if [ "$fail" -ne 0 ]; then
         echo
         echo "$hook failed. Fix the above, or '$bypass' to skip."

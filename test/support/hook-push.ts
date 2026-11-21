@@ -14,7 +14,14 @@ import { tempDir } from '../support/project';
 
 export const HOOKS = path.join(REPO, '.githooks');
 
-const { BLAZON_HOOK_TEST_ARGS: _outer, ...inherited } = process.env;
+const {
+  BLAZON_HOOK_TEST_ARGS: _outer,
+  BLAZON_HOOK_NO_LOCK: _noLock,
+  BLAZON_HOOK_LOCK_WAIT_SECONDS: _wait,
+  BLAZON_HOOK_LOCK_POLL_SECONDS: _poll,
+  BLAZON_HOOK_LOCK_NOTICE_SECONDS: _notice,
+  ...inherited
+} = process.env;
 export const git = (cwd: string, args: string[], env: Record<string, string> = {}) =>
   spawnSync('git', args, {
     cwd,
