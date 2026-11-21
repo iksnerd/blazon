@@ -51,7 +51,16 @@ export const BASE: Record<string, string> = {
 };
 
 // The hook of the repository being committed may be running these tests with its own BLAZON_HOOK_TEST_ARGS: the throwaway repos get the defaults
-const { BLAZON_HOOK_TEST_ARGS: _outer, ...inherited } = process.env;
+const {
+  BLAZON_HOOK_TEST_ARGS: _outer,
+  BLAZON_HOOK_NO_LOCK: _noLock,
+  BLAZON_HOOK_LOCK_WAIT_SECONDS: _wait,
+  BLAZON_HOOK_LOCK_POLL_SECONDS: _poll,
+  BLAZON_HOOK_LOCK_NOTICE_SECONDS: _notice,
+  ...inherited
+} = process.env;
+/** The environment a throwaway repo's hook runs in: this process's, without the knobs of the hook being run. */
+export const hookEnv = inherited;
 export const git = (cwd: string, args: string[], env: Record<string, string> = {}) =>
   spawnSync('git', args, {
     cwd,
