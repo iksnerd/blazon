@@ -90,7 +90,11 @@ lock_is_stale() {
     pid="$(owner_field "$dir" pid)"
     if [ -z "$pid" ]; then
         # mkdir is done and the record is not written yet; a holder that died between the two leaves a bare directory
-        mtime="$(stat -f %m "$dir" 2>/dev/null || stat -c %Y "$dir" 2>/dev/null || date +%s)"
+        # GNU stat takes -c %Y; BSD stat takes -f %m. On GNU, -f %m is the filesystem report (several lines, not a time), so each answer is
+        # accepted only when it is all digits.
+        mtime="$(stat -c %Y "$dir" 2>/dev/null)"
+        case "$mtime" in '' | *[!0-9]*) mtime="$(stat -f %m "$dir" 2>/dev/null)" ;; esac
+        case "$mtime" in '' | *[!0-9]*) mtime="$(date +%s)" ;; esac
         [ $(( $(date +%s) - mtime )) -gt 10 ]
         return
     fi

@@ -1,0 +1,1 @@
+The dev server waits for a folder that a config reload starts to watch before it sends the page its update. Before, an edit made right after a `tokensDir` (or other folder) change could be missed on a busy machine, and the page kept the old value until the next save.

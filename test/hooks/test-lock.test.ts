@@ -199,6 +199,37 @@ describe('the test lock', () => {
     expect(order(log)).toEqual(['start A', 'end A']);
   }, 120_000);
 
+  it('(c2) reads the age of a bare lock directory with a GNU stat too, where `stat -f` is the filesystem report and not a time', async () => {
+    // On Linux `stat -f %m dir` succeeds and prints a multi-line report; a script that takes its output as a number fails there. This stat
+    // stands for GNU coreutils: -f prints the report, -c %Y prints the modification time.
+    const bin = tempDir('blazon-gnu-stat-');
+    const shim = [
+      '#!/bin/sh',
+      'if [ "$1" = "-c" ]; then',
+      '  [ "$2" = "%Y" ] || exit 1',
+      '  exec perl -e \'print((stat($ARGV[0]))[9], "\\n")\' "$3"',
+      'fi',
+      'if [ "$1" = "-f" ]; then',
+      '  printf \'  File: "%s"\\n    ID: 0 Namelen: 255 Type: ext2/ext3\\n\' "$3"',
+      '  exit 0',
+      'fi',
+      'exec /usr/bin/stat "$@"',
+    ].join('\n');
+    fs.writeFileSync(path.join(bin, 'stat'), shim, { mode: 0o755 });
+    const { main } = twoWorktrees();
+    const log = logFile();
+    const lock = lockPath(main);
+    fs.mkdirSync(lock);
+    const old = new Date(Date.now() - 60_000);
+    fs.utimesSync(lock, old, old);
+    edit(main, 2);
+    const result = await startCommit(main, { STUB_LOG: log, STUB_ID: 'A', STUB_MS: '100', PATH: `${bin}:${hookEnv.PATH ?? process.env.PATH ?? ''}` }).done;
+    expect(result.status, result.out).toBe(0);
+    expect(result.out).not.toContain('unbound variable');
+    expect(order(log)).toEqual(['start A', 'end A']);
+    expect(fs.existsSync(lockPath(main))).toBe(false);
+  }, 120_000);
+
   it('(e) takes no lock on a cache hit', async () => {
     const { main } = twoWorktrees();
     const log = logFile();

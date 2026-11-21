@@ -219,6 +219,14 @@ describe('blazon dev: a config that moves the tokens folder', () => {
       return false;
     };
 
+    // A watcher that is slow to start on a folder (a loaded machine) is made slow here, so the order does not depend on the load
+    const addToWatcher = server.watcher.add.bind(server.watcher);
+    server.watcher.add = (paths) => {
+      setTimeout(() => addToWatcher(paths), 400);
+      return server.watcher;
+    };
+    const watching = (folder: string) => Object.keys(server.watcher.getWatched()).some((dir) => dir.endsWith(folder));
+
     try {
       // The tokens move to another folder, and the config says so
       fs.cpSync(path.join(project, 'tokens'), path.join(project, 'moved-tokens'), { recursive: true });
@@ -227,6 +235,8 @@ describe('blazon dev: a config that moves the tokens folder', () => {
       const moved = path.join(project, 'moved-tokens/colors.json');
       fs.writeFileSync(moved, fs.readFileSync(moved, 'utf-8').replace('#FF5A1F', '#112233'));
       expect(await waitFor('#112233')).toBe(true);
+      // The page is told only once the new folder is watched: an edit made as soon as it has the update is not lost
+      expect(watching('moved-tokens')).toBe(true);
 
       // An edit in the new folder, later, must still reach the page
       fs.writeFileSync(moved, fs.readFileSync(moved, 'utf-8').replace('#112233', '#445566'));

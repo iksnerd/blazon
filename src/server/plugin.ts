@@ -100,12 +100,28 @@ export function createBlazonVitePlugin(initialConfig: BlazonConfig, cwd: string 
       // Watch token, doc and asset directories, and the config (theme, logo, fonts). A reload that moves one starts watching the new
       // folder and stops watching the old.
       let watchedDirList = watchedDirs();
+      /** The folders a reload started to watch, until the watcher has them. `add` returns at once and the watcher reads the folder after. */
+      let started: string[] = [];
       const refreshDirs = () => {
         const next = watchedDirs();
         const dropped = watchedDirList.filter((dir) => !next.includes(dir));
         if (dropped.length > 0) devServer.watcher.unwatch(dropped);
-        devServer.watcher.add(next.filter((dir) => !watchedDirList.includes(dir)));
+        const added = next.filter((dir) => !watchedDirList.includes(dir));
+        devServer.watcher.add(added);
+        started = [...started, ...added];
         watchedDirList = next;
+      };
+      // An edit made as soon as the page has its update must reach the watcher, so the update waits for the new folders to be watched. The
+      // wait ends at the bound, so a folder that cannot be watched does not hold the page back.
+      const WATCH_WAIT_MS = 3000;
+      const untilWatching = async () => {
+        const waiting = started;
+        started = [];
+        const deadline = Date.now() + WATCH_WAIT_MS;
+        const watched = () => Object.keys(devServer.watcher.getWatched());
+        while (Date.now() < deadline && waiting.some((dir) => watchedDirList.includes(dir) && !watched().includes(dir))) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
       };
       devServer.watcher.add([...watchedDirList, ...configFiles, lockFile, pinFile]);
       refreshWatched();
@@ -170,6 +186,7 @@ export function createBlazonVitePlugin(initialConfig: BlazonConfig, cwd: string 
         }
         // The resolver may now name other files, or none of those it did
         refreshWatched();
+        await untilWatching();
 
         try {
           const freshData = withPin(await compileBlazonData(config, cwd));
