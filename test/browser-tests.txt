@@ -1,0 +1,14 @@
+# The test files that start Chrome, directly (playwright-core) or through a plugin program that draws with it. The one list of them:
+#   - pre-commit leaves them out of its "related to the staged files" run (--exclude, from browser_excludes in .githooks/lib.sh)
+#   - pre-push and `npm test` run them
+#   - test/support/browser-setup.ts holds a Chrome slot for the whole of each, so few run at once (test/support/chrome-limits.ts)
+# One glob per line (a path from the repository root, `*` within a folder), `#` starts a comment. test/support/browser-tests.test.ts fails
+# when a test file that starts Chrome is not matched here, and when a line matches no file.
+test/deck/brand-deck-examples.test.ts
+test/plugins/shipped/brand-deck/chrome*.test.ts
+test/plugins/shipped/favicons.test.ts
+test/plugins/shipped/logo-geometry/plugin.test.ts
+test/plugins/shipped/logo-kit.test.ts
+test/plugins/shipped/press-kit.test.ts
+test/plugins/shipped/print-book*.test.ts
+test/plugins/shipped/social-cards/browser.test.ts

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { chromium } from 'playwright-core';
+import { launchBrowser } from '../../support/chrome';
 import { spawnSync } from '../../support/spawn';
 import { pathToFileURL } from 'node:url';
 import fs from 'node:fs';
@@ -510,7 +510,7 @@ describe.skipIf(!CHROME)('the favicons plugin, in a real browser', () => {
   // view came out a shade different (about 1 render in 25). One browser draws it many times, so the count of distinct
   // pictures is the whole test: one when the page is let settle, two or more when it is not.
   it('draws the masks view the same every time', async () => {
-    const chrome = await chromium.launch({ executablePath: CHROME });
+    const chrome = await launchBrowser(CHROME);
     try {
       const master = await png(chrome, tileSvg(readSymbol(SYMBOL, 'the symbol'), 1024, 0.52, '#FFFFFF', '#3F73F8'), 1024, false);
       const html = masksView(master);

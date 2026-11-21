@@ -18,7 +18,8 @@ export default defineConfig({
     testTimeout: 30_000,
     environment: 'node',
     include: ['test/**/*.test.ts', 'test/**/*.test.tsx', 'mcp/test/**/*.test.ts'],
-    setupFiles: ['test/support/setup-dom.ts'],
+    // browser-setup.ts: a file listed in test/browser-tests.txt holds one of a few Chrome slots (test/support/chrome-limits.ts)
+    setupFiles: ['test/support/setup-dom.ts', 'test/support/browser-setup.ts'],
     globalSetup: ['test/support/global-setup.ts'],
   },
 });

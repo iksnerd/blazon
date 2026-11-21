@@ -22,7 +22,10 @@
 #                       files, with the folder for a change in src/cli, src/viewer or src/shipped (classify_lint in lib.sh).
 #                       pre-push lints the whole tree of what is pushed, so nothing is left out of the gate
 #   src/, test/**/*.ts(x)
-#                       -> only the tests related to those files (vitest related), plus the manual and RFC tests for src/
+#                       -> only the tests related to those files (vitest related), plus the manual and RFC tests for src/. The
+#                          test files that start Chrome (the list in test/browser-tests.txt, browser_excludes in lib.sh) are left
+#                          out of that run: each Chrome start takes most of a core and the hook runs several tests at once. They
+#                          run at push (.githooks/pre-push) and in `npm test`, so a commit checks less of the browser output
 #   mcp/src/, mcp/test/, and the commands and read functions it wraps (src/cli/, src/core/read/)
 #                       -> the MCP server's tests
 #   scripts/*.py, scripts/blazon-blazon.*, test/deck/python/
@@ -145,8 +148,11 @@ if tests_gate; then
     if [ -n "$related_files" ]; then
         # The key holds the files too: the same tree reached by a different change has other files to cover.
         list_key="$(printf '%s' "$related_files" | digest_of)"
+        # The browser tests are left out (browser_excludes in lib.sh); the key holds them, so a change to the list runs the step again.
+        browser_args="$(browser_excludes "$SNAP" | tr '\n' ' ')"
+        list_key="$list_key-$(printf '%s' "$browser_args" | digest_of)"
         # shellcheck disable=SC2086
-        cached_step "related-$TREE-$list_key" "tests: related to the staged files" bash -c "cd '$SNAP' && npm run -s test:related -- $TEST_ARGS $related_files"
+        cached_step "related-$TREE-$list_key" "tests: related to the staged files" bash -c "cd '$SNAP' && npm run -s test:related -- $TEST_ARGS $browser_args $related_files"
     fi
     if [ "$deck" -eq 1 ]; then
         cached_step "deck-$TREE" "tests: deck and plugins" bash -c "cd '$SNAP' && npm run -s test:deck -- $TEST_ARGS"

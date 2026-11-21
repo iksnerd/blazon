@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { chromium, type Browser } from 'playwright-core';
+import type { Browser } from 'playwright-core';
+import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { jobFor } from '../../../src/shipped/print-book/request.js';
@@ -63,7 +64,7 @@ beforeAll(async () => {
   if (!CHROME) return;
   plain = await site(false);
   tasks = await site(true);
-  browser = await chromium.launch({ executablePath: CHROME });
+  browser = await launchBrowser(CHROME);
 }, 240_000);
 
 afterAll(async () => {

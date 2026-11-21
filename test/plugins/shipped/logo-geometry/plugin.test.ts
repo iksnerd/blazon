@@ -164,8 +164,8 @@ describe('the entry, as blazon starts it', () => {
 describe.skipIf(!CHROME)('a PNG, read with the browser', () => {
   // A plus drawn as a PNG by the browser itself, so the test needs no image file in the repository
   const png = async () => {
-    const { chromium } = await import('playwright-core');
-    const browser = await chromium.launch({ executablePath: CHROME });
+    const { launchBrowser } = await import('../../../support/chrome');
+    const browser = await launchBrowser(CHROME);
     try {
       const page = await browser.newPage({ viewport: { width: 80, height: 80 } });
       await page.setContent(`<body style="margin:0;background:transparent"><svg width="80" height="80" viewBox="0 0 40 40"><rect x="15" width="10" height="40"/><rect y="15" width="40" height="10"/></svg></body>`);

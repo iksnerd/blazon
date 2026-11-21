@@ -212,3 +212,15 @@ refuse() {
     echo "$1 failed. Fix the above, or '$2' to skip."
     exit 1
 }
+
+# browser_excludes ROOT: the vitest arguments that leave out the test files that start Chrome, one `--exclude=<glob>` for each line of
+# test/browser-tests.txt in ROOT (the one list of them; `#` starts a comment). Prints nothing when ROOT has no such list. pre-commit
+# adds them to its related run: a Chrome start takes most of a core, and a commit that touches src/ is related to many of them. pre-push
+# and `npm test` do not, so the push runs them. Printed one to a line, so the caller can word-split them (no glob has a space).
+browser_excludes() {
+    local list="$1/test/browser-tests.txt" line
+    [ -f "$list" ] || return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in ''|'#'*) ;; *) printf '%s\n' "--exclude=$line" ;; esac
+    done < "$list"
+}

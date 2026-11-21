@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { chromium, type Browser } from 'playwright-core';
+import type { Browser } from 'playwright-core';
+import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
@@ -32,7 +33,7 @@ beforeAll(async () => {
   const out = tempDir('blazon-palette-');
   await buildSite({ ...(await loadConfig(root)), outDir: out }, root, { allowErrors: true });
   site = await serve(out);
-  browser = await chromium.launch({ executablePath: CHROME });
+  browser = await launchBrowser(CHROME);
 }, 180_000);
 
 afterAll(async () => {

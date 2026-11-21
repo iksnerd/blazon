@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { chromium, type Browser } from 'playwright-core';
+import type { Browser } from 'playwright-core';
+import { launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { jobFor } from '../../../src/shipped/print-book/request.js';
@@ -38,7 +39,7 @@ beforeAll(async () => {
   await buildSite({ ...config, outDir: out }, root, { allowErrors: true });
   siteRoot = out;
   site = await serve(out);
-  browser = await chromium.launch({ executablePath: CHROME });
+  browser = await launchBrowser(CHROME);
   // What the brand itself says, from its config and not from the page: a book with no option must print exactly these
   brandTitle = config.title;
   brandDescription = config.description ?? '';
