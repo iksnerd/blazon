@@ -114,13 +114,13 @@ classify_paths() {
             scripts/gen-checks-docs.ts|scripts/gen-layers-docs.ts|scripts/layers.json) docs=1 ;;
             scripts/shipped-lock.mjs) extra_tests="$extra_tests test/scripts/shipped-lock.test.ts" ;;
             # The build of the plugins' programs: what the conformance test and the print-book test hold them to
-            scripts/build-plugins.mjs|scripts/plugin-externals.ts) extra_tests="$extra_tests test/scripts/shipped-lock.test.ts test/plugins/shipped/conformance.test.ts test/plugins/shipped/print-book.test.ts" ;;
+            scripts/build-plugins.mjs|scripts/plugin-externals.ts) extra_tests="$extra_tests test/scripts/shipped-lock.test.ts test/plugins/shipped/conformance test/plugins/shipped/print-book.test.ts" ;;
             scripts/blazon-src.ts)
-                extra_tests="$extra_tests test/core/config/config-validation.test.ts test/plugins/roles/commands.test.ts test/plugins/host/cli.test.ts test/plugins/shipped/brand-deck test/plugins/examples/cue-rules.test.ts test/plugins/shipped/shipped.test.ts test/plugins/examples/reference.test.ts test/build/first-run.test.ts" ;;
+                extra_tests="$extra_tests test/core/config/config-validation.test.ts test/plugins/roles/commands test/plugins/host/cli test/plugins/shipped/brand-deck test/plugins/examples/cue-rules.test.ts test/plugins/shipped/shipped.test.ts test/plugins/examples/reference test/build/first-run.test.ts" ;;
             test/deck/python/*|scripts/*.py|scripts/blazon-blazon.*) deck=1 ;;
             # A plugin folder is not a page of the manual: plugins/shipped.lock (build output) holds a digest of each one, so a changed
             # README or package.json makes the lock stale, and only the tests that compare the two (and the conformance test) see that
-            plugins/*) extra_tests="$extra_tests test/plugins/shipped/shipped.test.ts test/plugins/shipped/conformance.test.ts" ;;
+            plugins/*) extra_tests="$extra_tests test/plugins/shipped/shipped.test.ts test/plugins/shipped/conformance" ;;
             docs/*|.github/*|LICENSE|CODEOWNERS) docs=1 ;;
             # The MCP workspace: its source and tests ask for its tests (above); a dependency or build change needs the whole suite; its README is a page
             mcp/src/*|mcp/test/*) ;;
@@ -137,10 +137,10 @@ classify_paths() {
             *) full=1 ;;
         esac
     done
-    # Each test file or folder once, and only those that exist in the tree
+    # Each test file, folder or name prefix (a split test file, such as test/plugins/shipped/conformance for conformance-*.test.ts) once, and only those that exist in the tree
     local listed="" item
     for item in $(printf '%s\n' $extra_tests | sort -u); do
-        [ -e "$root/$item" ] && listed="$listed $item"
+        compgen -G "$root/$item*" >/dev/null && listed="$listed $item"
     done
     extra_tests="$listed"
 }

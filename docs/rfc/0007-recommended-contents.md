@@ -148,7 +148,7 @@ A change that follows this RFC is tested at these points:
 4. **The scope.** An item for a section outside `sections` is not reported. A skipped item is not reported.
 5. **A new book.** A project that declares no section gets the full list once, and the core's own findings are unchanged with and without the plugin.
 6. **The protocol.** `blazon plugin check` on the plugin's launcher (`./plugins/blazon.recommend/bin/blazon-blazon.recommend.🔌`, once it is built; the command takes a program, not a plugin name) passes the core cases and the `check` role's cases (RFC 0002, Conformance item 5).
-7. **Every shipped plugin.** `test/plugins/shipped/conformance.test.ts` holds the folder to its checks, including a pin in `plugins/shipped.lock`.
+7. **Every shipped plugin.** `test/plugins/shipped/conformance-*.test.ts` hold the folder to its checks, including a pin in `plugins/shipped.lock`.
 8. **Blazon's own book.** `blazon check` on `examples/blazon` reports no `missing` and no `prompt`, or each remaining one is skipped in the config with a reason.
 
 ## Drawbacks
