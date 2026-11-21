@@ -309,7 +309,15 @@ export const CHECKS = {
   'font-meta-invalid': {
     severity: 'error',
     summary: 'The font fields on a token are not valid.',
-    fix: 'Fix the font extension on the token or group: only source, license and licenseUrl, as text, with http or https addresses, on a fontFamily token.',
+    fix: 'Fix the font extension on the token or group: only source, license, licenseUrl, role, reason and fallbackFor, as text, with http or https addresses and a role from primary, secondary, display, monospace or fallback, on a fontFamily token.',
+    appliesTo: ['token', 'group'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
+  'font-role-invalid': {
+    severity: 'warning',
+    summary: 'A font reason or fallbackFor is not valid, so it is left out.',
+    fix: 'Write font.reason as one line of up to 160 characters, and set font.fallbackFor (up to 80 characters, one line) only with role "fallback".',
     appliesTo: ['token', 'group'],
     rfc: '1#4',
     manual: '03-checks',

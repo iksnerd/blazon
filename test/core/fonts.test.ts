@@ -160,6 +160,17 @@ describe('the license file beside a font file', () => {
   });
 });
 
+describe('font role and reason in brand.json', () => {
+  it('are carried on the font token entry beside the license meta, and BRAND_VERSION stays 2', async () => {
+    const meta = { source: 'Acme Type', license: 'OFL-1.1', role: 'primary', reason: 'Headlines and running text' };
+    const root = writeProject({ 'tokens/a.json': tokens(['Mulish', 'sans-serif'], { $extensions: { 'dev.blazon': { font: meta } } }) });
+    const config = { ...DEFAULT_CONFIG };
+    const brand = JSON.parse(formatBrandJson(await compileBlazonData(config, root), config, root));
+    expect(brand.version).toBe(2);
+    expect(brand.tokens.find((t: { path: string }) => t.path === 'font.brand').blazon.font).toEqual(meta);
+  });
+});
+
 describe('check on a family that nothing loads', () => {
   it('warns once on the token that names it first, and says what to add', async () => {
     const data = await compile(

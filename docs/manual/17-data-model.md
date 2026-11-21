@@ -116,7 +116,7 @@ The `dev.blazon` fields of a token or group. Every field is optional.
 | `angle` | A gradient's direction in degrees |
 | `preview` | How the brand book previews the token, when its type and name do not say |
 | `webFont` | `false`, or a sentence, for a typeface the brand book cannot load |
-| `font` | On a font family token or group: `source`, `license` and `licenseUrl` |
+| `font` | On a font family token or group: `source`, `license`, `licenseUrl`, `role`, `reason` and, for a fallback, `fallbackFor` |
 | `proportion` | Group only: the documented share of a composition, by group path or by a label with its tokens |
 | `pairs` | Group only: contrast rules, each a foreground `fg`, a background `bg` and a minimum `min` |
 | `pattern` | Group only: marks the group as a pattern of one kind |

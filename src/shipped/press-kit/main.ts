@@ -90,7 +90,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   // The page is drawn last, from the same data the files above were, and the README lists it with the rest
   files.set(
     'index.html',
-    kitPage({ brand, company: options.company, terms: options.terms, note: options.note, logos: present, colors: colors.colors, fonts: fonts.text, paths: [...files.keys()] }),
+    kitPage({ brand, company: options.company, terms: options.terms, note: options.note, logos: present, colors: colors.colors, fonts: fonts.model, paths: [...files.keys()] }),
   );
   files.set('README.txt', readmeText(brand.title, [...files.keys()], options.name, options.note, options.terms !== undefined));
 

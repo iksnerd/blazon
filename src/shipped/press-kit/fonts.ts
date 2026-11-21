@@ -1,4 +1,5 @@
 import { SYSTEM_FAMILIES } from '../../core/fonts.js';
+import type { FontRole } from '../../types/index.js';
 import { families as stackFamilies, fontOf } from '../shared/font-stack.js';
 import type { BrandRead } from './brand.js';
 import { finding, type Finding } from './options.js';
@@ -19,11 +20,90 @@ interface Family {
   license?: string;
   licenseUrl?: string;
   source?: string;
+  role?: FontRole;
+  reason?: string;
+  /** As the token states it: a family name or a font token path */
+  fallbackFor?: string;
   /** From the license file beside the font files, when the token states no license */
   fileLicense?: { headline?: string; file: string };
 }
 
+type Stated = Pick<Family, 'license' | 'licenseUrl' | 'source' | 'role' | 'reason' | 'fallbackFor'>;
+
+// What fonts.txt and the page of the kit both say about the fonts: planFonts decides it once and returns it as data, so the format of the text
+// can change without the page noticing. Neither writer reads the other's output.
+
+/** How a font's license is known: its own words (and an address), only an address, a license file beside the font files, or not at all */
+export type KitLicense =
+  | { kind: 'text'; text: string; url?: string }
+  | { kind: 'url'; url: string }
+  | { kind: 'file'; headline?: string; file: string }
+  | { kind: 'unstated' }
+  /** A fallback with no source or license stated: neither is printed, since a fallback is not what the brand ships */
+  | { kind: 'none' };
+
+export interface KitFont {
+  name: string;
+  usedFor: string[];
+  role?: FontRole;
+  reason?: string;
+  /** For a `fallback`: the family it stands in for (a font token path in `fallbackFor` is resolved to that token's family) */
+  standsInFor?: string;
+  source?: string;
+  license: KitLicense;
+}
+
+export interface KitFonts {
+  families: KitFont[];
+  /** The families of the stacks that the brand does not ship */
+  fallbacks: string[];
+}
+
+export interface FontRow {
+  label: string;
+  value: string;
+  /** The value is a license text that fonts.txt prints on lines of its own, under the label */
+  block?: boolean;
+}
+
 const NOT_STATED = 'not stated';
+
+/** What to say about one font, in order: the one list both fonts.txt and the page are written from */
+export function fontRows(font: KitFont): FontRow[] {
+  const rows: FontRow[] = [];
+  if (font.usedFor.length > 0) rows.push({ label: 'Used for', value: font.usedFor.join(', ') });
+  if (font.role) rows.push({ label: 'Role', value: font.role });
+  if (font.reason) rows.push({ label: 'Why', value: font.reason });
+  if (font.standsInFor) rows.push({ label: 'Stands in for', value: font.standsInFor });
+  if (font.source !== undefined || font.license.kind !== 'none') rows.push({ label: 'Source', value: font.source ?? NOT_STATED });
+  const license = font.license;
+  if (license.kind === 'text') {
+    rows.push({ label: 'License', value: license.text, block: true });
+    if (license.url) rows.push({ label: 'License text', value: license.url });
+  } else if (license.kind === 'url') rows.push({ label: 'License', value: `see ${license.url}` });
+  else if (license.kind === 'file')
+    rows.push({ label: 'License', value: license.headline ?? `see ${license.file}` }, { label: 'License file', value: `${license.file} (in the brand project, not in this kit)` });
+  else if (license.kind === 'unstated') rows.push({ label: 'License', value: NOT_STATED });
+  return rows;
+}
+
+/** The one line that lists the fallbacks, or undefined when there are none */
+export const fallbackLine = (fonts: KitFonts): string | undefined => (fonts.fallbacks.length > 0 ? `Fallback fonts, not shipped: ${fonts.fallbacks.join(', ')}` : undefined);
+
+/** fonts.txt */
+export function fontsText(fonts: KitFonts): string {
+  const lines = ['Fonts', ''];
+  for (const font of fonts.families) {
+    lines.push(font.name);
+    for (const row of fontRows(font))
+      if (row.block) lines.push(`  ${row.label}:`, ...row.value.split('\n').map((line) => `    ${line}`.trimEnd()));
+      else lines.push(`  ${row.label}: ${row.value}`);
+    lines.push('');
+  }
+  const fallback = fallbackLine(fonts);
+  if (fallback) lines.push(fallback);
+  return `${lines.join('\n').trimEnd()}\n`;
+}
 const ROLES: [role: string, label: string][] = [
   ['fontDisplay', 'headings (the fontDisplay role)'],
   ['fontBody', 'running text (the fontBody role)'],
@@ -65,14 +145,21 @@ export function licenseHeadline(text: string): string | undefined {
   return lines.find((line) => line !== '' && line.length <= 100 && !/^(copyright\b|\(c\)|©)/i.test(line));
 }
 
-export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'stylesheets'> & Partial<Pick<BrandRead, 'fontLicenses'>>): { text?: string; findings: Finding[] } {
+export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'stylesheets'> & Partial<Pick<BrandRead, 'fontLicenses'>>): {
+  text?: string;
+  model?: KitFonts;
+  findings: Finding[];
+} {
   const families = new Map<string, Family>();
-  const add = (name: string, usedFor?: string, stated?: Pick<Family, 'license' | 'licenseUrl' | 'source'>) => {
+  const add = (name: string, usedFor?: string, stated?: Stated) => {
     const family = families.get(name.toLowerCase()) ?? { name, usedFor: [] };
     if (usedFor && !family.usedFor.includes(usedFor)) family.usedFor.push(usedFor);
     family.license ??= stated?.license;
     family.licenseUrl ??= stated?.licenseUrl;
     family.source ??= stated?.source;
+    family.role ??= stated?.role;
+    family.reason ??= stated?.reason;
+    family.fallbackFor ??= stated?.fallbackFor;
     families.set(name.toLowerCase(), family);
   };
   const sheetNames = new Set<string>();
@@ -82,11 +169,12 @@ export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'style
     if (!/[()]/.test(name) && !sheetNames.has(name.toLowerCase())) fallbacks.set(name.toLowerCase(), fallbacks.get(name.toLowerCase()) ?? name);
   };
   /** The front family of a stack is a brand font unless it is a system one nothing loads and nothing states a source or license for; the rest of the stack is fallback */
-  const take = (stack: string | undefined, usedFor: string, stated?: Pick<Family, 'license' | 'licenseUrl' | 'source'>) => {
+  const take = (stack: string | undefined, usedFor: string, stated?: Stated) => {
     const name = fontOf(stack);
     for (const family of stack ? stackFamilies(stack) : []) {
       const brandFont =
-        family === name && (!SYSTEM_FAMILIES.has(family.toLowerCase()) || sheetNames.has(family.toLowerCase()) || !!(stated?.license || stated?.licenseUrl || stated?.source));
+        family === name &&
+        (!SYSTEM_FAMILIES.has(family.toLowerCase()) || sheetNames.has(family.toLowerCase()) || !!(stated?.license || stated?.licenseUrl || stated?.source || stated?.role));
       if (brandFont) add(family, usedFor, stated);
       else fallback(family);
     }
@@ -121,27 +209,33 @@ export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'style
     );
     return { findings };
   }
-  const lines = ['Fonts', ''];
   const unlicensed: string[] = [];
+  const stackFront = new Map(brand.fontTokens.map((token) => [token.path, fontOf(token.stack)]));
+  const kit: KitFont[] = [];
   for (const family of families.values()) {
-    lines.push(family.name);
-    if (family.usedFor.length > 0) lines.push(`  Used for: ${family.usedFor.join(', ')}`);
-    lines.push(`  Source: ${family.source ?? sources.get(family.name.toLowerCase()) ?? NOT_STATED}`);
-    if (family.license) {
-      lines.push('  License:', ...family.license.split('\n').map((line) => `    ${line}`.trimEnd()));
-      if (family.licenseUrl) lines.push(`  License text: ${family.licenseUrl}`);
-    } else if (family.licenseUrl) lines.push(`  License: see ${family.licenseUrl}`);
-    else if (family.fileLicense) {
-      const { headline, file } = family.fileLicense;
-      lines.push(`  License: ${headline ?? `see ${file}`}`, `  License file: ${file} (in the brand project, not in this kit)`);
-    } else {
-      lines.push(`  License: ${NOT_STATED}`);
-      unlicensed.push(family.name);
-    }
-    lines.push('');
+    const license: KitLicense = family.license
+      ? { kind: 'text', text: family.license, ...(family.licenseUrl && { url: family.licenseUrl }) }
+      : family.licenseUrl
+        ? { kind: 'url', url: family.licenseUrl }
+        : family.fileLicense
+          ? { kind: 'file', ...(family.fileLicense.headline && { headline: family.fileLicense.headline }), file: family.fileLicense.file }
+          : family.role === 'fallback'
+            ? { kind: 'none' }
+            : { kind: 'unstated' };
+    if (license.kind === 'unstated') unlicensed.push(family.name);
+    const source = family.source ?? sources.get(family.name.toLowerCase());
+    kit.push({
+      name: family.name,
+      usedFor: family.usedFor,
+      ...(family.role && { role: family.role }),
+      ...(family.reason && { reason: family.reason }),
+      ...(family.fallbackFor && { standsInFor: stackFront.get(family.fallbackFor) ?? family.fallbackFor }),
+      ...(source && { source }),
+      license,
+    });
   }
   const left = [...fallbacks].filter(([key]) => !families.has(key)).map(([, name]) => name);
-  if (left.length > 0) lines.push(`Fallback fonts, not shipped: ${left.join(', ')}`);
+  const model: KitFonts = { families: kit, fallbacks: left };
   if (unlicensed.length > 0)
     findings.push(
       finding(
@@ -151,7 +245,7 @@ export function planFonts(brand: Pick<BrandRead, 'roles' | 'fontTokens' | 'style
         `${unlicensed.length} ${unlicensed.length === 1 ? 'font has' : 'fonts have'} no license stated: ${unlicensed.join(', ')}; fonts.txt says "license not stated" for each`,
       ),
     );
-  return { text: `${lines.join('\n').trimEnd()}\n`, findings };
+  return { text: fontsText(model), model, findings };
 }
 
 /** The families the brand embeds as font files, lower case: the only ones the PDF is certain to set text in */

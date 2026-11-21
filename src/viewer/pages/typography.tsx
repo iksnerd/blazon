@@ -1,5 +1,6 @@
 import type { BlazonData, FontMeta, TokenItem } from '../../types/index.js';
 import { typographyClassName } from '../../core/tokens/names.js';
+import { cleanFontMeta } from '../../core/font-roles.js';
 import { findingsFor } from '@/lib/brand';
 import { copy } from '@/lib/copy';
 import { firstFamily, humanize, styleLabel } from '@/lib/tokens/format';
@@ -23,6 +24,9 @@ function FontFacts({ font }: { font: FontMeta }) {
   const license = [font.license, font.licenseUrl].filter(Boolean).join(', ');
   return (
     <span data-font-facts="" className="flex flex-col text-[13px] text-muted-foreground">
+      {font.role && <span>Role: {font.role}</span>}
+      {font.reason && <span>Why: {font.reason}</span>}
+      {font.fallbackFor && <span>Stands in for: {font.fallbackFor}</span>}
       {font.source && <span>Source: {font.source}</span>}
       {license && <span>License: {license}</span>}
     </span>
@@ -68,7 +72,7 @@ export function TypographyPage({ data }: { data: BlazonData }) {
                       {token.blazon.webFont && <span>{token.blazon.webFont}</span>}
                     </span>
                   )}
-                  {token.blazon.font && <FontFacts font={token.blazon.font} />}
+                  {token.blazon.font && <FontFacts font={cleanFontMeta(token.blazon.font)} />}
                   <code className="font-mono text-xs text-muted-foreground">{token.path}</code>
                 </button>
               ))}

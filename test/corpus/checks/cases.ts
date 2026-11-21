@@ -200,6 +200,10 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
     fail: { files: tokens({ font: { $type: 'fontFamily', brand: { $value: ['Kinto'], ...blazon({ font: { source: 7 } }) } } }) },
     near: { files: tokens({ font: { $type: 'fontFamily', brand: { $value: ['Kinto'], ...blazon({ font: { source: 'Kinto Foundry' } }) } } }) },
   },
+  'font-role-invalid': {
+    fail: { files: tokens({ font: { $type: 'fontFamily', brand: { $value: ['Kinto'], ...blazon({ font: { role: 'primary', reason: 'one\ntwo' } }) } } }) },
+    near: { files: tokens({ font: { $type: 'fontFamily', brand: { $value: ['Kinto'], ...blazon({ font: { role: 'primary', reason: 'Headlines and running text' } }) } } }) },
+  },
   'page-frontmatter-invalid': {
     fail: { files: { ...tokens(), 'docs/a.md': '---\ntitle: a: b\n---\n\nText\n' } },
     near: { files: { ...tokens(), 'docs/a.md': '---\ntitle: "a: b"\n---\n\nText\n' } },
