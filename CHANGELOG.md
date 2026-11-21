@@ -6,6 +6,12 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.5.1 (2026-11-21)
+
+### Fixed
+
+- The dev server waits for a folder that a config reload starts to watch before it sends the page its update. Before, an edit made right after a `tokensDir` (or other folder) change could be missed on a busy machine, and the page kept the old value until the next save.
+
 ## 0.5.0 (2026-11-21)
 
 Tagged, not released and not published to npm: its CI run failed on Linux (a hook lock test and a dev server test). Everything in it is part of 0.5.1.
