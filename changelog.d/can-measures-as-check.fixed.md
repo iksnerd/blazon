@@ -1,0 +1,1 @@
+`blazon can` and the `can_use` tool measure contrast with the same function as `blazon check`: a translucent foreground is blended over the background, so `#3885FF80` on white is 1.82:1, not 3.52:1. A translucent background is refused (exit 2). A usage rule is read before the colors, so a gradient that usage forbids is a denial with its reason instead of an error.

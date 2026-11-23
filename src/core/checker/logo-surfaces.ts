@@ -1,6 +1,6 @@
 import type { Finding, LogoSet, ThemeRole, TokenItem } from '../../types/index.js';
 import { logoDenial } from './logo-rules.js';
-import { contrastRatio, parseColor } from './contrast.js';
+import { contrastBetween, contrastRatio, parseColor } from './contrast.js';
 import { finding } from './catalogue.js';
 
 // The brand book shows each configured logo on the surface it is made for (the `blazon:logo-usage` tiles): the light logo on a light surface
@@ -66,7 +66,7 @@ export function logoSurfaceFindings(
     if (token && logoDenial(token, items, variant)) continue;
     for (const color of paintedColors(src)) {
       const painted = parseColor(color);
-      const ratio = painted ? contrastRatio(painted, surface) : undefined;
+      const ratio = painted ? contrastBetween(painted, surface) : undefined;
       if (ratio === undefined || ratio >= INVISIBLE_BELOW) continue;
       findings.push(
         finding('logo-contrast-insufficient', {

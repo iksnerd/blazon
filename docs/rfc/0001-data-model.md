@@ -141,6 +141,8 @@ Proportions ("60/30/10") and contrast pairings are group-level rules:
 }}
 ```
 
+Contrast for a pair, in `blazon check` and in the read command `blazon can` alike, is the WCAG 2.x ratio of the foreground over the background. A foreground with an alpha channel is composited over the background first, source-over in sRGB with straight alpha. A background with an alpha channel has no ratio: `check` reports `contrast-unknown`, and `can` refuses the pair.
+
 `proportion` keys are group paths with a share (as above), or labels with the tokens they cover when a brand's buckets do not match its groups: `"White": { "share": 0.5, "tokens": ["{color.neutral.white}"] }` (Auth0's web color usage, slide 84). Blazon checks the token references and that the shares add up to 100% (within 0.5%), but not the composition itself. `pairs` is checked (see 4).
 
 ### 3. Contexts use the DTCG resolver

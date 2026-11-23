@@ -18,11 +18,20 @@ function pairsOf(typed: unknown): { fg: string; bg: string }[] {
   });
 }
 
+/** The `--alpha` value as a number, or undefined when it was not typed. The parser hands a number-like value over as a number; anything else is refused here. */
+function alphaOf(typed: unknown): number | undefined {
+  if (typed === undefined) return undefined;
+  const value = typeof typed === 'number' ? typed : typeof typed === 'string' && typed.trim() !== '' ? Number(typed) : Number.NaN;
+  if (!(value >= 0 && value <= 1)) throw new UsageError(`--alpha takes a number from 0 to 1; got "${String(typed)}".`, undefined, 'invalid-option-value');
+  return value;
+}
+
 /**
  * `can_use`, `blazon can <fg> <bg>`: whether the foreground token may be text (`--role ui`: a non-text element) on the background token, by the brand's own rules. Prints the answer and the rule
- * behind it. With `--pair fg:bg` repeated, one answer for each pair. `--no-verbose` leaves out the checks of an allowed answer. Exit status: 0 allowed (every pair), 1 denied, 2 an unknown token, one that is not a color, or a wrong form.
+ * behind it. With `--pair fg:bg` repeated, one answer for each pair. `--alpha` measures the foreground at that opacity. `--no-verbose` leaves out the checks of an allowed answer. Exit status: 0 allowed (every pair), 1 denied, 2 an unknown token, one that is not a color, or a wrong form.
  */
-export const canUseHandler: Handler = async ({ fg, bg, role, theme, pairs, verbose }, { dir }) => {
+export const canUseHandler: Handler = async ({ fg, bg, role, theme, pairs, verbose, alpha }, { dir }) => {
+  const opacity = alphaOf(alpha);
   const batch = pairsOf(pairs);
   const single = fg !== undefined || bg !== undefined;
   if (batch.length > 0 && single) throw new UsageError('give fg and bg, or --pair, not both.', undefined, 'conflicting-options');
@@ -33,11 +42,11 @@ export const canUseHandler: Handler = async ({ fg, bg, role, theme, pairs, verbo
   const { data } = await readBrand(dir);
   const asRole = (role as CanRole | undefined) ?? 'text';
   if (batch.length > 0) {
-    const results = asked(() => canUseMany(data, batch, asRole, theme as string | undefined)).map(shown);
+    const results = asked(() => canUseMany(data, batch, asRole, theme as string | undefined, opacity)).map(shown);
     const allowed = results.every((r) => r.allowed);
     return { command: 'can', passed: allowed, status: allowed ? 0 : 1, body: { allowed, results }, text: () => results.forEach((r) => print(r)) };
   }
-  const answer = shown(asked(() => canUse(data, fg as string, bg as string, asRole, theme as string | undefined)));
+  const answer = shown(asked(() => canUse(data, fg as string, bg as string, asRole, theme as string | undefined, opacity)));
   return { command: 'can', passed: answer.allowed, status: answer.allowed ? 0 : 1, body: answer, text: () => print(answer) };
 };
 

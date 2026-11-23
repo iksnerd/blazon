@@ -16,7 +16,8 @@ export function coerceArgs(op: Operation, args: Record<string, unknown>): Record
   for (const [name, prop] of Object.entries(toolInput(op).properties)) {
     const value = out[name];
     if (typeof value !== 'string') continue;
-    if (prop.type === 'integer' && /^\s*-?\d+\s*$/.test(value)) out[name] = Number(value);
+    if (prop.type === 'number' && value.trim() !== '' && Number.isFinite(Number(value))) out[name] = Number(value);
+    else if (prop.type === 'integer' && /^\s*-?\d+\s*$/.test(value)) out[name] = Number(value);
     else if (prop.type === 'boolean' && /^(true|false)$/i.test(value.trim())) out[name] = value.trim().toLowerCase() === 'true';
   }
   return out;

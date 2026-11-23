@@ -456,7 +456,7 @@ export const OPERATIONS: readonly Operation[] = [
   {
     name: 'can_use',
     title: 'Can this color be used here',
-    description: `Answers whether one color token may be text on another color token, by the brand rules. Give \`fg\` and \`bg\` for one pair, or \`pairs\` (at most ${MAX_PAIRS}) for several in one call: the answer then has one result per pair, in order, and \`allowed\` is true only when every pair is. Exactly one of the two forms. Set \`role\` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. \`verbose\` false leaves out the \`checks\` of an allowed answer; a denial keeps them. A denied answer is a normal result (\`allowed\` is false, \`reason\` names the rule), not an error. Pairs come only from the \`pairs\` rules of token groups; component tokens are not read for them. For a color you have not picked, find one with list_tokens and type color.`,
+    description: `Answers whether one color token may be text on another color token, by the brand rules. Give \`fg\` and \`bg\` for one pair, or \`pairs\` (at most ${MAX_PAIRS}) for several in one call: the answer then has one result per pair, in order, and \`allowed\` is true only when every pair is. Exactly one of the two forms. Set \`role\` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. \`verbose\` false leaves out the \`checks\` of an allowed answer; a denial keeps them. Contrast is measured as \`check_brand\` measures it: a color with an alpha channel is blended over its background, and \`alpha\` sets the foreground's opacity. The usage rules are read first, so a token a rule forbids is a denial even when it is not a color. A background with an alpha channel is an error, because what is behind it is not known, and so is a token that is not a color when usage allows it. A denied answer is a normal result (\`allowed\` is false, \`reason\` names the rule), not an error. Pairs come only from the \`pairs\` rules of token groups; component tokens are not read for them. For a color you have not picked, find one with list_tokens and type color.`,
     annotations: READ_ONLY,
     inputSchema: input(
       {
@@ -498,6 +498,13 @@ export const OPERATIONS: readonly Operation[] = [
           default: 'text',
           description:
             'What the first color is: text (default), judged by the usage, pairs and WCAG text rules, or ui for a focus ring, border or icon stroke, judged by the usage rules and the 3:1 non-text contrast',
+        },
+        alpha: {
+          type: 'number',
+          minimum: 0,
+          maximum: 1,
+          description:
+            'Measure the first color at this opacity, 0 to 1, on top of any alpha the token already has (the two multiply). The pair still names tokens; only the measured ratio changes. Default: the token as it is',
         },
         theme: {
           type: 'string',
@@ -541,12 +548,17 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'string',
           enum: ['text', 'ui'],
         },
+        alpha: {
+          description: 'The opacity the first color was measured at, when alpha was given',
+          type: 'number',
+        },
         theme: {
           description: 'The theme context the pair was judged in; absent for the default tokens',
           type: 'string',
         },
         contrast: {
-          description: 'The contrast ratio of the pair, the strictest WCAG level it meets, and for role ui the threshold it had to reach',
+          description:
+            'The contrast ratio of the pair, the strictest WCAG level it meets, and for role ui the threshold it had to reach. Absent when a usage rule denied a pair whose colors cannot be measured',
           type: 'object',
         },
       },
@@ -577,6 +589,11 @@ export const OPERATIONS: readonly Operation[] = [
           property: 'role',
           value: 'text|ui',
           description: 'text (default) or ui: judge a non-text element by the 3:1 rule, with no pairs',
+        },
+        {
+          property: 'alpha',
+          value: '0-1',
+          description: 'measure the foreground at this opacity, 0 to 1, times its own alpha; a translucent background is refused (exit 2)',
         },
         {
           property: 'theme',

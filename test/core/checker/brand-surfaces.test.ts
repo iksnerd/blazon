@@ -44,6 +44,12 @@ describe('logo-contrast-insufficient', () => {
     expect(found[0]!.message).toMatch(/light-surface logo draws #FF5A1F[^]*accent color \(#FF5A1F\)[^]*1\.0:1/);
   });
 
+  it('blends translucent artwork over the surface, as check does, and does not judge a translucent surface', () => {
+    // opaque #1E1F21 on a white page is well apart; the same ink at 2% opacity is the page
+    expect(logoSurfaceFindings({ onLight: uri(svg(['#1E1F2105'])), onDark: uri(svg(['#F2F0EB'])) }, { background: '#ffffff' }, {}, [])).toHaveLength(1);
+    expect(logoSurfaceFindings({ onLight: uri(svg(['#FFFFFF'])), onDark: uri(svg(['#F2F0EB'])) }, { background: '#ffffff80' }, {}, [])).toHaveLength(0);
+  });
+
   it.each([['white'], ['#ffffff'], ['#fff'], ['WHITE'], ['rgb(255, 255, 255)']])('names white artwork on a white background however the white is written: %s', (fill) => {
     const found = logoSurfaceFindings({ onLight: uri(svg([fill])), onDark: uri(svg(['#F2F0EB'])) }, { background: '#ffffff' }, {}, []);
     expect(found).toHaveLength(1);
