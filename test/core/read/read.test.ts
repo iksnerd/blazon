@@ -129,6 +129,34 @@ describe('listTokens', () => {
   });
 });
 
+describe('a path that is not there', () => {
+  // One suggestion helper serves get_token, list_tokens, get_rules and can_use.
+  it('says did you mean for a near miss, in every reader', () => {
+    expect(() => describeToken(data, 'color.inc')).toThrow('did you mean "color.ink"');
+    expect(() => listTokens(data, { group: 'colr' })).toThrow('did you mean "color"');
+    expect(() => canUse(data, 'color.inc', 'surface.page')).toThrow('did you mean "color.ink"');
+    expect(() => canUse(data, 'text.body', 'surfce.page')).toThrow('did you mean "surface.page"');
+    expect(() => ruleEntries(data, 'colour')).toThrow('did you mean "color"');
+  });
+
+  it('names the tokens of the known group when a token in it is not there', () => {
+    expect(() => describeToken(data, 'color.slate.50')).toThrow('did you mean "color.ink", "color.paper" or "color.mid"');
+    expect(() => canUse(data, 'color.slate.50', 'surface.page')).toThrow('did you mean "color.ink", "color.paper" or "color.mid"');
+    expect(() => listTokens(data, { group: 'color.slate' })).toThrow('did you mean "color.brand"');
+  });
+
+  it('names a group that shares a word with an unknown path', () => {
+    expect(() => listTokens(data, { group: 'page.surface' })).toThrow('did you mean "surface"');
+    expect(() => describeToken(data, 'page.surface.base')).toThrow('did you mean "surface.page" or "surface.hot"');
+    expect(() => canUse(data, 'text.body', 'background.surface')).toThrow('did you mean "surface.page" or "surface.hot"');
+  });
+
+  it('adds nothing when the path is nothing like the brand', () => {
+    expect(() => listTokens(data, { group: 'zzzzzzzz' })).toThrow('no group "zzzzzzzz".');
+    expect(() => describeToken(data, 'zzzzzzzz')).toThrow('no token "zzzzzzzz".');
+  });
+});
+
 describe('rules', () => {
   it("carries a token's own usage rule and says where it is written", () => {
     expect(tokenRules(data, data.tokens.byPath.get('color.flame')!).usage).toEqual({ deny: ['text'], from: 'color.flame' });

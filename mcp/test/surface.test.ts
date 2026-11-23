@@ -135,6 +135,26 @@ describe.skipIf(!installed)('blazon-mcp tool surface', () => {
     }
   });
 
+  it('names no token path as if every brand had it, in any tool or field description', async () => {
+    // Token paths belong to the brand, not to blazon: a caller who copies one into a brand that lacks it gets an error and may give up.
+    // These are the paths the descriptions used to carry; a description says how to find a real path (run list_tokens) instead.
+    const HARD_CODED = ['surface.background', 'color.brand', 'text.primary', 'color.slate', 'color.blue'];
+    const all = (schema: Schema | undefined, at: string, into: [string, string][]): void => {
+      if (!schema || typeof schema !== 'object') return;
+      if (schema.description) into.push([at, schema.description]);
+      for (const [name, prop] of Object.entries(schema.properties ?? {})) all(prop, `${at}.${name}`, into);
+      if (schema.items) all(schema.items, `${at}[]`, into);
+    };
+    const problems: string[] = [];
+    for (const tool of await listTools()) {
+      const texts: [string, string][] = [[tool.name, tool.description ?? '']];
+      all(tool.inputSchema, `${tool.name}.input`, texts);
+      all(tool.outputSchema, `${tool.name}.output`, texts);
+      for (const [at, text] of texts) for (const path of HARD_CODED) if (text.includes(path)) problems.push(`${at} names ${path}`);
+    }
+    expect(problems).toEqual([]);
+  });
+
   it('states the numbers the code enforces, from the constants', async () => {
     const tools = await listTools();
     const text = (name: string) => tools.find((t) => t.name === name)!.description!;

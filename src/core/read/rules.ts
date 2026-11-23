@@ -1,7 +1,6 @@
 import type { ContrastLevel, BlazonData, BlazonExtension, TokenItem } from '../../types/index.js';
 import { expand } from '../checker/contrast.js';
-import { cleanPath, LookupError } from './lookup.js';
-import { closest } from '../suggest.js';
+import { cleanPath, didYouMean, groupPaths, LookupError } from './lookup.js';
 
 /** The rules the brand writes as data (RFC 0001 section 2), each with the token or group it is written on. */
 
@@ -153,18 +152,7 @@ export function ruleEntries(data: BlazonData, prefix: string): RuleEntry[] {
   const inside = (at: string) => wanted === '' || at === wanted || at.startsWith(`${wanted}.`);
   const exists = wanted === '' || data.tokens.items.some((t) => inside(t.path));
   if (!exists) {
-    const groups = [
-      ...new Set(
-        data.tokens.items.flatMap((t) =>
-          t.path
-            .split('.')
-            .slice(0, -1)
-            .map((_, i, parts) => parts.slice(0, i + 1).join('.')),
-        ),
-      ),
-    ];
-    const meant = closest(wanted, [...groups, ...data.tokens.items.map((t) => t.path)]);
-    throw new LookupError(`no token or group "${wanted}"${meant ? `; did you mean "${meant}"?` : '.'}`);
+    throw new LookupError(`no token or group "${wanted}"${didYouMean(data, wanted, [...groupPaths(data), ...data.tokens.items.map((t) => t.path)])}`);
   }
   const above = data.tokens.groupMeta.filter((g) => wanted !== '' && wanted.startsWith(`${g.path}.`));
   const entries = [
