@@ -2,7 +2,7 @@
 
 Design tokens, guidelines and brand assets in one repo, compiled into CSS, TypeScript and a brand book that looks like your brand.
 
-[Manual](docs/manual/index.md) · [Blazon's own brand book, as source](examples/blazon/) · [Plugins](#plugins) · [Architecture](ARCHITECTURE.md) · [RFCs](docs/rfc)
+[Website](https://blazon-dev.vercel.app) · [Manual](docs/manual/index.md) · [Blazon's own brand book, as source](examples/blazon/) · [Plugins](#plugins) · [Architecture](ARCHITECTURE.md) · [RFCs](docs/rfc)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Node 24 or later](https://img.shields.io/badge/node-%3E%3D24-brightgreen.svg)
 
