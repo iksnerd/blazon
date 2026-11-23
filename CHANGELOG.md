@@ -6,6 +6,13 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.5.2 (2026-11-23)
+
+### Fixed
+
+- The `get_logo` output description now says each logo asset has `files` (a list), not `file`, so an agent reading the tool list is not told the old shape. `variants` still carry one `file` each.
+- A logo that `logo` in blazon.json names by file is now that file in `blazon.press-kit`, even when its asset has other files. With `logos/mark.svg` and `logos/mark.png`, `"logo": "./assets/logos/mark.png"` shipped the SVG, filed under `background-not-stated`; the kit now ships the PNG under `on-light-backgrounds`. A logo that names an id still takes the default order.
+
 ## 0.5.1 (2026-11-21)
 
 ### Fixed
