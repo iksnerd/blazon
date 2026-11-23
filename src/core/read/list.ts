@@ -1,6 +1,5 @@
 import { TOKEN_TYPES, type BlazonData, type Tier, type TokenType } from '../../types/index.js';
-import { closest } from '../suggest.js';
-import { LookupError, cleanPath } from './lookup.js';
+import { LookupError, cleanPath, didYouMean, groupPaths } from './lookup.js';
 import { inTheme, themeNames } from './theme.js';
 
 /** The tiers a token can have, as `$extensions["dev.blazon"].tier` writes them. */
@@ -34,16 +33,6 @@ export interface TokenList {
   tokens: TokenListing[];
 }
 
-/** Every group path in the brand: `color`, `color.brand`, and so on, from the paths of its tokens. */
-function groupPaths(data: BlazonData): Set<string> {
-  const groups = new Set<string>();
-  for (const { path } of data.tokens.items) {
-    const parts = path.split('.');
-    for (let i = 1; i < parts.length; i++) groups.add(parts.slice(0, i).join('.'));
-  }
-  return groups;
-}
-
 /** Whether `typed` names a group of tokens and not a token. A path that is both is a token. */
 export function isGroupPath(data: BlazonData, typed: string): boolean {
   const wanted = cleanPath(typed);
@@ -72,8 +61,7 @@ export function listTokens(data: BlazonData, options: { group?: string; type?: s
     group = cleanPath(options.group);
     const groups = groupPaths(data);
     if (!groups.has(group)) {
-      const meant = closest(group, [...groups]);
-      throw new LookupError(`no group "${group}"${meant ? `; did you mean "${meant}"?` : '.'}`);
+      throw new LookupError(`no group "${group}"${didYouMean(data, group, [...groups])}`);
     }
   }
   const tokens = resolved.tokens.items

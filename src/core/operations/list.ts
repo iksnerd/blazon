@@ -174,7 +174,8 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'string',
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
-          description: 'A group path, for example color or color.brand. Leave out for every token',
+          description:
+            "A group path as list_tokens returns it, the part of a token path before its last dot (a path of the form `<group>.<token>` has the group `<group>`). Leave out for every token. Run list_tokens first to see the brand's groups",
         },
         type: {
           description: 'A token type, for example color, dimension or fontFamily. Leave out for every type. An unknown type is refused with the list of types',
@@ -302,7 +303,7 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'string',
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
-          description: 'The token path, for example color.brand.primary. A path from list_tokens works',
+          description: 'The token path, exactly as list_tokens returns it (a format such as `<group>.<token>`). Paths differ between brands: run list_tokens first',
         },
         theme: THEME('Read the value'),
         dir: {
@@ -378,7 +379,7 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'string',
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
-          description: 'A token or group path, for example color.brand. Leave out for the whole brand',
+          description: 'A token or group path as list_tokens returns it. Leave out for the whole brand. Paths differ between brands: run list_tokens first',
         },
         dir: {
           type: 'string',
@@ -432,13 +433,13 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'string',
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
-          description: 'The text color token path, for example text.primary. Give it with bg, or give pairs instead',
+          description: 'The text color token path, as list_tokens returns it for a color token. Give it with bg, or give pairs instead',
         },
         bg: {
           type: 'string',
           maxLength: 200,
           pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
-          description: 'The background color token path, for example surface.background. Give it with fg, or give pairs instead',
+          description: 'The background color token path, as list_tokens returns it for a color token. Give it with fg, or give pairs instead',
         },
         pairs: {
           type: 'array',
