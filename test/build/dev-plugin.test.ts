@@ -40,6 +40,9 @@ describe('blazon dev: the Vite plugin', () => {
 
     const json = html.match(/<script id="blazon-data" type="application\/json">(.*?)<\/script>/s)?.[1];
     expect(JSON.parse(json ?? 'null').tokens.items.length).toBeGreaterThan(10);
+    // the page names itself before any script runs: the brand's title, not the viewer's stand-in
+    expect(html).toContain(`<title>${(await loadConfig(project)).title}</title>`);
+    expect(html).not.toContain('<title>Brand Book</title>');
     // Vite turns the inline bridge into a module it serves, so it gets import.meta.hot
     expect(html).toMatch(/<script type="module" src="\/index\.html\?html-proxy&(amp;)?index=\d\.js">/);
   });

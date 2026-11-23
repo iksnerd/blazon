@@ -1,0 +1,1 @@
+The built brand book, and the dev server's page, name themselves in their HTML: the brand's `title` is the page `<title>` and the Open Graph title, and its `description` is the description and Open Graph description tags. Before, the HTML said "Brand Book" for every brand until the script ran, so a link preview, a search result and the tab while loading showed the generic name.

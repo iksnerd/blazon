@@ -35,6 +35,41 @@ describe('injectBlazonData', () => {
     expect(scripts).toBe(1);
   });
 
+  const docOf = (html: string) => new DOMParser().parseFromString(html, 'text/html');
+  const meta = (doc: Document, selector: string) => doc.querySelector(selector)?.getAttribute('content');
+
+  it("sets the page title to the brand's own, where a browser tab, a link preview and a search result read it before any script runs", () => {
+    const doc = docOf(injectBlazonData(VIEWER_HTML, { title: 'Acme Brand Book', description: 'How Acme looks' } as BlazonData));
+    expect(doc.title).toBe('Acme Brand Book');
+    expect(doc.querySelectorAll('title')).toHaveLength(1);
+    expect(meta(doc, 'meta[name="description"]')).toBe('How Acme looks');
+    expect(meta(doc, 'meta[property="og:title"]')).toBe('Acme Brand Book');
+    expect(meta(doc, 'meta[property="og:description"]')).toBe('How Acme looks');
+  });
+
+  it('writes no description tag for a brand with no description, and still names the page', () => {
+    const doc = docOf(injectBlazonData(VIEWER_HTML, { title: 'Acme' } as BlazonData));
+    expect(doc.title).toBe('Acme');
+    expect(doc.querySelector('meta[name="description"]')).toBeNull();
+    expect(doc.querySelector('meta[property="og:description"]')).toBeNull();
+    expect(meta(doc, 'meta[property="og:title"]')).toBe('Acme');
+  });
+
+  it('keeps markup in a title or description inside its tag', () => {
+    const hostile = '</title><script>alert(1)</script>"><img src=x onerror=alert(1)> & <b>';
+    const doc = docOf(injectBlazonData(VIEWER_HTML, { title: hostile, description: hostile } as BlazonData));
+    expect(doc.title).toBe(hostile);
+    expect(meta(doc, 'meta[name="description"]')).toBe(hostile);
+    expect(meta(doc, 'meta[property="og:title"]')).toBe(hostile);
+    expect(doc.querySelectorAll('script')).toHaveLength(1);
+    expect(doc.querySelector('img')).toBeNull();
+  });
+
+  it('adds a title to a page that has none', () => {
+    const doc = docOf(injectBlazonData('<html><head></head><body></body></html>', { title: 'Acme' } as BlazonData));
+    expect(doc.title).toBe('Acme');
+  });
+
   it('refuses a viewer page with no head', () => {
     expect(() => injectBlazonData('<div id="root"></div>', dataWith('x'))).toThrow(/no <\/head>/);
   });

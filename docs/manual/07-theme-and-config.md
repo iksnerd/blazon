@@ -19,7 +19,7 @@
 
 | Key | Default | Does |
 |---|---|---|
-| `title` | `<package.json name> Brand Book`, else `Blazon Brand Book` | The brand book's title |
+| `title` | `<package.json name> Brand Book`, else `Blazon Brand Book` | The brand book's title: the heading, and the built page's `<title>` and Open Graph title |
 | `description` | `Design tokens and brand guidelines` | A tagline |
 | `tokensDir` | `./tokens` | Where the token files are. It must be inside the project folder, as `docsDir`, `assetsDir`, `resolver`, `outDir`, `tokensOutDir` and the `logo` files must: a path or a link that leaves it is the [`config-path-outside`](03-checks.md) error, and nothing is read from it or written to it. `blazon build -o` is the one way to put the site elsewhere. A category's `dir` may name a shared folder only when the person running blazon approves it with `--allow-dir <folder>` or `BLAZON_ALLOW_DIRS`: the config cannot approve a folder, see [An extra folder](06-assets-and-icons.md#an-extra-folder) |
 | `docsDir` | `./docs` | Where the pages are |

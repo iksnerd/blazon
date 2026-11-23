@@ -8,7 +8,7 @@ import { serveIconSets } from './icon-sets.js';
 import { categoryDirs as categoryDirsOf } from '../core/assets/categories.js';
 import { formatBrandJson } from '../core/brand/export.js';
 import { BRAND_SCHEMA_FILE, formatBrandSchema } from '../core/brand/schema.js';
-import { DATA_SCRIPT_ID, serializeBlazonData } from './data-script.js';
+import { DATA_SCRIPT_ID, serializeBlazonData, withBrandHead } from './data-script.js';
 import { CONFIG_FILE, loadConfig } from '../core/config/index.js';
 import { DevChecks } from '../plugins/roles/dev.js';
 import { coalesce } from './coalesce.js';
@@ -276,7 +276,7 @@ export function createBlazonVitePlugin(initialConfig: BlazonConfig, cwd: string 
             injectTo: 'head',
           });
         }
-        return { html, tags };
+        return { html: withBrandHead(html, data), tags };
       },
     },
   };
