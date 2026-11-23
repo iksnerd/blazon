@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { DEFAULT_CONFIG } from '../../../src/core/config/index.js';
 import { compileBlazonData } from '../../../src/core/index.js';
@@ -297,18 +300,83 @@ describe('describeFonts with a role', () => {
   });
 });
 
+const sha256Of = (file: string) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+
 describe('describeLogo', () => {
   it('gives the configured variant, the asset it is, its sidecar rules and the backgrounds that forbid a variant', () => {
     const logo = describeLogo(data, config, root);
-    expect(logo.variants).toEqual([{ variant: 'onLight', file: 'assets/logos/mark.svg', found: true, asset: 'logos/mark', ink: '#0033cc' }]);
+    expect(logo.variants).toEqual([
+      {
+        variant: 'onLight',
+        file: 'assets/logos/mark.svg',
+        found: true,
+        asset: 'logos/mark',
+        ink: '#0033cc',
+        path: path.join(root, 'assets/logos/mark.svg'),
+        sha256: sha256Of(path.join(root, 'assets/logos/mark.svg')),
+      },
+    ]);
     expect(logo.assets).toEqual([
       {
         id: 'logos/mark',
         files: ['assets/logos/mark.svg'],
+        details: [
+          {
+            file: 'assets/logos/mark.svg',
+            path: path.join(root, 'assets/logos/mark.svg'),
+            sha256: sha256Of(path.join(root, 'assets/logos/mark.svg')),
+            bytes: Buffer.byteLength(LOGO),
+            format: 'svg',
+          },
+        ],
         variants: ['onLight'],
         rules: expect.objectContaining({ lockup: 'mark', clearSpace: { value: 8, unit: 'px' }, ink: '#0033cc' }),
       },
     ]);
     expect(logo.forbidden).toEqual([{ at: 'color.brand', deny: ['onDark'], reason: 'the mark vanishes' }]);
+  });
+});
+
+describe('describeLogo, for a caller outside the brand folder', () => {
+  const PNG = Buffer.alloc(40, 7);
+
+  it('gives an id with two files one detail each, in the order of files, with the hash of the bytes', async () => {
+    const dir = tempProject({ 'tokens/a.json': tokens, 'assets/logos/acme.svg': LOGO });
+    fs.writeFileSync(path.join(dir, 'assets/logos/acme.png'), PNG);
+    const cfg = { ...DEFAULT_CONFIG, logo: { onLight: 'assets/logos/acme.png' } };
+    const logo = describeLogo(await compileBlazonData(cfg, dir), cfg, dir);
+    const asset = logo.assets[0]!;
+    expect(asset.files).toHaveLength(2);
+    expect(asset.details!.map((d) => d.file)).toEqual(asset.files);
+    for (const d of asset.details!) {
+      expect(path.isAbsolute(d.path!)).toBe(true);
+      expect(d.path).toBe(path.join(dir, d.file));
+      expect(d.sha256).toBe(sha256Of(d.path!));
+      expect(d.bytes).toBe(fs.statSync(d.path!).size);
+    }
+    expect(asset.details!.map((d) => d.format).sort()).toEqual(['png', 'svg']);
+    expect(logo.variants[0]).toMatchObject({ path: path.join(dir, 'assets/logos/acme.png'), sha256: createHash('sha256').update(PNG).digest('hex') });
+  });
+
+  it('says nothing but the file for a file that cannot be read, and does not throw', async () => {
+    const dir = tempProject({ 'tokens/a.json': tokens, 'assets/logos/acme.svg': LOGO });
+    fs.writeFileSync(path.join(dir, 'assets/logos/acme.png'), PNG);
+    const cfg = { ...DEFAULT_CONFIG, logo: { onLight: 'assets/logos/acme.svg' } };
+    const compiled = await compileBlazonData(cfg, dir);
+    fs.rmSync(path.join(dir, 'assets/logos/acme.svg'));
+    const logo = describeLogo(compiled, cfg, dir);
+    const [first, second] = logo.assets[0]!.details!;
+    const gone = [first, second].find((d) => d!.file.endsWith('.svg'))!;
+    expect(gone).toEqual({ file: 'assets/logos/acme.svg' });
+    expect([first, second].find((d) => d!.file.endsWith('.png'))!.sha256).toBeDefined();
+    expect(logo.variants[0]).not.toHaveProperty('path');
+    expect(logo.variants[0]).not.toHaveProperty('sha256');
+  });
+
+  it('gives a variant whose file is not there no path', async () => {
+    const dir = tempProject({ 'tokens/a.json': tokens });
+    const cfg = { ...DEFAULT_CONFIG, logo: { onLight: 'assets/logos/none.svg' } };
+    const logo = describeLogo(await compileBlazonData(cfg, dir), cfg, dir);
+    expect(logo.variants[0]).toEqual({ variant: 'onLight', file: 'assets/logos/none.svg', found: false });
   });
 });

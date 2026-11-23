@@ -153,7 +153,11 @@ describe('blazon logo (get_logo)', () => {
     const config = { ...logoConfig(root), logo: './assets/logos/mark.png' };
     const data = await compileBlazonData(config, root);
     const logo = describeLogo(data, config, root);
-    expect(logo.assets).toEqual([{ id: 'logos/mark', files: ['assets/logos/mark.svg', 'assets/logos/mark.png'], variants: ['onLight'], rules: { lockup: 'mark' } }]);
+    expect(logo.assets).toEqual([
+      { id: 'logos/mark', files: ['assets/logos/mark.svg', 'assets/logos/mark.png'], details: expect.any(Array), variants: ['onLight'], rules: { lockup: 'mark' } },
+    ]);
+    // the details keep the order of files
+    expect(logo.assets[0]!.details!.map((d) => d.file)).toEqual(logo.assets[0]!.files);
     // brand.json keeps one entry for each file, with the same id
     expect(buildBrandExport(data, { ...DEFAULT_CONFIG }, root).assets.filter((a) => a.id === 'logos/mark')).toHaveLength(2);
   });
