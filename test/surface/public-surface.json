@@ -24,6 +24,7 @@
     ],
     "options": [
       "--allow-dir <folder>",
+      "--alpha <0-1>",
       "--base <url-prefix>",
       "--brand <dir>",
       "--check",

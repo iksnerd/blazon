@@ -3,6 +3,7 @@
 /** A property of an operation's input. The shapes are the ones both the command line and a tool can take. */
 export type Prop =
   | { type: 'string'; description: string; default?: string; enum?: readonly string[]; maxLength?: number; pattern?: string }
+  | { type: 'number'; description: string; default?: number; minimum?: number; maximum?: number }
   | { type: 'integer'; description: string; default?: number; minimum?: number; maximum?: number }
   | { type: 'boolean'; description: string; default?: boolean }
   | { type: 'array'; description: string; items: JsonSchema; minItems?: number; maxItems?: number };

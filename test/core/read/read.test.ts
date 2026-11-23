@@ -251,7 +251,7 @@ describe('canUse', () => {
     const asText = canUse(brand, 'c.mid', 'c.page');
     const asUi = canUse(brand, 'c.mid', 'c.page', 'ui');
     expect(asText).toMatchObject({ role: 'text', allowed: true });
-    expect(asText.contrast.threshold).toBeUndefined();
+    expect(asText.contrast?.threshold).toBeUndefined();
     expect(asUi).toMatchObject({ role: 'ui', allowed: true, contrast: { ratio: 3.03, threshold: 3 } });
     expect(asUi.checks.find((c) => c.rule === 'pairs')?.message).toContain('do not apply');
     expect(canUse(brand, 'c.pale', 'c.page', 'ui')).toMatchObject({ allowed: false, reason: 'non-text contrast needs 3:1, this is 1.36:1' });
