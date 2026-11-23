@@ -111,6 +111,18 @@ Every tool returns blazon's JSON twice: as structured content that matches the t
 
 The server also offers two resources, `blazon://rules` (every rule of the brand) and `blazon://brand` (the compiled brand), and a prompt, `build_page`, that carries the workflow of [chapter 19](19-building-a-website.md) for a page you describe. The server's instructions are short: the order `check_brand`, `list_tokens`, `get_token`, `can_use`, and the two limits above.
 
+## What blazon judges and what it only publishes
+
+| Blazon judges (`blazon check`, and the `can_use` verdict) | Blazon publishes, and the agent follows |
+|---|---|
+| `usage` rules on tokens | A logo's `placement` |
+| Listed contrast `pairs` | `do` and `dont` lines |
+| A logo's `colorways` | `misuse` figures |
+| `logo.deny` and logo contrast | Clear space (the social-cards plugin checks it on its cards) |
+| The shape of a sidecar | A token's `$description` |
+
+Blazon does not check an app's layout. A right-hand cell is data in `brand.json` and the tool answers: the agent reads it and keeps to it.
+
 ## A skill for the agent
 
 The blazon repository holds an Agent Skill, `skills/blazon/SKILL.md`, that teaches an agent the working loop on a brand book: `blazon check`, `blazon can` for contrast, the tools above and when to use each, where tokens live, what never to edit, how to read a finding and how to add a token or a page. It points at this manual instead of repeating it. To install it, copy the `skills/blazon` folder into the agent's skills directory (for Claude Code, `.claude/skills/` in the project or `~/.claude/skills/` for every project). It works with or without the MCP server.
