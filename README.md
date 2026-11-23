@@ -68,7 +68,7 @@ npx blazon mcp --print-config --client claude-code --brand my-brand
 npx blazon mcp --check --brand my-brand                # finds the server? finds blazon? answers a real handshake? registered?
 ```
 
-`--print-config` prints the command that registers it: `node`, the installed server file, `--brand` and `BLAZON_BIN`. To run the server by hand without installing, `npx -y -p @iksnerd/blazon blazon-mcp --brand my-brand` does it (`blazon-mcp --version` names the MCP SDK and zod it carries).
+`--print-config` prints the command that registers it: `node`, the installed server file, `--brand` and `BLAZON_BIN`, under the brand's own name (`acme-brand` for a brand titled `Acme`; `--name` chooses another). To run the server by hand without installing, `npx -y -p @iksnerd/blazon blazon-mcp --brand my-brand` does it (`blazon-mcp --version` names the MCP SDK and zod it carries).
 
 `blazon mcp --check` writes no file, prints a `fix` command for each check that fails, and exits 1 when the server is not ready. It starts the server on the brand folder, which compiles it with no plugin; what a brand says reaches your agent as tool results, so use a brand you trust. [Blazon for agents](docs/manual/20-blazon-for-agents.md) has the tools and the clients. For an agent that reads skills, [`skills/blazon/SKILL.md`](skills/blazon/SKILL.md) teaches the loop (check, contrast, MCP tools, what never to edit).
 

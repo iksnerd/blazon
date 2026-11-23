@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { DEFAULT_CONFIG } from './config/defaults.js';
 import { packageRoot } from './package-root.js';
 
 export const MCP_CLIENTS = ['claude-code', 'claude-desktop', 'cursor', 'vscode'] as const;
@@ -59,6 +60,34 @@ export function resolveMcpLaunch(root: string = packageRoot(), node: string = pr
   return { command: node, args: [entry], env, built: false, problem: isSourceCheckout(root) ? NOT_BUILT : INCOMPLETE_INSTALL };
 }
 
+/** The name a client registers the server under when the brand gives it nothing better. */
+export const DEFAULT_MCP_NAME = 'blazon';
+const MCP_NAME = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+/** Whether a client accepts it as a server name: letters, digits, hyphens and underscores, starting with a letter or digit, 64 at most. */
+export const isMcpName = (name: string): boolean => MCP_NAME.test(name);
+
+/**
+ * The name to register the server under: the brand's title as a slug, with `-brand` unless the title already says brand (`acme-brand`,
+ * `acme-brand-guidelines`). Two brands then sit side by side in one client config, and an agent sees whose tools it calls. `blazon` when
+ * the brand has no title of its own: none, nothing left of it as a slug, or the title blazon gives a new book. A client lists a server by
+ * this name (it is the prefix of the tool names), so a brand's name here is the one thing that tells two of them apart.
+ */
+export function mcpServerName(title: string | undefined): string {
+  const base = (title ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .slice(0, 40)
+    .replace(/-+$/, '');
+  // `<name> Brand Book` is the title a new project gets: the book is not part of the name, so it is `<name>-brand`. A title that is nothing but
+  // that has no name in it.
+  const name = base.replace(/-brand-book$/, '-brand');
+  if (name === '' || name === 'brand' || name === 'brand-book' || title === DEFAULT_CONFIG.title) return DEFAULT_MCP_NAME;
+  return name.split('-').includes('brand') ? name : `${name}-brand`;
+}
+
 /** A word safe in a POSIX shell: quoted only when it has to be. */
 const shell = (word: string): string => (/^[A-Za-z0-9_@%+=:,./-]+$/.test(word) ? word : `'${word.replace(/'/g, `'\\''`)}'`);
 
@@ -79,7 +108,7 @@ function entry(launch: McpLaunch, brand: string | undefined, type: boolean): Rec
   };
 }
 
-const json = (key: 'mcpServers' | 'servers', value: Record<string, unknown>): string => JSON.stringify({ [key]: { blazon: value } }, null, 2);
+const json = (key: 'mcpServers' | 'servers', name: string, value: Record<string, unknown>): string => JSON.stringify({ [key]: { [name]: value } }, null, 2);
 
 /**
  * The text that registers blazon-mcp (stdio) in one client. `brand` is an absolute folder, or undefined to leave `--brand` out
@@ -87,7 +116,7 @@ const json = (key: 'mcpServers' | 'servers', value: Record<string, unknown>): st
  * Claude Code `claude mcp add` and `.mcp.json`, Claude Desktop `claude_desktop_config.json`, Cursor `.cursor/mcp.json`,
  * VS Code `.vscode/mcp.json` (`servers`, with `type`) and `code --add-mcp`.
  */
-export function buildMcpConfig(client: McpClient, launch: McpLaunch, brand?: string): McpConfig {
+export function buildMcpConfig(client: McpClient, launch: McpLaunch, brand?: string, name: string = DEFAULT_MCP_NAME): McpConfig {
   const note = launch.built ? undefined : launch.problem;
   const args = [...launch.args, ...(brand === undefined ? [] : ['--brand', brand])];
   const base = { client, title: TITLES[client], built: launch.built, ...(note && { note }) };
@@ -95,12 +124,12 @@ export function buildMcpConfig(client: McpClient, launch: McpLaunch, brand?: str
     case 'claude-code': {
       // `--env` may not be followed directly by the name, so `--transport stdio` sits between them
       const env = Object.entries(launch.env).flatMap(([k, v]) => ['--env', `${k}=${v}`]);
-      const add = ['claude', 'mcp', 'add', '--scope', 'project', ...env, '--transport', 'stdio', 'blazon', '--', launch.command, ...args].map(shell).join(' ');
+      const add = ['claude', 'mcp', 'add', '--scope', 'project', ...env, '--transport', 'stdio', name, '--', launch.command, ...args].map(shell).join(' ');
       return {
         ...base,
         snippets: [
           { kind: 'command', label: 'Command (writes .mcp.json at the project root)', text: add },
-          { kind: 'json', label: '.mcp.json', text: json('mcpServers', entry(launch, brand, false)) },
+          { kind: 'json', label: '.mcp.json', text: json('mcpServers', name, entry(launch, brand, false)) },
         ],
       };
     }
@@ -111,19 +140,22 @@ export function buildMcpConfig(client: McpClient, launch: McpLaunch, brand?: str
           {
             kind: 'json',
             label: 'claude_desktop_config.json (macOS: ~/Library/Application Support/Claude/, Windows: %APPDATA%\\Claude\\, Linux: ~/.config/Claude/)',
-            text: json('mcpServers', entry(launch, brand, false)),
+            text: json('mcpServers', name, entry(launch, brand, false)),
           },
         ],
       };
     case 'cursor':
-      return { ...base, snippets: [{ kind: 'json', label: '.cursor/mcp.json (or ~/.cursor/mcp.json for every project)', text: json('mcpServers', entry(launch, brand, true)) }] };
+      return {
+        ...base,
+        snippets: [{ kind: 'json', label: '.cursor/mcp.json (or ~/.cursor/mcp.json for every project)', text: json('mcpServers', name, entry(launch, brand, true)) }],
+      };
     case 'vscode': {
-      const add = `code --add-mcp ${shell(JSON.stringify({ name: 'blazon', ...entry(launch, brand, true) }))}`;
+      const add = `code --add-mcp ${shell(JSON.stringify({ name, ...entry(launch, brand, true) }))}`;
       return {
         ...base,
         snippets: [
           { kind: 'command', label: 'Command (adds it to your VS Code user profile)', text: add },
-          { kind: 'json', label: '.vscode/mcp.json', text: json('servers', entry(launch, brand, true)) },
+          { kind: 'json', label: '.vscode/mcp.json', text: json('servers', name, entry(launch, brand, true)) },
         ],
       };
     }
@@ -131,8 +163,8 @@ export function buildMcpConfig(client: McpClient, launch: McpLaunch, brand?: str
 }
 
 /** Every client's config, in the order of {@link MCP_CLIENTS}. What the dev server hands the brand book's "Connect your agent" panel. */
-export function allMcpConfigs(launch: McpLaunch, brand?: string): McpConfig[] {
-  return MCP_CLIENTS.map((client) => buildMcpConfig(client, launch, brand));
+export function allMcpConfigs(launch: McpLaunch, brand?: string, name: string = DEFAULT_MCP_NAME): McpConfig[] {
+  return MCP_CLIENTS.map((client) => buildMcpConfig(client, launch, brand, name));
 }
 
 export const isMcpClient = (value: string): value is McpClient => (MCP_CLIENTS as readonly string[]).includes(value);

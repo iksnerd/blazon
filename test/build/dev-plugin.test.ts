@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createServer, type ViteDevServer } from 'vite';
 import { starterProject } from '../support/init-project';
 import { loadConfig } from '../../src/core/config/index.js';
+import { mcpServerName } from '../../src/core/mcp-config.js';
 import { createBlazonVitePlugin } from '../../src/server/plugin.js';
 
 describe('blazon dev: the Vite plugin', () => {
@@ -53,6 +54,12 @@ describe('blazon dev: the Vite plugin', () => {
     // the command is node and the server file of this blazon, never the npx form of a package that is not on npm
     expect(JSON.stringify(body.clients)).not.toMatch(/npx|blazon-mcp@|not published/);
     expect(JSON.stringify(body.clients)).toContain('mcp/dist/index.js');
+    // the server is registered under the brand's name, as `blazon mcp --print-config` does, and not as blazon
+    const name = mcpServerName((await loadConfig(project)).title);
+    expect(name).not.toBe('blazon');
+    const claude = body.clients.find((c: { client: string }) => c.client === 'claude-code');
+    const registered = JSON.parse(claude.snippets.find((snippet: { kind: string }) => snippet.kind === 'json').text);
+    expect(Object.keys(registered.mcpServers)).toEqual([name]);
   });
 
   it('pushes fresh data to open pages when a token file changes', async () => {

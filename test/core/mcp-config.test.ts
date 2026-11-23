@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { tempDir } from '../support/project';
-import { allMcpConfigs, buildMcpConfig, isMcpClient, MCP_CLIENTS, resolveMcpLaunch, type McpLaunch } from '../../src/core/mcp-config.js';
+import { allMcpConfigs, buildMcpConfig, isMcpClient, isMcpName, MCP_CLIENTS, mcpServerName, resolveMcpLaunch, type McpLaunch } from '../../src/core/mcp-config.js';
 
 const BUILT: McpLaunch = { command: '/usr/bin/node', args: ['/f/mcp/dist/index.js'], env: { BLAZON_BIN: '/f/bin/blazon.js' }, built: true };
 const UNBUILT: McpLaunch = { command: '/usr/bin/node', args: ['/f/mcp/dist/index.js'], env: {}, built: false, problem: 'the server file is missing' };
@@ -45,6 +45,55 @@ describe('resolveMcpLaunch', () => {
     fs.mkdirSync(path.join(root, 'mcp'));
     fs.writeFileSync(path.join(root, 'mcp/package.json'), '{}');
     expect(resolveMcpLaunch(root, '/n/node').problem).toContain('npm run build -w mcp');
+  });
+});
+
+describe('mcpServerName', () => {
+  it('names the server after the brand: its title as a slug, with -brand unless the title already says brand', () => {
+    expect(mcpServerName('Acme')).toBe('acme-brand');
+    expect(mcpServerName('Acme Corp')).toBe('acme-corp-brand');
+    expect(mcpServerName('Acme Brand Guidelines')).toBe('acme-brand-guidelines');
+    expect(mcpServerName('Café Müller')).toBe('cafe-muller-brand');
+    // the title a new project gets is `<name> Brand Book`: the book is not part of the name
+    expect(mcpServerName('Acme Brand Book')).toBe('acme-brand');
+    expect(mcpServerName('acme-corp Brand Book')).toBe('acme-corp-brand');
+  });
+
+  it('is blazon when there is no brand title to use: none, empty, only symbols, or the title blazon gives a new book', () => {
+    for (const title of [undefined, '', '   ', '***', 'Blazon Brand Book', 'Brand Book', 'Brand']) expect(mcpServerName(title), String(title)).toBe('blazon');
+  });
+
+  it('is always a name a client accepts, however long or odd the title is', () => {
+    const long = mcpServerName(`${'Very long company name '.repeat(10)}`);
+    expect(long.length).toBeLessThanOrEqual(48);
+    for (const title of ['Acme', '../../etc', 'a b/c', '日本語', 'x'.repeat(200)]) expect(isMcpName(mcpServerName(title)), title).toBe(true);
+  });
+
+  it('isMcpName takes letters, digits, hyphens and underscores, starting with a letter or digit, and nothing else', () => {
+    for (const ok of ['blazon', 'acme-brand', 'Acme_1', '9lives']) expect(isMcpName(ok), ok).toBe(true);
+    for (const bad of ['', '-x', 'a b', 'a/b', 'a.b', 'é', 'x'.repeat(65)]) expect(isMcpName(bad), bad).toBe(false);
+  });
+});
+
+describe('buildMcpConfig with a server name', () => {
+  it('registers every client under the name it is given, and under blazon when it is given none', () => {
+    const named = (client: (typeof MCP_CLIENTS)[number], key: 'mcpServers' | 'servers') =>
+      Object.keys(JSON.parse(buildMcpConfig(client, BUILT, '/b', 'acme-brand').snippets.find((s) => s.kind === 'json')!.text)[key]);
+    expect(named('claude-code', 'mcpServers')).toEqual(['acme-brand']);
+    expect(named('claude-desktop', 'mcpServers')).toEqual(['acme-brand']);
+    expect(named('cursor', 'mcpServers')).toEqual(['acme-brand']);
+    expect(named('vscode', 'servers')).toEqual(['acme-brand']);
+    expect(Object.keys(jsonOf('cursor', BUILT, '/b').mcpServers)).toEqual(['blazon']);
+  });
+
+  it('puts the name in the Claude Code command and in the VS Code --add-mcp JSON', () => {
+    expect(buildMcpConfig('claude-code', BUILT, '/b', 'acme-brand').snippets[0]!.text).toContain('--transport stdio acme-brand -- ');
+    const add = buildMcpConfig('vscode', BUILT, '/b', 'acme-brand').snippets[0]!.text;
+    expect(JSON.parse(add.replace(/^code --add-mcp '/, '').replace(/'$/, '')).name).toBe('acme-brand');
+  });
+
+  it('allMcpConfigs passes the name to every client', () => {
+    for (const config of allMcpConfigs(BUILT, '/b', 'acme-brand')) expect(JSON.stringify(config.snippets), config.client).toContain('acme-brand');
   });
 });
 

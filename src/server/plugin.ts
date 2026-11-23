@@ -15,7 +15,7 @@ import { coalesce } from './coalesce.js';
 import { ErrorReporter } from './error-reporter.js';
 import { LOCK_FILE } from '../plugins/pins/lock.js';
 import { BLAZON_LOCK, blazonIdentity, blazonPinFindings, type BlazonIdentity } from '../core/blazon-pin.js';
-import { allMcpConfigs, resolveMcpLaunch } from '../core/mcp-config.js';
+import { allMcpConfigs, mcpServerName, resolveMcpLaunch } from '../core/mcp-config.js';
 import { inputFiles as projectFiles, projectInputs } from '../core/inputs.js';
 
 /** How long the file events of a burst may be apart and still be one change: a `git checkout` of dozens of files sends one update, a save sends its own a moment later. */
@@ -150,12 +150,20 @@ export function createBlazonVitePlugin(initialConfig: BlazonConfig, cwd: string 
         );
       });
 
-      // How to register blazon-mcp in each client for this project, for the "Connect your agent" panel; the brand is this project's folder
+      // How to register blazon-mcp in each client for this project, for the "Connect your agent" panel; the brand is this project's folder, and the
+      // server is named after it (the title now, as a config reload may change it), as `blazon mcp --print-config` does
       devServer.middlewares.use('/__blazon/mcp-config', (req, res, next) => {
         if (req.method && req.method !== 'GET') return next();
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.setHeader('Cache-Control', 'no-store');
-        res.end(JSON.stringify({ format: 'blazon-mcp-config', version: 1, brand: path.resolve(cwd), clients: allMcpConfigs(resolveMcpLaunch(), path.resolve(cwd)) }));
+        res.end(
+          JSON.stringify({
+            format: 'blazon-mcp-config',
+            version: 1,
+            brand: path.resolve(cwd),
+            clients: allMcpConfigs(resolveMcpLaunch(), path.resolve(cwd), mcpServerName(config.title)),
+          }),
+        );
       });
 
       // Before /brand-assets, which would take the icon-sets path for one of its own; getters, so a config reload takes effect

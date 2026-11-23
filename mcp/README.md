@@ -81,7 +81,7 @@ This runs `scripts/build-mcp.mjs`, which bundles `mcp/src/index.ts`, the MCP SDK
 
 ## Print the config
 
-`blazon mcp --print-config [--client claude-code|claude-desktop|cursor|vscode] [--brand <dir>] [--json]` prints the command or JSON that registers this server in a client, with an absolute brand folder when `--brand` is given. It writes no file. It names `node`, the `mcp/dist/index.js` of the blazon that runs it (an installed package ships it) and `BLAZON_BIN`. If an install has lost that file it prints nothing and says to reinstall. `blazon dev` offers the same in a "Connect your agent" panel. The sections below show the formats by hand.
+`blazon mcp --print-config [--client claude-code|claude-desktop|cursor|vscode] [--brand <dir>] [--name <name>] [--json]` prints the command or JSON that registers this server in a client, with an absolute brand folder when `--brand` is given, under a name taken from the brand's title (`acme-brand`; `blazon` when there is none) or `--name`. It writes no file. It names `node`, the `mcp/dist/index.js` of the blazon that runs it (an installed package ships it) and `BLAZON_BIN`. If an install has lost that file it prints nothing and says to reinstall. `blazon dev` offers the same in a "Connect your agent" panel. The sections below show the formats by hand.
 
 A registration made earlier against a source clone keeps running that clone after `npm install` moves a book to a newer blazon, so an agent can keep getting the old tool schemas. `blazon mcp --check` now says when the registered file is not this install's, and `blazon mcp --print-config` prints the command that registers this one. What changed between versions is in `CHANGELOG.md` in the installed package (`node_modules/@iksnerd/blazon/CHANGELOG.md`).
 

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import pc from '../../core/colors.js';
 import {
+  DEFAULT_MCP_NAME,
   INCOMPLETE_INSTALL,
   isSourceCheckout,
   mcpConfigFiles,
@@ -17,6 +18,7 @@ import {
 import { OPERATIONS, toolOperations } from '../../core/operations/index.js';
 import { packageRoot } from '../../core/package-root.js';
 import { printJson } from '../read.js';
+import { brandServerName } from './mcp-name.js';
 
 /** The longest the whole handshake may take before the server is killed. */
 export const HANDSHAKE_TIMEOUT_MS = 30_000;
@@ -289,13 +291,21 @@ function scriptOf(entry: McpEntryLaunch, home: string, base: string | undefined,
  * identified from the entry (an `npx` or `blazon-mcp` form, a file that is not there), and this says so instead of guessing. `none`: not
  * registered. Only `same` passes; the check is advisory in every state, so none of them changes the exit status.
  */
-export function checkRegistered(client: McpClient, folders: string[], brand: string, home = os.homedir(), root = packageRoot()): McpCheck {
+export function checkRegistered(
+  client: McpClient,
+  folders: string[],
+  brand: string,
+  home = os.homedir(),
+  root = packageRoot(),
+  serverNames: readonly string[] = [DEFAULT_MCP_NAME],
+): McpCheck {
   const files = mcpConfigFiles(client, folders, home, process.platform, process.env.APPDATA);
   const installPath = real(resolveMcpLaunch(root).args[0] as string);
   const found: string[] = [];
   const read: string[] = [];
   const unreadable: string[] = [];
   const scripts: { file: string; script: string | undefined }[] = [];
+  const foundNames = new Set<string>();
   for (const file of files) {
     let text: string;
     try {
@@ -309,16 +319,21 @@ export function checkRegistered(client: McpClient, folders: string[], brand: str
       continue;
     }
     read.push(file.path);
-    if (!names.includes('blazon')) continue;
+    const present = serverNames.filter((name) => names.includes(name));
+    if (present.length === 0) continue;
     found.push(file.path);
     // a project file's relative path is read from its project folder; a user-wide file has none
     const base = file.scope === 'project' ? folders.find((dir) => file.path.startsWith(dir + path.sep)) : undefined;
-    const launches = mcpEntryLaunches(text, file, 'blazon') ?? [];
-    if (launches.length === 0) scripts.push({ file: file.path, script: undefined });
-    for (const launch of launches) scripts.push({ file: file.path, script: scriptOf(launch, home, base, installPath) });
+    for (const name of present) {
+      foundNames.add(name);
+      const launches = mcpEntryLaunches(text, file, name) ?? [];
+      if (launches.length === 0) scripts.push({ file: file.path, script: undefined });
+      for (const launch of launches) scripts.push({ file: file.path, script: scriptOf(launch, home, base, installPath) });
+    }
   }
   const note = unreadable.length > 0 ? ` (not valid JSON, skipped: ${unreadable.join(', ')})` : '';
   const fix = `blazon mcp --print-config --client ${client} --brand ${brand}`;
+  const wanted = serverNames.length > 1 ? `${serverNames[0]} (or ${serverNames.slice(1).join(', ')})` : (serverNames[0] ?? DEFAULT_MCP_NAME);
   if (found.length === 0)
     return {
       name: 'registered',
@@ -328,7 +343,7 @@ export function checkRegistered(client: McpClient, folders: string[], brand: str
       state: 'none',
       found: false,
       sameServer: null,
-      detail: `no server named blazon in ${client}'s config; looked in ${read.length > 0 ? read.join(', ') : 'no file that exists'}${note}`,
+      detail: `no server named ${wanted} in ${client}'s config; looked in ${read.length > 0 ? read.join(', ') : 'no file that exists'}${note}`,
       fix,
       files: [],
     };
@@ -341,7 +356,7 @@ export function checkRegistered(client: McpClient, folders: string[], brand: str
       state: 'different',
       sameServer: false,
       registeredPath: other.script,
-      detail: `${client} has a server named blazon in ${other.file}, but it runs ${other.script}, not this install's ${installPath}; blazon mcp --print-config prints the command that registers this install${note}`,
+      detail: `${client} has a server named ${[...foundNames].join(' and ')} in ${other.file}, but it runs ${other.script}, not this install's ${installPath}; blazon mcp --print-config prints the command that registers this install${note}`,
       fix,
     };
   if (scripts.some((item) => item.script === undefined))
@@ -350,7 +365,7 @@ export function checkRegistered(client: McpClient, folders: string[], brand: str
       passed: false,
       state: 'unknown',
       sameServer: null,
-      detail: `${client} has a server named blazon in ${found.join(', ')}, but this check could not tell which file it runs; this install's is ${installPath}, and blazon mcp --print-config prints the command that registers it${note}`,
+      detail: `${client} has a server named ${[...foundNames].join(' and ')} in ${found.join(', ')}, but this check could not tell which file it runs; this install's is ${installPath}, and blazon mcp --print-config prints the command that registers it${note}`,
       fix,
     };
   return {
@@ -358,13 +373,15 @@ export function checkRegistered(client: McpClient, folders: string[], brand: str
     passed: true,
     state: 'same',
     sameServer: true,
-    detail: `${client} has a server named blazon in ${found.join(', ')}, and it runs this install's ${installPath}${note}`,
+    detail: `${client} has a server named ${[...foundNames].join(' and ')} in ${found.join(', ')}, and it runs this install's ${installPath}${note}`,
   };
 }
 
 export interface McpCheckOptions {
   client: McpClient;
   brand: string;
+  /** The server's name to look for; by default the brand's (its title as a slug), and the old name blazon too. */
+  name?: string;
   json?: boolean;
   /** Where the project-level config files are looked for besides the brand folder. */
   cwd?: string;
@@ -390,7 +407,8 @@ export async function runMcpCheck(options: McpCheckOptions): Promise<number> {
         fix: built.fix as string,
       };
   const folders = [...new Set([cwd, brand])];
-  const registered = checkRegistered(client, folders, brand, home, root);
+  const serverName = options.name ?? (await brandServerName(brand));
+  const registered = checkRegistered(client, folders, brand, home, root, [...new Set([serverName, DEFAULT_MCP_NAME])]);
   const { entry: _entry, ...builtCheck } = built;
   const checks: McpCheck[] = [builtCheck, blazon, shake, registered];
   const passed = checks.filter((check) => !check.advisory).every((check) => check.passed);

@@ -155,8 +155,9 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     .option('--check', 'Test that the server is built, finds blazon, answers a real MCP handshake and is registered in the client; runs no plugin')
     .option('--client <client>', 'With --print-config or --check: claude-code (default), claude-desktop, cursor or vscode')
     .option('--brand <dir>', 'The brand folder: with --print-config, written into the config as an absolute path; with --check, the folder the server starts on')
+    .option('--name <name>', "The server's name in the client: by default the brand's title as a slug, such as acme-brand (blazon when the brand has none)")
     .option('--json', 'Print the config or the check as JSON on standard output')
-    .action(async (options?: { printConfig?: boolean; check?: boolean; client?: string; brand?: string; json?: boolean }) => {
+    .action(async (options?: { printConfig?: boolean; check?: boolean; client?: string; brand?: string; name?: string; json?: boolean }) => {
       try {
         process.exitCode = await runMcp(options);
       } catch (err) {

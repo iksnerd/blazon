@@ -189,6 +189,26 @@ describe('mcp --check: (d) the client has a blazon entry', () => {
   };
   const entry = { command: 'node', args: ['x', '--flag', canary], env: { SOME_VAR: canary } };
 
+  it('finds the entry under the brand name, and under the old name blazon', () => {
+    const names = ['acme-brand', 'blazon'];
+    for (const key of ['acme-brand', 'blazon']) {
+      const home = tempDir('blazon-home-');
+      const project = tempDir('blazon-proj-');
+      write(home, '.claude.json', { mcpServers: { [key]: entry } });
+      expect(checkRegistered('claude-code', [project], project, home, undefined, names).found, key).toBe(true);
+    }
+  });
+
+  it('does not take an entry of another name for this brand, and says which names it looked for', () => {
+    const home = tempDir('blazon-home-');
+    const project = tempDir('blazon-proj-');
+    write(home, '.claude.json', { mcpServers: { 'other-brand': entry } });
+    const result = checkRegistered('claude-code', [project], project, home, undefined, ['acme-brand', 'blazon']);
+    expect(result.found).toBe(false);
+    expect(result.detail).toContain('acme-brand');
+    expect(result.detail).toContain('blazon');
+  });
+
   it('finds the entry by name in ~/.claude.json, at the top and under the project, and never returns a value', () => {
     const home = tempDir('blazon-home-');
     const project = tempDir('blazon-proj-');

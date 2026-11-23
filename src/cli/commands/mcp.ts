@@ -1,17 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import pc from '../../core/colors.js';
-import { buildMcpConfig, isMcpClient, MCP_CLIENTS, INCOMPLETE_INSTALL, isSourceCheckout, resolveMcpLaunch, type McpClient } from '../../core/mcp-config.js';
+import { buildMcpConfig, isMcpClient, isMcpName, MCP_CLIENTS, INCOMPLETE_INSTALL, isSourceCheckout, resolveMcpLaunch, type McpClient } from '../../core/mcp-config.js';
+import { brandServerName } from './mcp-name.js';
 import { UsageError } from '../errors.js';
 import { printJson } from '../read.js';
 import { runMcpCheck } from './mcp-check.js';
 
 /**
- * `blazon mcp --print-config [--client c] [--brand dir]`: prints what registers blazon-mcp (stdio) in a client. Writes no file.
+ * `blazon mcp --print-config [--client c] [--brand dir] [--name n]`: prints what registers blazon-mcp (stdio) in a client, under the brand's name
+ * (its title as a slug, `acme-brand`) or `--name`. Writes no file.
  * `blazon mcp --check [--client c] [--brand dir]`: says whether the server is built, can find blazon, answers a real MCP handshake and is registered.
  * Exits 0, or 2 for an unknown client, both flags or neither. `--check` exits 1 when the server is not ready; `--print-config` exits 1 when an install has lost its server file, because there is no command that works.
  */
-export async function runMcp(options: { printConfig?: boolean; check?: boolean; client?: string; brand?: string; json?: boolean; root?: string } = {}): Promise<number> {
+export async function runMcp(
+  options: { printConfig?: boolean; check?: boolean; client?: string; brand?: string; name?: string; json?: boolean; root?: string } = {},
+): Promise<number> {
   if (options.printConfig && options.check) throw new UsageError('give --print-config or --check, not both. See blazon mcp --help.', undefined, 'conflicting-options');
   if (!options.printConfig && !options.check)
     throw new UsageError(
@@ -23,21 +27,34 @@ export async function runMcp(options: { printConfig?: boolean; check?: boolean; 
   if (options.client !== undefined && !isMcpClient(options.client))
     throw new UsageError(`unknown client "${options.client}"; the clients are ${MCP_CLIENTS.join(', ')}.`, undefined, 'invalid-option-value');
   const brand = options.brand === undefined ? undefined : path.resolve(process.cwd(), options.brand);
+  if (options.name !== undefined && !isMcpName(options.name))
+    throw new UsageError(
+      `--name takes letters, digits, hyphens and underscores, 64 at most, starting with a letter or digit; "${options.name}" is not one.`,
+      undefined,
+      'invalid-option-value',
+    );
   if (options.check) {
     const folder = brand ?? process.cwd();
     if (!fs.statSync(folder, { throwIfNoEntry: false })?.isDirectory()) throw new UsageError(`the brand folder ${folder} does not exist.`, undefined, 'no-folder');
-    return runMcpCheck({ client, brand: folder, ...(options.root && { root: options.root }), ...(options.json && { json: true }) });
+    return runMcpCheck({
+      client,
+      brand: folder,
+      ...(options.name !== undefined && { name: options.name }),
+      ...(options.root && { root: options.root }),
+      ...(options.json && { json: true }),
+    });
   }
+  const name = options.name ?? (await brandServerName(brand ?? process.cwd()));
   const launch = resolveMcpLaunch(options.root);
   if (!launch.built && !isSourceCheckout(options.root)) {
     // An install without its server file is damaged: every command printed would fail, so say so and print none.
-    if (options.json) printJson('mcp', false, { client, built: false, ...(brand && { brand }), note: INCOMPLETE_INSTALL, snippets: [] });
+    if (options.json) printJson('mcp', false, { client, name, built: false, ...(brand && { brand }), note: INCOMPLETE_INSTALL, snippets: [] });
     else console.error(`\n  ${pc.yellow(INCOMPLETE_INSTALL)}\n`);
     return 1;
   }
-  const config = buildMcpConfig(client, launch, brand);
+  const config = buildMcpConfig(client, launch, brand, name);
   if (options.json) {
-    printJson('mcp', true, { client, built: config.built, ...(brand && { brand }), ...(config.note && { note: config.note }), snippets: config.snippets });
+    printJson('mcp', true, { client, name, built: config.built, ...(brand && { brand }), ...(config.note && { note: config.note }), snippets: config.snippets });
     return 0;
   }
   console.log(`\n  ${pc.bold(config.title)}`);
