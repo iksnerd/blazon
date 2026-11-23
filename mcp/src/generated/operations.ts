@@ -6,7 +6,7 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'check_brand',
     title: 'Check the brand',
     description:
-      "Runs blazon check on the brand, without plugins, and returns its findings and counts. Plugins in blazon.json do not run, so the counts can be lower than `blazon check` prints, but only for a plugin with a check role; a build-only plugin adds no finding. `pluginsSkipped` and `warnings` list every configured plugin, since a role is known only by starting the plugin. `passed` is false when the brand's own data has errors (`brandHasErrors`), and values read from such a brand can be wrong; a `pin-mismatch` finding is listed and counted but does not make `passed` false, and is also in `pinMismatch`. Returns at most `limit` findings (default 50, at most 500); `counts` stay whole. Not for reading a value: use get_token.",
+      "Runs blazon check on the brand, without plugins, and returns its findings and counts. Plugins in blazon.json do not run, so the counts can be lower than `blazon check` prints, but only for a plugin with a check role; a build-only plugin adds no finding. `pluginsSkipped` and `warnings` list every configured plugin, since a role is known only by starting the plugin; `rulesNotRun` gives the code pattern of each (`name/*`). `byRule` groups the findings by code with a count and one example each. `passed` is false when the brand's own data has errors (`brandHasErrors`), and values read from such a brand can be wrong; a `pin-mismatch` finding is listed and counted but does not make `passed` false, and is also in `pinMismatch`. Returns at most `limit` findings (default 50, at most 500); `counts` stay whole. Not for reading a value: use get_token.",
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
@@ -70,6 +70,37 @@ export const OPERATIONS: readonly Operation[] = [
           description: 'The findings, cut to `limit`',
         },
         findingsTotal: { description: 'How many findings there are before `limit` cut the list', type: 'number' },
+        byRule: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              code: { type: 'string', description: 'The finding code' },
+              severity: { type: 'string', description: 'error, warning or info' },
+              count: { type: 'number', description: 'How many findings carry this code at this severity, before `limit` cut the list' },
+              example: {
+                type: 'object',
+                description: 'The first finding of this code',
+                properties: {
+                  path: { type: 'string', description: 'Where the first finding of this code is, cut to 80 characters' },
+                  message: { type: 'string', description: 'What it says, cut to 120 characters' },
+                },
+                required: ['path', 'message'],
+                additionalProperties: {},
+              },
+            },
+            required: ['code', 'severity', 'count', 'example'],
+            additionalProperties: {},
+          },
+          description:
+            'The findings grouped by code, worst severity first, then the larger count: what the warnings are without reading the list. Counted over every finding the check returned, not only the `limit` kept; with `severity` set, only that level and worse',
+        },
+        rulesNotRun: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'The code pattern of each plugin that did not run, such as `blazon.copy/*`. A plugin finding code starts with its name and a slash, so no code matching one of these is in `findings`, and its absence says nothing about the brand. Absent when the config lists no plugin',
+        },
         pluginsSkipped: {
           type: 'array',
           items: { type: 'string' },

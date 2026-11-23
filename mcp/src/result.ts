@@ -93,7 +93,7 @@ export function answerWith(
   // Cut on code points, so a surrogate pair is never split; every length here counts code points.
   const points = Array.from(json);
   const notice = `Truncated: the answer is ${points.length} characters (Unicode code points) and the limit is ${MAX_TEXT}; ${narrow}.`;
-  const whole = (['counts', 'passed', 'pinMismatch'] as const).filter((key) => key in document).map((key) => [key, document[key]] as const);
+  const whole = (['counts', 'passed', 'byRule', 'pinMismatch'] as const).filter((key) => key in document).map((key) => [key, document[key]] as const);
   return {
     content: [...lead, { type: 'text', text: `${points.slice(0, MAX_TEXT).join('')}\n[${notice}]` }],
     structuredContent: { ...Object.fromEntries(whole), truncated: true, notice, warnings, brandHasErrors },
@@ -124,4 +124,42 @@ export function limitItems(document: Record<string, unknown>, key: string, limit
     else high = mid - 1;
   }
   return build(low);
+}
+
+/** One rule of a check answer: how many findings carry its code, at what severity, and the first one as an example. */
+export interface RuleGroup {
+  code: string;
+  severity: string;
+  count: number;
+  example: { path: string; message: string };
+}
+
+const SEVERITY_RANK: Record<string, number> = { error: 0, warning: 1, info: 2 };
+/** The longest example path and message, in characters: the view names what the findings are, it does not repeat them. */
+const EXAMPLE_PATH_MAX = 80;
+const EXAMPLE_MESSAGE_MAX = 120;
+
+const cut = (text: unknown, max: number): string => {
+  const chars = Array.from(typeof text === 'string' ? text : '');
+  return chars.length > max ? `${chars.slice(0, max - 3).join('')}...` : chars.join('');
+};
+/** Code-unit order, as `compareText` in src/core/order.ts: the same on every host. This package does not import core. */
+const compareCode = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+/**
+ * The findings grouped by code: severity (error, warning, info), then the larger count, then the code. The example is the first finding of the
+ * code in the order blazon lists them (severity, then path). A code at two severities is two groups.
+ */
+export function groupByRule(findings: unknown[]): RuleGroup[] {
+  const groups = new Map<string, RuleGroup>();
+  for (const item of findings) {
+    const f = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>;
+    const code = typeof f.code === 'string' ? f.code : '';
+    const severity = typeof f.severity === 'string' ? f.severity : '';
+    const key = `${severity}\u0000${code}`;
+    const group = groups.get(key);
+    if (group) group.count++;
+    else groups.set(key, { code, severity, count: 1, example: { path: cut(f.path, EXAMPLE_PATH_MAX), message: cut(f.message, EXAMPLE_MESSAGE_MAX) } });
+  }
+  return [...groups.values()].sort((a, b) => (SEVERITY_RANK[a.severity] ?? 3) - (SEVERITY_RANK[b.severity] ?? 3) || b.count - a.count || compareCode(a.code, b.code));
 }

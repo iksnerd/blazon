@@ -13,6 +13,7 @@ import { VERSIONS } from './version.js';
 import {
   answerWith,
   failure,
+  groupByRule,
   hasBrandErrors,
   limitItems,
   pinMismatchIn,
@@ -67,9 +68,10 @@ function skippedPlugins(brand: string): { fields: Record<string, unknown>; warni
   const names = configuredPlugins(brand);
   if (names.length === 0) return { fields: {}, warnings: [] };
   return {
-    fields: { pluginsSkipped: names },
+    fields: { pluginsSkipped: names, rulesNotRun: names.map((n) => `${n}/*`) },
     warnings: [
       `Plugins in blazon.json did not run: ${names.join(', ')}. Only a plugin with a check role can add findings to these counts; a build-only plugin adds none. The server cannot read a plugin's role without starting it, so it lists every configured plugin. Run \`blazon check\` for the full counts.`,
+      `A plugin's finding codes start with its name and a slash, so codes that start with ${names.map((n) => `${n}/`).join(' or ')} did not run: their absence from the findings does not mean the brand is clean of them.`,
     ],
   };
 }
@@ -79,7 +81,11 @@ const LOOKUPS: Record<string, Lookup> = {
     narrow: NARROW_FINDINGS,
     notes: skippedPlugins,
     // `counts` and the list keep the pin finding; `passed` is about the brand's own data, as `brandHasErrors` is
-    shape: (document, args, warnings) => ({ ...limitItems(document, 'findings', Number(args.limit), NARROW_FINDINGS, warnings), passed: document.brandHasErrors !== true }),
+    // `byRule` is made from the whole list before `limit` cuts it, so a caller sees every rule that fired without a second call
+    shape: (document, args, warnings) => ({
+      ...limitItems({ ...document, byRule: groupByRule(Array.isArray(document.findings) ? document.findings : []) }, 'findings', Number(args.limit), NARROW_FINDINGS, warnings),
+      passed: document.brandHasErrors !== true,
+    }),
   },
   list_tokens: {
     hint: 'Call list_tokens with no arguments to see every path.',
