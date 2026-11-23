@@ -74,6 +74,23 @@ Each file gets a rule with the brand's `family`, `weight` and `style`, the `form
 
 Blazon embeds the font files that `fonts` lists, and `.woff2`, `.woff`, `.ttf` and `.otf` all work. A tool that needs a TTF or OTF and not the web font, such as `next/og` (Satori), a PDF library or a native app, reads a file of its own: keep it in the brand's `fonts/` folder beside the woff2 and do not list it in `fonts`. Blazon ignores a file there that `fonts` does not name: `blazon check` reports nothing about it, `blazon fonts` does not print it and a build does not copy it. The site then reads it from the brand folder (for Satori, `fs.readFile` of that path, passed as `fonts: [{ name, data, weight }]`) and takes the same family name and weight from `blazon fonts`.
 
+In a Next.js app, `next/font/local` can load the files instead. Copy the files that `blazon fonts --json` (or `get_fonts`) lists under `files` into the app, and give one `localFont` call the entries of one family. `weight` and `style` come from each entry, and `weight` is a string there:
+
+```ts
+// app/fonts.ts
+import localFont from 'next/font/local';
+
+export const acmeSans = localFont({
+  src: [
+    { path: './fonts/AcmeSans-Regular.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/AcmeSans-Bold.woff2', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-acme-sans',
+});
+```
+
+`src` paths are relative to the file that calls `localFont`, and `next/font/local` has no `subsets` option (only `next/font/google` does). Set `variable` and point the Tailwind family at it, or keep the family name the brand gives. Blazon does not subset, convert or rename font files: a changed file is a licence matter and the brand's decision.
+
 ## Widths written once in a Tailwind v4 site
 
 A brand's Web page may state layout widths that have no token, such as a 640px breakpoint and a 1200px content column, and say the site writes each once. Blazon writes neither, and `tailwind.css` does not define them. This is one way to do it in a Tailwind v4 stylesheet, not blazon output:
@@ -145,6 +162,16 @@ A path that is not a token is the `blazon.shadcn/token-missing` error, and the v
 When `pairs` is present, the brand declares contrast `pairs`, and each entry says whether one of them covers that shadcn pair (`declared`). A pair with `declared: false` is not an allowed pair: do not use it for text on a surface until the brand owner adds a rule or maps another token. This is a note in the data, not a finding, and the build does not fail on it. Where `pairs` is absent, the brand declares no pairs and there is nothing to compare.
 
 Then write the CSS yourself, from the tokens: set each shadcn variable to `var(--path)` from `theme.css`, or to the `value` for a project that does not load it. Dark mode is yours too: `value` is the default context only. The tokens a context changes are in `contexts` of `brand.json` and in the CSS ([chapter 4](04-contexts.md)).
+
+### Weights, sizes and radius in shadcn's components
+
+shadcn/ui's registry components hard-code Tailwind classes such as `font-medium` on a button. After the reset in `tailwind-reset.css` ([chapter 8](08-using-the-outputs.md#tailwind)), `font-medium` generates nothing unless the brand has a `fontWeight` token named `medium`: the reset removes every default weight when the brand has one. Do not keep the class and do not add a token for it. Set each component's weight and size from the brand's type role instead: use the brand's `.type-*` class from `typography.css`, or the variables of its `typography` token, such as `--type-button-font-weight` and `--type-button-font-size` (a token `type.button` writes `--type-button-font-*`, one per part). A brand's own weight token is the variable `--font-weight-<name>` (`--font-weight-heavy` for `font.weight.heavy`) in `theme.css`, and the utility `font-<name>` in `tailwind.css`. The same holds for `text-sm`, `rounded-md` and other size and radius classes: check each against what the brand defines.
+
+For radius, `blazon.shadcn` writes `--radius` when the brand has a `radius` role token (`radius.default`, `radius.base` or `radius.md`, [chapter 7](07-theme-and-config.md)) and writes nothing else for it. The `--radius-sm`, `--radius-md` and `--radius-lg` lines that shadcn's own `globals.css` derives from `--radius` are shadcn's. When the brand has a `radius` group, `blazon.tailwind` writes the brand's steps as `--radius-<token name>` (`radius.card` is `--radius-card`), and the brand's scale is the one to use: delete shadcn's derived `--radius-*` lines, or keep one only for a step the brand does not define.
+
+### Motion and easing
+
+Blazon reads the DTCG `duration` and `cubicBezier` types, and `blazon.tailwind` writes each `cubicBezier` token as `--ease-*` (`motion.easing.mechanical` is `--ease-mechanical`). A brand that has durations and no `cubicBezier` token has not stated its easing. That is a question for the brand owner, not a curve to invent: shadcn's `ease-in-out` is not the brand's. The starter's `motion` tokens in `examples/blazon/tokens/form.json` state both, and its `transition` token joins a duration and an easing.
 
 ## The logo
 

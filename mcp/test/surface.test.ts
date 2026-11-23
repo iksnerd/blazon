@@ -121,6 +121,7 @@ describe.skipIf(!installed)('blazon-mcp tool surface', () => {
     const names = (await listTools()).map((t) => t.name);
     expect(INSTRUCTIONS.length).toBeLessThanOrEqual(MAX_DESCRIPTION);
     expect(INSTRUCTIONS.slice(0, 512)).toMatch(/Order: check_brand/);
+    expect(INSTRUCTIONS).toContain('never a value to invent');
     const mentioned = INSTRUCTIONS.match(/\b(?:check|list|get|can)_[a-z]+\b/g) ?? [];
     expect(mentioned.length).toBeGreaterThan(0);
     for (const name of mentioned) expect(names, `instructions name ${name}, which is not registered`).toContain(name);
