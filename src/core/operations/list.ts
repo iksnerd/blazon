@@ -647,13 +647,14 @@ export const OPERATIONS: readonly Operation[] = [
     outputSchema: output(
       {
         variants: {
-          description: 'The logo variants (onLight, onDark), each with its file and whether the file was found',
+          description:
+            'The logo variants (onLight, onDark), each with its file, whether the file was found and, when it was, its absolute path (on the machine the server runs on) and sha256',
           type: 'array',
           items: {},
         },
         assets: {
           description:
-            'The logo assets, each once, with its id, its files (a list; the first is the one a reader with no preference takes), the variants it serves and its rules: clear space, minimum size, lockups',
+            'The logo assets, each once, with its id, its files (a list; the first is the one a reader with no preference takes), details (for each file, in order: file, absolute path, sha256, bytes, format), the variants it serves and its rules: clear space, minimum size, lockups. Paths are absolute on the machine the server runs on',
           type: 'array',
           items: {},
         },

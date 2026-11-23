@@ -1,0 +1,1 @@
+`blazon logo --json` and the `get_logo` tool give each logo variant an absolute `path` and a `sha256`, and each logo asset a `details` list with the `file`, absolute `path`, `sha256`, `bytes` and `format` of every file, in the order of `files`. A caller outside the brand folder can now find the file and check its bytes. The paths are meaningful only on the machine blazon runs on.

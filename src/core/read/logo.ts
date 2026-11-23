@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 import type { AssetMeta, BlazonConfig, BlazonData } from '../../types/index.js';
 import { assetSourcePath, categoryDirs } from '../assets/categories.js';
@@ -15,12 +17,30 @@ export interface LogoVariant {
   asset?: string;
   /** The color the asset's sidecar declares for it; without one a reader judges the file as black on light or white on dark */
   ink?: string;
+  /** The absolute path of the file, only when blazon found it. Meaningful on the machine blazon runs on */
+  path?: string;
+  /** Hex SHA-256 of the file's bytes, with `path` */
+  sha256?: string;
+}
+
+/** One file of a logo asset. A file that cannot be read has only `file`. */
+export interface LogoFileDetail {
+  /** Equal to the matching entry of `files` */
+  file: string;
+  /** Absolute, on the machine blazon runs on */
+  path?: string;
+  /** Hex SHA-256 of the file's bytes */
+  sha256?: string;
+  bytes?: number;
+  format?: string;
 }
 
 export interface LogoAsset {
   id: string;
   /** Every file of the id, from the project root, in the default order of its representations (RFC 0001 section 12): the first is the one a reader without a preference takes */
   files: string[];
+  /** One entry for each of `files`, in the same order, with the absolute path, hash, size and format */
+  details: LogoFileDetail[];
   /** The configured variants that use one of these files */
   variants: ('onLight' | 'onDark')[];
   /** What the sidecar says, as brand.json carries it: clearSpace, minSize, maxSize, replacedBelow, lockup, placement, partnership, initiative, unit, ink, background, do, dont */
@@ -32,6 +52,15 @@ export interface LogoDescription {
   assets: LogoAsset[];
   /** Backgrounds that forbid a logo variant, whatever their contrast: the token or group, the variants and the reason */
   forbidden: { at: string; deny: string[]; reason?: string }[];
+}
+
+/** The hex SHA-256 of a file's bytes, or nothing when it cannot be read. */
+function hashOf(file: string): string | undefined {
+  try {
+    return createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  } catch {
+    return undefined;
+  }
 }
 
 /** The configured logo variants, each logo asset with the rules of its sidecar, and the backgrounds that forbid a variant. */
@@ -49,7 +78,10 @@ export function describeLogo(data: BlazonData, config: BlazonConfig, cwd: string
     if (!file) return [];
     const asset = variant === 'onLight' ? data.logo?.onLightAsset : data.logo?.onDarkAsset;
     const ink = variant === 'onLight' ? data.logo?.onLightInk : data.logo?.onDarkInk;
-    return [{ variant, file, found: Boolean(variant === 'onLight' ? data.logo?.onLight : data.logo?.onDark), ...(asset && { asset }), ...(ink && { ink }) }];
+    const found = Boolean(variant === 'onLight' ? data.logo?.onLight : data.logo?.onDark);
+    const absolute = path.resolve(cwd, file);
+    const sha256 = found ? hashOf(absolute) : undefined;
+    return [{ variant, file, found, ...(asset && { asset }), ...(ink && { ink }), ...(sha256 && { path: absolute, sha256 }) }];
   });
   // one entry for an id: its files are its representations, and its sidecar is one
   const ids = [...new Set(data.assets.logos.map((asset) => asset.id))];
@@ -59,6 +91,12 @@ export function describeLogo(data: BlazonData, config: BlazonConfig, cwd: string
     return {
       id,
       files: records.map(fileOf),
+      details: records.map((record, i): LogoFileDetail => {
+        const file = fileOf(record);
+        const absolute = sources[i]!;
+        const sha256 = hashOf(absolute);
+        return sha256 ? { file, path: absolute, sha256, bytes: record.bytes, format: record.format } : { file };
+      }),
       variants: variants.filter((v) => (paths[v.variant] ? sources.some((source) => sameFile(path.resolve(cwd, paths[v.variant]!), source)) : false)).map((v) => v.variant),
       rules: records[0]!.meta ?? {},
     };
