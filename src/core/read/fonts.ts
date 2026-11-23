@@ -79,6 +79,18 @@ export function describeFonts(data: BlazonData, config: BlazonConfig, cwd: strin
 }
 
 /**
+ * A path as the text of a quoted CSS `url()`. `base` may come from a tool call, so nothing in it may end the string, the function or the
+ * declaration, or start another rule: quotes, parentheses, `;`, braces, backslash and white space are percent-encoded, and a lone surrogate
+ * (which `encodeURI` throws on) becomes U+FFFD.
+ */
+function cssUrlText(path: string): string {
+  return encodeURI(path.replace(/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g, '�')).replace(
+    /["'();]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+/**
  * The `@font-face` rules for the font files of `description`, for a site that serves them itself. `src` is the path as the config
  * gives it, from the brand folder; with `base` it is `base` and the file's name, so a site can point it at its own public folder.
  * A stylesheet is a comment with its address: blazon does not fetch it, so it has no rule. A file that is not a font blazon embeds is a comment too.
@@ -92,7 +104,7 @@ export function fontFaceCss(description: Pick<FontsDescription, 'stylesheets' | 
       continue;
     }
     const where = base === undefined ? entry.file : `${base.endsWith('/') ? base : `${base}/`}${entry.file.split('/').pop()}`;
-    blocks.push(fontFaceRule(entry, `url("${encodeURI(where).replace(/"/g, '%22')}") format("${format}")`, true));
+    blocks.push(fontFaceRule(entry, `url("${cssUrlText(where)}") format("${format}")`, true));
   }
   return blocks.length === 0 ? '/* The config lists no fonts. */\n' : `${blocks.join('\n\n')}\n`;
 }

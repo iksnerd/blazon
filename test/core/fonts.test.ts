@@ -238,6 +238,24 @@ describe('fontFaceCss, the rules blazon fonts --css prints', () => {
     expect(fontFaceCss({ stylesheets: [], files }, 'https://cdn.example/f')).toContain('url("https://cdn.example/f/Plain.otf")');
   });
 
+  it('cannot be made to close the rule or add one by a hostile base', () => {
+    const hostile = ['/f/");}@import url(//evil.example/x.css);a{b:"/', "/f/');}\n.x{color:red}/*", '/f/\\");}', '/f/\ud800/'];
+    for (const base of hostile) {
+      const out = fontFaceCss({ stylesheets: [], files }, base);
+      const rules = out.trimEnd().split('\n\n');
+      expect(rules, base).toHaveLength(files.length);
+      for (const rule of rules) {
+        expect(rule.startsWith('@font-face {\n  font-family: "'), base).toBe(true);
+        expect(rule.endsWith(';\n}'), base).toBe(true);
+        expect(rule.match(/[{}]/g), base).toHaveLength(2);
+        const src = rule.split('\n').find((line) => line.startsWith('  src: '))!;
+        const body = /^ {2}src: url\("([^"]*)"\) format\("[a-z0-9]+"\);$/.exec(src)?.[1];
+        expect(body, `${base}: ${src}`).toBeDefined();
+        expect(body, base).toMatch(/^[^"'()\\;{}\s]*$/);
+      }
+    }
+  });
+
   it('makes no rule for a stylesheet, only a comment with its address', () => {
     const out = fontFaceCss({ stylesheets: [INTER], files: [] });
     expect(out).toBe(`/* Stylesheet, not fetched by blazon: ${INTER} */\n`);

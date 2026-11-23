@@ -138,7 +138,7 @@
     {
       "name": "get_fonts",
       "title": "Read the brand fonts",
-      "description": "Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. For the family a token names, use get_token."
+      "description": "Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. With css it also returns the @font-face rules for the font files, with base as their URL prefix. For the family a token names, use get_token."
     },
     {
       "name": "get_logo",

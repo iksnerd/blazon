@@ -97,7 +97,7 @@ All seven are read-only (`readOnlyHint: true`) and write nothing.
 | `get_token` | `blazon get <path> [--theme name]` | read the value, type, CSS variable names and rules of one token whose path you know, optionally as a resolver theme resolves it |
 | `get_rules` | `blazon rules [path]` | learn what a token, a group or the whole brand allows and forbids |
 | `can_use` | `blazon can <fg> <bg>` or `--pair fg:bg` | ask whether one color token may be text on another (`role: "ui"` for a border or focus ring), with the rule behind the answer. `pairs` takes up to 50 `{ fg, bg }` in one call and answers `results`, one for each in order; `verbose: false` leaves out the `checks` of an allowed answer. Pairs are only those a token group lists in `pairs`; component tokens are not read for them |
-| `get_fonts` | `blazon fonts` | find the stylesheets and font files to load, and whether each family a token names is loaded |
+| `get_fonts` | `blazon fonts` | find the stylesheets and font files to load, and whether each family a token names is loaded; with `css` (and `base`, the URL prefix) also `fontFace`, the `@font-face` rules |
 | `get_logo` | `blazon logo` | read the logo variants and their rules before you place a logo |
 
 Every tool returns blazon's JSON twice: as structured content that matches the tool's output schema, and as the same compact JSON in a text block. Differences from the command line:

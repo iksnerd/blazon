@@ -776,10 +776,19 @@
   {
     "name": "get_fonts",
     "title": "Read the brand fonts",
-    "description": "Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. For the family a token names, use get_token.",
+    "description": "Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. With css it also returns the @font-face rules for the font files, with base as their URL prefix. For the family a token names, use get_token.",
     "inputSchema": {
       "type": "object",
-      "properties": {},
+      "properties": {
+        "css": {
+          "type": "boolean",
+          "description": "Print the @font-face rules for the font files, and a comment for each stylesheet"
+        },
+        "base": {
+          "type": "string",
+          "description": "With css: the URL prefix for each font file, in place of its path from the brand folder"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false
     },
@@ -845,6 +854,10 @@
           "description": "Each font family a token names, with the tokens that name it and `loaded`, whether the brand loads it",
           "type": "array",
           "items": {}
+        },
+        "fontFace": {
+          "description": "The @font-face rules for the font files, and a comment for each stylesheet. Present only when css was asked for",
+          "type": "string"
         }
       },
       "required": [

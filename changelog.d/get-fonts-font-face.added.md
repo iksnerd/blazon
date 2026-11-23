@@ -1,0 +1,1 @@
+The `get_fonts` tool takes `css` and `base` and returns `fontFace`, the `@font-face` rules for the brand's font files, as `blazon fonts --css` prints them. A URL prefix is now percent-encoded for quotes, parentheses and `;` too.

@@ -597,7 +597,7 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'get_fonts',
     title: 'Read the brand fonts',
     description:
-      'Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. For the family a token names, use get_token.',
+      'Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. With css it also returns the @font-face rules for the font files, with base as their URL prefix. For the family a token names, use get_token.',
     annotations: READ_ONLY,
     inputSchema: input(
       {
@@ -635,6 +635,10 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'array',
           items: {},
         },
+        fontFace: {
+          description: 'The @font-face rules for the font files, and a comment for each stylesheet. Present only when css was asked for',
+          type: 'string',
+        },
       },
       [],
     ),
@@ -642,7 +646,7 @@ export const OPERATIONS: readonly Operation[] = [
       rank: 5,
       command: ['fonts'],
       positional: ['dir'],
-      cliOnly: ['dir', 'css', 'base'],
+      cliOnly: ['dir'],
       summary: 'Read the fonts the brand loads (stylesheets and font files) and the families its tokens name',
       options: [
         {
