@@ -28,6 +28,22 @@ describe.skipIf(!installed)('blazon-mcp', () => {
     expect(jsonOf(allowed).allowed).toBe(true);
   });
 
+  it('measure_contrast measures a blend and answers no verdict; what it cannot measure is a tool error', async () => {
+    const plain = jsonOf(await call('measure_contrast', { fg: 'text.primary', bg: 'surface.background' }));
+    expect(plain).toMatchObject({ fg: 'text.primary', bg: 'surface.background', note: 'a measurement, not a brand approval' });
+    const tinted = jsonOf(await call('measure_contrast', { fg: 'text.primary', bg: 'surface.background', with: 'color.signal.orange', withAlpha: 0.12, alpha: 0.9 }));
+    expect(tinted).toMatchObject({ with: 'color.signal.orange', withAlpha: 0.12, alpha: 0.9 });
+    expect(typeof tinted.ratio).toBe('number');
+    expect(tinted.seen).toEqual({ fg: expect.stringMatching(/^#[0-9a-f]{6}$/), bg: expect.stringMatching(/^#[0-9a-f]{6}$/) });
+    for (const answer of [plain, tinted]) {
+      expect(Object.keys(answer)).not.toContain('allowed');
+      expect(Object.keys(answer)).not.toContain('passed');
+    }
+    expect(await refused(call('measure_contrast', { fg: 'text.primary', bg: 'surface.background', with: 'color.signal.orange' }))).toBe(true);
+    expect(await refused(call('measure_contrast', { fg: 'text.primary', bg: 'surface.background', with: 'color.signal.orange', withAlpha: 1.5 }))).toBe(true);
+    expect(await refused(call('measure_contrast', { fg: 'text.primary', bg: 'surface.backgrnd' }))).toBe(true);
+  });
+
   it('can_use takes a role: ui is judged as a non-text element, an unknown role is refused', async () => {
     const ui = jsonOf(await call('can_use', { fg: 'text.primary', bg: 'surface.background', role: 'ui' }));
     expect(ui).toMatchObject({ role: 'ui', contrast: { threshold: 3 } });

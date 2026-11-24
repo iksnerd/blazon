@@ -143,6 +143,18 @@ Proportions ("60/30/10") and contrast pairings are group-level rules:
 
 Contrast for a pair, in `blazon check` and in the read command `blazon can` alike, is the WCAG 2.x ratio of the foreground over the background. A foreground with an alpha channel is composited over the background first, source-over in sRGB with straight alpha. A background with an alpha channel has no ratio: `check` reports `contrast-unknown`, and `can` refuses the pair.
 
+The read command `blazon contrast` (tool `measure_contrast`) measures a foreground token on a background token the same way, with one optional translucent token blended over the background first: `with` at the opacity `withAlpha`, multiplied with the token's own alpha. The blend is source-over in sRGB with straight alpha, the same function as above. The base background must be opaque. The foreground is then composited at its own opacity (times `alpha`, when given) over the blended background, and the ratio is the WCAG 2.x ratio of the two. The ratio is computed from the unrounded blend and printed to two decimals; the hex in `seen` is that blend rounded to 8 bits and is for display only. No gamut mapping is applied to the ratio. The answer is a measurement and has no verdict: a blend is never a listed pair, so `pairs` do not apply to it, and the answer lists only the pairs the brand lists for the foreground on the base background.
+
+Test vectors for the blend. Colors are written as hex, and `none` means the input is not given. A test (`test/docs/rfc.test.ts`) fails when the code and this table disagree.
+
+| Vector | fg | bg | with | withAlpha | alpha | seen fg | seen bg | Ratio |
+|---|---|---|---|---|---|---|---|---|
+| no blend | `#ffffff` | `#000000` | none | none | none | `#ffffff` | `#000000` | 21.00 |
+| tint over the background | `#000000` | `#ffffff` | `#ff0000` | 0.5 | none | `#000000` | `#ff8080` | 8.62 |
+| foreground at half opacity | `#3885ff` | `#ffffff` | none | none | 0.5 | `#9cc2ff` | `#ffffff` | 1.82 |
+| 12% tint, text on a dark canvas | `#9a9ab0` | `#0b0b14` | `#7c5cff` | 0.12 | none | `#9a9ab0` | `#191530` | 6.41 |
+| tint and foreground opacity | `#ffffff` | `#101020` | `#7c5cff` | 0.4 | 0.6 | `#b1acc9` | `#3b2e79` | 5.15 |
+
 `proportion` keys are group paths with a share (as above), or labels with the tokens they cover when a brand's buckets do not match its groups: `"White": { "share": 0.5, "tokens": ["{color.neutral.white}"] }` (Auth0's web color usage, slide 84). Blazon checks the token references and that the shares add up to 100% (within 0.5%), but not the composition itself. `pairs` is checked (see 4).
 
 ### 3. Contexts use the DTCG resolver

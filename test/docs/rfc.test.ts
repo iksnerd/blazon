@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import type { TokenType } from '../../src/types/index.js';
 import { CHECKS, type CheckCode } from '../../src/core/checker/catalogue.js';
 import { read, interfaceKeys, findingCodes, rfcSection } from '../support/spec-helpers.js';
+import { parseColor } from '../../src/core/checker/contrast.js';
+import { measureColors } from '../../src/core/read/index.js';
 import { assetFingerprint, assetSetFingerprint, assetSetInput, fingerprintInput, tokenFingerprint } from '../../src/core/checker/review.js';
 
 // RFC 0001 is the normative text. It must name every config key and every finding code the code has, so a reader
@@ -138,6 +140,54 @@ describe('RFC 0001', () => {
       const [two, three] = setRows();
       expect(three!.input).toContain('the two lines above');
       expect(two!.fingerprint).not.toBe(three!.fingerprint);
+    });
+  });
+
+  // The blend of `blazon contrast` (section 4): worked vectors, parsed out of the RFC and measured again here.
+  describe('the contrast blend vectors', () => {
+    const cell = (text: string): string => text.trim().replace(/^`+|`+$/g, '');
+    const none = (text: string): number | undefined => (cell(text) === 'none' ? undefined : Number(cell(text)));
+    const rows = () => {
+      const start = rfc.indexOf('Test vectors for the blend.');
+      expect(start, 'the RFC has its blend vectors').toBeGreaterThan(-1);
+      const lines = rfc.slice(start).split('\n').slice(1);
+      const first = lines.findIndex((line) => line.startsWith('|'));
+      const table = lines.slice(first + 2);
+      return table
+        .slice(
+          0,
+          table.findIndex((line) => !line.startsWith('|')),
+        )
+        .map((line) => line.split(/ \| /).map((c) => c.replace(/^\| /, '').replace(/ \|$/, '')))
+        .map((c) => ({
+          name: cell(c[0]!),
+          fg: cell(c[1]!),
+          bg: cell(c[2]!),
+          over: cell(c[3]!),
+          withAlpha: none(c[4]!),
+          alpha: none(c[5]!),
+          seenFg: cell(c[6]!),
+          seenBg: cell(c[7]!),
+          ratio: cell(c[8]!),
+        }));
+    };
+
+    it('has three to five vectors', () => {
+      expect(rows().length).toBeGreaterThanOrEqual(3);
+      expect(rows().length).toBeLessThanOrEqual(5);
+    });
+
+    it('reproduces each vector: the blended hex of both colors and the ratio to two decimals', () => {
+      for (const r of rows()) {
+        const got = measureColors({
+          fg: parseColor(r.fg)!,
+          bg: parseColor(r.bg)!,
+          ...(r.over !== 'none' && { over: { color: parseColor(r.over)!, alpha: r.withAlpha! } }),
+          ...(r.alpha !== undefined && { alpha: r.alpha }),
+        })!;
+        expect(got.seen, r.name).toEqual({ fg: r.seenFg, bg: r.seenBg });
+        expect(got.ratio.toFixed(2), r.name).toBe(r.ratio);
+      }
     });
   });
 });

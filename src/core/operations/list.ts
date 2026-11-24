@@ -611,6 +611,119 @@ export const OPERATIONS: readonly Operation[] = [
     },
   },
   {
+    name: 'measure_contrast',
+    title: 'Measure the contrast of a color',
+    description:
+      "Measures the contrast of one color token on another, optionally with one translucent color token blended over the background first. It is a measurement of what would be rendered, not a verdict: the answer has no `allowed` and does not say whether the brand approves; only `can_use` says whether the brand allows a pair, and a blend is never a listed pair. Use it for a tint or glow that no token names: give the opaque base `bg`, the tinting token as `with` and its opacity as `withAlpha`. `alpha` is the foreground's own opacity and `withAlpha` is the opacity of `with` over `bg`; they are different. `with` and `withAlpha` come together or not at all. The answer is `ratio` (WCAG 2.x), `level`, `nonText` (true from 3:1), `seen` (the two colors after blending, as hex) and `brandPairs`: the pairs the brand lists for this `fg` on the BASE `bg` token, not on the blend. A gradient is not measured: pass the color of its strongest point as `with` and that point's opacity as `withAlpha`. Refused, never guessed: a translucent `bg`, a `with` that is not a color blazon can read, an unknown token, `with` without `withAlpha` or the reverse, an opacity outside 0 to 1.",
+    annotations: READ_ONLY,
+    inputSchema: input(
+      {
+        fg: {
+          type: 'string',
+          maxLength: 200,
+          pattern: TOKEN_PATH,
+          description: 'The foreground color token path, as list_tokens returns it for a color token',
+        },
+        bg: {
+          type: 'string',
+          maxLength: 200,
+          pattern: TOKEN_PATH,
+          description: 'The base background color token path. It must be opaque: a background with an alpha channel is refused',
+        },
+        with: {
+          type: 'string',
+          maxLength: 200,
+          pattern: TOKEN_PATH,
+          description: 'A color token blended over `bg`, such as a glow or tint no token names. Give it with `withAlpha`. A gradient is refused: pass its strongest point',
+        },
+        withAlpha: {
+          type: 'number',
+          minimum: 0,
+          maximum: 1,
+          description:
+            'The opacity of `with` composited over `bg`, 0 to 1, on top of any alpha the `with` token has (the two multiply). Not the foreground opacity: that is `alpha`. Give it with `with`',
+        },
+        alpha: {
+          type: 'number',
+          minimum: 0,
+          maximum: 1,
+          description:
+            "The foreground's own opacity, 0 to 1, as `can_use` takes it, on top of any alpha the token has. Not the opacity of `with`: that is `withAlpha`. Default: the token as it is",
+        },
+        theme: {
+          type: 'string',
+          maxLength: 200,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*$',
+          description: "Measure in this context of the resolver's theme modifier, such as dark. Default: the default tokens",
+        },
+        dir: DIR,
+      },
+      ['fg', 'bg'],
+    ),
+    outputSchema: output(
+      {
+        fg: { description: 'The foreground color token that was measured', type: 'string' },
+        bg: { description: 'The base background color token', type: 'string' },
+        with: { description: 'The color token blended over the base background, when given', type: 'string' },
+        withAlpha: { description: 'The opacity of `with` over the base background, when given', type: 'number' },
+        alpha: { description: 'The foreground opacity that was measured at, when given', type: 'number' },
+        theme: { description: 'The theme context it was measured in; absent for the default tokens', type: 'string' },
+        ratio: { description: 'The WCAG 2.x contrast ratio of what was seen, to two decimals', type: 'number' },
+        level: {
+          description: 'The strictest WCAG text level the ratio meets: AAA, AA, AA-large, or fail when it meets none',
+          type: 'string',
+          enum: ['AAA', 'AA', 'AA-large', 'fail'],
+        },
+        nonText: { description: 'True when the ratio reaches 3:1, the WCAG 1.4.11 figure for a graphic or a control boundary', type: 'boolean' },
+        seen: { description: 'The two colors that were measured, as hex, after `with` and the foreground opacity were blended: `fg` over `bg`', type: 'object' },
+        brandPairs: {
+          description:
+            "The pairs the brand lists that name this `fg` on the BASE `bg` token, each with fg, bg, min and from. They are the base's pairs, not the blend's: a blend is never a listed pair. Empty when none is listed",
+          type: 'array',
+          items: { type: 'object' },
+        },
+        note: { description: 'Always "a measurement, not a brand approval"', type: 'string' },
+      },
+      ['fg', 'bg', 'ratio', 'level', 'nonText', 'seen', 'brandPairs', 'note'],
+    ),
+    cli: {
+      rank: 5,
+      command: ['contrast'],
+      positional: ['fg', 'bg', 'dir'],
+      cliOnly: ['dir'],
+      folder: 'fg',
+      summary:
+        'Measure the contrast of the foreground token on the background token, optionally with a translucent token blended over the background; a measurement, not a verdict (exit 0; 2 when it cannot be measured)',
+      options: [
+        {
+          property: 'with',
+          value: 'token',
+          description: 'blend this color token over the background first (a tint or glow no token names); needs --with-alpha',
+        },
+        {
+          property: 'withAlpha',
+          flag: 'with-alpha',
+          value: '0-1',
+          description: 'the opacity of the --with token over the background, 0 to 1; needs --with',
+        },
+        {
+          property: 'alpha',
+          value: '0-1',
+          description: 'measure the foreground at this opacity, 0 to 1, times its own alpha (not the opacity of --with)',
+        },
+        {
+          property: 'theme',
+          value: 'name',
+          description: "measure in this context of the resolver's theme modifier (such as dark); exits 2 for an unknown theme",
+        },
+        {
+          property: 'json',
+          description: 'Print the answer as JSON on standard output',
+        },
+      ],
+    },
+  },
+  {
     name: 'get_fonts',
     title: 'Read the brand fonts',
     description:
@@ -660,7 +773,7 @@ export const OPERATIONS: readonly Operation[] = [
       [],
     ),
     cli: {
-      rank: 5,
+      rank: 6,
       command: ['fonts'],
       positional: ['dir'],
       cliOnly: ['dir'],
@@ -715,7 +828,7 @@ export const OPERATIONS: readonly Operation[] = [
       [],
     ),
     cli: {
-      rank: 6,
+      rank: 7,
       command: ['logo'],
       positional: ['dir'],
       cliOnly: ['dir'],
@@ -742,7 +855,7 @@ export const OPERATIONS: readonly Operation[] = [
       [],
     ),
     cli: {
-      rank: 7,
+      rank: 8,
       command: ['brand'],
       positional: ['dir'],
       cliOnly: ['dir'],

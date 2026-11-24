@@ -88,6 +88,11 @@
       "summary": "Ask whether the foreground token may be text (or, with --role ui, a border or focus ring) on the background token, by the brand rules; exits 0 allowed, 1 denied, 2 unknown token. Several pairs: --pair fg:bg, repeated"
     },
     {
+      "name": "contrast",
+      "usage": "blazon contrast [fg] [bg] [dir]",
+      "summary": "Measure the contrast of the foreground token on the background token, optionally with a translucent token blended over the background; a measurement, not a verdict (exit 0; 2 when it cannot be measured)"
+    },
+    {
       "name": "fonts",
       "usage": "blazon fonts [dir]",
       "summary": "Read the fonts the brand loads (stylesheets and font files) and the families its tokens name"
@@ -134,6 +139,11 @@
       "name": "can_use",
       "title": "Can this color be used here",
       "description": "Answers whether one color token may be text on another color token, by the brand rules. Give `fg` and `bg` for one pair, or `pairs` (at most 50) for several in one call: the answer then has one result per pair, in order, and `allowed` is true only when every pair is. Exactly one of the two forms. Set `role` to ui for a focus ring, border or icon stroke: it is judged against the 3:1 non-text contrast and the pairs rules do not apply. `verbose` false leaves out the `checks` of an allowed answer; a denial keeps them. Contrast is measured as `check_brand` measures it: a color with an alpha channel is blended over its background, and `alpha` sets the foreground's opacity. The usage rules are read first, so a token a rule forbids is a denial even when it is not a color. A background with an alpha channel is an error, because what is behind it is not known, and so is a token that is not a color when usage allows it. A denied answer is a normal result (`allowed` is false, `reason` names the rule), not an error. Pairs come only from the `pairs` rules of token groups; component tokens are not read for them. For a color you have not picked, find one with list_tokens and type color."
+    },
+    {
+      "name": "measure_contrast",
+      "title": "Measure the contrast of a color",
+      "description": "Measures the contrast of one color token on another, optionally with one translucent color token blended over the background first. It is a measurement of what would be rendered, not a verdict: the answer has no `allowed` and does not say whether the brand approves; only `can_use` says whether the brand allows a pair, and a blend is never a listed pair. Use it for a tint or glow that no token names: give the opaque base `bg`, the tinting token as `with` and its opacity as `withAlpha`. `alpha` is the foreground's own opacity and `withAlpha` is the opacity of `with` over `bg`; they are different. `with` and `withAlpha` come together or not at all. The answer is `ratio` (WCAG 2.x), `level`, `nonText` (true from 3:1), `seen` (the two colors after blending, as hex) and `brandPairs`: the pairs the brand lists for this `fg` on the BASE `bg` token, not on the blend. A gradient is not measured: pass the color of its strongest point as `with` and that point's opacity as `withAlpha`. Refused, never guessed: a translucent `bg`, a `with` that is not a color blazon can read, an unknown token, `with` without `withAlpha` or the reverse, an opacity outside 0 to 1."
     },
     {
       "name": "get_fonts",

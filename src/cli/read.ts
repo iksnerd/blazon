@@ -33,8 +33,9 @@ export function asked<T>(lookup: () => T): T {
 }
 
 /** The one JSON document `--json` prints: `command` and `passed` first, as `check --json` does. */
-export function printJson(command: string, passed: boolean, body: object): void {
-  process.stdout.write(`${JSON.stringify({ command, passed, ...body }, null, 2)}\n`);
+export function printJson(command: string, passed: boolean | undefined, body: object): void {
+  // `passed` is left out when the command measures and does not judge (`contrast`)
+  process.stdout.write(`${JSON.stringify({ command, ...(passed !== undefined && { passed }), ...body }, null, 2)}\n`);
 }
 
 /** A list of "label  value" lines, the labels lined up. */

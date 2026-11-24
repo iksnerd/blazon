@@ -1,0 +1,1 @@
+`blazon contrast <fg> <bg>` and the `measure_contrast` tool measure the contrast of a color token on a background token, optionally with one translucent token blended over the background (`--with`, `--with-alpha`). It is a measurement with no verdict: `can_use` stays the only answer to whether the brand allows a pair.

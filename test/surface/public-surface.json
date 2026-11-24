@@ -6,6 +6,7 @@
       "build [dir]",
       "can [fg] [bg] [dir]",
       "check [dir]",
+      "contrast <fg> <bg> [dir]",
       "dev [dir]",
       "doctor",
       "drift [target]",
@@ -60,6 +61,8 @@
       "--tier <tier>",
       "--tokens <dir>",
       "--type <type>",
+      "--with <token>",
+      "--with-alpha <0-1>",
       "--yes",
       "-o, --outDir <dir>",
       "-p, --port <port>"
@@ -580,7 +583,8 @@
       "get_logo",
       "get_rules",
       "get_token",
-      "list_tokens"
+      "list_tokens",
+      "measure_contrast"
     ]
   },
   "pluginProtocol": {

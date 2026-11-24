@@ -49,6 +49,9 @@ const UI_USAGE_ROLES = ['border', 'icon', 'interactive'] as const;
 
 const LEVELS: ContrastLevel[] = ['AAA', 'AA', 'AA-large'];
 
+/** The strictest WCAG level a ratio meets, or 'fail' when it meets none. */
+export const levelOf = (ratio: number): ContrastLevel | 'fail' => LEVELS.find((l) => ratio >= CONTRAST_MINIMUM[l]) ?? 'fail';
+
 /** The token, then each token it aliases in turn. */
 function chain(data: BlazonData, item: TokenItem): TokenItem[] {
   const found: TokenItem[] = [];
@@ -128,7 +131,7 @@ export function canUse(data: BlazonData, typedFg: string, typedBg: string, role:
     return { fg: fg.path, bg: bg.path, role, allowed: false, reason: denial.message, checks: usage, ...alphaShown };
   }
   const { ratio } = measured;
-  const level = LEVELS.find((l) => ratio >= CONTRAST_MINIMUM[l]) ?? 'fail';
+  const level = levelOf(ratio);
   const shown = `${ratio.toFixed(2)}:1`;
   const rounded = Math.round(ratio * 100) / 100;
   if (role === 'ui') {

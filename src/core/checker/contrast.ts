@@ -21,10 +21,21 @@ export function contrastRatio(a: Color, b: Color): number {
 }
 
 /** A color's opacity, 0 to 1; a color with no alpha is opaque. */
-const alphaOf = (color: Color): number => {
+export const alphaOf = (color: Color): number => {
   const alpha = color.alpha;
   return typeof alpha === 'number' && !Number.isNaN(alpha) ? alpha : 1;
 };
+
+/**
+ * `top` shown at `alpha` (default: its own opacity) over the opaque `base`: source-over in sRGB with straight alpha, and the result is opaque.
+ * A missing channel (`none`) takes the base's. This is the one blend: `contrastBetween` (so `blazon check` and `blazon can`) and the read
+ * command `blazon contrast` all use it.
+ */
+export function blendOver(top: Color, base: Color, alpha: number = alphaOf(top)): Color {
+  const [f, b] = [top.to('srgb').coords, base.to('srgb').coords];
+  const mixed = f.map((c, i) => (c === null || Number.isNaN(c) ? b[i]! : c * alpha + b[i]! * (1 - alpha)));
+  return new Color('srgb', mixed as [number, number, number]);
+}
 
 /**
  * The ratio of a foreground over a background, or undefined when the backdrop is not known. WCAG measures what is seen, so a
@@ -35,9 +46,7 @@ export function contrastBetween(fg: Color, bg: Color): number | undefined {
   if (alphaOf(bg) < 1) return undefined;
   const a = alphaOf(fg);
   if (a >= 1) return contrastRatio(fg, bg);
-  const [f, b] = [fg.to('srgb').coords, bg.to('srgb').coords];
-  const mixed = f.map((c, i) => (c === null || Number.isNaN(c) ? b[i]! : c * a + b[i]! * (1 - a)));
-  return contrastRatio(new Color('srgb', mixed as [number, number, number]), bg);
+  return contrastRatio(blendOver(fg, bg, a), bg);
 }
 
 /** A ratio as the message prints it: floored to two decimals, so a failing 4.496 never reads as the 4.50 it misses. */
