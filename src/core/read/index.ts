@@ -10,3 +10,4 @@ export { canUse, canUseMany, withoutChecks, levelOf, CAN_ROLES, NON_TEXT_MINIMUM
 export { describeFonts, fontFaceCss, type FontsDescription, type FamilyUse, type FontFileEntry } from './fonts.js';
 export { describeOutputs, OutputsError, OUTPUTS_NOTE, type OutputsDescription, type OutputFile, type MissingOutput, type OutputState } from './outputs.js';
 export { describeLogo, type LogoDescription, type LogoAsset, type LogoVariant } from './logo.js';
+export { pickLogo, type LogoPick, type LogoChosen, type LogoRefused, type PickOptions as LogoPickOptions } from '../logo/pick.js';

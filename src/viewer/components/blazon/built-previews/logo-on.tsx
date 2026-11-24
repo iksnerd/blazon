@@ -21,7 +21,7 @@ export function LogoOn({ data, args }: { data: BlazonData; args: string[] }) {
         const paint = String(item.value);
         const dark = (whiteContrast(paint) ?? 0) >= GRAPHIC_CONTRAST;
         const ink = dark ? '#fff' : '#000';
-        const src = logoOn(data, paint, dark);
+        const src = logoOn(data, paint, dark, true, item);
         return (
           <figure key={item.path} data-logo-on={item.path} className="flex min-h-40 flex-col justify-between gap-6 rounded-lg border p-6" style={{ background: paint, color: ink }}>
             {src && <img className="my-auto h-7 w-auto self-center" src={src} alt="" />}

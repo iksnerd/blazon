@@ -15,11 +15,21 @@ export interface LogoDenial {
  * own rule (or its group's) wins; failing that, the first rule on the tokens it aliases, as for usage.
  */
 export function logoDenial(item: TokenItem, items: readonly TokenItem[], variant: string): LogoDenial | undefined {
+  const denial = logoDenialUnder(item, items, [variant]);
+  return denial && { path: denial.path, ...(denial.reason !== undefined && { reason: denial.reason }) };
+}
+
+/**
+ * The same lookup for a file that answers to several names: a configured file is `onLight` or `onDark` and, when it is a logo asset, its id too.
+ * A rule that names any of them denies it. The reader that holds the asset passes both names, so a `deny` written as an id is never missed.
+ */
+export function logoDenialUnder(item: TokenItem, items: readonly TokenItem[], names: readonly string[]): (LogoDenial & { name: string }) | undefined {
   const seen = new Set<string>();
   for (let at: TokenItem | undefined = item; at && !seen.has(at.path); at = at.aliasOf ? items.find((t) => t.path === at!.aliasOf) : undefined) {
     seen.add(at.path);
     const rule = at.blazon.logo;
-    if (Array.isArray(rule?.deny) && rule.deny.includes(variant)) return { path: at.path, ...(typeof rule.reason === 'string' && { reason: rule.reason }) };
+    const name = Array.isArray(rule?.deny) ? names.find((n) => rule.deny!.includes(n)) : undefined;
+    if (name !== undefined) return { name, path: at.path, ...(typeof rule!.reason === 'string' && { reason: rule!.reason }) };
   }
   return undefined;
 }

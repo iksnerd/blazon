@@ -1,0 +1,1 @@
+`blazon logo --on <token>` (and `get_logo` with `on`) picks the logo for a background token: the configured file or logo asset that reads best there, never one a `logo.deny` rule forbids, or a refusal that says whether the brand's rule, too little contrast or an unmeasurable background left none. `--lockup` limits it to one lockup.

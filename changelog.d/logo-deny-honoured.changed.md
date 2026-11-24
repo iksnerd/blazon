@@ -1,0 +1,1 @@
+A `logo.deny` rule is now honoured wherever a logo is chosen for a background: `blazon:logo-on` and the page covers no longer show a logo the rule forbids, and `logo-contrast-insufficient` is no longer raised for a configured file whose asset id the rule denies.
