@@ -75,7 +75,7 @@ describe.skipIf(!CHROME)('the social-cards plugin, in a real browser', () => {
     const PLATE = 'linear-gradient(100deg, #101c26 0%, #1d3a4a 55%, #0d1216 100%)';
     const banner = () =>
       world({
-        logoMeta: { placement: ['top-left'], minSize: { width: rule(120) }, clearSpace: rule(69) },
+        logoMeta: { placement: ['top-left', 'top-right', 'bottom-left'], minSize: { width: rule(120) }, clearSpace: rule(69) },
         tokens: [...fmt('banner', 1584, 396, 24), tok('gradient.plate', 'gradient', PLATE)],
       });
     const cover = (extra: object = {}) => ({ id: 'cover', format: 'banner', background: 'gradient.plate', headline: 'Your money. One app.', logoWidth: '22%', logoCorner: 'top-right', anchor: 'top', ...extra });
@@ -133,7 +133,7 @@ describe.skipIf(!CHROME)('the social-cards plugin, in a real browser', () => {
     const PLATE = 'linear-gradient(100deg, #101c26 0%, #1d3a4a 55%, #0d1216 100%)';
     const cover = (extra: object = {}) =>
       run(
-        world({ logoMeta: { placement: ['top-left'], minSize: { width: rule(120) }, clearSpace: rule(69) }, tokens: [...fmt('banner', 1584, 396, 24), tok('gradient.plate', 'gradient', PLATE)] }),
+        world({ logoMeta: { placement: ['top-left', 'top-right', 'bottom-left'], minSize: { width: rule(120) }, clearSpace: rule(69) }, tokens: [...fmt('banner', 1584, 396, 24), tok('gradient.plate', 'gradient', PLATE)] }),
         { cards: [{ id: 'cover', format: 'banner', background: 'gradient.plate', headline: 'Your money. One app.', logoWidth: '22%', logoCorner: 'top-right', anchor: 'top', keepClear: ['avatar'], ...extra }] },
       );
 
@@ -150,7 +150,7 @@ describe.skipIf(!CHROME)('the social-cards plugin, in a real browser', () => {
       const kept = cover();
       expect(kept.findings).toEqual([]);
       const plain = run(
-        world({ logoMeta: { placement: ['top-left'], minSize: { width: rule(120) }, clearSpace: rule(69) }, tokens: [...fmt('banner', 1584, 396, 24), tok('gradient.plate', 'gradient', PLATE)] }),
+        world({ logoMeta: { placement: ['top-left', 'top-right', 'bottom-left'], minSize: { width: rule(120) }, clearSpace: rule(69) }, tokens: [...fmt('banner', 1584, 396, 24), tok('gradient.plate', 'gradient', PLATE)] }),
         { cards: [{ id: 'cover', format: 'banner', background: 'gradient.plate', headline: 'Your money. One app.', logoWidth: '22%', logoCorner: 'top-right', anchor: 'top' }] },
       );
       expect(fs.readFileSync(path.join(kept.outDir, 'cover.png')).equals(fs.readFileSync(path.join(plain.outDir, 'cover.png')))).toBe(true);
