@@ -1,1 +1,0 @@
-The MCP tool `check_brand` now answers with `byRule`, the findings grouped by rule code with a count and one example each, so a brand with many warnings is readable without the full list. When `blazon.json` lists plugins, `rulesNotRun` names each one's code pattern (`name/*`), so a zero count for those rules is not read as a clean brand. No field was removed or renamed.

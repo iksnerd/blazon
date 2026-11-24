@@ -6,6 +6,33 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.6.0 (2026-11-24)
+
+### Breaking
+
+- `blazon can` and the `can_use` tool now measure contrast with the same function as `blazon check`. A translucent foreground is blended over the background, so `#3885FF80` on white is 1.82:1, not 3.52:1: a pair that passed only because its color was read as opaque now fails. A translucent background is refused (exit 2, a tool error) where it used to be answered as if opaque. An answer that usage denied for colors that cannot be measured has no `contrast` field.
+
+### Added
+
+- `blazon can --alpha <0-1>` and the `alpha` property of `can_use` measure the foreground at that opacity, on top of its own alpha.
+- The `get_fonts` tool takes `css` and `base` and returns `fontFace`, the `@font-face` rules for the brand's font files, as `blazon fonts --css` prints them. A URL prefix is now percent-encoded for quotes, parentheses and `;` too.
+- `blazon logo --json` and the `get_logo` tool give each logo variant an absolute `path` and a `sha256`, and each logo asset a `details` list with the `file`, absolute `path`, `sha256`, `bytes` and `format` of every file, in the order of `files`. A caller outside the brand folder can now find the file and check its bytes. The paths are meaningful only on the machine blazon runs on.
+
+### Changed
+
+- The MCP tool `check_brand` now answers with `byRule`, the findings grouped by rule code with a count and one example each, so a brand with many warnings is readable without the full list. When `blazon.json` lists plugins, `rulesNotRun` names each one's code pattern (`name/*`), so a zero count for those rules is not read as a clean brand. No field was removed or renamed.
+- The MCP tools no longer show example token paths that a brand may not have, and
+  `list_tokens`, `get_token` and `can_use` now answer an unknown path or group with
+  "did you mean" and the nearest real paths, the way `get_rules` already did. The
+  same applies to `blazon list`, `blazon get` and `blazon can`.
+- The MCP server instructions say that a token the brand does not define is a question for the user, never a value to invent.
+- `blazon mcp --print-config` and the brand book's "Connect your agent" panel register the MCP server under the brand's own name: its title as a slug with `-brand`, such as `acme-brand`, instead of `blazon` for every brand. Two brands can then sit in one client's config, and an agent sees whose tools it calls. `--name` chooses another name. A brand with no title of its own gets `blazon` as before. `blazon mcp --check` finds the entry under the brand name and under the old name `blazon`. The server still reports itself as `blazon` in the MCP handshake.
+
+### Fixed
+
+- The built brand book, and the dev server's page, name themselves in their HTML: the brand's `title` is the page `<title>` and the Open Graph title, and its `description` is the description and Open Graph description tags. Before, the HTML said "Brand Book" for every brand until the script ran, so a link preview, a search result and the tab while loading showed the generic name.
+- `blazon can` and the `can_use` tool read a pair's `usage` rules before its colors, so a gradient that usage forbids is a denial with its reason instead of an error. A gradient that usage allows still cannot be measured, and stays an error.
+
 ## 0.5.2 (2026-11-23)
 
 ### Fixed

@@ -1,1 +1,0 @@
-`blazon can` and the `can_use` tool read a pair's `usage` rules before its colors, so a gradient that usage forbids is a denial with its reason instead of an error. A gradient that usage allows still cannot be measured, and stays an error.
