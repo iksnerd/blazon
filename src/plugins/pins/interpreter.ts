@@ -77,10 +77,22 @@ export interface ChainOptions {
  * because whoever can write there can put another program where this one is.
  */
 export function chainProblem(file: string, options: ChainOptions = {}): string | undefined {
+  return chainFault(file, options)?.message;
+}
+
+/** A refused link of the chain: the message, and for a folder or file others can write, which path and its permission bits. */
+export interface ChainFault {
+  message: string;
+  /** Set when the fault is a mode that others can write */
+  writable?: { path: string; mode: number; uid: number };
+}
+
+/** `chainProblem` with the detail a fix needs. The message is the same text. */
+export function chainFault(file: string, options: ChainOptions = {}): ChainFault | undefined {
   const uid = options.uid ?? process.getuid?.() ?? 0;
-  const unsafe = (place: string, stat: fs.Stats): string | undefined => {
-    if (stat.uid !== 0 && stat.uid !== uid) return `${place} is owned by user ${stat.uid}, who is neither you nor root`;
-    if (stat.mode & 0o022) return `${place} can be written by group or others`;
+  const unsafe = (place: string, stat: fs.Stats): ChainFault | undefined => {
+    if (stat.uid !== 0 && stat.uid !== uid) return { message: `${place} is owned by user ${stat.uid}, who is neither you nor root` };
+    if (stat.mode & 0o022) return { message: `${place} can be written by group or others`, writable: { path: place, mode: stat.mode & 0o7777, uid: stat.uid } };
     return undefined;
   };
   let current = '/';
@@ -100,29 +112,29 @@ export function chainProblem(file: string, options: ChainOptions = {}): string |
     try {
       stat = fs.lstatSync(next);
     } catch {
-      return `${next} does not exist`;
+      return { message: `${next} does not exist` };
     }
     if (stat.isSymbolicLink()) {
-      if (++links > MAX_LINKS) return `${file} has too many links on the way`;
+      if (++links > MAX_LINKS) return { message: `${file} has too many links on the way` };
       const target = fs.readlinkSync(next);
       if (target.startsWith('/')) current = '/';
       pending.push(...target.split('/').filter((piece) => piece !== '' && piece !== '.').reverse());
       continue;
     }
     if (pending.length > 0 || options.final === 'dir') {
-      if (!stat.isDirectory()) return `${next} is not a directory`;
+      if (!stat.isDirectory()) return { message: `${next} is not a directory` };
       const problem = unsafe(next, stat);
       if (problem) return problem;
       current = next;
       continue;
     }
-    if (!stat.isFile()) return `${next} is not a regular file`;
+    if (!stat.isFile()) return { message: `${next} is not a regular file` };
     const problem = unsafe(next, stat);
     if (problem) return problem;
-    if (!(stat.mode & 0o111)) return `${next} is not executable`;
+    if (!(stat.mode & 0o111)) return { message: `${next} is not executable` };
     return undefined;
   }
-  return options.final === 'dir' ? undefined : `${file} does not exist`;
+  return options.final === 'dir' ? undefined : { message: `${file} does not exist` };
 }
 
 export interface TrustedPath {

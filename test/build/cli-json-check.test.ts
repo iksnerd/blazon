@@ -5,11 +5,11 @@ import { starterProject } from '../support/init-project';
 import { blazon, brokenProject } from '../support/blazon-src';
 
 // check and build output, as JSON and as text: findings, --strict, failures, and the line of a finding. Split from the --json tests.
-// `--json` is the contract for a script or an agent: standard output is one JSON document and nothing else, the human text
-// goes to standard error, and the exit status says what a person would read from the last line.
+// `--json` is the contract for a script or an agent: standard output is one JSON document and nothing else, standard error
+// is empty on a run that ends normally, and the exit status says what a person would read from the last line.
 
 describe('blazon check --json', () => {
-  it('prints one JSON document on standard output and the banner on standard error', async () => {
+  it('prints one JSON document on standard output and nothing on standard error', async () => {
     const root = await starterProject();
     const ran = blazon('check', root, '--json');
     expect(ran.status, ran.stdout + ran.stderr).toBe(0);
@@ -22,8 +22,23 @@ describe('blazon check --json', () => {
     expect(report.findings[0]).toEqual(
       expect.objectContaining({ code: expect.any(String), severity: expect.stringMatching(/^(error|warning|info)$/), path: expect.any(String), message: expect.any(String) }),
     );
-    expect(ran.stderr).toContain('Checking design tokens');
+    expect(ran.stderr).toBe(''); // the findings are in the document, so a list on standard error would only repeat them
     expect(ran.stdout).not.toContain('Checking design tokens');
+  });
+
+  it('keeps standard error empty with --severity warning, so 2>&1 parses', async () => {
+    const root = await starterProject();
+    const ran = blazon('check', root, '--json', '--severity', 'warning');
+    expect(ran.status, ran.stdout + ran.stderr).toBe(0);
+    expect(ran.stderr).toBe('');
+    expect(JSON.parse(ran.stdout).counts.warnings).toBe(2);
+  });
+
+  it('still prints the findings as text without --json', async () => {
+    const ran = blazon('check', await starterProject());
+    expect(ran.status, ran.stdout + ran.stderr).toBe(0);
+    expect(ran.stdout).toContain('Checking design tokens');
+    expect(ran.stdout).toContain('starter-logo-unchanged');
   });
 
   it('exits 1 and reports the error as a finding when the tokens are wrong', async () => {

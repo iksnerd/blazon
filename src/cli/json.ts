@@ -8,8 +8,8 @@ import { runInit, type InitOptions, type InitReport } from './commands/init.js';
 
 /**
  * Runs a command that finds things and prints what it found as one JSON document on standard output. Everything else the
- * command prints (its banner, its list of findings) goes to standard error for the time it runs, so a script can parse
- * standard output whole. `counts` and `passed` cover every finding; `severity` only cuts the list. `brandHasErrors` is true when a finding other than the pin
+ * command prints on a normal run (its banner, its list of findings) is dropped for the time it runs, so standard output is
+ * the one document and standard error stays empty; a failure still prints its one-line error there. `counts` and `passed` cover every finding; `severity` only cuts the list. `brandHasErrors` is true when a finding other than the pin
  * family is an error (a value may be wrong); `pinMismatch` is there when blazon.lock names another blazon build, and `cwd` is the folder it is read from. Exit status: 0 passed, 1 not passed. A command that cannot start throws, and prints nothing here.
  */
 export const SEVERITIES = ['error', 'warning', 'info'] as const;
@@ -26,7 +26,7 @@ export async function asJson(
   cwd: string = process.cwd(),
 ): Promise<void> {
   const log = console.log;
-  console.log = (...args: unknown[]) => console.error(...args);
+  console.log = () => {}; // the document carries every finding: a list or banner on standard error would repeat it and break 2>&1
   let findings: Finding[];
   try {
     findings = (await run()).findings;
