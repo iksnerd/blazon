@@ -22,9 +22,8 @@ export interface OutputFile {
 }
 
 export interface MissingOutput {
-  /** The plugin's id: its `as`, or its name. Its folder `<outputsDir>/<id>/` does not exist */
+  /** The plugin's id: its `as`, or its name. Its folder `<outputsDir>/<id>/` does not exist. A plugin that writes nothing on this command is listed too */
   id: string;
-  fix: string;
 }
 
 export interface OutputsDescription {
@@ -32,7 +31,7 @@ export interface OutputsDescription {
   outputsDir: string;
   files: OutputFile[];
   missing: MissingOutput[];
-  /** The command to run, present when a plugin is missing or any file is stale or the folder holds nothing */
+  /** The command to run, present when any file is stale or the folder holds nothing. Not set by a missing plugin folder alone: a plugin may write nothing on `blazon tokens`, and running it again would not change that */
   fix?: string;
   note: string;
   /** With `file`: its text, cut at MAX_TEXT characters */
@@ -151,8 +150,8 @@ export function describeOutputs(config: BlazonConfig, cwd: string, options: { fi
   const missing: MissingOutput[] = (config.plugins ?? [])
     .map((entry) => entry.as ?? entry.name)
     .filter((id) => !(fs.statSync(path.join(base, id), { throwIfNoEntry: false })?.isDirectory() ?? false))
-    .map((id) => ({ id, fix: FIX }));
-  const needsRun = missing.length > 0 || files.length === 0 || files.some((f) => f.state === 'stale');
+    .map((id) => ({ id }));
+  const needsRun = files.length === 0 || files.some((f) => f.state === 'stale');
   const answer: OutputsDescription = { outputsDir, files, missing, ...(needsRun && { fix: FIX }), note: OUTPUTS_NOTE };
   if (options.file !== undefined) Object.assign(answer, readText(base, options.file));
   return answer;

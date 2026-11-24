@@ -30,7 +30,7 @@ function print(answer: OutputsDescription): void {
   console.log(`\n  ${pc.bold(answer.outputsDir)}`);
   if (answer.files.length === 0) console.log(pc.dim('  Nothing is there.'));
   for (const file of answer.files) console.log(`  ${file.state === 'fresh' ? pc.green('fresh') : pc.yellow('stale')}  ${file.file}  ${pc.dim(`${file.bytes} bytes`)}`);
-  for (const gone of answer.missing) console.log(`  ${pc.red('missing')}  ${gone.id}/`);
+  for (const gone of answer.missing) console.log(`  ${pc.dim('no folder')}  ${gone.id}/  ${pc.dim('(a plugin may write nothing on this command)')}`);
   if (answer.fix) console.log(`\n  Run ${pc.bold(answer.fix)}.`);
   console.log(`\n  ${pc.dim(answer.note)}\n`);
 }

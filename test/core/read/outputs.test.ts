@@ -75,7 +75,7 @@ describe('describeOutputs', () => {
     const answer = describeOutputs(asked, copy);
     expect(answer.files).toEqual([]);
     expect(answer.missing.map((m) => m.id)).toEqual(['blazon.tailwind', 'acme.shadcn']);
-    expect(answer.missing[0]?.fix).toBe('blazon tokens');
+    expect(answer.missing[0]).not.toHaveProperty('fix');
     expect(answer.fix).toBe('blazon tokens');
     expect(fs.existsSync(path.join(copy, 'dist'))).toBe(false);
   });
@@ -86,7 +86,9 @@ describe('describeOutputs', () => {
     const asked = { ...config, plugins: [{ name: 'blazon.tailwind' }, { name: 'blazon.shadcn' }] } as BlazonConfig;
     const answer = describeOutputs(asked, root);
     expect(answer.missing.map((m) => m.id)).toEqual(['blazon.shadcn']);
-    expect(answer.fix).toBe('blazon tokens');
+    // a plugin with no folder may simply write nothing on `blazon tokens`: running it again would never clear that, so it is not a fix
+    expect(answer).not.toHaveProperty('fix');
+    expect(answer.missing[0]).not.toHaveProperty('fix');
     expect(answer.files.map((f) => f.file)).toContain('blazon.tailwind/theme.css');
     fs.rmSync(path.join(outDir(), 'blazon.tailwind'), { recursive: true });
   });

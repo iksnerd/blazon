@@ -906,12 +906,12 @@ export const OPERATIONS: readonly Operation[] = [
             type: 'object',
             properties: {
               id: { type: 'string', description: 'The id of a plugin blazon.json lists whose folder `<outputsDir>/<id>/` does not exist' },
-              fix: { type: 'string', description: 'The command to run' },
             },
-            required: ['id', 'fix'],
+            required: ['id'],
             additionalProperties: {},
           },
-          description: 'The configured plugins with no output folder. A plugin with no build role writes none, so one listed here may never write one',
+          description:
+            'The configured plugins with no output folder. A plugin with no build role, or one that writes only on `blazon build`, has none: nothing is wrong, and `fix` is not set for this alone',
         },
         fix: { type: 'string', description: 'The command to run when something is missing or stale. Absent when nothing is' },
         note: { type: 'string', description: 'What fresh means, and the limit of a timestamp' },
