@@ -106,7 +106,7 @@ export async function compileBlazonData(input: BlazonConfig, cwd: string = proce
     ...absentLocalFindings(absentLocal, categories.configs),
     ...replacementFindings(assets.all, absentLocal),
     ...initiativeFindings(assets.all, absentLocal),
-    ...colorwayFindings(assets.all, resolvedTokens.items, absentLocal),
+    ...colorwayFindings(assets.all, resolvedTokens.items, absentLocal, new Set(resolvedTokens.unresolved)),
     ...assetProblems.filter((f) => !(f.code === 'asset-sidecar-orphaned' && absentLocal.has(f.path.split('/')[0]!))),
   ];
 

@@ -622,6 +622,7 @@ Not in it, on purpose: the pages' HTML, SVG markup (the files are beside it), th
 | `ParsedTokens.contexts`, `ParsedTokens.modifiers` | `contexts`, `modifiers` | the tokens of a context are projected like `tokens`; `modifiers` is `[]` when absent |
 | `ParsedTokens.byPath`, `ParsedTokens.groups`, `ParsedTokens.nested` | left out | three more copies of the tokens: a lookup `Map` that is `{}` as JSON, the tokens by first path segment, and the resolved values in their hierarchy |
 | `ParsedTokens.problems` | `findings` | not a key of its own: the check puts them in `findings` |
+| `ParsedTokens.unresolved` | left out | the paths of tokens whose alias names no token, so the checks that need a value skip them: `alias-unresolved` is the one finding for that cause |
 | `TokenItem.path`, `TokenItem.type`, `TokenItem.value`, `TokenItem.resolvedValue`, `TokenItem.rawValue`, `TokenItem.parts`, `TokenItem.aliasOf`, `TokenItem.description`, `TokenItem.deprecated`, `TokenItem.cssVariable`, `TokenItem.extensions`, `TokenItem.blazon` | the same names | as is; left out when empty or absent: `type`, `parts`, `aliasOf`, `description`, `deprecated`, `extensions` and `blazon` |
 | `TokenItem.file` | `sourceFile` | renamed, because `file` means a path beside brand.json |
 | `TokenItem.group`, `TokenItem.name` | left out | both are in `path` |

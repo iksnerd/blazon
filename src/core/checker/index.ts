@@ -28,10 +28,11 @@ export interface CheckResult {
 export function checkTokens(data: Pick<BlazonData, 'tokens'> & { vocabulary?: Pick<Vocabulary, 'usageRoles'> }, options?: { strict?: boolean }): CheckResult {
   const roles = data.vocabulary?.usageRoles ?? STANDARD_USAGE_ROLES;
   const { items, byPath, groupMeta, problems } = data.tokens;
+  const unresolved = new Set(data.tokens.unresolved);
   const all: Finding[] = [
     ...problems,
     ...items.flatMap((item) => usageFindings(item, byPath, roles)),
-    ...groupMeta.flatMap((group) => (group.blazon.pairs ?? []).flatMap((pair) => contrastFindings(pair, group.path, items))),
+    ...groupMeta.flatMap((group) => (group.blazon.pairs ?? []).flatMap((pair) => contrastFindings(pair, group.path, items, unresolved))),
     ...groupMeta.flatMap((group) => proportionFindings(group.path, group.blazon.proportion, byPath)),
     ...duplicateFindings(items),
     ...variableFindings(data.tokens),

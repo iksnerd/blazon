@@ -87,6 +87,8 @@ export interface ParsedTokens {
   groupMeta: GroupMeta[];
   /** Problems found while loading and resolving; `blazon check` adds rule findings */
   problems: Finding[];
+  /** Paths of the tokens whose value is unknown because an alias in it, or down its chain, names no token; the checks that need a value skip them. Absent when there are none */
+  unresolved?: string[];
   /** With a resolver document: every non-default context, one modifier at a time */
   contexts?: TokenContext[];
   /** With a resolver document: each modifier, its default context and all its contexts */

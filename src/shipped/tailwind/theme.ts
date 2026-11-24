@@ -163,12 +163,24 @@ export function formatTailwindReset(tokens: readonly TokenRead[]): string | unde
 }
 
 /**
+ * The utility a font family or a font weight generates, `font-display` for `--font-display` and for `--font-weight-display`: Tailwind reads
+ * `font-<name>` from both namespaces, so the two share a name even though their variables differ. Undefined for any other token.
+ */
+function utilityOf(token: TokenRead, variable: string): string | undefined {
+  if (token.type === 'fontFamily') return `font-${variable.slice('--font-'.length)}`;
+  if (token.type === 'fontWeight') return `font-${variable.slice('--font-weight-'.length)}`;
+  return undefined;
+}
+
+/**
  * Two tokens whose names reduce to one Tailwind variable (`color.brand` and `colors.brand`) overwrite each other, and tailwind.css keeps the
  * first. The one that comes second is an error, unless both hold one value (a semantic alias and its primitive share a name by design) or both
- * also write one CSS variable in theme.css, where the core's own check has already said so.
+ * also write one CSS variable in theme.css, where the core's own check has already said so. A font family and a font weight of one name are
+ * two variables but one utility, `font-<name>`, so they are reported too.
  */
 export function collisions(tokens: readonly TokenRead[]): Finding[] {
   const owner = new Map<string, TokenRead>();
+  const utilityOwner = new Map<string, TokenRead>();
   const found: Finding[] = [];
   for (const token of tokens) {
     const variable = tailwindVariable(token);
@@ -176,6 +188,18 @@ export function collisions(tokens: readonly TokenRead[]): Finding[] {
     const first = owner.get(variable);
     if (!first) {
       owner.set(variable, token);
+      const utility = utilityOf(token, variable);
+      const sharer = utility === undefined ? undefined : utilityOwner.get(utility);
+      if (utility !== undefined && sharer && sharer.path !== token.path) {
+        found.push(
+          finding(
+            'variable-duplicate',
+            'error',
+            token.path,
+            `${token.path} and ${sharer.path} both generate the Tailwind utility ${utility} (${variable} and ${tailwindVariable(sharer)}); rename one`,
+          ),
+        );
+      } else if (utility !== undefined) utilityOwner.set(utility, token);
       continue;
     }
     if (first.path === token.path || token.value === first.value) continue;

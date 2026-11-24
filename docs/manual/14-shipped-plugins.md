@@ -693,5 +693,5 @@ A brand with no token in any namespace gets neither file. The plugin has no opti
 
 | Finding | Severity | Means |
 |---|---|---|
-| `blazon.tailwind/variable-duplicate` | error | Two tokens with different values write one Tailwind variable (`color.brand` and `colors.brand` are both `--color-brand`); `tailwind.css` keeps the first. Rename one of them. Two tokens with one value, such as a semantic alias and its primitive, are not reported |
+| `blazon.tailwind/variable-duplicate` | error | Two tokens with different values write one Tailwind variable (`color.brand` and `colors.brand` are both `--color-brand`); `tailwind.css` keeps the first. Rename one of them. Two tokens with one value, such as a semantic alias and its primitive, are not reported. A `fontFamily` and a `fontWeight` of one name (`font.display`, `weight.display`) are reported too: both generate the utility `font-display` |
 | `blazon.tailwind/option-invalid` | error | The entry gives an option, which this plugin does not take, or `options` is not an object |

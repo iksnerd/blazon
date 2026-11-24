@@ -81,7 +81,7 @@ export function matchingPairs<T extends { fg: string; bg: string }>(items: Token
   return listed.filter((pair) => expand(pair.fg, items).some((t) => fgChain.includes(t.path)) && expand(pair.bg, items).some((t) => bgChain.includes(t.path)));
 }
 
-export function contrastFindings(pair: ContrastPair, rulePath: string, items: TokenItem[]): Finding[] {
+export function contrastFindings(pair: ContrastPair, rulePath: string, items: TokenItem[], unresolved: ReadonlySet<string> = new Set()): Finding[] {
   const minimum = CONTRAST_MINIMUM[pair.min];
   const fgs = expand(pair.fg, items);
   const bgs = expand(pair.bg, items);
@@ -92,6 +92,8 @@ export function contrastFindings(pair: ContrastPair, rulePath: string, items: To
   const findings: Finding[] = [];
   for (const bg of bgs) {
     for (const fg of fgs) {
+      // An alias that names no token is `alias-unresolved` already; a pair on it is not a second finding
+      if (unresolved.has(fg.path) || unresolved.has(bg.path)) continue;
       const [fgColor, bgColor] = [parseColor(String(fg.value)), parseColor(String(bg.value))];
       if (!fgColor || !bgColor) {
         findings.push(finding('contrast-unknown', { path: bg.path, message: `Cannot measure ${fg.value} on ${bg.value}: not a color blazon can read` }));

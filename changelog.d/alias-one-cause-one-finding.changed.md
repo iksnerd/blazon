@@ -1,0 +1,1 @@
+`blazon check` reports an alias that names no token once, as `alias-unresolved`. The `token-value-invalid`, `token-type-missing` and `contrast-unknown` findings that only followed from it, on the token, on a pair or logo colorway that names it and on a token that aliases it, are no longer listed.
