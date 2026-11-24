@@ -62,7 +62,7 @@ export function colorwayResults(logo: Asset, assets: readonly Asset[], items: re
  * The findings of every logo's colorways: a variant that names no asset is an error on the sidecar (as `replacedBelow.by` is), a colorway
  * below its level is `contrast-insufficient`, and one that cannot be measured is `contrast-unknown`. A logo id with several files is one logo.
  */
-export function colorwayFindings(assets: readonly Asset[], items: readonly TokenItem[], absentLocal: ReadonlySet<string>): Finding[] {
+export function colorwayFindings(assets: readonly Asset[], items: readonly TokenItem[], absentLocal: ReadonlySet<string>, unresolved: ReadonlySet<string> = new Set()): Finding[] {
   const seen = new Set<string>();
   return assets.flatMap((asset): Finding[] => {
     if (!asset.meta?.colorways || seen.has(asset.id)) return [];
@@ -77,7 +77,7 @@ export function colorwayFindings(assets: readonly Asset[], items: readonly Token
         return;
       }
       const result = colorwayResults({ ...asset, meta: { ...asset.meta, colorways: [colorway] } }, assets, items)[0];
-      if (!result) return;
+      if (!result || unresolved.has(colorway.on)) return;
       if (result.ratio === undefined) {
         const why = !result.background
           ? `{${colorway.on}} is not a color token`

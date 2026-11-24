@@ -122,6 +122,26 @@ describe('two tokens that write one Tailwind variable', () => {
     expect(collisions(await tokensOf(files))).toEqual([]);
   });
 
+  it('is an error when a fontFamily and a fontWeight both generate the utility font-display', async () => {
+    const files = { 'a.json': { font: { $type: 'fontFamily', display: { $value: 'Acme Sans' } }, weight: { $type: 'fontWeight', display: { $value: 800 } } } };
+    const tokens = await tokensOf(files);
+    expect(formatTailwindTheme(tokens)).toContain('--font-display: ');
+    expect(formatTailwindTheme(tokens)).toContain('--font-weight-display: ');
+    expect(collisions(tokens)).toEqual([
+      {
+        code: 'blazon.tailwind/variable-duplicate',
+        severity: 'error',
+        path: 'weight.display',
+        message: 'weight.display and font.display both generate the Tailwind utility font-display (--font-weight-display and --font-display); rename one',
+      },
+    ]);
+  });
+
+  it('lets a font family and a font weight of different names stand', async () => {
+    const files = { 'a.json': { font: { $type: 'fontFamily', display: { $value: 'Acme Sans' } }, weight: { $type: 'fontWeight', heavy: { $value: 800 } } } };
+    expect(collisions(await tokensOf(files))).toEqual([]);
+  });
+
   it('leaves a pair that also shares its theme.css variable to the core check, which names it already', () => {
     const token = (p: string, value: string) => ({ path: p, type: 'color', value, cssVariable: '--color-brand' });
     expect(collisions(readBrand({ format: 'blazon-brand', version: 2, tokens: [token('color.brand', '#111111'), token('colors.brand', '#222222')] }))).toEqual([]);

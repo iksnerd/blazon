@@ -1,5 +1,6 @@
 import type { ParsedTokens, TokenGroup, TokenItem } from '../../types/index.js';
 import { aliasTarget, Resolver } from './alias.js';
+import { compareText } from '../order.js';
 import { generateCssVarName } from './names.js';
 import { dictionary, type TokenTree } from './walk.js';
 import { compositeParts, toCssValue } from './values/index.js';
@@ -18,8 +19,9 @@ export function resolveTokenTree(tree: TokenTree, cssPrefix = '--'): ParsedToken
     const aliasOf = aliasTarget(token.rawValue);
     const segments = token.path.split('.');
 
+    const cascaded = resolver.unresolved.has(token.path);
     if (!type) {
-      resolver.report(token.path, 'token-type-missing', 'No $type on the token, its groups, or the token it aliases');
+      if (!cascaded) resolver.report(token.path, 'token-type-missing', 'No $type on the token, its groups, or the token it aliases');
     } else if (aliasOf && token.type) {
       const targetType = resolver.typeOf(tree.tokens.find((t) => t.path === aliasOf) ?? token);
       if (targetType && targetType !== token.type) {
@@ -29,7 +31,7 @@ export function resolveTokenTree(tree: TokenTree, cssPrefix = '--'): ParsedToken
 
     const value = toCssValue(type, resolvedValue, token.blazon);
     const parts = compositeParts(type, resolvedValue);
-    if (value.problem) resolver.report(token.path, 'token-value-invalid', value.problem);
+    if (value.problem && !cascaded) resolver.report(token.path, 'token-value-invalid', value.problem);
 
     items.push({
       path: token.path,
@@ -57,6 +59,7 @@ export function resolveTokenTree(tree: TokenTree, cssPrefix = '--'): ParsedToken
     nested: nest(items),
     groupMeta: tree.groupMeta,
     problems: [...tree.problems, ...resolver.problems],
+    ...(resolver.unresolved.size > 0 && { unresolved: [...resolver.unresolved].sort(compareText) }),
   };
 }
 

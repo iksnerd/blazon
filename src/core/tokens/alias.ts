@@ -21,6 +21,8 @@ export class Resolver {
   /** The paths in the `resolving` state, in the order the walk entered them. */
   private readonly stack: string[] = [];
   readonly problems: Finding[] = [];
+  /** Tokens whose value cannot be known because an alias in it, or down its chain, names no token. The one finding for that cause is `alias-unresolved` on the root. */
+  readonly unresolved = new Set<string>();
 
   constructor(tokens: DeclaredToken[]) {
     this.declared = new Map(tokens.map((t) => [t.path, t]));
@@ -53,6 +55,7 @@ export class Resolver {
     }
     if (!this.declared.has(target)) {
       this.report(owner, 'alias-unresolved', `Alias {${target}} does not match any token`);
+      this.unresolved.add(owner);
       return value;
     }
     if (this.states.get(target)?.kind === 'resolving') {
@@ -62,7 +65,9 @@ export class Resolver {
       this.report(first, 'alias-circular', `Alias {${loop[(loop.indexOf(first) + 1) % loop.length]}} leads back to ${first}`);
       return value;
     }
-    return this.token(target);
+    const resolved = this.token(target);
+    if (this.unresolved.has(target)) this.unresolved.add(owner);
+    return resolved;
   }
 
   /** The declared type of a token, or of the first token down its alias chain that has one. A loop or a broken link gives undefined. */
