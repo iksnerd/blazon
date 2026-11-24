@@ -1,5 +1,7 @@
 // Color helpers for the viewer's own rendering (ink on a swatch, RGB labels).
 
+import { contrastBetween as coreContrast, parseColor } from '../../../core/checker/contrast';
+
 type Rgb = [number, number, number];
 
 function parseRgb(css: string): Rgb | undefined {
@@ -54,8 +56,14 @@ export function blackContrast(paint: string): number | undefined {
   return l === undefined ? undefined : (l + 0.05) / 0.05;
 }
 
-/** The WCAG contrast ratio between two paints; undefined when either holds no color blazon can read. */
+/**
+ * The WCAG contrast ratio between two paints. Two plain colors are measured by core's `contrastBetween` (one measure: a translucent
+ * foreground is blended over the background, and a translucent background has no ratio). A gradient is judged by the average
+ * luminance of its stops. Undefined when either holds no color blazon can read.
+ */
 export function contrastBetween(a: string, b: string): number | undefined {
+  const [ca, cb] = [parseColor(a), parseColor(b)];
+  if (ca && cb) return coreContrast(ca, cb);
   const la = paintLuminance(a);
   const lb = paintLuminance(b);
   if (la === undefined || lb === undefined) return undefined;
