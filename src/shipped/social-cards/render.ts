@@ -7,7 +7,9 @@ import {
   contrastFinding,
   keepClearFindings,
   logoContrastFinding,
+  logoCornerFinding,
   logoFinding,
+  logoNoCornerFinding,
   logoWidthFinding,
   overflowFinding,
   planLogo,
@@ -169,6 +171,8 @@ async function drawCard(browser: Browser, origin: string, brand: BrandRead, card
       })
     : undefined;
   if (plan?.clampedFrom !== undefined) findings.push(logoWidthFinding(card.id, plan.clampedFrom, plan.rect.width));
+  if (plan?.outsideRule) findings.push(logoCornerFinding(card.id, plan.corner, plan.outsideRule));
+  if (plan?.noCornerOnEdge) findings.push(logoNoCornerFinding(card.id, plan.noCornerOnEdge.edge, plan.corner, plan.noCornerOnEdge.listed));
 
   const anchor: Look['anchor'] = card.anchor ?? (plan?.corner.startsWith('top') ? 'bottom' : plan ? 'top' : 'bottom');
   // A logo on the text's own edge (only a `logoCorner` with an `anchor` puts it there) takes room across, not down

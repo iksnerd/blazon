@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { NAME } from '../../../../src/shipped/social-cards/request.js';
-import { logoFinding, logoWidthFinding, planLogo } from '../../../../src/shipped/social-cards/checks.js';
+import { logoCornerFinding, logoFinding, logoNoCornerFinding, logoWidthFinding, planLogo } from '../../../../src/shipped/social-cards/checks.js';
 import { logoInset, pageHtml, type Look } from '../../../../src/shipped/social-cards/layout.js';
 import { rule } from './helpers.js';
 
@@ -24,7 +24,7 @@ describe('the logo', () => {
     const meta = { placement: ['top-left', 'bottom-right'] as string[] };
     expect(planLogo(format, logo, meta, 'top').corner).toBe('bottom-right');
     expect(planLogo(format, logo, meta, 'bottom').corner).toBe('top-left');
-    expect(planLogo(format, logo, { placement: ['top-right'] }, 'top').corner).toBe('bottom-right');
+    expect(planLogo(format, logo, { placement: ['top-right', 'bottom-left'] }, 'top').corner).toBe('bottom-left');
     expect(planLogo(format, logo, undefined, 'top').corner).toBe('bottom-left');
     expect(planLogo(format, logo, meta).corner).toBe('top-left');
   });
@@ -83,7 +83,28 @@ describe('the logo', () => {
       expect(rect.y).toBe(corner.startsWith('top') ? 64 : 630 - 64 - rect.height);
     }
     expect(planLogo(format, logo, meta, 'top', { corner: 'top-right' }).corner).toBe('top-right');
-    expect(planLogo(format, logo, meta, 'top', {}).corner).toBe('bottom-left');
+    expect(planLogo(format, logo, undefined, 'top', {}).corner).toBe('bottom-left');
+  });
+
+  it('never picks a corner the placement does not list', () => {
+    // text from the top, the sidecar lists only top corners: the preferred corner stays and the plan says why
+    const plan = planLogo(format, logo, { placement: ['top-right'] }, 'top');
+    expect(plan.corner).toBe('top-right');
+    expect(plan.noCornerOnEdge).toEqual({ edge: 'top', listed: ['top-right'] });
+    expect(logoNoCornerFinding('c', 'top', 'top-right', ['top-right'])).toMatchObject({ code: `${NAME}/card-logo-corner-unlisted`, severity: 'warning', path: 'c.png' });
+    // a listed corner on the other edge is still taken, with nothing to report
+    expect(planLogo(format, logo, { placement: ['top-right', 'bottom-left'] }, 'top').noCornerOnEdge).toBeUndefined();
+    // no placement: today's behaviour
+    expect(planLogo(format, logo, undefined, 'top').noCornerOnEdge).toBeUndefined();
+  });
+
+  it('keeps an explicit logoCorner the placement does not list, and reports it', () => {
+    const plan = planLogo(format, logo, { placement: ['top-left'] }, undefined, { corner: 'bottom-right' });
+    expect(plan.corner).toBe('bottom-right');
+    expect(plan.outsideRule).toEqual(['top-left']);
+    expect(logoCornerFinding('c', 'bottom-right', ['top-left'])).toMatchObject({ code: `${NAME}/card-logo-corner-unlisted`, severity: 'warning', message: expect.stringContaining('bottom-right') });
+    expect(planLogo(format, logo, { placement: ['top-left'] }, undefined, { corner: 'top-left' }).outsideRule).toBeUndefined();
+    expect(planLogo(format, logo, undefined, undefined, { corner: 'top-left' }).outsideRule).toBeUndefined();
   });
 
   it('gives the text room across, not down, when the logo is on its edge', () => {
