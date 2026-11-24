@@ -1,6 +1,6 @@
 {
   "name": "@iksnerd/blazon",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Brand book and design token compiler: DTCG tokens, brand rules checked by blazon check, a static brand book that wears the brand",
   "type": "module",
   "bin": {

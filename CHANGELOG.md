@@ -6,6 +6,25 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.7.1 (2026-11-24)
+
+### Changed
+
+- `blazon check` reports an alias that names no token once, as `alias-unresolved`. The `token-value-invalid`, `token-type-missing` and `contrast-unknown` findings that only followed from it, on the token, on a pair or logo colorway that names it and on a token that aliases it, are no longer listed.
+- `blazon init` now writes a `.gitignore` with `dist/` (the default output folders), or adds that line once to the one already there, and never rewrites the rest. The list it prints, and `--json` (`created`, plus a new `updated`), now name every top-level folder and file it wrote, including `fonts/`, `AGENTS.md` and `CLAUDE.md`.
+- The `plugin-failed` fix for a plugin folder that group or others can write now
+  names the folder, its mode (for example 775) and the exact `chmod g-w` or
+  `chmod go-w` that fixes it. The advice to install under your home folder stays
+  for shared folders such as `/tmp`.
+- The starter `AGENTS.md` gives the order for replacing the starter: the colors go in one step (`colors.json`, the `theme` roles in `blazon.json`, `dark.json` and the `border` and `shadow` tokens of `form.json`), with the findings to expect in between. The theme-and-config chapter says that one font license file is read for each font folder, so two families under different licenses need a subfolder each.
+
+### Fixed
+
+- `blazon check --json`, `build --json` and `tokens --json` no longer print the
+  banner and the findings list to standard error. Standard output is the one JSON
+  document and standard error is empty on a normal run, so `2>&1` parses.
+- `blazon.tailwind` reports a `fontFamily` and a `fontWeight` token of one name as `variable-duplicate`: both generate the Tailwind utility `font-<name>`.
+
 ## 0.7.0 (2026-11-24)
 
 ### Breaking
