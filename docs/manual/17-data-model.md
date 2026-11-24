@@ -59,6 +59,7 @@ tokens/  docs/  assets/  blazon.json   →   BlazonData   →   dist/tokens/  di
 | `nested` | The resolved values in the original hierarchy; a composite is an object of CSS-ready parts |
 | `groupMeta` | The groups that carry a `$description` or `dev.blazon` fields (`GroupMeta`) |
 | `problems` | The problems found while loading and resolving; `blazon check` adds its rule findings |
+| `unresolved` | The paths of tokens whose alias, or an alias down its chain, names no token, so the checks that need a value skip them; `alias-unresolved` is the one finding for that cause. Absent when there are none |
 | `contexts` | With a resolver document, every non-default context, one modifier at a time (`TokenContext`) |
 | `modifiers` | With a resolver document, each modifier with its default context and all its contexts |
 

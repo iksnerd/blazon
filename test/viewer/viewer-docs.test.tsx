@@ -338,6 +338,8 @@ describe.skipIf(!PRESENT)('the logo on color tokens', () => {
     };
     openViewer('#doc/guide', forbid(['logos/navy']));
     expect(tile('color.test.green').querySelector('img')!.getAttribute('src')).toBe(data.logo!.onDark);
+    // `tile` takes the first match on the page, so the first render must go before the second is read
+    cleanup();
     openViewer('#doc/guide', forbid(['logos/navy', 'onDark']));
     expect(tile('color.test.green').querySelector('img')).toBeNull();
   });
