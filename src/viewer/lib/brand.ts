@@ -1,6 +1,7 @@
-import type { Asset, AssetRules, DocItem, Finding, BlazonData, GroupMeta, TokenItem } from '../../types/index.js';
+import type { Asset, AssetRules, DocItem, Finding, BlazonData, GroupMeta, ThemeRole, TokenItem } from '../../types/index.js';
 import { blackContrast, contrastBetween, GRAPHIC_CONTRAST, whiteContrast } from './theme/color';
 import { humanize, parentOf } from './tokens/format';
+import { logoDenialUnder } from '../../core/checker/logo-rules.js';
 
 /** Token types shown on the Motion page and on the Strokes & effects page. */
 export const MOTION_TYPES: readonly string[] = ['duration', 'cubicBezier', 'transition'];
@@ -99,6 +100,19 @@ export function logoFor(data: BlazonData, background: 'light' | 'dark'): string 
   return background === 'dark' ? data.logo.onDark : data.logo.onLight;
 }
 
+/** The token that fills a theme role (`background`, `inverse`, `accent`), when the brand maps it. */
+export function themeRoleToken(data: BlazonData, role: ThemeRole): TokenItem | undefined {
+  const path = data.themeTokens?.[role];
+  return path ? data.tokens.items.find((t) => t.path === path) : undefined;
+}
+
+/** Whether `logo.deny` forbids a configured variant on a background token, under the variant name or the id of the asset it is. */
+export function logoDeniedOn(data: BlazonData, token: TokenItem | undefined, variant: 'onLight' | 'onDark'): boolean {
+  if (!token) return false;
+  const asset = variant === 'onLight' ? data.logo?.onLightAsset : data.logo?.onDarkAsset;
+  return Boolean(logoDenialUnder(token, data.tokens.items, asset ? [variant, asset] : [variant]));
+}
+
 /** A logo asset whose sidecar declares the artwork's `ink`, as a candidate for a background. */
 export interface InkedLogo {
   name: string;
@@ -149,12 +163,19 @@ export function logoCandidates(data: BlazonData): LogoCandidate[] {
  * is one of those candidates when its sidecar declares an ink, and is otherwise assumed black or white,
  * which cannot be beaten by ratio, so a brand's own color is used wherever it reads. With no declared
  * ink, or none that reads, the result is the pick.
+ *
+ * `background` is the token the paint comes from. A logo its `logo.deny` rule forbids, under the variant name or the asset id, is never
+ * chosen: not as a candidate, and not as the pick, which then gives nothing. `blazon logo --on` applies the same rule (`pickLogo`).
  */
-export function logoOn(data: BlazonData, paint: string | undefined, dark: boolean, fallback = true): string | undefined {
+export function logoOn(data: BlazonData, paint: string | undefined, dark: boolean, fallback = true, background?: TokenItem): string | undefined {
   const logo = data.logo;
-  const picked = fallback ? (dark ? (logo?.onDark ?? logo?.onLight) : (logo?.onLight ?? logo?.onDark)) : logoFor(data, dark ? 'dark' : 'light');
+  const variant = fallback ? (dark ? (logo?.onDark ? 'onDark' : 'onLight') : logo?.onLight ? 'onLight' : 'onDark') : dark ? 'onDark' : 'onLight';
+  const picked = logo?.[variant] && !logoDeniedOn(data, background, variant) ? logo[variant] : undefined;
   if (paint === undefined) return picked;
+  const denied = (name: string) =>
+    Boolean(background && logoDenialUnder(background, data.tokens.items, name === logo?.onLightAsset ? ['onLight', name] : name === logo?.onDarkAsset ? ['onDark', name] : [name]));
   const best = inkedLogos(data)
+    .filter((candidate) => !denied(candidate.name))
     .map((candidate) => ({ candidate, ratio: contrastBetween(candidate.ink, paint) }))
     .filter((c): c is { candidate: InkedLogo; ratio: number } => c.ratio !== undefined && c.ratio >= GRAPHIC_CONTRAST)
     .sort((a, b) => b.ratio - a.ratio)[0];

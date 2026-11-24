@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BlazonData } from '../../../types/index.js';
-import { isDarkBackground, logoOn } from '@/lib/brand';
+import { isDarkBackground, logoOn, themeRoleToken } from '@/lib/brand';
 import type { Favicons } from '@/lib/favicons';
 import { pairIntros, paginate, type Block } from '@/lib/paginate';
 import type { Mode } from '@/lib/theme/theme';
@@ -151,7 +151,7 @@ export function PrintBook({
   // The logo made for the cover's ground (the inverse role), as a deck's title slide carries it; a brand with one logo
   // gets that one
   const ground = isDarkBackground(data.theme.inverse, data.theme.inverseText) ? 'dark' : 'light';
-  const coverLogo = logoOn(data, data.theme.inverse, ground === 'dark');
+  const coverLogo = logoOn(data, data.theme.inverse, ground === 'dark', true, themeRoleToken(data, 'inverse'));
 
   return (
     <main data-print-book="" className="bg-background text-foreground">

@@ -1,6 +1,6 @@
 import pc from '../../core/colors.js';
-import { describeLogo, type LogoDescription } from '../../core/read/index.js';
-import { readBrand } from '../read.js';
+import { describeLogo, pickLogo, type LogoDescription, type LogoPick } from '../../core/read/index.js';
+import { asked, readBrand } from '../read.js';
 import type { Handler } from './types.js';
 
 const measure = (value: unknown): string => {
@@ -12,13 +12,23 @@ const measure = (value: unknown): string => {
 };
 
 /** `get_logo`, `blazon logo`: the configured logo variants and the rules each logo asset's sidecar states. Prints only; exits 0. */
-export const getLogoHandler: Handler = async (_args, { dir }) => {
+export const getLogoHandler: Handler = async ({ on, lockup }, { dir }) => {
   const { config, data } = await readBrand(dir);
   const logo = describeLogo(data, config, dir);
-  return { command: 'logo', passed: true, status: 0, body: logo, text: () => print(logo) };
+  // `lockup` without `on` has nothing to pick for, so it is ignored as any other unused option is
+  const pick = on === undefined ? undefined : asked(() => pickLogo(data, config, dir, { on: on as string, ...(lockup !== undefined && { lockup: lockup as string }) }));
+  const body = pick ? { ...logo, pick } : logo;
+  return { command: 'logo', passed: true, status: 0, body, text: () => print(logo, pick, on as string | undefined) };
 };
 
-function print(logo: LogoDescription): void {
+function printPick(pick: LogoPick, on: string): void {
+  console.log(`\n  ${pc.bold(`Pick on ${on}`)}`);
+  if ('refused' in pick) console.log(`  ${pc.red('none')}  ${pick.refused.rule}: ${pick.refused.reason}`);
+  else console.log(`  ${pick.file}  ${pick.ratio.toFixed(2)}:1 (needs ${pick.min}:1)${pick.colorway ? pc.dim(`  ${pick.colorway}`) : ''}${pc.dim(`  ${pick.asset}`)}`);
+}
+
+function print(logo: LogoDescription, pick?: LogoPick, on?: string): void {
+  if (pick && on) printPick(pick, on);
   console.log(`\n  ${pc.bold('Variants')}`);
   if (logo.variants.length === 0) console.log(pc.dim('  No logo is configured.'));
   for (const v of logo.variants)

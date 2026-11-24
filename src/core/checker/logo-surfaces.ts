@@ -1,5 +1,5 @@
 import type { Finding, LogoSet, ThemeRole, TokenItem } from '../../types/index.js';
-import { logoDenial } from './logo-rules.js';
+import { logoDenialUnder } from './logo-rules.js';
 import { contrastBetween, contrastRatio, parseColor } from './contrast.js';
 import { finding } from './catalogue.js';
 
@@ -63,7 +63,8 @@ export function logoSurfaceFindings(
     const surface = paint ? parseColor(paint) : undefined;
     if (!paint || !surface || !src) continue;
     const token = themeTokens?.[role] ? items.find((t) => t.path === themeTokens[role]) : undefined;
-    if (token && logoDenial(token, items, variant)) continue;
+    const asset = variant === 'onLight' ? logo.onLightAsset : logo.onDarkAsset;
+    if (token && logoDenialUnder(token, items, asset ? [variant, asset] : [variant])) continue;
     for (const color of paintedColors(src)) {
       const painted = parseColor(color);
       const ratio = painted ? contrastBetween(painted, surface) : undefined;

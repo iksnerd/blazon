@@ -711,9 +711,22 @@ export const OPERATIONS: readonly Operation[] = [
     name: 'get_logo',
     title: 'Read the brand logo',
     description:
-      "Gets the brand logo variants for light and dark surfaces, their files, and the rules for each logo: clear space, minimum size, lockups, and the backgrounds that forbid it. Use it before placing a logo. For the brand's other rules use get_rules.",
+      "Gets the brand logo variants for light and dark surfaces, their files, and the rules for each logo: clear space, minimum size, lockups, and the backgrounds that forbid it. Use it before placing a logo. Give `on`, a background color token, to have blazon pick the logo for it: the answer then has `pick`, the file that reads best there with its contrast, or a `refused` that says whether a `logo` deny rule, too little contrast or an unmeasurable background left none. For the brand's other rules use get_rules.",
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-    inputSchema: { type: 'object', properties: { dir: { type: 'string', description: 'The brand folder. Default: the current folder' } }, additionalProperties: false },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        on: {
+          type: 'string',
+          maxLength: 200,
+          pattern: '^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$',
+          description: 'A background color token path. The answer then has `pick`: the logo to place on it',
+        },
+        lockup: { type: 'string', maxLength: 200, description: 'With `on`: only the logo assets of this lockup (horizontal, stacked, mark, wordmark, or one the brand added)' },
+        dir: { type: 'string', description: 'The brand folder. Default: the current folder' },
+      },
+      additionalProperties: false,
+    },
     outputSchema: {
       type: 'object',
       properties: {
@@ -753,6 +766,11 @@ export const OPERATIONS: readonly Operation[] = [
           type: 'array',
           items: {},
         },
+        pick: {
+          description:
+            'Only with `on`. Either `file`, `asset`, `ratio`, `min` (the bar it had to reach) and, when a colorway named the background, `colorway`; or `refused` with `rule` (deny, contrast or unknown), `from` and `reason`. Rules in `forbidden` are honoured',
+          type: 'object',
+        },
       },
       required: ['warnings', 'brandHasErrors'],
       additionalProperties: {},
@@ -763,7 +781,11 @@ export const OPERATIONS: readonly Operation[] = [
       positional: ['dir'],
       cliOnly: ['dir'],
       summary: 'Read the configured logo variants and the rules each logo sidecar states: clear space, minimum size, lockups, ink',
-      options: [{ property: 'json', description: 'Print the logo as JSON on standard output' }],
+      options: [
+        { property: 'on', value: 'token', description: 'Also pick the logo for this background color token: the answer gains `pick`' },
+        { property: 'lockup', value: 'name', description: 'With --on: only the logo assets of this lockup' },
+        { property: 'json', description: 'Print the logo as JSON on standard output' },
+      ],
     },
   },
 ];

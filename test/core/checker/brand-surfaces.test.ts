@@ -215,3 +215,18 @@ describe('logo-contrast-insufficient in a context', () => {
     expect(await invisible(project({ onDark: '#000000', lightInverse: '#0033AA', darkBackground: '#000000' }))).toEqual([['logo.onDark', 'theme=dark']]);
   });
 });
+
+describe('logo-contrast-insufficient and logo.deny by asset id', () => {
+  const orange = '#FF5A1F';
+  const logo = { onLight: uri(svg(['#1E1F21', orange])), onDark: uri(svg(['#F2F0EB', orange])), onLightAsset: 'logos/acme-ink' };
+  const theme = { background: '#F2F0EB', inverse: '#1E1F21', accent: orange, accentText: '#1E1F21' };
+  const accent = (deny: string[]) => ({ path: 'interactive.primary', aliasOf: undefined, blazon: { logo: { deny } } }) as unknown as TokenItem;
+
+  it('is silent for a configured file whose asset id is denied on that surface', () => {
+    expect(logoSurfaceFindings(logo, theme, { accent: 'interactive.primary' }, [accent(['logos/acme-ink'])])).toEqual([]);
+  });
+
+  it('still reports it when the deny names another asset', () => {
+    expect(logoSurfaceFindings(logo, theme, { accent: 'interactive.primary' }, [accent(['logos/other'])])).toHaveLength(1);
+  });
+});

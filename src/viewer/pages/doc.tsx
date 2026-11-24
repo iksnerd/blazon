@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import type { DocItem, BlazonData, ThemeRole } from '../../types/index.js';
-import { logoDenial } from '../../core/checker/logo-rules.js';
 import { type DirectiveName } from '../../core/docs/directives.js';
-import { docGroup, isDarkBackground, logoOn } from '@/lib/brand';
+import { docGroup, isDarkBackground, logoDeniedOn, logoOn, themeRoleToken } from '@/lib/brand';
 import type { Mode } from '@/lib/theme/theme';
 import { cn } from '@/lib/utils';
 import { GUTTER, PageFooter } from '@/components/blazon/page';
@@ -35,18 +34,16 @@ function escapeAttr(value: string): string {
 }
 
 /** Whether the brand's rules forbid a logo variant on the token that fills a theme role. */
-function logoForbidden(data: BlazonData, role: ThemeRole, variant: string): boolean {
-  const path = data.themeTokens?.[role];
-  const token = path ? data.tokens.items.find((t) => t.path === path) : undefined;
-  return Boolean(token && logoDenial(token, data.tokens.items, variant));
+function logoForbidden(data: BlazonData, role: ThemeRole, variant: 'onLight' | 'onDark'): boolean {
+  return logoDeniedOn(data, themeRoleToken(data, role), variant);
 }
 
 /** Logo usage tiles for the `<!-- blazon:logo-usage -->` directive: each variant on the background it is made for. */
 function logoUsage(data: BlazonData): string {
   if (!data.logo) return '<p class="text-[13px] text-muted-foreground">No logo is configured (blazon.json → logo).</p>';
-  const accent = logoOn(data, data.theme.accent, isDarkBackground(data.theme.accent, data.theme.accentText), false);
+  const accent = logoOn(data, data.theme.accent, isDarkBackground(data.theme.accent, data.theme.accentText), false, themeRoleToken(data, 'accent'));
   // A surface the brand forbids this logo on is not shown with it: the rule says so on the token, and the page says it in words
-  const forbidden = (role: ThemeRole, variant: string): boolean => logoForbidden(data, role, variant);
+  const forbidden = (role: ThemeRole, variant: 'onLight' | 'onDark'): boolean => logoForbidden(data, role, variant);
   // A dark theme makes the background the dark surface and the inverse the light one: each variant then stands on the other
   const swapped = isDarkBackground(data.theme.background, data.theme.text) && !isDarkBackground(data.theme.inverse, data.theme.inverseText);
   const background = { role: 'background' as const, className: 'bg-[var(--blazon-bg)] text-[var(--blazon-text)] border' };
@@ -216,11 +213,9 @@ export function DocPage({ data, doc, mode, print = false }: { data: BlazonData; 
         ? isDarkBackground(data.theme.accent, data.theme.accentText)
         : isDarkBackground(data.theme.inverse, data.theme.inverseText);
   const coverPaint = cover === 'accent' ? data.theme.accent : cover === 'inverse' ? data.theme.inverse : undefined;
-  const picked = logoOn(data, coverPaint, dark, false);
-  // The cover's logo follows the same rule as the usage tiles: none on a surface the brand forbids it on
-  const variant = picked === undefined ? undefined : picked === data.logo?.onDark ? 'onDark' : picked === data.logo?.onLight ? 'onLight' : undefined;
   const coverRole: ThemeRole = cover === 'accent' ? 'accent' : cover === 'inverse' ? 'inverse' : 'background';
-  const logo = variant !== undefined && logoForbidden(data, coverRole, variant) ? undefined : picked;
+  // The cover's logo follows the brand's `logo.deny` on the surface it stands on, as the usage tiles do: none where it is forbidden
+  const logo = logoOn(data, coverPaint, dark, false, themeRoleToken(data, coverRole));
   const description = typeof doc.meta.description === 'string' ? doc.meta.description : undefined;
   const sections = sectionIds(sectionize(expandDirectives(doc.html, data)));
 

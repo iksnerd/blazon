@@ -330,6 +330,18 @@ describe.skipIf(!PRESENT)('the logo on color tokens', () => {
     expect(tile('color.test.green').querySelector('img')!.getAttribute('src')).toBe('brand-assets/logos/navy.svg');
   });
 
+  it('leave out a logo the color forbids, as the asset id or as the variant it is, and fall back to nothing when the pick is forbidden', () => {
+    const forbid = (names: string[]): BlazonData => {
+      const brand = withNavy('<h2>On green</h2><!-- blazon:logo-on color.test.green -->', '#0B1F3A');
+      const items = brand.tokens.items.map((t) => (t.path === 'color.test.green' ? { ...t, blazon: { ...t.blazon, logo: { deny: names, reason: 'Never on green' } } } : t));
+      return { ...brand, tokens: { ...brand.tokens, items } };
+    };
+    openViewer('#doc/guide', forbid(['logos/navy']));
+    expect(tile('color.test.green').querySelector('img')!.getAttribute('src')).toBe(data.logo!.onDark);
+    openViewer('#doc/guide', forbid(['logos/navy', 'onDark']));
+    expect(tile('color.test.green').querySelector('img')).toBeNull();
+  });
+
   it('change nothing when no logo declares an ink', () => {
     openViewer('#doc/guide', withNavy('<h2>On green</h2><!-- blazon:logo-on color.test.green color.primary.indigo -->', undefined));
     expect(tile('color.test.green').querySelector('img')!.getAttribute('src')).toBe(data.logo!.onDark);
