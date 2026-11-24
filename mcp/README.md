@@ -24,6 +24,7 @@ The server's instructions give the order: `check_brand` once per session, `list_
 | `measure_contrast` | `fg` and `bg`, `with` and `withAlpha` (together), `alpha`, `theme` | `blazon contrast` | measure the contrast of one color on another, optionally with one translucent token blended over the background, for a color no token names. A measurement with no `allowed`: only `can_use` says whether the brand allows a pair |
 | `get_fonts` | none | `blazon fonts` | find the stylesheets and files to load, and whether each family a token names is loaded |
 | `get_logo` | none | `blazon logo` | read the logo variants and their clear space, minimum size and forbidden backgrounds |
+| `get_outputs` | `file` (optional) | `blazon outputs` | find the files the last `blazon tokens` or `build` wrote, whether each is fresh or stale, and which configured plugins have no output folder; with `file`, that file's text. Reads only: it starts no plugin |
 
 Every tool has a title, `readOnlyHint: true` and an input schema that refuses extra arguments. A number or boolean sent as a string (`"5"`, `"true"`) is accepted when it reads as one. A token path is dot-separated segments of ASCII letters, digits, `_` and `-`; a segment starts with a letter, digit or `_`. So `a..b`, `a.`, `-x` and `.x` are refused, and an argument can never become a flag.
 

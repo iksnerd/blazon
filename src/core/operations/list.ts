@@ -864,4 +864,71 @@ export const OPERATIONS: readonly Operation[] = [
     },
     mcp: false,
   },
+  {
+    name: 'get_outputs',
+    title: 'Find the brand outputs',
+    description: `Lists the files the last \`blazon tokens\` or \`blazon build\` wrote under the tokens output folder (theme.css, tokens.json and the folder of each plugin, \`<id>/\`), with the absolute path and size of each and whether it is fresh or stale, and names the configured plugins whose folder is missing, with the command that fixes it. Fresh means no input of the brand is newer than the file, by timestamp. With \`file\` (a path under the outputs folder, as listed) it also returns that file as text, cut at ${MAX_TEXT} characters (\`truncated\` says so); a file that is not text is refused. Use it to read the generated CSS or a plugin output instead of copying values by hand. It only reads: it starts no plugin and writes nothing, so a missing or stale file is fixed by running the command it names. For one token use get_token.`,
+    annotations: READ_ONLY,
+    inputSchema: input(
+      {
+        file: {
+          type: 'string',
+          maxLength: 500,
+          description:
+            'A file under the outputs folder, relative to it, as the `file` field of a listed file gives it, such as theme.css or acme.press/main.css. Leave out to list',
+        },
+        dir: DIR,
+      },
+      [],
+    ),
+    outputSchema: output(
+      {
+        outputsDir: { type: 'string', description: 'The tokens output folder, relative to the brand folder' },
+        files: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              file: { type: 'string', description: 'The path under the outputs folder: pass it as `file`' },
+              relative: { type: 'string', description: 'The path from the brand folder' },
+              path: { type: 'string', description: 'The absolute path on the machine the server runs on' },
+              bytes: { type: 'number', description: 'The size in bytes' },
+              state: { type: 'string', enum: ['fresh', 'stale'], description: 'stale when an input of the brand is newer than the file' },
+            },
+            required: ['file', 'relative', 'path', 'bytes', 'state'],
+            additionalProperties: {},
+          },
+          description: 'Every file found under the outputs folder. Empty when the folder is not there',
+        },
+        missing: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', description: 'The id of a plugin blazon.json lists whose folder `<outputsDir>/<id>/` does not exist' },
+              fix: { type: 'string', description: 'The command to run' },
+            },
+            required: ['id', 'fix'],
+            additionalProperties: {},
+          },
+          description: 'The configured plugins with no output folder. A plugin with no build role writes none, so one listed here may never write one',
+        },
+        fix: { type: 'string', description: 'The command to run when something is missing or stale. Absent when nothing is' },
+        note: { type: 'string', description: 'What fresh means, and the limit of a timestamp' },
+        text: { type: 'string', description: 'With `file`: the file text, cut at the size limit' },
+      },
+      ['outputsDir', 'files', 'missing', 'note'],
+    ),
+    cli: {
+      rank: 9,
+      command: ['outputs'],
+      positional: ['dir'],
+      cliOnly: ['dir'],
+      summary: 'List the files the last blazon tokens or build wrote and whether each is fresh or stale; --file prints one',
+      options: [
+        { property: 'file', value: 'path', description: 'Print this file of the outputs folder (a path as listed) instead of the list; it must be text' },
+        { property: 'json', description: 'Print the list as JSON on standard output' },
+      ],
+    },
+  },
 ];

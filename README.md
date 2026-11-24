@@ -61,7 +61,7 @@ run the `fix` it names, and register the server with `blazon mcp --print-config 
 
 ## Use blazon from your agent (MCP)
 
-A coding agent can ask blazon about the brand as tool calls (`check_brand`, `get_token`, `can_use` and five more, all read-only) instead of reading token files. The server ships inside `@iksnerd/blazon`: `npm install @iksnerd/blazon` gives you its program, `blazon-mcp`, and installs no package for it (it is one file with its libraries bundled in). Print the config for your client and check that it works:
+A coding agent can ask blazon about the brand as tool calls (`check_brand`, `get_token`, `can_use` and six more, all read-only) instead of reading token files. The server ships inside `@iksnerd/blazon`: `npm install @iksnerd/blazon` gives you its program, `blazon-mcp`, and installs no package for it (it is one file with its libraries bundled in). Print the config for your client and check that it works:
 
 ```bash
 npx blazon mcp --print-config --client claude-code --brand my-brand

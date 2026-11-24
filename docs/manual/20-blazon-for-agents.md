@@ -88,7 +88,7 @@ It runs four checks, and each one that does not pass names a `fix` command:
 
 ## The tools
 
-All seven are read-only (`readOnlyHint: true`) and write nothing.
+All nine are read-only (`readOnlyHint: true`) and write nothing.
 
 | Tool | Runs | Use it to |
 |---|---|---|
@@ -100,10 +100,12 @@ All seven are read-only (`readOnlyHint: true`) and write nothing.
 | `measure_contrast` | `blazon contrast <fg> <bg>` | measure the contrast of one color token on another, optionally with one translucent token blended over the background (`with` and `withAlpha`, together), for a tint or glow no token names. `alpha` is the foreground's own opacity, not the tint's. It is a measurement, not a verdict: the answer has `ratio`, `level`, `nonText`, `seen` and `brandPairs` (the pairs listed for the base background) and never `allowed`. Only `can_use` says whether the brand allows a pair. A gradient is not measured: pass its strongest point as `with` and `withAlpha` |
 | `get_fonts` | `blazon fonts` | find the stylesheets and font files to load, and whether each family a token names is loaded; with `css` (and `base`, the URL prefix) also `fontFace`, the `@font-face` rules |
 | `get_logo` | `blazon logo` | read the logo variants and their rules before you place a logo |
+| `get_outputs` | `blazon outputs` | find the files `blazon tokens` or `blazon build` wrote (the generated CSS, `tokens.json`, each plugin's folder) with their absolute paths and whether each is `fresh` or `stale`, and which configured plugins have no folder, with the command that fixes it. `file` (a path under the outputs folder, as listed) also returns that file's `text`, cut at 40 000 characters with `truncated`; a file that is not text, or that leaves the outputs folder, is refused. It only reads: it starts no plugin, writes nothing and computes no CSS, so a missing or stale file is fixed by running the command it names. Use it to read generated CSS instead of copying hex values or gradient strings by hand |
 
 Every tool returns blazon's JSON twice: as structured content that matches the tool's output schema, and as the same compact JSON in a text block. Differences from the command line:
 
 - A denied `can_use` is a normal answer with `allowed: false` and the reason. The command exits 1 for it; the tool does not fail. A pair whose contrast cannot be measured is an error, not a denial, unless a usage rule already denies it: a translucent background, or a token that is not a color.
+- `get_outputs` is the only tool that reads files blazon wrote earlier and not the brand: its `fresh` and `stale` compare timestamps, and an answer with `fix` means a person or agent with permission runs that command; the server runs nothing.
 - `measure_contrast` is never a denial: it has no `allowed`, and what it cannot measure (a translucent background, a `with` that is not a color, an opacity outside 0 to 1) is an error.
 - An error, such as a token that does not exist, comes back as a tool error with blazon's own message and the next step: `list_tokens` finds a path. A group path given to `get_token` is refused, and the error names `list_tokens`.
 - When the brand has errors, a read command says so on standard error. The tool returns that as a leading text block and as `warnings` in the structured result, with `brandHasErrors: true`. Values from such a brand may be wrong; run `check_brand` and fix the errors first.

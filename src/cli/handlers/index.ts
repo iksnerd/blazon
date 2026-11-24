@@ -7,6 +7,7 @@ import { measureContrastHandler } from './contrast.js';
 import { getFontsHandler } from './fonts.js';
 import { getLogoHandler } from './logo.js';
 import { getBrandHandler } from './brand.js';
+import { getOutputsHandler } from './outputs.js';
 
 /**
  * One handler for each operation of the list that has a command (src/core/operations/list.ts), by the operation's name. `check_brand` has none:
@@ -21,6 +22,7 @@ export const HANDLERS: Record<string, Handler> = {
   get_fonts: getFontsHandler,
   get_logo: getLogoHandler,
   get_brand: getBrandHandler,
+  get_outputs: getOutputsHandler,
 };
 
 export type { Context, Handler, Outcome } from './types.js';

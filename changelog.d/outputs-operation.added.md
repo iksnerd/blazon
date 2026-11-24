@@ -1,0 +1,1 @@
+`blazon outputs [dir]` and the `get_outputs` tool list the files the last `blazon tokens` or `blazon build` wrote, say whether each is fresh or stale and which configured plugins have no output folder, and return one file's text with `--file`. They only read: no plugin starts and nothing is written.
