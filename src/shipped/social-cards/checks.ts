@@ -36,6 +36,22 @@ export const logoWidthFinding = (id: string, asked: number, least: number): Find
     `logoWidth asks for a logo ${Number(asked.toFixed(1))}px wide, under the ${Math.round(least)}px its minSize allows; it is drawn at ${Math.round(least)}px`,
   );
 
+export const logoCornerFinding = (id: string, corner: string, listed: string[]): Finding =>
+  finding(
+    'card-logo-corner-unlisted',
+    'warning',
+    id,
+    `the logo is in ${corner}, which its placement (${listed.join(', ')}) does not list; the card keeps it, but the brand's rule says otherwise: change logoCorner, or list ${corner} in the logo's placement`,
+  );
+
+export const logoNoCornerFinding = (id: string, edge: string, preferred: string, listed: string[]): Finding =>
+  finding(
+    'card-logo-corner-unlisted',
+    'warning',
+    id,
+    `the text hangs from the ${edge}, but the logo's placement (${listed.join(', ')}) lists no corner on the other edge; the logo stays in ${preferred}, the first it lists, and may meet with the text: list a corner on the ${edge === 'top' ? 'bottom' : 'top'} edge or change anchor`,
+  );
+
 export const overflowFinding = (id: string, floor: number): Finding =>
   finding('card-text-overflow', 'error', id, `the headline does not fit the safe area at ${floor}px, the smallest type step; shorten it or use a larger format`);
 
@@ -82,6 +98,10 @@ export interface LogoPlan {
   clearSpace: number;
   /** Set when `logoWidth` asked for fewer px than the sidecar's `minSize`: what was asked (the logo is drawn at the minimum) */
   clampedFrom?: number;
+  /** Set when the card's `logoCorner` is not one the sidecar's `placement` lists: the corners it does list */
+  outsideRule?: Corner[];
+  /** Set when the text edge asked for a corner on the other edge and the sidecar lists none: the corner stays the preferred one */
+  noCornerOnEdge?: { edge: 'top' | 'bottom'; listed: Corner[] };
 }
 /** A logo is this share of the card's width when its sidecar sets no larger minimum */
 const LOGO_SHARE = 0.14;
@@ -112,13 +132,17 @@ export function planLogo(
   const height = Math.round(width * aspect);
   const listed = (meta?.placement ?? []).filter((c): c is Corner => CORNERS.includes(c as Corner));
   const first = listed[0] ?? 'top-left';
-  // Text hanging from the top needs the logo at the bottom, and the other way round: the first listed corner on that edge, else the first corner mirrored
+  // Text hanging from the top needs the logo at the bottom, and the other way round: the first listed corner on that edge. The plugin never picks
+  // a corner the brand did not list: with none on that edge the preferred (first listed) corner stays and the plan says so (`noCornerOnEdge`).
+  // A logo with no placement has nothing to contradict, so its first corner is mirrored as before.
+  const opposite = textEdge === undefined ? undefined : textEdge === 'top' ? 'bottom' : 'top';
   const mirrored = `${first.startsWith('top') ? 'bottom' : 'top'}-${first.endsWith('left') ? 'left' : 'right'}` as Corner;
-  const corner =
-    ask.corner ??
-    (textEdge === undefined || first.startsWith(textEdge === 'top' ? 'bottom' : 'top')
-      ? first
-      : (listed.find((c) => c.startsWith(textEdge === 'top' ? 'bottom' : 'top')) ?? mirrored));
+  const onEdge = opposite === undefined ? undefined : listed.find((c) => c.startsWith(opposite));
+  const fallback = opposite === undefined || first.startsWith(opposite) ? first : listed.length > 0 ? (onEdge ?? first) : mirrored;
+  const corner = ask.corner ?? fallback;
+  const outsideRule = listed.length > 0 && ask.corner !== undefined && !listed.includes(ask.corner) ? listed : undefined;
+  const noCornerOnEdge =
+    listed.length > 0 && ask.corner === undefined && opposite !== undefined && onEdge === undefined && !first.startsWith(opposite) ? { edge: textEdge!, listed } : undefined;
   const x = corner.endsWith('left') ? format.margin : format.width - format.margin - width;
   const y = corner.startsWith('top') ? format.margin : format.height - format.margin - height;
 
@@ -130,7 +154,14 @@ export function planLogo(
     inArtwork = lengthInPx(space);
   }
   const clearSpace = inArtwork === undefined ? Math.round(height / 2) : inArtwork * (width / artwork.width);
-  return { corner, rect: { x, y, width, height }, clearSpace, ...(clamped && { clampedFrom: ask.width as number }) };
+  return {
+    corner,
+    rect: { x, y, width, height },
+    clearSpace,
+    ...(outsideRule && { outsideRule }),
+    ...(noCornerOnEdge && { noCornerOnEdge }),
+    ...(clamped && { clampedFrom: ask.width as number }),
+  };
 }
 
 const inflate = (r: Rect, by: number): Rect => ({ x: r.x - by, y: r.y - by, width: r.width + 2 * by, height: r.height + 2 * by });
