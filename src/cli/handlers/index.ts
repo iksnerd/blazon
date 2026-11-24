@@ -3,6 +3,7 @@ import { getTokenHandler } from './get.js';
 import { listTokensHandler } from './list.js';
 import { getRulesHandler } from './rules.js';
 import { canUseHandler } from './can.js';
+import { measureContrastHandler } from './contrast.js';
 import { getFontsHandler } from './fonts.js';
 import { getLogoHandler } from './logo.js';
 import { getBrandHandler } from './brand.js';
@@ -16,6 +17,7 @@ export const HANDLERS: Record<string, Handler> = {
   list_tokens: listTokensHandler,
   get_rules: getRulesHandler,
   can_use: canUseHandler,
+  measure_contrast: measureContrastHandler,
   get_fonts: getFontsHandler,
   get_logo: getLogoHandler,
   get_brand: getBrandHandler,

@@ -82,12 +82,12 @@ describe('the built blazon-mcp file', () => {
     expect(out).toBe(`blazon-mcp ${own} (bundles @modelcontextprotocol/sdk ${sdk}, zod ${zod})`);
   });
 
-  it('serves the seven tools over stdio from a folder with no node_modules, and answers real calls', async () => {
+  it('serves the eight tools over stdio from a folder with no node_modules, and answers real calls', async () => {
     const client = await connect(baseEnv({ BLAZON_BIN: bin }));
     try {
       expect(client.getServerVersion()?.name).toBe('blazon');
       const tools = (await client.listTools()).tools;
-      expect(tools.map((t) => t.name).sort()).toEqual(['can_use', 'check_brand', 'get_fonts', 'get_logo', 'get_rules', 'get_token', 'list_tokens']);
+      expect(tools.map((t) => t.name).sort()).toEqual(['can_use', 'check_brand', 'get_fonts', 'get_logo', 'get_rules', 'get_token', 'list_tokens', 'measure_contrast']);
       for (const tool of tools) expect((tool.inputSchema as { additionalProperties?: boolean }).additionalProperties).toBe(false);
       expect((await client.listResources()).resources.map((r) => r.uri).sort()).toEqual(['blazon://brand', 'blazon://rules']);
       expect((await client.listPrompts()).prompts.map((p) => p.name)).toEqual(['build_page']);

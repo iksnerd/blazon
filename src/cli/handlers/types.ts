@@ -9,7 +9,8 @@ export interface Context {
  */
 export interface Outcome {
   command: string;
-  passed: boolean;
+  /** Absent for a command that measures and does not judge: `--json` then has no `passed`. */
+  passed?: boolean;
   status: number;
   body: object;
   text(): void;

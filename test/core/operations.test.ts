@@ -47,8 +47,17 @@ describe('the operations list', () => {
   });
 
   it('lists the tools in a fixed order and the commands by rank', () => {
-    expect(toolOperations(OPERATIONS).map((op) => op.name)).toEqual(['check_brand', 'list_tokens', 'get_token', 'get_rules', 'can_use', 'get_fonts', 'get_logo']);
-    expect(commandOperations(OPERATIONS).map((op) => (op.cli as { command: string[] }).command[0])).toEqual(['get', 'list', 'rules', 'can', 'fonts', 'logo', 'brand']);
+    expect(toolOperations(OPERATIONS).map((op) => op.name)).toEqual([
+      'check_brand',
+      'list_tokens',
+      'get_token',
+      'get_rules',
+      'can_use',
+      'measure_contrast',
+      'get_fonts',
+      'get_logo',
+    ]);
+    expect(commandOperations(OPERATIONS).map((op) => (op.cli as { command: string[] }).command[0])).toEqual(['get', 'list', 'rules', 'can', 'contrast', 'fonts', 'logo', 'brand']);
   });
 
   it('builds a tool without changing the operation, and without the properties only the command line takes', () => {

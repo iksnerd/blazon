@@ -21,6 +21,7 @@ The server's instructions give the order: `check_brand` once per session, `list_
 | `get_token` | `path`, `theme` (optional) | `blazon get <path> [--theme name]` | read a token's value, type, CSS variable names and rules, optionally as a resolver theme resolves it |
 | `get_rules` | `path` (optional) | `blazon rules` | learn what a token, a group or the whole brand allows and forbids |
 | `can_use` | `fg` and `bg`, or `pairs` (up to 50), `role`, `theme`, `verbose` | `blazon can` | ask whether one color may be text on another (`pairs` answers `results`, one for each pair in order; `verbose: false` drops the `checks` of an allowed answer), or with `role: "ui"` a focus ring, border or icon stroke judged at 3:1 with no pairs. A denied answer is a result with `allowed: false`, not an error |
+| `measure_contrast` | `fg` and `bg`, `with` and `withAlpha` (together), `alpha`, `theme` | `blazon contrast` | measure the contrast of one color on another, optionally with one translucent token blended over the background, for a color no token names. A measurement with no `allowed`: only `can_use` says whether the brand allows a pair |
 | `get_fonts` | none | `blazon fonts` | find the stylesheets and files to load, and whether each family a token names is loaded |
 | `get_logo` | none | `blazon logo` | read the logo variants and their clear space, minimum size and forbidden backgrounds |
 

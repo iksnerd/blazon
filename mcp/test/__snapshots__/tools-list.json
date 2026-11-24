@@ -784,6 +784,186 @@
     }
   },
   {
+    "name": "measure_contrast",
+    "title": "Measure the contrast of a color",
+    "description": "Measures the contrast of one color token on another, optionally with one translucent color token blended over the background first. It is a measurement of what would be rendered, not a verdict: the answer has no `allowed` and does not say whether the brand approves; only `can_use` says whether the brand allows a pair, and a blend is never a listed pair. Use it for a tint or glow that no token names: give the opaque base `bg`, the tinting token as `with` and its opacity as `withAlpha`. `alpha` is the foreground's own opacity and `withAlpha` is the opacity of `with` over `bg`; they are different. `with` and `withAlpha` come together or not at all. The answer is `ratio` (WCAG 2.x), `level`, `nonText` (true from 3:1), `seen` (the two colors after blending, as hex) and `brandPairs`: the pairs the brand lists for this `fg` on the BASE `bg` token, not on the blend. A gradient is not measured: pass the color of its strongest point as `with` and that point's opacity as `withAlpha`. Refused, never guessed: a translucent `bg`, a `with` that is not a color blazon can read, an unknown token, `with` without `withAlpha` or the reverse, an opacity outside 0 to 1.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fg": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
+          "description": "The foreground color token path, as list_tokens returns it for a color token"
+        },
+        "bg": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
+          "description": "The base background color token path. It must be opaque: a background with an alpha channel is refused"
+        },
+        "with": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*(\\.[A-Za-z0-9_][A-Za-z0-9_-]*)*$",
+          "description": "A color token blended over `bg`, such as a glow or tint no token names. Give it with `withAlpha`. A gradient is refused: pass its strongest point"
+        },
+        "withAlpha": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The opacity of `with` composited over `bg`, 0 to 1, on top of any alpha the `with` token has (the two multiply). Not the foreground opacity: that is `alpha`. Give it with `with`"
+        },
+        "alpha": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The foreground's own opacity, 0 to 1, as `can_use` takes it, on top of any alpha the token has. Not the opacity of `with`: that is `withAlpha`. Default: the token as it is"
+        },
+        "theme": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]*$",
+          "description": "Measure in this context of the resolver's theme modifier, such as dark. Default: the default tokens"
+        }
+      },
+      "required": [
+        "fg",
+        "bg"
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lines blazon printed on standard error, such as a warning that the brand has errors. Empty when blazon said nothing"
+        },
+        "brandHasErrors": {
+          "type": "boolean",
+          "description": "True when the brand's own data has error findings, so a value read from it may be wrong. Run check_brand to see them. A blazon.lock that names another blazon build does not set it: that is `pinMismatch`"
+        },
+        "pinMismatch": {
+          "type": "object",
+          "properties": {
+            "pinned": {
+              "type": "string",
+              "description": "The blazon build blazon.lock names, as blazon prints it (12 hex digits)"
+            },
+            "running": {
+              "type": "string",
+              "description": "The blazon build running, as blazon prints it, or \"unknown\" when it cannot say"
+            },
+            "message": {
+              "type": "string",
+              "description": "One line: which build the book is pinned to, which is running, and what to do"
+            }
+          },
+          "required": [
+            "pinned",
+            "running",
+            "message"
+          ],
+          "additionalProperties": {},
+          "description": "Present only when blazon.lock names a different blazon build than the one running. The build and the book disagree; no token or value is wrong because of it, so there is no need to re-check values. Tell the user. `blazon check`, `build` and `tokens` refuse until it is fixed"
+        },
+        "truncated": {
+          "description": "True when the answer was cut to fit the size limit. `notice` says how to narrow the question",
+          "type": "boolean"
+        },
+        "notice": {
+          "description": "Present when the answer was cut: how much was kept and how to ask a narrower question",
+          "type": "string"
+        },
+        "fg": {
+          "description": "The foreground color token that was measured",
+          "type": "string"
+        },
+        "bg": {
+          "description": "The base background color token",
+          "type": "string"
+        },
+        "with": {
+          "description": "The color token blended over the base background, when given",
+          "type": "string"
+        },
+        "withAlpha": {
+          "description": "The opacity of `with` over the base background, when given",
+          "type": "number"
+        },
+        "alpha": {
+          "description": "The foreground opacity that was measured at, when given",
+          "type": "number"
+        },
+        "theme": {
+          "description": "The theme context it was measured in; absent for the default tokens",
+          "type": "string"
+        },
+        "ratio": {
+          "description": "The WCAG 2.x contrast ratio of what was seen, to two decimals",
+          "type": "number"
+        },
+        "level": {
+          "description": "The strictest WCAG text level the ratio meets: AAA, AA, AA-large, or fail when it meets none",
+          "type": "string",
+          "enum": [
+            "AAA",
+            "AA",
+            "AA-large",
+            "fail"
+          ]
+        },
+        "nonText": {
+          "description": "True when the ratio reaches 3:1, the WCAG 1.4.11 figure for a graphic or a control boundary",
+          "type": "boolean"
+        },
+        "seen": {
+          "description": "The two colors that were measured, as hex, after `with` and the foreground opacity were blended: `fg` over `bg`",
+          "type": "object"
+        },
+        "brandPairs": {
+          "description": "The pairs the brand lists that name this `fg` on the BASE `bg` token, each with fg, bg, min and from. They are the base's pairs, not the blend's: a blend is never a listed pair. Empty when none is listed",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "note": {
+          "description": "Always \"a measurement, not a brand approval\"",
+          "type": "string"
+        }
+      },
+      "required": [
+        "warnings",
+        "brandHasErrors",
+        "fg",
+        "bg",
+        "ratio",
+        "level",
+        "nonText",
+        "seen",
+        "brandPairs",
+        "note"
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {}
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
     "name": "get_fonts",
     "title": "Read the brand fonts",
     "description": "Gets the font stylesheets and font files the brand loads, and for each font family a token names whether the brand loads it. Use it to load the same fonts as the brand instead of typing a font address. With css it also returns the @font-face rules for the font files, with base as their URL prefix. For the family a token names, use get_token.",

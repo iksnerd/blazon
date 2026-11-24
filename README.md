@@ -61,7 +61,7 @@ run the `fix` it names, and register the server with `blazon mcp --print-config 
 
 ## Use blazon from your agent (MCP)
 
-A coding agent can ask blazon about the brand as tool calls (`check_brand`, `get_token`, `can_use` and four more, all read-only) instead of reading token files. The server ships inside `@iksnerd/blazon`: `npm install @iksnerd/blazon` gives you its program, `blazon-mcp`, and installs no package for it (it is one file with its libraries bundled in). Print the config for your client and check that it works:
+A coding agent can ask blazon about the brand as tool calls (`check_brand`, `get_token`, `can_use` and five more, all read-only) instead of reading token files. The server ships inside `@iksnerd/blazon`: `npm install @iksnerd/blazon` gives you its program, `blazon-mcp`, and installs no package for it (it is one file with its libraries bundled in). Print the config for your client and check that it works:
 
 ```bash
 npx blazon mcp --print-config --client claude-code --brand my-brand
@@ -190,7 +190,7 @@ getVar('interactive.primary'); // "var(--interactive-primary)"
 | `blazon build [dir]` | Check, then write the tokens and the site to `dist/site/` |
 | `blazon preview [dir]` | Serve the built site |
 | `blazon drift <url-or-css-file>` | Compare tokens with a live site |
-| `blazon list [group]`, `blazon get <path>`, `blazon rules [path]`, `blazon can <fg> <bg>`, `blazon fonts`, `blazon logo`, `blazon brand` | List the tokens, read one, its rules, a text-on-background answer, the fonts, the logo or the whole compiled brand (`blazon brand`, always JSON); `--json` prints JSON |
+| `blazon list [group]`, `blazon get <path>`, `blazon rules [path]`, `blazon can <fg> <bg>`, `blazon contrast <fg> <bg>`, `blazon fonts`, `blazon logo`, `blazon brand` | List the tokens, read one, its rules, a text-on-background answer, the fonts, the logo or the whole compiled brand (`blazon brand`, always JSON); `--json` prints JSON |
 | `blazon explain [code]` | Say what a finding code means, its severity, the fix and where to read more; with no code, list every code |
 | `blazon doctor` | Check this machine and folder: Node version, brand folder, plugin folder safety, Chrome (if a plugin needs it) and `blazon.lock`. Writes nothing |
 | `blazon pin [dir]` | Write `blazon.lock`, so only the pinned blazon runs `check`, `tokens` and `build` |
