@@ -100,7 +100,7 @@ export const run = (w: ReturnType<typeof world>, options: object = {}, env: Reco
   const ran = plugin(JSON.stringify({ v: 2, type: 'build', options, brand: w.brand, site_dir: w.siteDir, out_dir: outDir }), env);
   return { ran, outDir, findings: ran.status === 0 ? (JSON.parse(ran.out).findings as { code: string; severity: string; path: string; message: string }[]) : [] };
 };
-export const pdfOf = (outDir: string) => path.join(outDir, 'brand-deck.pdf');
+export const pdfOf = (outDir: string) => path.join(outDir, 'acme-brand-deck.pdf');
 export const pages = async (file: string) => (await PDFDocument.load(fs.readFileSync(file))).getPages().map((p) => p.getSize());
 export const text = (file: string): string[] => {
   const words = spawnSync('pdftotext', ['-layout', file, '-'], { encoding: 'utf-8' });

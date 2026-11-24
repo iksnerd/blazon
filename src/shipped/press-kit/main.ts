@@ -12,9 +12,10 @@ import { drawPdf } from './pdf.js';
 import { jobFor, MANIFEST, NAME } from './request.js';
 import { siteFile } from '../shared/site.js';
 import { aboutText, readmeText } from './text.js';
+import { brandedName } from '../shared/slug.js';
 
-// blazon.press-kit: blazon's build role. Reads one request on standard input and writes into out_dir a folder, press-kit/, and press-kit.zip with
-// the same files: what an outsider needs from the brand. The logos that are ready to go (not marked needs-review, and a generated one only
+// blazon.press-kit: blazon's build role. Reads one request on standard input and writes into out_dir a folder, <brand>-press-kit/, and <brand>-press-kit.zip
+// with the same files (press-kit/ and press-kit.zip when the brand has no title, or the `name` option): what an outsider needs from the brand. The logos that are ready to go (not marked needs-review, and a generated one only
 // once reviewed), the colors as JSON, CSS and text, the fonts, the boilerplate, a README, and a one-page PDF drawn in Chrome. It answers
 // {"findings": [...]}. Wrong options are findings, not a failure, and so is a PDF that cannot be drawn. A broken request is exit 2 with the
 // reason as the first line of standard output, and nothing is written. Without the PDF it needs Node and nothing else.
@@ -22,7 +23,7 @@ import { aboutText, readmeText } from './text.js';
 async function build(text: string): Promise<{ findings: Finding[] }> {
   const job = jobFor(text);
   const brand = readBrand(job.brand);
-  const { options, findings } = parseOptions(job.options, logoIds(brand));
+  const { options, findings } = parseOptions(job.options, logoIds(brand), brandedName(brand.named ? brand.title : undefined, 'press-kit'));
 
   /** The kit's files by their path inside it */
   const files = new Map<string, Buffer | string>();

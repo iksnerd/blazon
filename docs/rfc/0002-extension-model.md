@@ -256,7 +256,7 @@ Twelve plugins ship, one entry each in `plugins/shipped.lock`. Eleven fill the `
 
 | Plugin | Does | Notes |
 |---|---|---|
-| `blazon.brand-deck` | A PDF deck of 16:9 slides from `brand.json` and the built site | Needs Node and Chrome (`BLAZON_CHROME`; `BLAZON_DECK_FONTS` names font folders). Writes `<tokensOutDir>/blazon.brand-deck/brand-deck.pdf`. Began as a Python program that needed `uv` and the network |
+| `blazon.brand-deck` | A PDF deck of 16:9 slides from `brand.json` and the built site | Needs Node and Chrome (`BLAZON_CHROME`; `BLAZON_DECK_FONTS` names font folders). Writes `<tokensOutDir>/blazon.brand-deck/<brand>-brand-deck.pdf`. Began as a Python program that needed `uv` and the network |
 | `blazon.print-book` | The brand book as a PDF and a PowerPoint of pictures | Needs Chrome |
 | `blazon.favicons` | The favicon and app-icon set, with a head snippet, a manifest and preview views | Needs Chrome. Also a `check` plugin |
 | `blazon.social-cards` | Marketing images from tokens, logo and a background | Needs Chrome |

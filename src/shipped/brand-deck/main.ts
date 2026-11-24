@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { readBrand, type Brand } from './brand.js';
+import { deckFileName, readBrand, type Brand } from './brand.js';
 import { launch } from './browser.js';
 import { readOptions, type Finding } from './checks.js';
 import { DeckError, readFavicons } from './favicons.js';
@@ -10,7 +10,7 @@ import { writeFolder } from '../shared/folder.js';
 import { skippedForNoSite, NeedsSite } from '../shared/plugin.js';
 import { Cannot, jobFor, MANIFEST, NAME } from './request.js';
 
-// blazon.brand-deck: blazon's build role. Reads one request on standard input, draws the brand as a PDF deck (brand-deck.pdf) in
+// blazon.brand-deck: blazon's build role. Reads one request on standard input, draws the brand as a PDF deck (<brand>-brand-deck.pdf) in
 // out_dir, and answers {"findings": [...]}. Wrong options are findings, not a failure. When the request is broken, a file the deck
 // needs cannot be read, or there is no browser to draw with, it exits 2 with the reason as the first line of standard output, and
 // writes nothing. When blazon.favicons has drawn its set beside this plugin's folder, the deck ends with a Favicons part, so that
@@ -54,12 +54,12 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
     findings.push({
       code: `${NAME}/page-count`,
       severity: 'warning',
-      path: 'brand-deck.pdf',
+      path: deckFileName(brand),
       message: `the deck planned ${deck.slides.length} slides, and the PDF has ${deck.pages} pages`,
     });
   }
   // Written once, whole, after the browser is done: a call that ends earlier leaves nothing behind
-  writeFolder(job.outDir, [['brand-deck.pdf', deck.pdf]]);
+  writeFolder(job.outDir, [[deckFileName(brand), deck.pdf]]);
   return { findings };
 }
 
@@ -68,7 +68,7 @@ const USAGE = 'usage: blazon-blazon.brand-deck BRAND.json [-o deck.pdf] [--favic
 /** The command line. Exit 0 on success; 1 when a file the deck needs cannot be read (nothing is written); 2 when the input is not a blazon brand, or is not given. */
 async function cli(args: string[]): Promise<number> {
   let brandFile: string | undefined;
-  let output = 'brand-deck.pdf';
+  let output: string | undefined;
   let favicons: string | undefined;
   const skip: string[] = [];
   const fonts: string[] = [];
@@ -118,8 +118,9 @@ async function cli(args: string[]): Promise<number> {
   try {
     const table = fontsFor(brand, folders);
     const deck = await draw(brand, path.dirname(path.resolve(brandFile)), favicons ? readFavicons(favicons, brand, say) : null, table, left);
-    writeFolder(path.dirname(path.resolve(output)), [[path.basename(output), deck.pdf]]);
-    process.stdout.write(`wrote ${output} (${deck.slides.length} slides)\n`);
+    const target = output ?? deckFileName(brand);
+    writeFolder(path.dirname(path.resolve(target)), [[path.basename(target), deck.pdf]]);
+    process.stdout.write(`wrote ${target} (${deck.slides.length} slides)\n`);
     return 0;
   } catch (error) {
     if (!(error instanceof DeckError || error instanceof Cannot)) throw error;

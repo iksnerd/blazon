@@ -9,7 +9,8 @@ import { readBrand as readBrandRaw } from '../../../src/shipped/office-template/
 import { contrast, luminance, mix, parseColor, toHex } from '../../../src/shipped/shared/color.js';
 import { FALLBACK_LINE_HEIGHT, fontOf, planFonts, planHeading } from '../../../src/shipped/office-template/fonts.js';
 import { chooseLogos, sizeLogo } from '../../../src/shipped/office-template/logo.js';
-import { parseOptions, slug } from '../../../src/shipped/office-template/options.js';
+import { parseOptions } from '../../../src/shipped/office-template/options.js';
+import { slug } from '../../../src/shipped/shared/slug.js';
 import { planPalette } from '../../../src/shipped/office-template/palette.js';
 import { keepOut, overlaps, planLayouts, W } from '../../../src/shipped/office-template/plan.js';
 import { NAME } from '../../../src/shipped/office-template/request.js';
