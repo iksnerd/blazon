@@ -6,6 +6,34 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.7.0 (2026-11-24)
+
+### Breaking
+
+- `blazon.press-kit` and `blazon.brand-deck` name their files after the brand, as
+  `blazon.office-template` does. The press kit's folder, zip and PDF were
+  `press-kit`, `press-kit.zip` and `press-kit.pdf`, and are now `<brand>-press-kit`
+  and so on (`acme-press-kit.zip` for a brand titled `Acme`). The deck's file was
+  `brand-deck.pdf` and is now `<brand>-brand-deck.pdf`. A title ending in `Brand
+  Book` loses those words, and a brand with no title, or the title blazon gives a
+  new book, keeps the old names. The press kit's `name` option still sets the whole
+  name; the deck has no option for it, and its command line keeps `-o`.
+
+### Added
+
+- `blazon contrast <fg> <bg>` and the `measure_contrast` tool measure the contrast of a color token on a background token, optionally with one translucent token blended over the background (`--with`, `--with-alpha`). It is a measurement with no verdict: `can_use` stays the only answer to whether the brand allows a pair.
+- `blazon logo --on <token>` (and `get_logo` with `on`) picks the logo for a background token: the configured file or logo asset that reads best there, never one a `logo.deny` rule forbids, or a refusal that says whether the brand's rule, too little contrast or an unmeasurable background left none. `--lockup` limits it to one lockup.
+- `blazon outputs [dir]` and the `get_outputs` tool list the files the last `blazon tokens` or `blazon build` wrote, say whether each is fresh or stale and which configured plugins have no output folder, and return one file's text with `--file`. They only read: no plugin starts and nothing is written.
+
+### Changed
+
+- A `logo.deny` rule is now honoured wherever a logo is chosen for a background: `blazon:logo-on` and the page covers no longer show a logo the rule forbids, and `logo-contrast-insufficient` is no longer raised for a configured file whose asset id the rule denies.
+
+### Fixed
+
+- The social-cards plugin no longer puts the logo in a corner the logo's `placement` does not list. When no listed corner fits the text edge it keeps the first listed corner, and a `logoCorner` outside `placement` is kept; both now report `card-logo-corner-unlisted`.
+- The brand viewer measures contrast as `blazon check` does: a translucent foreground is blended over its background, and a translucent background has no ratio.
+
 ## 0.6.0 (2026-11-24)
 
 ### Breaking

@@ -1,1 +1,0 @@
-The social-cards plugin no longer puts the logo in a corner the logo's `placement` does not list. When no listed corner fits the text edge it keeps the first listed corner, and a `logoCorner` outside `placement` is kept; both now report `card-logo-corner-unlisted`.
