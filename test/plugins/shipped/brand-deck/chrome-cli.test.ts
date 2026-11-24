@@ -19,7 +19,7 @@ describe.skipIf(!CHROME || !POPPLER)('the deck plugin, in a real browser', () =>
       const { dir, ran } = cli(world(), ['-o', path.join(tempDir('blazon-deck-cli-out-'), 'deck.pdf')]);
       expect(ran.status, ran.out + ran.err).toBe(0);
       expect(ran.out).toMatch(/^wrote .*deck\.pdf \(\d+ slides\)\n$/);
-      expect(fs.readdirSync(dir)).not.toContain('brand-deck.pdf');
+      expect(fs.readdirSync(dir)).not.toContain('acme-brand-deck.pdf');
     }, 120_000);
 
     it('exits 2 for a file that is not a blazon brand, and 1 naming a logo that is missing, writing nothing', () => {

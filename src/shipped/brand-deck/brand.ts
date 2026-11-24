@@ -1,4 +1,5 @@
 import { Cannot } from './request.js';
+import { brandedName } from '../shared/slug.js';
 
 // What the deck reads from brand.json (the `brand` of the request). It trusts as little of it as the Python deck did: the
 // format and the version are checked, the lists are lists, and an item that is not an object is not an item.
@@ -126,3 +127,6 @@ export function measurePx(measure: unknown, meta: Obj): number | undefined {
   }
   return dimensionPx(measure);
 }
+
+/** The deck's file name: `<brand>-brand-deck.pdf`, or `brand-deck.pdf` when the brand has no title of its own */
+export const deckFileName = (brand: Pick<Brand, 'brand'>): string => `${brandedName(brand.brand.title, 'brand-deck')}.pdf`;

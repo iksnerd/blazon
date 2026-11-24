@@ -15,12 +15,12 @@ if (!CHROME) {
 }
 
 describe.skipIf(!CHROME || !POPPLER)('the deck plugin, in a real browser', () => {
-  it('draws one 16:9 page for each slide, writes only brand-deck.pdf, and reports nothing for a good brand', async () => {
+  it('draws one 16:9 page for each slide, writes only acme-brand-deck.pdf, and reports nothing for a good brand', async () => {
     const w = world();
     const { ran, outDir, findings } = run(w);
     expect(ran.status, ran.out + ran.err).toBe(0);
     expect(findings).toEqual([]);
-    expect(fs.readdirSync(outDir)).toEqual(['brand-deck.pdf']);
+    expect(fs.readdirSync(outDir)).toEqual(['acme-brand-deck.pdf']);
     const sizes = await pages(pdfOf(outDir));
     expect(sizes).toHaveLength(plan(readBrand(w.brand), null, () => ['x']).length);
     for (const size of sizes) expect([size.width, size.height]).toEqual([960, 540]);

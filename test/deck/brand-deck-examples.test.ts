@@ -50,7 +50,10 @@ function deckOf(site: Site, brand: any = site.brand): { pages: string[]; file: s
     env: { PATH: '/usr/bin:/bin', HOME: os.homedir(), BLAZON_CHROME: CHROME },
   });
   expect(ran.status, ran.stdout + ran.stderr).toBe(0);
-  const file = path.join(outDir, 'brand-deck.pdf');
+  const file = path.join(
+    outDir,
+    fs.readdirSync(outDir).find((name) => name.endsWith('brand-deck.pdf'))!,
+  );
   const text = spawnSync('pdftotext', ['-layout', file, '-'], { encoding: 'utf-8' });
   expect(text.status, 'pdftotext (poppler) reads the PDF').toBe(0);
   return { pages: text.stdout.split('\f').slice(0, -1), file };

@@ -592,8 +592,8 @@ describe('the entry', () => {
     const made = world({ options: { pdf: false } });
     const ran = plugin(made.request);
     expect(ran.status, ran.out + ran.err).toBe(0);
-    expect(fs.readdirSync(made.outDir).sort()).toEqual(['press-kit', 'press-kit.zip']);
-    const folder = path.join(made.outDir, 'press-kit');
+    expect(fs.readdirSync(made.outDir).sort()).toEqual(['acme-co-press-kit', 'acme-co-press-kit.zip']);
+    const folder = path.join(made.outDir, 'acme-co-press-kit');
     expect(walk(folder)).toEqual(
       [
         'README.txt',
@@ -610,8 +610,8 @@ describe('the entry', () => {
       ].sort(),
     );
     expect(fs.readFileSync(path.join(folder, 'logos/on-light-backgrounds/mark-light.svg'), 'utf-8')).toBe(SVG('#1E1F21'));
-    const zipped = unzip(path.join(made.outDir, 'press-kit.zip'));
-    expect(zipped.map(([name]) => name)).toEqual(walk(folder).map((name) => `press-kit/${name}`).sort());
+    const zipped = unzip(path.join(made.outDir, 'acme-co-press-kit.zip'));
+    expect(zipped.map(([name]) => name)).toEqual(walk(folder).map((name) => `acme-co-press-kit/${name}`).sort());
     for (const [name, body] of zipped) expect(body.equals(fs.readFileSync(path.join(made.outDir, name))), name).toBe(true);
     expect(findingsOf(ran.out).map((f) => f.code)).toEqual([`${NAME}/logo-left-out`, `${NAME}/logo-left-out`, `${NAME}/color-left-out`, `${NAME}/color-not-hex`, `${NAME}/font-license-unstated`]);
   });
@@ -619,11 +619,11 @@ describe('the entry', () => {
   it('writes the same bytes for the same request, and drops a file an earlier run left', () => {
     const made = world({ options: { pdf: false } });
     plugin(made.request);
-    const first = fs.readFileSync(path.join(made.outDir, 'press-kit.zip'));
-    fs.writeFileSync(path.join(made.outDir, 'press-kit/stale.txt'), 'old');
+    const first = fs.readFileSync(path.join(made.outDir, 'acme-co-press-kit.zip'));
+    fs.writeFileSync(path.join(made.outDir, 'acme-co-press-kit/stale.txt'), 'old');
     plugin(made.request);
-    expect(fs.readFileSync(path.join(made.outDir, 'press-kit.zip')).equals(first)).toBe(true);
-    expect(fs.existsSync(path.join(made.outDir, 'press-kit/stale.txt'))).toBe(false);
+    expect(fs.readFileSync(path.join(made.outDir, 'acme-co-press-kit.zip')).equals(first)).toBe(true);
+    expect(fs.existsSync(path.join(made.outDir, 'acme-co-press-kit/stale.txt'))).toBe(false);
   });
 
   it('writes into out_dir only, whatever the name option says', () => {
@@ -631,7 +631,7 @@ describe('the entry', () => {
       const made = world({ options: { pdf: false, name } });
       const ran = plugin(made.request);
       expect(ran.status).toBe(0);
-      expect(fs.readdirSync(made.outDir).sort()).toEqual(['press-kit', 'press-kit.zip']);
+      expect(fs.readdirSync(made.outDir).sort()).toEqual(['acme-co-press-kit', 'acme-co-press-kit.zip']);
       expect(fs.existsSync(path.join(path.dirname(made.outDir), 'escape'))).toBe(false);
     }
   }, 60_000);
@@ -639,7 +639,7 @@ describe('the entry', () => {
   it('includes a color marked needs-review, labelled, when the unreviewed option is true', () => {
     const made = world({ options: { pdf: false, unreviewed: true } });
     expect(plugin(made.request).status).toBe(0);
-    const folder = path.join(made.outDir, 'press-kit/colors');
+    const folder = path.join(made.outDir, 'acme-co-press-kit/colors');
     expect(fs.readFileSync(path.join(folder, 'colors.txt'), 'utf-8')).toContain('color.draft (unreviewed)');
     expect(JSON.parse(fs.readFileSync(path.join(folder, 'colors.json'), 'utf-8')).colors.find((c: { path: string }) => c.path === 'color.draft').review).toBe('needs-review');
   });
@@ -649,7 +649,7 @@ describe('the entry', () => {
     const made = world({ options: { pdf: false, company: { ...company, bogus: 1 }, note: 'The colours are proposed.' } });
     const ran = plugin(made.request);
     expect(ran.status, ran.out + ran.err).toBe(0);
-    const folder = path.join(made.outDir, 'press-kit');
+    const folder = path.join(made.outDir, 'acme-co-press-kit');
     expect(fs.readFileSync(path.join(folder, 'about.txt'), 'utf-8')).toBe(
       'Acme Co\n\nAcme is a bank.\n\nAbout Acme.\n\nLegal name: Acme Ltd\n\nNote: The colours are proposed.\n',
     );
@@ -666,12 +666,35 @@ describe('the entry', () => {
     expect(walk(path.join(made.outDir, 'acme-kit')).filter((file) => file.startsWith('logos/on-'))).toEqual(['logos/on-dark-backgrounds/mark-dark.svg']);
   });
 
+  it.each([
+    ['Acme', 'acme-press-kit'],
+    ['Acme Brand Book', 'acme-press-kit'],
+    ['Acme Brand Guidelines', 'acme-brand-guidelines-press-kit'],
+    ['../../Acme/..', 'acme-press-kit'],
+    ['Blazon Brand Book', 'press-kit'],
+    ['', 'press-kit'],
+  ])('names the kit after the brand when there is no name option: %j gives %s', (title, name) => {
+    const made = world({ brand: { brand: { title }, theme: {}, tokens: [], assets: [], logo: {} }, options: { pdf: false } });
+    expect(plugin(made.request).status).toBe(0);
+    expect(fs.readdirSync(made.outDir).sort()).toEqual([name, `${name}.zip`]);
+    expect(fs.readFileSync(path.join(made.outDir, name, 'README.txt'), 'utf-8')).toContain(`${name}.zip holds the same files.`);
+  });
+
+  it('keeps press-kit for a brand with no title, and lets the name option win over the title', () => {
+    const made = world({ brand: { brand: {}, theme: {}, tokens: [], assets: [], logo: {} }, options: { pdf: false } });
+    expect(plugin(made.request).status).toBe(0);
+    expect(fs.readdirSync(made.outDir).sort()).toEqual(['press-kit', 'press-kit.zip']);
+    const named = world({ options: { pdf: false, name: 'kit' } });
+    expect(plugin(named.request).status).toBe(0);
+    expect(fs.readdirSync(named.outDir).sort()).toEqual(['kit', 'kit.zip']);
+  });
+
   it('answers a wrong option with a finding, exit 0, and writes the kit', () => {
     const made = world({ options: { pdf: 'no', bogus: true } });
     const ran = plugin(made.request, NO_CHROME);
     expect(ran.status).toBe(0);
     expect(findingsOf(ran.out).filter((f) => f.code === `${NAME}/option-invalid`)).toHaveLength(2);
-    expect(fs.existsSync(path.join(made.outDir, 'press-kit.zip'))).toBe(true);
+    expect(fs.existsSync(path.join(made.outDir, 'acme-co-press-kit.zip'))).toBe(true);
   });
 
   it('leaves out a logo whose file is not in the site, with an error finding', () => {
@@ -680,7 +703,7 @@ describe('the entry', () => {
     const ran = plugin(made.request);
     expect(ran.status).toBe(0);
     expect(findingsOf(ran.out)).toContainEqual({ code: `${NAME}/file-missing`, severity: 'error', path: 'logos/mark-dark', message: expect.any(String) });
-    expect(walk(path.join(made.outDir, 'press-kit')).some((file) => file.endsWith('mark-dark.svg'))).toBe(false);
+    expect(walk(path.join(made.outDir, 'acme-co-press-kit')).some((file) => file.endsWith('mark-dark.svg'))).toBe(false);
   });
 
   it('skips the PDF with a finding, never exit 2, when there is no browser, and writes the rest', () => {
@@ -690,8 +713,8 @@ describe('the entry', () => {
     const skipped = findingsOf(ran.out).filter((f) => f.code === `${NAME}/pdf-skipped`);
     expect(skipped).toHaveLength(1);
     expect(skipped[0]).toMatchObject({ severity: 'warning', message: expect.stringMatching(/no browser to draw the PDF with: BLAZON_CHROME names \/nonexistent\/chrome/) });
-    expect(walk(path.join(made.outDir, 'press-kit')).some((file) => file.endsWith('.pdf'))).toBe(false);
-    expect(fs.existsSync(path.join(made.outDir, 'press-kit.zip'))).toBe(true);
+    expect(walk(path.join(made.outDir, 'acme-co-press-kit')).some((file) => file.endsWith('.pdf'))).toBe(false);
+    expect(fs.existsSync(path.join(made.outDir, 'acme-co-press-kit.zip'))).toBe(true);
   });
 
   it('writes a kit with a brand that has no logo, no colors, no fonts and no description, and says so', () => {
@@ -699,8 +722,8 @@ describe('the entry', () => {
     const ran = plugin(made.request);
     expect(ran.status, ran.out + ran.err).toBe(0);
     expect(findingsOf(ran.out).map((f) => f.code)).toEqual([`${NAME}/logo-none`, `${NAME}/color-none`, `${NAME}/font-none`, `${NAME}/about-no-description`]);
-    expect(walk(path.join(made.outDir, 'press-kit'))).toEqual(['README.txt', 'about.txt', 'index.html']);
-    expect(fs.readFileSync(path.join(made.outDir, 'press-kit/about.txt'), 'utf-8')).toBe('Bare\n\nNo description is set in blazon.json.\n');
+    expect(walk(path.join(made.outDir, 'bare-press-kit'))).toEqual(['README.txt', 'about.txt', 'index.html']);
+    expect(fs.readFileSync(path.join(made.outDir, 'bare-press-kit/about.txt'), 'utf-8')).toBe('Bare\n\nNo description is set in blazon.json.\n');
   });
 });
 
@@ -711,14 +734,14 @@ describe.skipIf(!CHROME)('the PDF, in a real browser', () => {
     expect(a.status, a.out + a.err).toBe(0);
     expect(findingsOf(a.out).some((f) => f.code === `${NAME}/pdf-skipped`)).toBe(false);
     expect(findingsOf(a.out).find((f) => f.code === `${NAME}/pdf-font-fallback`)).toMatchObject({ severity: 'info', message: expect.stringContaining('Big Shoulders Display or Arial') });
-    const pdf = fs.readFileSync(path.join(made.outDir, 'press-kit/press-kit.pdf'));
+    const pdf = fs.readFileSync(path.join(made.outDir, 'acme-co-press-kit/acme-co-press-kit.pdf'));
     expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
     expect(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)).toHaveLength(1);
-    const zipped = unzip(path.join(made.outDir, 'press-kit.zip')).find(([name]) => name === 'press-kit/press-kit.pdf')!;
+    const zipped = unzip(path.join(made.outDir, 'acme-co-press-kit.zip')).find(([name]) => name === 'acme-co-press-kit/acme-co-press-kit.pdf')!;
     expect(zipped[1].equals(pdf)).toBe(true);
-    const zip = fs.readFileSync(path.join(made.outDir, 'press-kit.zip'));
+    const zip = fs.readFileSync(path.join(made.outDir, 'acme-co-press-kit.zip'));
     expect(plugin(made.request, { BLAZON_CHROME: CHROME }).status).toBe(0);
-    expect(fs.readFileSync(path.join(made.outDir, 'press-kit.zip')).equals(zip)).toBe(true);
+    expect(fs.readFileSync(path.join(made.outDir, 'acme-co-press-kit.zip')).equals(zip)).toBe(true);
   }, 120_000);
 });
 
@@ -1075,14 +1098,14 @@ describe('the kit with no contact and no terms', () => {
     const made = world({ brand: trimmed, options: { pdf: false } });
     const ran = plugin(made.request);
     expect(ran.status, ran.out + ran.err).toBe(0);
-    const folder = path.join(made.outDir, 'press-kit');
+    const folder = path.join(made.outDir, 'acme-co-press-kit');
     const files = walk(folder);
     expect(files.filter((file) => !(file in OLD_SHA) && file !== 'README.txt')).toEqual(['index.html']);
     for (const [file, hash] of Object.entries(OLD_SHA)) expect(sha(fs.readFileSync(path.join(folder, file))), file).toBe(hash);
     const readme = fs.readFileSync(path.join(folder, 'README.txt'), 'utf-8');
     const line = readme.split('\n').find((row) => row.startsWith('  index.html'))!;
     expect(line).toMatch(/^ {2}index\.html {6}\S/);
-    expect(readme.replace(`${line}\n`, '')).toBe(OLD_README);
+    expect(readme.replace(`${line}\n`, '')).toBe(OLD_README.replace('press-kit.zip holds', 'acme-co-press-kit.zip holds'));
     expect(readme.indexOf(line)).toBe(OLD_README.indexOf('  logos/'));
     expect(readme).not.toContain('Terms of use');
   });
@@ -1099,11 +1122,11 @@ describe('the entry with contact, terms and the page', () => {
     const made = world({ options });
     const ran = plugin(made.request);
     expect(ran.status, ran.out + ran.err).toBe(0);
-    const folder = path.join(made.outDir, 'press-kit');
+    const folder = path.join(made.outDir, 'acme-co-press-kit');
     const page = fs.readFileSync(path.join(folder, 'index.html'), 'utf-8');
     expect(page).toContain('press@acme.example');
     expect(page).toContain('Use the logos as supplied.');
-    const zipped = unzip(path.join(made.outDir, 'press-kit.zip')).find(([name]) => name === 'press-kit/index.html')!;
+    const zipped = unzip(path.join(made.outDir, 'acme-co-press-kit.zip')).find(([name]) => name === 'acme-co-press-kit/index.html')!;
     expect(zipped[1].equals(fs.readFileSync(path.join(folder, 'index.html')))).toBe(true);
     const about = fs.readFileSync(path.join(folder, 'about.txt'), 'utf-8');
     expect(about).toContain('Contact:\n  Name: Ada Example\n  Email: press@acme.example\n');
@@ -1122,7 +1145,7 @@ describe('the entry with contact, terms and the page', () => {
     const ran = plugin(made.request);
     expect(ran.status).toBe(0);
     expect(findingsOf(ran.out).filter((f) => f.code === `${NAME}/option-invalid`).map((f) => f.path)).toEqual(['options.company.contact.email']);
-    expect(fs.existsSync(path.join(made.outDir, 'press-kit/index.html'))).toBe(true);
+    expect(fs.existsSync(path.join(made.outDir, 'acme-co-press-kit/index.html'))).toBe(true);
   });
 });
 
@@ -1131,7 +1154,7 @@ describe.skipIf(!CHROME)('the PDF with contact and terms, in a real browser', ()
     const made = world({ options: { company: { contact: { name: 'Ada Example', email: 'press@acme.example' } }, terms: { text: 'Use the logos as supplied.' } } });
     const ran = plugin(made.request, { BLAZON_CHROME: CHROME });
     expect(ran.status, ran.out + ran.err).toBe(0);
-    const words = spawnSync('pdftotext', [path.join(made.outDir, 'press-kit/press-kit.pdf'), '-'], { encoding: 'utf-8' });
+    const words = spawnSync('pdftotext', [path.join(made.outDir, 'acme-co-press-kit/acme-co-press-kit.pdf'), '-'], { encoding: 'utf-8' });
     expect(words.status, 'pdftotext (poppler) reads the PDF').toBe(0);
     expect(words.stdout).toContain('Ada Example');
     expect(words.stdout).toContain('press@acme.example');

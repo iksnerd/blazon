@@ -1,6 +1,6 @@
 # blazon.press-kit
 
-The plugin blazon ships to pack what an outsider needs from a brand: the logos that are ready to share, the colors, the fonts, the boilerplate, the contact, the terms of use, a web page and a one-page PDF, in one folder and one zip. It fills the `build` role. Everything but the PDF needs only Node; the PDF needs a Chrome (`BLAZON_CHROME` names one, else the Google Chrome installed on the computer), and without one the plugin writes the rest and says so in a finding.
+The plugin blazon ships to pack what an outsider needs from a brand: the logos that are ready to share, the colors, the fonts, the boilerplate, the contact, the terms of use, a web page and a one-page PDF, in one folder and one zip, named after the brand (`acme-press-kit/` and `acme-press-kit.zip` for a brand titled `Acme`). It fills the `build` role. Everything but the PDF needs only Node; the PDF needs a Chrome (`BLAZON_CHROME` names one, else the Google Chrome installed on the computer), and without one the plugin writes the rest and says so in a finding.
 
 The source is `src/shipped/press-kit/`, and `npm run build` (`npm run build:plugins`) bundles it, with the blazon code it uses, into `bin/blazon-blazon.press-kit.🔌`, the one file that holds the plugin's code and that `plugins/shipped.lock` pins. The program loads `playwright-core` and `pdf-lib` from `node_modules` when it runs; that is outside the pin. The zip writer is `src/shipped/shared/zip.ts`, which `blazon.office-template` uses too. The manual's plugins chapter says what to put in the config, what the plugin writes and what each finding means.
 
@@ -13,7 +13,7 @@ The source is `src/shipped/press-kit/`, and `npm run build` (`npm run build:plug
 | `fonts.txt` | The brand's fonts: the front family of `fontDisplay`, `fontBody` and each font token, and the families the font stylesheets load, unless it is a system font nothing loads (then it is a fallback); a `Role:`, `Why:` and, for a fallback, `Stands in for:` line where a font token states them; the source and license only where a font token states them (its `font` extension) or the data has them, else the license file blazon found beside the family's font files (`License file:` with its path), else `not stated`. The fallbacks are one last line, `Fallback fonts, not shipped` |
 | `index.html` | The whole kit as one static page for a browser, at the root of the folder and the zip: inline CSS, no script, no remote font or image, the logos by relative paths, every brand text escaped. Sections, only those with data: name and description, About, Facts, Contact, Logos (with the rules the sidecars state), Colors, Fonts, Terms of use, Note. Always written; it has no option |
 | `about.txt` | `brand.title`, then the `company` option's description, else `brand.description` (without either, a line saying none is set), then the company's boilerplate, facts and contact, the `terms` and the `note` |
-| `press-kit.pdf` | The title, the description (the company's when the option gives one), the boilerplate, the facts, the contact, a short block of the terms, the note, up to ten colors and one logo, drawn in Chrome |
+| `<name>.pdf` | The title, the description (the company's when the option gives one), the boilerplate, the facts, the contact, a short block of the terms, the note, up to ten colors and one logo, drawn in Chrome |
 
 A logo marked `needs-review`, and a generated logo with no `review`, are left out, with a finding for each. A color token marked `needs-review` is left out too, unless the `unreviewed` option is `true`, which includes it labelled as unreviewed.
 
@@ -23,7 +23,7 @@ Every option is plain data in the plugin's `options` in `blazon.json`. A wrong o
 
 | Option | Type | Default | Does |
 |---|---|---|---|
-| `name` | string | `press-kit` | Folder, zip and PDF name, without an extension: letters, digits, dots, hyphens and underscores, up to 64 characters |
+| `name` | string | `<brand>-press-kit`, or `press-kit` when the brand has no title of its own | Folder, zip and PDF name, without an extension: letters, digits, dots, hyphens and underscores, up to 64 characters |
 | `pdf` | boolean | `true` | `false` writes no PDF and needs no browser |
 | `unreviewed` | boolean | `false` | `true` includes the colors marked `needs-review`, labelled as unreviewed |
 | `logos` | list of asset ids | every logo | The logos to include; one that is not ready stays out |

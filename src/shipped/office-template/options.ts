@@ -19,14 +19,6 @@ export type { Finding };
 export const finding = findingFor(NAME);
 const invalid = (message: string): Finding => finding('option-invalid', 'error', 'options', message);
 
-/** A name as a file name: lowercase letters, digits, dots, hyphens and underscores, so it cannot leave out_dir. `fallback` when nothing is left. */
-export const slug = (text: string, fallback = 'brand'): string =>
-  text
-    .toLowerCase()
-    .replace(/[^a-z0-9._]+/g, '-')
-    .replace(/^[-.]+|[-.]+$/g, '')
-    .slice(0, 80) || fallback;
-
 /**
  * The options as the template uses them, and an `option-invalid` finding for each thing wrong. Nothing here throws: the options are the
  * person's, not the request's. A wrong option is left at its default and the rest is written.

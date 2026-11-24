@@ -112,9 +112,9 @@ export const fileName = (text: string): string => text.replace(/[^A-Za-z0-9._-]+
  * The options as the kit uses them, and an `option-invalid` finding for each thing wrong. Nothing here throws: the options are the
  * person's, not the request's. A wrong option is left at its default and the rest is written. `logoIds` are the assets that are logos.
  */
-export function parseOptions(raw: unknown, logoIds: ReadonlySet<string>): { options: Options; findings: Finding[] } {
+export function parseOptions(raw: unknown, logoIds: ReadonlySet<string>, defaultName = 'press-kit'): { options: Options; findings: Finding[] } {
   const findings: Finding[] = [];
-  const options: Options = { name: 'press-kit', pdf: true, unreviewed: false };
+  const options: Options = { name: defaultName, pdf: true, unreviewed: false };
   if (!isObject(raw)) return { options, findings: [invalid('options must be an object')] };
   for (const key of Object.keys(raw)) if (!KEYS.includes(key)) findings.push(invalid(`unknown option "${key}"; the options are ${KEYS.join(', ')}`));
 
