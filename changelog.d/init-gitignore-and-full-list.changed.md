@@ -1,0 +1,1 @@
+`blazon init` now writes a `.gitignore` with `dist/` (the default output folders), or adds that line once to the one already there, and never rewrites the rest. The list it prints, and `--json` (`created`, plus a new `updated`), now name every top-level folder and file it wrote, including `fonts/`, `AGENTS.md` and `CLAUDE.md`.

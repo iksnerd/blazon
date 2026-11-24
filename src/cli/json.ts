@@ -48,7 +48,7 @@ export async function asJson(
 
 /**
  * `blazon init --json`: never asks, prints what it made as one JSON document on standard output and its usual text on standard error.
- * `created` and `kept` are paths in the folder; a starter file that was already there is kept, not overwritten. Exit status: init's own.
+ * `created`, `kept` and `updated` are paths in the folder; a starter file that was already there is kept, not overwritten, and `updated` names a `.gitignore` init added a line to. Exit status: init's own.
  */
 export async function initAsJson(dir: string, options: InitOptions): Promise<number> {
   const log = console.log;

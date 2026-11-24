@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import pc from '../../core/colors.js';
-import { copyStarter, getTemplateDir } from '../../core/starter.js';
+import { copyStarter, ensureBuildIgnored, getTemplateDir } from '../../core/starter.js';
 import { applyFromSite, type FromSiteResult } from '../../core/init/from-site/index.js';
 import { applyAnswers, parseColor, parseDescription, parseFont, parseLogo, parseName, type Answers } from '../../core/init/answers.js';
 import { readJson, writeJson } from '../../core/init/vocabulary.js';
@@ -23,6 +23,29 @@ function describeCreated(folder: string, files: string[]): string | undefined {
   const subfolders = [...new Set(names.filter((n) => n.length > 1).map((n) => n[0]!))];
   if (subfolders.length > 0) return `${plural(names.length, 'file', 'files')} in ${plural(subfolders.length, 'folder', 'folders')}: ${subfolders.join(', ')}`;
   return `${plural(names.length, 'file', 'files')}: ${names.map((n) => n[0]).join(', ')}`;
+}
+
+/** The folders init writes first, in the order a person reads them; any other folder follows by name, then the files at the top. */
+const FOLDER_ORDER = ['tokens', 'assets', 'docs', 'fonts'];
+const FILE_ORDER = ['blazon.json', 'blazon.resolver.json', 'AGENTS.md', 'CLAUDE.md'];
+const rank = (order: string[], name: string): number => (order.includes(name) ? order.indexOf(name) : order.length);
+
+/** One line for each top-level folder (with what is in it) and each top-level file among the written paths. */
+function topLevelLines(written: string[], ignoreLines: string[]): string[] {
+  const folders = [...new Set(written.filter((f) => f.includes('/')).map((f) => f.split('/')[0]!))].sort(
+    (a, b) => rank(FOLDER_ORDER, a) - rank(FOLDER_ORDER, b) || (a < b ? -1 : 1),
+  );
+  const files = written.filter((f) => !f.includes('/')).sort((a, b) => rank(FILE_ORDER, a) - rank(FILE_ORDER, b) || (a < b ? -1 : 1));
+  return [
+    ...folders.map((folder) => {
+      const what = describeCreated(
+        folder,
+        written.filter((f) => f.startsWith(`${folder}/`)),
+      );
+      return what ? `${folder}/ (${what})` : `${folder}/`;
+    }),
+    ...files.map((file) => (file === '.gitignore' ? `.gitignore (${ignoreLines.join(', ')})` : file)),
+  ];
 }
 
 // Words a folder name often ends with that the title says itself: "acme-brand" is "Acme Brand Book", not "Acme Brand Brand Book".
@@ -77,6 +100,8 @@ export interface InitReport {
   dir: string;
   created: string[];
   kept: string[];
+  /** Files that were already there and that init added a line to (`.gitignore`); empty when it changed none */
+  updated: string[];
 }
 
 const FLAGS = [
@@ -124,8 +149,16 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   const copied = copyStarter(destDir, templateDir);
   const kept = copied.kept;
   const written = copied.written.map((f) => path.relative(destDir, f).split(path.sep).join('/')).sort();
+  // The build output stays out of git (manual chapter 15). Written here, never copied from the starter: npm leaves a `.gitignore` out of a package
+  const ignored = ensureBuildIgnored(destDir);
+  if (ignored.status === 'created') written.push('.gitignore');
   const created = new Set(written);
-  options.report?.({ dir: destDir, created: written, kept: kept.map((f) => path.relative(destDir, f).split(path.sep).join('/')).sort() });
+  options.report?.({
+    dir: destDir,
+    created: written,
+    kept: kept.map((f) => path.relative(destDir, f).split(path.sep).join('/')).sort(),
+    updated: ignored.status === 'updated' ? ['.gitignore'] : [],
+  });
 
   // A new config is named after the project folder: "acme-brand" -> "Acme Brand Book".
   if (!hadConfig && fs.existsSync(configPath)) {
@@ -134,16 +167,9 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     writeJson(configPath, { ...config, title: brandTitle(destDir), description: 'Brand guidelines, built from design tokens' });
   }
 
-  const created_lines: string[] = [];
-  for (const folder of ['tokens', 'assets', 'docs']) {
-    const what = describeCreated(
-      folder,
-      written.filter((f) => f.startsWith(`${folder}/`)),
-    );
-    if (what) created_lines.push(`${folder}/ (${what})`);
-  }
-  if (written.includes('blazon.json')) created_lines.push('blazon.json');
-  if (written.includes('blazon.resolver.json')) created_lines.push('blazon.resolver.json');
+  // One line for each top-level folder and file init wrote, built from what was written so the list cannot fall behind the starter
+  const created_lines = topLevelLines(written, ignored.added);
+  const updated_lines = ignored.status === 'updated' ? [`.gitignore (added ${ignored.added.join(', ')})`] : [];
 
   let plan: Plan = { answers };
   if (prompter) {
@@ -158,6 +184,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     }
   } else {
     for (const line of created_lines) console.log(`  ${pc.green('✔')} Created ${line}`);
+    for (const line of updated_lines) console.log(`  ${pc.green('✔')} Updated ${line}`);
     if (kept.length > 0) console.log(`  ${pc.yellow('!')} ${kept.length} starter files were already here and are kept as they are`);
     console.log();
   }
@@ -230,7 +257,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
       ? `Confirm the colors read from the site in ${colors} with the brand owner`
       : `Edit ${colors} with your colors`;
   if (prompter) {
-    const wrote = [...created_lines.map((l) => `Created ${l}`)];
+    const wrote = [...created_lines.map((l) => `Created ${l}`), ...updated_lines.map((l) => `Updated ${l}`)];
     if (site) wrote.push(`Read from ${from}: ${site.written.length} files written, ${site.removed.length} starter files removed`, ...site.missing.map((m) => `Not found: ${m}`));
     for (const item of applied.set) wrote.push(`Set ${item}`);
     wrote.push(...applied.hints.map((h) => `Note: ${h}`));
