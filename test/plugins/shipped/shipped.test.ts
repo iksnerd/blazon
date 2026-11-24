@@ -255,7 +255,20 @@ describe('what is refused, and why', () => {
       const reason = await refused(i);
       expect(reason).toContain(`${place}${problem}${i.folder}`);
       const [found] = await check(i);
-      expect(found!.fix).toContain('home folder');
+      const mode = (fs.statSync(place).mode & 0o777).toString(8);
+      expect(found!.fix).toBe(`${place} has mode ${mode}, so it is group-writable (g+w). If it is yours, run: chmod g-w ${place}`);
+      expect(found!.fix).not.toMatch(/home folder|-R\b/);
+    });
+
+    it.each([
+      [0o757, 'other-writable (o+w)', 'o-w'],
+      [0o777, 'group-writable and other-writable (g+w and o+w)', 'go-w'],
+    ])('names the bits and the chmod for mode %o', async (mode, bits, flag) => {
+      if (notClean) return console.warn('shipped.test: skipped, the install folder is not clean');
+      const i = install();
+      fs.chmodSync(i.folder, mode);
+      const [found] = await check(i);
+      expect(found!.fix).toBe(`${i.folder} has mode ${mode.toString(8)}, so it is ${bits}. If it is yours, run: chmod ${flag} ${i.folder}`);
     });
 
     // The default first run of an install under a shared folder (/tmp on Linux, /private/tmp on macOS) lands here: the fix

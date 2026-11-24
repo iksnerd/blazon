@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { chainProblem, readShebang } from './interpreter.js';
+import { chainFault, readShebang, type ChainFault } from './interpreter.js';
 import { readLockFile, type LockEntry } from './lock.js';
 import { packageRoot } from '../../core/package-root.js';
 import { SHIPPED_LOCK } from '../../core/shipped-names.js';
@@ -57,11 +57,12 @@ export function shippedProblem(shipped: Shipped): string | undefined {
  * The same, with `place` set when the cause is where blazon is installed: a folder on the way that another user can write
  * or owns. That one is not fixed by reinstalling in the same place, so the host gives it a fix of its own.
  */
-export function shippedTrouble(shipped: Shipped): { problem: string; place: boolean } | undefined {
-  const untrusted = chainProblem(shipped.directory, { final: 'dir' }) ?? chainProblem(shipped.entry);
-  if (untrusted) {
+export function shippedTrouble(shipped: Shipped): { problem: string; place: boolean; writable?: ChainFault['writable'] } | undefined {
+  const fault = chainFault(shipped.directory, { final: 'dir' }) ?? chainFault(shipped.entry);
+  if (fault) {
+    const untrusted = fault.message;
     const place = OPEN_PLACE.test(untrusted);
-    return { problem: `${untrusted}, so blazon will not run a plugin from ${shipped.directory}${place ? '' : '; reinstall blazon'}`, place };
+    return { writable: fault.writable, problem: `${untrusted}, so blazon will not run a plugin from ${shipped.directory}${place ? '' : '; reinstall blazon'}`, place };
   }
   let got: string;
   try {

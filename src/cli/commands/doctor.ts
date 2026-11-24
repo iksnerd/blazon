@@ -131,7 +131,9 @@ async function brandCheck(cwd: string): Promise<{ check: DoctorCheck; config?: B
 function hostCheck(cwd: string, env: DoctorEnv, plugins: number): DoctorCheck {
   const problem = env.hostProblem(cwd);
   if (!problem) return { id: 'plugin-host', status: 'ok', message: `${cwd} is a folder blazon will run plugins from` };
-  const fix = /written by group or others/.test(problem) ? writableFix(cwd) : 'Run blazon from a folder under your own home folder that only you can write.';
+  const fix = /written by group or others/.test(problem)
+    ? writableFix(/^(.+) can be written by group or others$/.exec(problem)?.[1] ?? cwd)
+    : 'Run blazon from a folder under your own home folder that only you can write.';
   // With no plugin listed, nothing is refused yet: the folder is a risk for the day one is
   return { id: 'plugin-host', status: plugins > 0 ? 'fail' : 'warn', message: `${problem}, so blazon will refuse to run plugins from it`, fix };
 }

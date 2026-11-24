@@ -16,7 +16,7 @@ import { scrub, scrubPlain } from '../host/scrub.js';
 import { findShipped, shippedDirectory, type Shipped } from '../pins/shipped.js';
 import { message, truncateGraphemes } from '../wire/text.js';
 import { finding } from '../../core/checker/catalogue.js';
-import { COULD_NOT_FIX, CONFIG_FIX, MANIFEST_EXIT_FIX, OUT_DIR_FIX, PROTOCOL_FIX, STOPPED_FIX, breakFix, labelFix, notFoundFix, pinFix, writableFix } from './fixes.js';
+import { COULD_NOT_FIX, CONFIG_FIX, MANIFEST_EXIT_FIX, OUT_DIR_FIX, PROTOCOL_FIX, STOPPED_FIX, breakFix, fixOf, labelFix, notFoundFix, pinFix, writableFix } from './fixes.js';
 
 // The check and build roles (RFC 0002 section 2; RFC 0005). A PluginRun is one unit of work, a run
 // of one blazon command: it reads the lock once, keeps a breaker for each plugin, and turns whatever happens into
@@ -295,7 +295,7 @@ export class PluginRun {
     else if (manifestAnswer.code === 2) ended('exit-2');
     // The manifest call is given no variables, so no labelled value can be in its stderr; scrub every one this process holds all the same
     const held = Object.entries(this.env).flatMap(([variable, value]) => (value && SECRET_PREFIXES.some((prefix) => variable.startsWith(prefix)) ? [value] : []));
-    if (!manifestAnswer.answered) return [failed(`the manifest call did not exit 0 (${manifestAnswer.breakReason})${tailOf(manifestAnswer, held)}`, breakFix(manifestAnswer.cause, name, pinPath))];
+    if (!manifestAnswer.answered) return [failed(`the manifest call did not exit 0 (${manifestAnswer.breakReason})${tailOf(manifestAnswer, held)}`, fixOf(manifestAnswer, name, pinPath))];
     if (manifestAnswer.code !== 0) return [failed(`the manifest call did not exit 0 (exit ${manifestAnswer.code})${tailOf(manifestAnswer, held)}`, MANIFEST_EXIT_FIX)];
     let manifest: Manifest;
     try {
@@ -381,7 +381,7 @@ export class PluginRun {
   private outcome(target: Target, role: Role, result: Result, secrets: readonly string[], pinPath?: string): { findings: Finding[] } | { failure: Finding; ended: 'break' | 'exit-2' } {
     const { name } = target;
     const failed = (reason: string, fix?: string): Finding => failedFor(target, reason, fix);
-    if (!result.answered) return { failure: failed(brokeWith(result, secrets), breakFix(result.cause, name, pinPath)), ended: 'break' };
+    if (!result.answered) return { failure: failed(brokeWith(result, secrets), fixOf(result, name, pinPath)), ended: 'break' };
     if (result.code === 2) {
       const reason = message(result.stdout, `plugin ${name} could not answer`, secrets);
       return { failure: failed(`could not answer: ${reason}`, COULD_NOT_FIX), ended: 'exit-2' };

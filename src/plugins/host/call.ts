@@ -65,6 +65,8 @@ export interface Result {
   breakReason: string;
   /** For a break: which kind of cause it was, so the host can say what fixes it */
   cause?: BreakCause;
+  /** For a `place` break caused by a mode: the path, its mode bits and its owner, so the fix can name the chmod */
+  open?: { path: string; mode: number; uid: number };
 }
 
 /**
@@ -125,7 +127,10 @@ export async function run(call: Call): Promise<Result> {
     if (call.program || call.directory || call.pin) return broke('a shipped call has no program, directory or pin of its own', 'call');
     // Every call, not the first: a change after the last check is caught by this one (the folder can still change between the check and the start)
     const trouble = shippedTrouble(call.shipped);
-    if (trouble) return broke(`unavailable: shipped plugin: ${trouble.problem}`, trouble.place ? 'place' : 'install');
+    if (trouble) {
+      const refused = broke(`unavailable: shipped plugin: ${trouble.problem}`, trouble.place ? 'place' : 'install');
+      return trouble.writable ? { ...refused, open: trouble.writable } : refused;
+    }
     let launch: ReturnType<typeof shippedLaunch>;
     try {
       launch = shippedLaunch(call.shipped.entry);

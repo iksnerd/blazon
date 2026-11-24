@@ -19,6 +19,26 @@ export const notFoundFix = (name: string): string =>
 export const writableFix = (place: string): string =>
   `If ${place} is yours, run chmod go-w ${place}; if it is not, put the plugin in a folder under your own home folder.`;
 
+/**
+ * The fix for a folder or file on the way to a plugin that group or others can write. When it is the user's own and not a
+ * shared (sticky) folder, it names the path, its mode, the bits and the one chmod that fixes it, never a recursive one.
+ * Otherwise (a shared folder such as /tmp, or one root owns) the folder is not the user's to change: move the install.
+ */
+export function openPlaceFix(found: { path: string; mode: number; uid: number } | undefined, uid: number = process.getuid?.() ?? 0): string {
+  if (!found || found.uid !== uid || found.mode & 0o1000) return breakFix('place', '')!;
+  const group = (found.mode & 0o020) !== 0;
+  const others = (found.mode & 0o002) !== 0;
+  const bits = group && others ? 'group-writable and other-writable (g+w and o+w)' : group ? 'group-writable (g+w)' : 'other-writable (o+w)';
+  const mode = (found.mode & 0o777).toString(8).padStart(3, '0');
+  const flag = group && others ? 'go-w' : group ? 'g-w' : 'o-w';
+  return `${found.path} has mode ${mode}, so it is ${bits}. If it is yours, run: chmod ${flag} ${found.path}`;
+}
+
+/** The fix for a call that did not answer: the folder's own mode when that was the cause, else the cause's fixed text. */
+export function fixOf(result: { cause?: BreakCause; open?: { path: string; mode: number; uid: number } }, name: string, pin?: string): string | undefined {
+  return result.cause === 'place' ? openPlaceFix(result.open) : breakFix(result.cause, name, pin);
+}
+
 /** A check or build plugin that must be pinned and is not. */
 export const pinFix = (program: string, name: string): string => `Pin it: blazon plugin pin ${program} --name ${name}, then commit blazon.plugins.lock.`;
 
