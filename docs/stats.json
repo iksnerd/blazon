@@ -106,6 +106,11 @@
       "name": "brand",
       "usage": "blazon brand [dir]",
       "summary": "Print the brand as brand.json holds it, compiled now and written nowhere; --key prints one part"
+    },
+    {
+      "name": "outputs",
+      "usage": "blazon outputs [dir]",
+      "summary": "List the files the last blazon tokens or build wrote and whether each is fresh or stale; --file prints one"
     }
   ],
   "checks": {
@@ -154,6 +159,11 @@
       "name": "get_logo",
       "title": "Read the brand logo",
       "description": "Gets the brand logo variants for light and dark surfaces, their files, and the rules for each logo: clear space, minimum size, lockups, and the backgrounds that forbid it. Use it before placing a logo. For the brand's other rules use get_rules."
+    },
+    {
+      "name": "get_outputs",
+      "title": "Find the brand outputs",
+      "description": "Lists the files the last `blazon tokens` or `blazon build` wrote under the tokens output folder (theme.css, tokens.json and the folder of each plugin, `<id>/`), with the absolute path and size of each and whether it is fresh or stale, and names the configured plugins whose folder is missing, with the command that fixes it. Fresh means no input of the brand is newer than the file, by timestamp. With `file` (a path under the outputs folder, as listed) it also returns that file as text, cut at 40000 characters (`truncated` says so); a file that is not text is refused. Use it to read the generated CSS or a plugin output instead of copying values by hand. It only reads: it starts no plugin and writes nothing, so a missing or stale file is fixed by running the command it names. For one token use get_token."
     }
   ],
   "chapters": [

@@ -8,4 +8,5 @@ export { inTheme, themeNames, THEME_MODIFIER } from './theme.js';
 export { measureContrast, measureColors, MEASURE_NOTE, type ContrastMeasure } from './contrast.js';
 export { canUse, canUseMany, withoutChecks, levelOf, CAN_ROLES, NON_TEXT_MINIMUM, type CanAnswer, type CanCheck, type CanRole } from './can.js';
 export { describeFonts, fontFaceCss, type FontsDescription, type FamilyUse, type FontFileEntry } from './fonts.js';
+export { describeOutputs, OutputsError, OUTPUTS_NOTE, type OutputsDescription, type OutputFile, type MissingOutput, type OutputState } from './outputs.js';
 export { describeLogo, type LogoDescription, type LogoAsset, type LogoVariant } from './logo.js';

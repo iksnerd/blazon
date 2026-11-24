@@ -31,6 +31,7 @@ If the client has the blazon MCP server, use its tools instead of reading token 
 | `get_fonts` | find the stylesheets and files to load |
 | `measure_contrast` | measure a color no token names (a tint over a background, `with` and `withAlpha`); a measurement, never an approval |
 | `get_logo` | read logo variants, clear space and forbidden backgrounds |
+| `get_outputs` | find the generated CSS and plugin outputs, whether they are fresh, and read one file; read it instead of copying values by hand |
 
 A denied `can_use` is a normal answer (`allowed: false`), not an error. When a result says `brandHasErrors`, values may be wrong: run `check_brand` and fix the errors first. The server does not run plugins, so a finding only a plugin raises is not in its answer.
 

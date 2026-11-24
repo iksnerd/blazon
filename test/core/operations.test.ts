@@ -56,8 +56,19 @@ describe('the operations list', () => {
       'measure_contrast',
       'get_fonts',
       'get_logo',
+      'get_outputs',
     ]);
-    expect(commandOperations(OPERATIONS).map((op) => (op.cli as { command: string[] }).command[0])).toEqual(['get', 'list', 'rules', 'can', 'contrast', 'fonts', 'logo', 'brand']);
+    expect(commandOperations(OPERATIONS).map((op) => (op.cli as { command: string[] }).command[0])).toEqual([
+      'get',
+      'list',
+      'rules',
+      'can',
+      'contrast',
+      'fonts',
+      'logo',
+      'brand',
+      'outputs',
+    ]);
   });
 
   it('builds a tool without changing the operation, and without the properties only the command line takes', () => {

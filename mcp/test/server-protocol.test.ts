@@ -26,7 +26,17 @@ describe.skipIf(!installed)('blazon-mcp', () => {
 
   it('lists the eight tools, each with a title, a description, an output schema and a closed input schema', async () => {
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(['can_use', 'check_brand', 'get_fonts', 'get_logo', 'get_rules', 'get_token', 'list_tokens', 'measure_contrast']);
+    expect(tools.map((t) => t.name).sort()).toEqual([
+      'can_use',
+      'check_brand',
+      'get_fonts',
+      'get_logo',
+      'get_outputs',
+      'get_rules',
+      'get_token',
+      'list_tokens',
+      'measure_contrast',
+    ]);
     for (const tool of tools) {
       expect(tool.title?.length).toBeGreaterThan(5);
       expect(tool.description?.length).toBeGreaterThan(40);

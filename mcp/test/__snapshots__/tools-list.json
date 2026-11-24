@@ -1150,5 +1150,168 @@
     "execution": {
       "taskSupport": "forbidden"
     }
+  },
+  {
+    "name": "get_outputs",
+    "title": "Find the brand outputs",
+    "description": "Lists the files the last `blazon tokens` or `blazon build` wrote under the tokens output folder (theme.css, tokens.json and the folder of each plugin, `<id>/`), with the absolute path and size of each and whether it is fresh or stale, and names the configured plugins whose folder is missing, with the command that fixes it. Fresh means no input of the brand is newer than the file, by timestamp. With `file` (a path under the outputs folder, as listed) it also returns that file as text, cut at 40000 characters (`truncated` says so); a file that is not text is refused. Use it to read the generated CSS or a plugin output instead of copying values by hand. It only reads: it starts no plugin and writes nothing, so a missing or stale file is fixed by running the command it names. For one token use get_token.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "A file under the outputs folder, relative to it, as the `file` field of a listed file gives it, such as theme.css or acme.press/main.css. Leave out to list"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lines blazon printed on standard error, such as a warning that the brand has errors. Empty when blazon said nothing"
+        },
+        "brandHasErrors": {
+          "type": "boolean",
+          "description": "True when the brand's own data has error findings, so a value read from it may be wrong. Run check_brand to see them. A blazon.lock that names another blazon build does not set it: that is `pinMismatch`"
+        },
+        "pinMismatch": {
+          "type": "object",
+          "properties": {
+            "pinned": {
+              "type": "string",
+              "description": "The blazon build blazon.lock names, as blazon prints it (12 hex digits)"
+            },
+            "running": {
+              "type": "string",
+              "description": "The blazon build running, as blazon prints it, or \"unknown\" when it cannot say"
+            },
+            "message": {
+              "type": "string",
+              "description": "One line: which build the book is pinned to, which is running, and what to do"
+            }
+          },
+          "required": [
+            "pinned",
+            "running",
+            "message"
+          ],
+          "additionalProperties": {},
+          "description": "Present only when blazon.lock names a different blazon build than the one running. The build and the book disagree; no token or value is wrong because of it, so there is no need to re-check values. Tell the user. `blazon check`, `build` and `tokens` refuse until it is fixed"
+        },
+        "truncated": {
+          "description": "True when the answer was cut to fit the size limit. `notice` says how to narrow the question",
+          "type": "boolean"
+        },
+        "notice": {
+          "description": "Present when the answer was cut: how much was kept and how to ask a narrower question",
+          "type": "string"
+        },
+        "outputsDir": {
+          "type": "string",
+          "description": "The tokens output folder, relative to the brand folder"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string",
+                "description": "The path under the outputs folder: pass it as `file`"
+              },
+              "relative": {
+                "type": "string",
+                "description": "The path from the brand folder"
+              },
+              "path": {
+                "type": "string",
+                "description": "The absolute path on the machine the server runs on"
+              },
+              "bytes": {
+                "type": "number",
+                "description": "The size in bytes"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "fresh",
+                  "stale"
+                ],
+                "description": "stale when an input of the brand is newer than the file"
+              }
+            },
+            "required": [
+              "file",
+              "relative",
+              "path",
+              "bytes",
+              "state"
+            ],
+            "additionalProperties": {}
+          },
+          "description": "Every file found under the outputs folder. Empty when the folder is not there"
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The id of a plugin blazon.json lists whose folder `<outputsDir>/<id>/` does not exist"
+              },
+              "fix": {
+                "type": "string",
+                "description": "The command to run"
+              }
+            },
+            "required": [
+              "id",
+              "fix"
+            ],
+            "additionalProperties": {}
+          },
+          "description": "The configured plugins with no output folder. A plugin with no build role writes none, so one listed here may never write one"
+        },
+        "fix": {
+          "type": "string",
+          "description": "The command to run when something is missing or stale. Absent when nothing is"
+        },
+        "note": {
+          "type": "string",
+          "description": "What fresh means, and the limit of a timestamp"
+        },
+        "text": {
+          "type": "string",
+          "description": "With `file`: the file text, cut at the size limit"
+        }
+      },
+      "required": [
+        "warnings",
+        "brandHasErrors",
+        "outputsDir",
+        "files",
+        "missing",
+        "note"
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": {}
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
   }
 ]
