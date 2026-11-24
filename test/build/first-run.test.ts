@@ -96,8 +96,12 @@ describe('blazon init output', () => {
     expect(out).toContain(`Created tokens/ (${starter.tokens.length} files: ${starter.tokens.join(', ')})`);
     expect(out).toContain(`Created assets/ (${starter.assets.length} files in ${starter.assetFolders.length} folders: ${starter.assetFolders.join(', ')})`);
     expect(out).toContain(`Created docs/ (${starter.docs.length} pages, ${starter.docsByName[0]} to ${starter.docsByName.at(-1)})`);
+    expect(out).toContain(`Created fonts/ (${starter.fonts.length} files: ${starter.fonts.join(', ')})`);
     expect(out).toContain('Created blazon.json');
     expect(out).toContain('Created blazon.resolver.json');
+    expect(out).toContain('Created AGENTS.md');
+    expect(out).toContain('Created CLAUDE.md');
+    expect(out).toContain('Created .gitignore (dist/)');
     // The folder is not under the folder the test runs in, so each step names it in full
     expect(out).toContain(`1. Edit ${dir}/tokens/colors.json with your colors`);
     expect(out).toMatch(new RegExp(`2\\. Run\\s+blazon dev ${literal(dir)}`));

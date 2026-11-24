@@ -75,8 +75,12 @@ The brand has one signal color. `interactive.primary` is it, `text.onSignal` is 
   ✔ Created tokens/ (6 files: colors.json, form.json, social.json, spacing.json, theme/dark.json, typography.json)
   ✔ Created assets/ (22 files in 4 folders: backgrounds, construction, icons, logos)
   ✔ Created docs/ (12 pages, 01-principles.md to 12-web.md)
+  ✔ Created fonts/ (3 files: IBMPlexMono-Regular-latin.woff2, IBMPlexMono-SemiBold-latin.woff2, OFL.txt)
   ✔ Created blazon.json
   ✔ Created blazon.resolver.json
+  ✔ Created AGENTS.md
+  ✔ Created CLAUDE.md
+  ✔ Created .gitignore (dist/)
 
 Next steps:
   1. Edit acme-brand/tokens/colors.json with your colors
@@ -86,7 +90,7 @@ Next steps:
   5. Point a coding agent at acme-brand/AGENTS.md: it is the guide for editing this brand
 ```
 
-Each step works from the folder you ran `blazon init` in. With `--color`, the first step says the primary color is set and the rest of the palette is still blazon's.
+The list names every top-level folder and file `init` wrote. `.gitignore` keeps the build output (`dist/`) out of git: a folder that has one gets the line added at the end, once, and nothing else in it changes. Each step works from the folder you ran `blazon init` in. With `--color`, the first step says the primary color is set and the rest of the palette is still blazon's.
 
 Run `blazon check acme-brand` straight away and it exits 0: it reports 0 errors, 2 warnings and 43 notes. The notes are every starter file in `docs/`, `tokens/`, `assets/` and `fonts/`, grouped by folder. `AGENTS.md` and `CLAUDE.md` get none. The warnings are `starter-logo-unchanged`: the two logos in `blazon.json` are still blazon's own mark, and the book would show it under your name until you replace them. It then repeats the first three steps under `Next:`. The list shrinks as you replace files. [Chapter 3](03-checks.md#how-the-findings-are-printed) explains the grouping.
 

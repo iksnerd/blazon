@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Finding } from '../types/index.js';
 import { finding } from './checker/catalogue.js';
+import { DEFAULT_CONFIG } from './config/defaults.js';
 
 // The starter is blazon's own brand book, `examples/blazon/`, copied by `blazon init` (RFC 0003). A file that is still the
 // starter's, byte for byte, is text nobody has written yet (RFC 0001 §4, `starter-file-unchanged`). There is one copy: from source
@@ -67,6 +68,43 @@ export function copyStarter(dest: string, template: string = getTemplateDir()): 
     written.push(to);
   }
   return { written, kept };
+}
+
+const ignoreKey = (line: string): string => line.trim().replace(/^\//, '').replace(/\/+$/, '');
+
+/** The lines a git ignore file needs for the build output: the folder both output folders sit under, or each folder when they do not share one. */
+export function buildOutputIgnores(config: { outDir?: unknown; tokensOutDir?: unknown } = {}): string[] {
+  const folders = [config.outDir, config.tokensOutDir].map((value, i) =>
+    typeof value === 'string' && value.trim() ? value : [DEFAULT_CONFIG.outDir, DEFAULT_CONFIG.tokensOutDir][i]!,
+  );
+  const parts = folders.map((folder) => path.posix.normalize(folder.split(path.sep).join('/')).replace(/^\.\//, '').replace(/\/+$/, '').split('/'));
+  // A folder that leaves the project or is the project itself is not for a project ignore file to name
+  const inside = parts.filter((p) => p[0] !== '..' && p[0] !== '.' && p[0] !== '' && !path.isAbsolute(p.join('/')));
+  const shared = inside.length === 2 && inside[0]![0] === inside[1]![0] && (inside[0]!.length > 1 || inside[1]!.length > 1) ? [inside[0]![0]!] : inside.map((p) => p.join('/'));
+  return [...new Set(shared)].map((line) => `${line}/`);
+}
+
+/**
+ * Makes sure `dest/.gitignore` ignores the build output (manual chapter 15: keep `dist/` out of git). A missing file is written; an existing one only
+ * gets the lines it lacks, at the end, and is never rewritten otherwise. The file comes from here and not from the starter because npm leaves a file named
+ * `.gitignore` out of a package. Returns what it did.
+ */
+export function ensureBuildIgnored(dest: string): { file: string; status: 'created' | 'updated' | 'unchanged'; added: string[] } {
+  const file = path.join(dest, '.gitignore');
+  let config: { outDir?: unknown; tokensOutDir?: unknown } = {};
+  try {
+    config = JSON.parse(fs.readFileSync(path.join(dest, 'blazon.json'), 'utf-8')) as typeof config;
+  } catch {
+    // no readable config yet: the defaults
+  }
+  const wanted = buildOutputIgnores(config);
+  const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8') : undefined;
+  const has = new Set((existing ?? '').split(/\r?\n/).map(ignoreKey));
+  const added = wanted.filter((line) => !has.has(ignoreKey(line)));
+  if (added.length === 0) return { file, status: 'unchanged', added };
+  const lead = existing === undefined || existing === '' || existing.endsWith('\n') ? '' : '\n';
+  fs.writeFileSync(file, `${existing ?? ''}${lead}${added.join('\n')}\n`);
+  return { file, status: existing === undefined ? 'created' : 'updated', added };
 }
 
 const same = (a: string, b: string): boolean => {

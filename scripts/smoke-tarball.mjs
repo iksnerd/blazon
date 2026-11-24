@@ -103,6 +103,12 @@ try {
   const programs = path.join(work, 'node_modules', '@iksnerd', 'blazon', 'plugins');
   step('blazon --help', blazon, ['--help'], { expect: 'Usage' });
   step('blazon init', blazon, ['init', 'brand', '--yes']);
+  // npm drops a .gitignore from a package, so init writes this one from code: prove it does from the installed package
+  const ignoreFile = path.join(work, 'brand', '.gitignore');
+  if (!fs.existsSync(ignoreFile) || !fs.readFileSync(ignoreFile, 'utf-8').split('\n').includes('dist/')) {
+    failed = true;
+    throw new Error('blazon init from the packed starter wrote no .gitignore with dist/');
+  }
   step('blazon check', blazon, ['check', 'brand']);
   // What a new user sees on minute one, from the packed starter: judged against the same file the source test reads.
   const fresh = step('blazon check --json', blazon, ['check', 'brand', '--json']);

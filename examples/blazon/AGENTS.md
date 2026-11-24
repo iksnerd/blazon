@@ -27,7 +27,11 @@ Codes you meet first:
 
 - Put a value in `tokens/` once. In a page, use a directive such as `<!-- blazon:tokens color.signal -->`, not the hex (the `pages` chapter lists them). A directive inside a code fence is not run.
 - Rules live next to the values under `$extensions["dev.blazon"]` (`usage`, `pairs`, `review`). Never remove a rule or the `logo` to clear a finding; fix the value or ask. The `usage` rule on `color.signal` and the `pairs` rule on `text` are blazon's own: replace them with the new brand's.
-- Replace starter files in groups and check after each: tokens, then pages, then assets, then `blazon.json`. Most errors of a rebrand are a page or token still pointing at something removed.
+- Replace starter files in groups and check after each, in this order. Most errors of a rebrand are a page or token still pointing at something removed.
+  1. The colors, as one step: `tokens/colors.json`, the `theme` roles in `blazon.json`, `tokens/theme/dark.json` and the `border` and `shadow` tokens of `tokens/form.json`. They change together because the roles name tokens that `colors.json` defines, and `dark.json` and `form.json` alias them. Until all four are done, `blazon check` reports `theme-unresolved` for each role, and `alias-unresolved` in `dark.json` and `form.json`; that is expected, not a sign the step went wrong.
+  2. The other token files: `spacing.json`, `typography.json`, `social.json`.
+  3. The pages in `docs/`. Until a page is rewritten, `directive-invalid` names each token group its directives still point at.
+  4. The assets and the rest of `blazon.json` (title, description, `logo`). `starter-logo-unchanged` stays until the logo is replaced, and `logo-contrast-insufficient` may appear while the starter logo meets the new colors.
 - A passing check does not mean the rebrand is done: the starter passes too. You are done when no `starter-file-unchanged` note remains except files you chose to keep, and you list those.
 
 ## The MCP server
