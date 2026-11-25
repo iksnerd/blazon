@@ -96,7 +96,7 @@ export interface LogoFiles {
   asset: (id: string) => string | undefined;
 }
 
-/** The configured logo files and the other `logos` assets that state an ink, as candidates; a configured file is judged as its sidecar's ink, else black on light and white on dark */
+/** The configured logo files and the other `logos` assets that state an ink, as candidates; a configured file is judged as its sidecar's ink, else black on light and white on dark. `declared` marks a candidate whose sidecar states an `ink` */
 export function logoCandidatesOf(data: BlazonData, files: LogoFiles): { configured: Candidate[]; others: Candidate[] } {
   const logo = data.logo;
   const configured = (['onLight', 'onDark'] as const).flatMap((variant): Candidate[] => {
@@ -104,8 +104,9 @@ export function logoCandidatesOf(data: BlazonData, files: LogoFiles): { configur
     const found = variant === 'onLight' ? logo?.onLight : logo?.onDark;
     if (!file || !found) return [];
     const asset = variant === 'onLight' ? logo?.onLightAsset : logo?.onDarkAsset;
-    const ink = (variant === 'onLight' ? logo?.onLightInk : logo?.onDarkInk) ?? (variant === 'onLight' ? '#000000' : '#ffffff');
-    return [{ file, asset, names: asset ? [variant, asset] : [variant], ink, configured: true }];
+    const declared = variant === 'onLight' ? logo?.onLightInk : logo?.onDarkInk;
+    const ink = declared ?? (variant === 'onLight' ? '#000000' : '#ffffff');
+    return [{ file, asset, names: asset ? [variant, asset] : [variant], ink, configured: true, declared: Boolean(declared) }];
   });
   const taken = new Set(configured.flatMap((c) => (c.asset ? [c.asset] : [])));
   const others = [...new Set(data.assets.logos.map((a) => a.id))].sort().flatMap((id): Candidate[] => {
@@ -124,9 +125,11 @@ export interface Selection {
 }
 
 /**
- * The one choice of a logo for a surface, which `pickLogo` makes for a background token and the viewer makes for a paint: the configured files
- * first, with a lockup both compete with the other assets, without one the assets that declare an ink are a second try. `logo.deny`, the
- * colorways' bars and the shared contrast measure decide, and the highest ratio wins, a tie to the configured file.
+ * The one choice of a logo for a surface, which `pickLogo` makes for a background token and the viewer makes for a paint. `logo.deny`, the
+ * colorways' bars and the shared contrast measure decide. Without a lockup, the candidates that declare an ink (an asset's sidecar `ink`,
+ * a configured file's included) come first and the highest ratio wins, a tie to the configured file; only when none reaches the bar are the
+ * configured files with no declared ink judged, as black on light and white on dark, by the same rule. With a lockup, the assets of that
+ * lockup compete together.
  */
 export function selectLogo(
   data: BlazonData,
@@ -145,8 +148,10 @@ export function selectLogo(
     weak.push(...result.weak);
     return result.chosen;
   };
-  const pool = lockup === undefined ? judge(configured) : judge([...withLockup(configured), ...withLockup(others)]);
-  const winner = bestOf(pool.length > 0 || lockup !== undefined ? pool : judge(others.filter((c) => c.declared)));
+  const winner =
+    lockup !== undefined
+      ? bestOf(judge([...withLockup(configured), ...withLockup(others)]))
+      : (bestOf(judge([...configured, ...others].filter((c) => c.declared))) ?? bestOf(judge(configured.filter((c) => !c.declared))));
   if (!winner) return { winner: undefined, denied, weak };
   const { configured: _configured, ...rest } = winner;
   return { winner: rest, denied, weak };
