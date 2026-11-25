@@ -111,3 +111,30 @@ export function contrastFindings(pair: ContrastPair, rulePath: string, items: To
   }
   return findings;
 }
+
+const PAINT_STOP = /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)/gi;
+
+/** The average relative luminance of the color stops a paint (a color or a gradient) holds; undefined when it holds none blazon can read. */
+export function paintLuminance(paint: string): number | undefined {
+  const stops = (paint.match(PAINT_STOP) ?? []).map(parseColor).filter((color): color is Color => color !== undefined);
+  return stops.length === 0 ? undefined : stops.reduce((sum, color) => sum + color.luminance, 0) / stops.length;
+}
+
+/**
+ * The contrast of one paint on another, where a paint is a color or a gradient. Two plain colors are measured by `contrastBetween`, the one measure
+ * (a translucent foreground is blended, a translucent background has no ratio). A gradient is judged by the average luminance of its stops.
+ * Undefined when either holds no color blazon can read.
+ */
+export function paintContrast(fg: string, bg: string): number | undefined {
+  const [cf, cb] = [parseColor(fg), parseColor(bg)];
+  if (cf && cb) return contrastBetween(cf, cb);
+  const [lf, lb] = [paintLuminance(fg), paintLuminance(bg)];
+  if (lf === undefined || lb === undefined) return undefined;
+  return (Math.max(lf, lb) + 0.05) / (Math.min(lf, lb) + 0.05);
+}
+
+/** Black or white, whichever reads better on a paint (a color or a gradient, judged by the average luminance of its stops); undefined when the paint holds no readable color. */
+export function inkForPaint(paint: string): '#000' | '#fff' | undefined {
+  const l = paintLuminance(paint);
+  return l === undefined ? undefined : 1.05 / (l + 0.05) >= (l + 0.05) / 0.05 ? '#fff' : '#000';
+}

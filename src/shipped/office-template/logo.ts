@@ -1,5 +1,8 @@
 import { dimensionToPx, measurePx } from '../../core/assets/measure.js';
 import { findByFile } from '../../core/assets/representations.js';
+import { bestOf, judgeLogos, ratioOnColor, type Candidate } from '../../core/logo/judge.js';
+import { parseColor as parseCore } from '../../core/checker/contrast.js';
+import { luminance, parseColor } from '../shared/color.js';
 import type { BrandRead, LogoAsset } from './brand.js';
 import { finding, type Finding, type Options } from './options.js';
 
@@ -28,6 +31,56 @@ export function chooseLogos(brand: BrandRead, options: Pick<Options, 'logo'>): {
     ...[...brand.assets.values()].filter((asset) => asset.id.startsWith('logos/')),
   ].filter((asset): asset is LogoAsset => asset !== undefined);
   return { light: pool.find((asset) => madeFor(asset, brand) === 'light'), dark: pool.find((asset) => madeFor(asset, brand) === 'dark') };
+}
+
+/** The logo each surface gets once the brand's `logo.deny` is read: `null` is none, and a surface not in the object keeps `chooseLogos`' pick */
+export type SurfaceLogos = Partial<Record<'primary' | 'inverse', LogoAsset | null>>;
+
+const SURFACE_ROLE = { primary: 'background', inverse: 'inverse' } as const;
+/** Below this luminance a surface is dark, as `planLayouts` judges it */
+const DARK_BELOW = 0.4;
+
+/**
+ * Applies the brand's `logo.deny` to the surfaces the template draws (`theme.tokens`: background and inverse), with core's `judgeLogos`, the rule
+ * `pickLogo` runs. A surface whose token denies no candidate keeps what `chooseLogos` picked. One that does gets the best candidate that is allowed
+ * and reaches its bar (the logo made for the surface wins a tie), or none, with a finding.
+ */
+export function logosBySurface(brand: BrandRead, chosen: { light?: LogoAsset; dark?: LogoAsset }): { logos: SurfaceLogos; findings: Finding[] } {
+  const logos: SurfaceLogos = {};
+  const findings: Finding[] = [];
+  const pool = [...new Set([chosen.light, chosen.dark, ...[...brand.assets.values()].filter((asset) => asset.id.startsWith('logos/'))])].filter(
+    (a): a is LogoAsset => a !== undefined,
+  );
+  for (const surface of ['primary', 'inverse'] as const) {
+    const path = brand.surfaceTokens[SURFACE_ROLE[surface]];
+    const background = path ? brand.items.find((item) => item.path === path) : undefined;
+    const css = background && typeof background.value === 'string' ? background.value : undefined;
+    const bg = css ? parseCore(css) : undefined;
+    const rgb = css ? parseColor(css) : undefined;
+    if (!background || !bg || !rgb) continue;
+    const dark = luminance(rgb) < DARK_BELOW;
+    const candidates: Candidate[] = pool.flatMap((asset): Candidate[] => {
+      const made = madeFor(asset, brand);
+      const variant = asset.file === brand.logo.onLight ? 'onLight' : asset.file === brand.logo.onDark ? 'onDark' : undefined;
+      const ink = asset.meta.ink ?? (made === 'dark' ? '#ffffff' : '#000000');
+      return [{ file: asset.file, asset: asset.id, names: variant ? [variant, asset.id] : [asset.id], ink, configured: made === (dark ? 'dark' : 'light') }];
+    });
+    const judged = judgeLogos({ background, items: brand.items, ratioOn: ratioOnColor(bg), candidates, colorways: [] });
+    if (judged.denied.length === 0) continue;
+    const winner = bestOf(judged.chosen);
+    logos[surface] = winner ? (pool.find((asset) => asset.id === winner.asset) ?? null) : null;
+    const [first] = judged.denied;
+    const said = `${first!.from} forbids ${first!.name}${first!.reason ? ` (${first!.reason})` : ''}`;
+    findings.push(
+      finding(
+        'logo-denied',
+        'warning',
+        path!,
+        winner ? `${said}, so the ${surface} surface uses ${winner.asset}` : `${said} and no other logo is allowed and reads there, so the ${surface} surface carries none`,
+      ),
+    );
+  }
+  return { logos, findings };
 }
 
 export interface Placed {

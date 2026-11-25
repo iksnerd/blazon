@@ -1,0 +1,1 @@
+The built brand book chooses a logo for a color or gradient with the rule `blazon logo --on` uses: a colorway sets the bar for its logo, a lockup limits the choice, and a gradient is measured as core measures it. A logo that does not reach its bar is left off, where the page used to fall back to the configured variant.

@@ -310,6 +310,7 @@ The same brand gives the same bytes. Wrong options are findings and the rest is 
 | `blazon.office-template/font-not-embedded` | info | The theme names a font that a template cannot carry and that is not one every computer has |
 | `blazon.office-template/logo-none` | warning | The brand has no logo asset, so the template carries none |
 | `blazon.office-template/logo-no-variant` | warning | No logo is made for the light surfaces, or for the dark ones, so those layouts carry none |
+| `blazon.office-template/logo-denied` | warning | A `logo.deny` on the background or inverse token forbids the logo a surface would carry; the surface takes another logo that is allowed and reads, or none |
 | `blazon.office-template/logo-no-size` | warning | The logo does not give its width and height, so it cannot be placed |
 | `blazon.office-template/logo-no-clear-space` | warning | The logo states no clear space, so a quarter of its height is kept clear |
 | `blazon.office-template/logo-not-vector` | warning | An SVG logo is not plain enough to be shapes (a transform, a stroke, a gradient, text) and is embedded as an SVG picture |

@@ -1,6 +1,6 @@
 import type { LogoAsset } from './brand.js';
 import { luminance, parseColor } from '../shared/color.js';
-import { sizeLogo, type Placed } from './logo.js';
+import { sizeLogo, type Placed, type SurfaceLogos } from './logo.js';
 import type { Palette, Slot } from './palette.js';
 import { MARGIN as DECK_MARGIN, PAGE as DECK_PAGE } from '../brand-deck/plan/constants.js';
 
@@ -89,7 +89,7 @@ function placeLogo(asset: LogoAsset | undefined, target: number, where: (placed:
 }
 
 /** The master and layouts for a palette and the logos to place. A surface is dark when its color is, and gets the logo made for dark. */
-export function planLayouts(palette: Palette, logos: { light?: LogoAsset; dark?: LogoAsset }): Plan {
+export function planLayouts(palette: Palette, logos: { light?: LogoAsset; dark?: LogoAsset }, bySurface: SurfaceLogos = {}): Plan {
   const luminanceOf = (slot: Slot): number => luminance(parseColor(`#${palette[slot]}`)!);
   const bgSlot = palette.slots.background;
   const textSlot = palette.slots.text;
@@ -98,7 +98,10 @@ export function planLayouts(palette: Palette, logos: { light?: LogoAsset; dark?:
   const onInverse: Slot = Math.abs(luminanceOf('dk1') - luminanceOf(invSlot)) > Math.abs(luminanceOf('lt1') - luminanceOf(invSlot)) ? 'dk1' : 'lt1';
   // A logo made for a dark surface goes where the surface is dark, and the same for a light one
   const darkSurface = (surface: Surface) => luminanceOf(surface === 'primary' ? bgSlot : invSlot) < 0.4;
-  const logoFor = (surface: Surface) => (darkSurface(surface) ? logos.dark : logos.light);
+  const logoFor = (surface: Surface) => {
+    const decided = bySurface[surface];
+    return decided === undefined ? (darkSurface(surface) ? logos.dark : logos.light) : (decided ?? undefined);
+  };
 
   const content = W - 2 * MARGIN;
   // The master: a logo at the foot, left, and the slide number at the right

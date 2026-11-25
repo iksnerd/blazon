@@ -46,6 +46,10 @@ export interface BrandRead {
   assets: Map<string, LogoAsset>;
   /** Every file of every asset, for a logo that names a file and not an id (`findByFile`): `assets` keeps one for each id */
   files: LogoAsset[];
+  /** Every token with the fields a `logo.deny` lookup reads (its alias and its `blazon.logo` rule), by path */
+  items: { path: string; type?: string; value: unknown; aliasOf?: string; blazon?: { logo?: { deny?: string[]; reason?: string } } }[];
+  /** The token each surface role names in `theme.tokens`; the logo's deny rules are read on these */
+  surfaceTokens: { background?: string; inverse?: string };
   /** The files brand.json names as the logo for a light and for a dark surface */
   logo: { onLight?: string; onDark?: string };
 }
@@ -84,6 +88,23 @@ export function readBrand(brand: unknown): BrandRead {
     if (!item.aliasOf) colors.push({ path: item.path, value });
   }
 
+  const items: BrandRead['items'] = [];
+  for (const item of Array.isArray(root.tokens) ? root.tokens : []) {
+    if (!isObject(item) || typeof item.path !== 'string') continue;
+    const rule = isObject(item.blazon) && isObject(item.blazon.logo) ? item.blazon.logo : undefined;
+    const deny = Array.isArray(rule?.deny) ? rule.deny.filter((v): v is string => typeof v === 'string') : undefined;
+    const reason = text(rule?.reason);
+    items.push({
+      path: item.path,
+      ...(typeof item.type === 'string' && { type: item.type }),
+      value: item.resolvedValue ?? item.value,
+      ...(typeof item.aliasOf === 'string' && { aliasOf: item.aliasOf }),
+      ...(deny && { blazon: { logo: { deny, ...(reason && { reason }) } } }),
+    });
+  }
+  const themeTokens = isObject(root.theme) && isObject(root.theme.tokens) ? root.theme.tokens : {};
+  const surfaceTokens = { background: text(themeTokens.background), inverse: text(themeTokens.inverse) };
+
   const typography: TypeStyle[] = [];
   for (const item of Array.isArray(root.tokens) ? root.tokens : []) {
     if (!isObject(item) || item.type !== 'typography' || typeof item.path !== 'string' || item.aliasOf || !isObject(item.resolvedValue)) continue;
@@ -103,5 +124,5 @@ export function readBrand(brand: unknown): BrandRead {
   }
 
   const title = isObject(root.brand) ? text(root.brand.title) : undefined;
-  return { title: title ?? 'Brand', roles, colors, named, typography, assets, files, logo: readLogo(root) };
+  return { title: title ?? 'Brand', roles, colors, named, typography, assets, files, items, surfaceTokens, logo: readLogo(root) };
 }

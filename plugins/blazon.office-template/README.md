@@ -16,7 +16,7 @@ The source is `src/shipped/office-template/`, and `npm run build` (`npm run buil
 | Heading font (major) | The first named family of `fontDisplay` |
 | Body font (minor) | The first named family of `fontBody` |
 
-The Cover, Section divider and Closing layouts sit on the `inverse` surface, the others on the background. A logo made for dark surfaces goes where the surface is dark, and a logo made for light surfaces where it is light; a logo is made for what its sidecar `background` says, else for what `logo.onLight` and `logo.onDark` in brand.json make it.
+The Cover, Section divider and Closing layouts sit on the `inverse` surface, the others on the background. A logo made for dark surfaces goes where the surface is dark, and a logo made for light surfaces where it is light; a logo is made for what its sidecar `background` says, else for what `logo.onLight` and `logo.onDark` in brand.json make it. A `logo.deny` on the token that `theme.tokens` names for `background` or `inverse` (or on a token it aliases) is honoured as `blazon logo --on` honours it: the denied logo is left off that surface and another that is allowed and reaches the contrast bar is used, else the surface has none.
 
 The logo is drawn at 1.3 inches wide on the master, 2.4 on the Cover and 2 on the Section divider and Closing layouts, held between the sidecar's `minSize` and `maxSize`. Its `clearSpace` is kept free on every side: no placeholder reaches into it. A plain SVG logo is written as PowerPoint shapes, so it is vector in every program and can be edited; any other SVG is embedded as the SVG, which PowerPoint 2016 and later draws.
 
