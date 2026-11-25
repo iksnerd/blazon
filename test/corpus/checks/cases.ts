@@ -176,6 +176,13 @@ export const CASES: Partial<Record<CheckCode, Case>> = {
     fail: { files: { ...tokens(), 'fonts/mulish.woff2': 'wOF2', 'fonts/OFL.txt': 'x'.repeat(70 * 1024) }, config: { fonts: [{ family: 'Mulish', file: 'fonts/mulish.woff2' }] } },
     near: { files: { ...tokens(), 'fonts/mulish.woff2': 'wOF2', 'fonts/OFL.txt': 'x'.repeat(1024) }, config: { fonts: [{ family: 'Mulish', file: 'fonts/mulish.woff2' }] } },
   },
+  'font-license-duplicate': {
+    fail: {
+      files: { ...tokens(), 'fonts/mulish.woff2': 'wOF2', 'fonts/OFL.txt': 'a', 'fonts/LICENSE': 'b' },
+      config: { fonts: [{ family: 'Mulish', file: 'fonts/mulish.woff2' }] },
+    },
+    near: { files: { ...tokens(), 'fonts/mulish.woff2': 'wOF2', 'fonts/OFL.txt': 'a' }, config: { fonts: [{ family: 'Mulish', file: 'fonts/mulish.woff2' }] } },
+  },
   'font-license-unknown': {
     fail: { files: tokens({ font: { $type: 'fontFamily', brand: { $value: ['Kinto', 'sans-serif'], ...blazon({ font: { license: 'OFL-1.2' } }) } } }) },
     near: { files: tokens({ font: { $type: 'fontFamily', brand: { $value: ['Kinto', 'sans-serif'], ...blazon({ font: { license: 'OFL-1.1' } }) } } }) },

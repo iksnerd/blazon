@@ -34,19 +34,32 @@ const LICENSE_NAMES = [/^ofl(\.(txt|md))?$/i, /^license(\.(txt|md))?$/i, /^licen
  * name in code point order. Only that folder is looked at, never a parent, and only a regular file counts.
  */
 export function licenseFileIn(dir: string): string | undefined {
+  return licenseFilesIn(dir)[0];
+}
+
+/** Every license file in `dir`, the one `licenseFileIn` reads first, then the ones it ignores, each group in code point order. */
+export function licenseFilesIn(dir: string): string[] {
   let names: string[];
   try {
     names = fs.readdirSync(dir);
   } catch {
-    return undefined;
+    return [];
   }
-  for (const pattern of LICENSE_NAMES) {
-    const hit = names
-      .filter((name) => pattern.test(name) && fs.statSync(path.join(dir, name), { throwIfNoEntry: false })?.isFile())
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
-    if (hit) return path.join(dir, hit);
-  }
-  return undefined;
+  const files = names.filter((name) => LICENSE_NAMES.some((pattern) => pattern.test(name)) && fs.statSync(path.join(dir, name), { throwIfNoEntry: false })?.isFile());
+  const rank = (name: string) => LICENSE_NAMES.findIndex((pattern) => pattern.test(name));
+  return files.sort((a, b) => rank(a) - rank(b) || (a < b ? -1 : a > b ? 1 : 0)).map((name) => path.join(dir, name));
+}
+
+/** A warning when the folder of a font file holds more than one license file: only the first is read. Its path is the folder. */
+function ambiguousLicense(fontFile: string, cwd: string): Finding | undefined {
+  const dir = path.dirname(fontFile);
+  const files = licenseFilesIn(dir);
+  if (files.length < 2) return undefined;
+  const rel = (file: string) => path.relative(cwd, file).split(path.sep).join('/') || '.';
+  return finding('font-license-duplicate', {
+    path: rel(dir),
+    message: `The font folder ${rel(dir)} holds ${files.length} license files (${files.map((file) => path.basename(file)).join(', ')}); ${rel(files[0]!)} is used for every family in it and the others are ignored`,
+  });
 }
 
 /**
@@ -145,6 +158,8 @@ export function loadFonts(fonts: BlazonConfig['fonts'], cwd: string): LoadedFont
       const src = `url(data:${kind.type};base64,${fs.readFileSync(full).toString('base64')}) format("${kind.format}")`;
       loaded.stylesheets.push(`data:text/css;base64,${Buffer.from(fontFaceRule(entry, src)).toString('base64')}`);
       loaded.families.add(entry.family.toLowerCase());
+      const ambiguous = ambiguousLicense(full, cwd);
+      if (ambiguous && !loaded.problems.some((p) => p.code === ambiguous.code && p.path === ambiguous.path)) loaded.problems.push(ambiguous);
       if (!loaded.licenses.some((l) => l.family.toLowerCase() === entry.family.toLowerCase())) {
         const { license, problem } = readFontLicense(entry.family, full, cwd);
         if (license) loaded.licenses.push(license);

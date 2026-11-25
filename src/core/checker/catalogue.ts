@@ -290,6 +290,14 @@ export const CHECKS = {
     rfc: '1#4',
     manual: '03-checks',
   },
+  'font-license-duplicate': {
+    severity: 'warning',
+    summary: 'A font folder holds more than one license file.',
+    fix: 'Blazon reads one license file per font folder (the first of OFL, LICENSE, LICENCE and COPYING by name) and gives it to every family in the folder. Keep one license file per family folder, each family in its own subfolder.',
+    appliesTo: ['config'],
+    rfc: '1#4',
+    manual: '03-checks',
+  },
   'font-license-invalid': {
     severity: 'warning',
     summary: 'A license file beside a font file was not read.',

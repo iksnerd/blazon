@@ -150,6 +150,25 @@ describe('the license file beside a font file', () => {
     expect(found).toHaveLength(1);
   });
 
+  it('warns once per folder when it holds more than one license file, names them, and still reads the first', async () => {
+    const files = { 'fonts/OFL.txt': OFL, 'fonts/LICENSE': 'b', 'fonts/Acme-Serif.woff2': FONT_BYTES };
+    const data = await compile(files, [
+      { family: 'Mulish', file: 'fonts/Mulish.woff2' },
+      { family: 'Acme Serif', file: 'fonts/Acme-Serif.woff2' },
+    ]);
+    const ambiguous = data.findings.filter((f) => f.code === 'font-license-duplicate');
+    expect(ambiguous).toEqual([
+      expect.objectContaining({ severity: 'warning', path: 'fonts', message: expect.stringMatching(/fonts.*LICENSE.*OFL\.txt|fonts.*OFL\.txt.*LICENSE/) }),
+    ]);
+    expect(ambiguous[0]?.message).toContain('fonts/OFL.txt is used');
+    expect(data.fontLicenses?.map((l) => l.licenseFile)).toEqual(['fonts/OFL.txt', 'fonts/OFL.txt']);
+  });
+
+  it('does not warn for one license file in a folder', async () => {
+    const data = await compile({ 'fonts/OFL.txt': OFL }, [{ family: 'Mulish', file: 'fonts/Mulish.woff2' }]);
+    expect(data.findings.filter((f) => f.code === 'font-license-duplicate')).toEqual([]);
+  });
+
   it('is carried by brand.json as theme.fontLicenses, and left out when there is none', async () => {
     const root = writeProject({ 'tokens/a.json': tokens(['Mulish', 'sans-serif']), 'fonts/Mulish.woff2': FONT_BYTES, 'fonts/OFL.txt': OFL });
     const config = { ...DEFAULT_CONFIG, fonts: [{ family: 'Mulish', file: 'fonts/Mulish.woff2' }] };

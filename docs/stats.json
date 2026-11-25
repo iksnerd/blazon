@@ -114,9 +114,9 @@
     }
   ],
   "checks": {
-    "total": 76,
+    "total": 77,
     "error": 47,
-    "warning": 21,
+    "warning": 22,
     "info": 8
   },
   "mcpTools": [

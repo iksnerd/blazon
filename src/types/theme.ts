@@ -11,6 +11,8 @@ export type ThemeRole =
   | 'inverseText'
   | 'fontDisplay'
   | 'fontBody'
+  /** The monospace typeface of code, labels and values */
+  | 'fontMono'
   /** Corner radius of the viewer's own surfaces (cards, inputs, menus) */
   | 'radius';
 

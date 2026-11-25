@@ -16,6 +16,7 @@ export const CONVENTIONAL_ROLES: Record<ThemeRole, { types: TokenType[]; paths: 
   inverseText: { types: ['color'], paths: ['text.inverse', 'text.onInverse'] },
   fontDisplay: { types: ['fontFamily'], paths: ['font.family.display', 'font.family.heading', 'font.family.sans'] },
   fontBody: { types: ['fontFamily'], paths: ['font.family.body', 'font.family.sans', 'font.family.base'] },
+  fontMono: { types: ['fontFamily'], paths: ['font.family.mono', 'font.family.monospace', 'font.family.code'] },
   radius: { types: ['dimension'], paths: ['radius.default', 'radius.base', 'radius.md'] },
 };
 
