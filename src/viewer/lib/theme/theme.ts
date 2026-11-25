@@ -16,6 +16,7 @@ const THEME_VARS: Record<ThemeRole, string> = {
   inverseText: '--blazon-inverse-text',
   fontDisplay: '--blazon-font-display',
   fontBody: '--blazon-font-body',
+  fontMono: '--blazon-font-mono',
   radius: '--blazon-radius',
 };
 

@@ -89,7 +89,7 @@ describe('compileBlazonData reports a config that is wrong', () => {
       'a theme role that does not exist',
       'theme',
       { accnt: 'brand.primary' },
-      'theme has unknown role "accnt"; known: background, canvas, text, muted, border, accent, accentText, inverse, inverseText, fontDisplay, fontBody, radius',
+      'theme has unknown role "accnt"; known: background, canvas, text, muted, border, accent, accentText, inverse, inverseText, fontDisplay, fontBody, fontMono, radius',
     ],
     ['a theme role that is not a path', 'theme', { accent: 5 }, 'theme.accent must be a token path (a string)'],
     [

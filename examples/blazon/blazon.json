@@ -42,6 +42,7 @@
     "inverseText": "text.inverse",
     "fontDisplay": "font.family.display",
     "fontBody": "font.family.body",
+    "fontMono": "font.family.mono",
     "radius": "radius.hairline"
   },
   "fonts": [

@@ -30,7 +30,7 @@ const conventional: Tokens = {
   text: { primary: color('#111111'), muted: color('#666666'), inverse: color('#ffffff') },
   border: { default: color('#dddddd') },
   interactive: { primary: color('#635dff') },
-  font: { family: { sans: { $type: 'fontFamily', $value: 'Inter' } } },
+  font: { family: { sans: { $type: 'fontFamily', $value: 'Inter' }, mono: { $type: 'fontFamily', $value: 'Acme Mono' } } },
   radius: { default: { $type: 'dimension', $value: { value: 8, unit: 'px' } } },
 };
 
@@ -50,6 +50,7 @@ describe('theme without a theme block', () => {
       inverseText: '#ffffff',
       fontDisplay: 'Inter',
       fontBody: 'Inter',
+      fontMono: "'Acme Mono'",
       radius: '8px',
     });
     const finding = data.findings.find((f) => f.code === 'theme-inferred');
@@ -65,6 +66,12 @@ describe('theme without a theme block', () => {
     // A theme block names them itself; a role whose token is missing is left out
     const mapped = await compile(project(conventional), { accent: 'interactive.primary', fontBody: 'font.family.sans', muted: 'text.nope' });
     expect(mapped.themeTokens).toEqual({ accent: 'interactive.primary', fontBody: 'font.family.sans' });
+  });
+
+  it('takes the monospace role from font.family.mono, so code can be set in the brand font', async () => {
+    const data = await compile(project(conventional));
+    expect(data.theme.fontMono).toBe("'Acme Mono'");
+    expect(data.themeTokens).toMatchObject({ fontMono: 'font.family.mono' });
   });
 
   it('prefers the first conventional name when a brand has several', async () => {

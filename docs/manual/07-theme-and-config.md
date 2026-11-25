@@ -59,6 +59,7 @@ The brand book looks like the brand it documents. Each theme role takes its valu
 | `inverseText` | Text on the inverse surface | color |
 | `fontDisplay` | The typeface of titles | fontFamily |
 | `fontBody` | The typeface of body text | fontFamily |
+| `fontMono` | The monospace typeface of code, labels and values in the book and its print version | fontFamily |
 | `radius` | The corner radius of the viewer's own cards, inputs and menus | dimension |
 
 A role that points at a token that does not exist is an error (`theme-unresolved`). A role you leave out takes blazon's neutral default: white, black and grey with an indigo-blue accent.
@@ -84,6 +85,7 @@ With no `theme` entry at all, blazon takes each role from the first token with a
 | `inverseText` | `text.inverse`, `text.onInverse` |
 | `fontDisplay` | `font.family.display`, `font.family.heading`, `font.family.sans` |
 | `fontBody` | `font.family.body`, `font.family.sans`, `font.family.base` |
+| `fontMono` | `font.family.mono`, `font.family.monospace`, `font.family.code` |
 | `radius` | `radius.default`, `radius.base`, `radius.md` |
 
 Set `theme` yourself when your names differ, or when you want to choose, for example, which neutral is the page background.
@@ -113,7 +115,7 @@ Loading is checked. When `fonts` lists anything and a token names a family first
 
 Where a typeface comes from and under what license is not in `fonts`, which says what to load, but on the typeface token, as `font`: `"$extensions": { "dev.blazon": { "font": { "source": "Kinto Type Foundry", "license": "OFL-1.1", "licenseUrl": "https://openfontlicense.org/" } } }` (see [Extensions](02-tokens.md)). A license file in the same folder as a listed font file is read for you: the first of `OFL.txt`, `LICENSE`, `LICENCE` or `COPYING` (any case, `.txt` or `.md` allowed, and a `LICENCE` name may go on, as in `LICENCE-Plex.md`), in that folder only and never in a parent. Its text goes into `brand.json` as `theme.fontLicenses`, which is how a plugin that is never given the project folder, such as `blazon.press-kit`, can print it. The file must be inside the project, at most 64 KiB and UTF-8 text; otherwise `blazon check` warns `font-license-invalid` and the file is not read. A `license` on the token still wins. Listing a font file in `fonts` is also what lets `blazon.press-kit` set its PDF in that font, and the file then goes into the PDF as the page's font. It is your statement that the license allows embedding: blazon does not read `license` to decide, so list only files you may embed.
 
-One license file is read for each font folder: the first by the name order above, and a second file in the same folder is ignored without a finding. Every family whose font file sits in that folder is given that one file. When two families have different licenses, give each its own subfolder with its own license file (`fonts/acme-sans/OFL.txt`, `fonts/acme-serif/LICENSE`). The starter keeps one family, IBM Plex Mono, flat in `fonts/` with its `OFL.txt`, which is the case this fits.
+One license file is read for each font folder: the first by the name order above, and a second file in the same folder is ignored, with a `font-license-duplicate` warning that names the folder and the files and says which one is used. Every family whose font file sits in that folder is given that one file. When two families have different licenses, give each its own subfolder with its own license file (`fonts/acme-sans/OFL.txt`, `fonts/acme-serif/LICENSE`): one license file per family folder is what clears the warning. The starter keeps one family, IBM Plex Mono, flat in `fonts/` with its `OFL.txt`, which is the case this fits.
 
 ## Adding your own names
 

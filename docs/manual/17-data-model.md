@@ -237,7 +237,7 @@ Names blazon checks a value against.
 | Asset format | `svg`, `png`, `jpg`, `gif`, `webp`, `avif` |
 | Logo corner | `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | Initiative position | `beside`, `below` |
-| Theme role | `background`, `canvas`, `text`, `muted`, `border`, `accent`, `accentText`, `inverse`, `inverseText`, `fontDisplay`, `fontBody`, `radius` |
+| Theme role | `background`, `canvas`, `text`, `muted`, `border`, `accent`, `accentText`, `inverse`, `inverseText`, `fontDisplay`, `fontBody`, `fontMono`, `radius` |
 | Severity | `error`, `warning`, `info` |
 | Lockup | `horizontal`, `stacked`, `mark`, `wordmark`, and the names added in `vocabulary.lockups` |
 | Usage role | `text`, `background`, `border`, `icon`, `illustration`, `accent`, `interactive`, and the names added in `vocabulary.usageRoles` |
