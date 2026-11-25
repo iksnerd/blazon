@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ratioOnColor, selectLogo, type LogoFiles } from '../../../src/core/logo/judge.js';
+import { ratioOnColor, selectInkedLogo, selectLogo, type LogoFiles } from '../../../src/core/logo/judge.js';
 import { parseColor } from '../../../src/core/checker/contrast.js';
 import type { BlazonData, TokenItem } from '../../../src/types/index.js';
 
@@ -136,5 +136,17 @@ describe('selectLogo order', () => {
     expect(result.winner).toBeUndefined();
     expect(result.denied.length).toBe(1);
     expect(result.weak.length).toBeGreaterThan(0);
+  });
+
+  it('selectInkedLogo judges declared inks only, and selectLogo is that, then the plain files', () => {
+    const bg = parseColor(String(MID.value))!;
+    const input = { background: MID, ratioOn: ratioOnColor(bg), files };
+    const plain = brand({ assets: [{ id: 'logos/acme-gold', ink: '#d4af37' }] });
+    // Gold does not reach 3:1 on mid grey: no inked winner, so the plain files are left to the caller; selectLogo goes on to onDark
+    expect(selectInkedLogo(plain, input).winner).toBeUndefined();
+    expect(selectLogo(plain, input).winner?.file).toBe('white.svg');
+    const inked = brand({ assets: [{ id: 'logos/acme-ink', ink: '#101010' }] });
+    expect(selectInkedLogo(inked, input).winner?.asset).toBe('logos/acme-ink');
+    expect(selectLogo(inked, input).winner?.asset).toBe('logos/acme-ink');
   });
 });

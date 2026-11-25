@@ -3,7 +3,7 @@ import { blackContrast, whiteContrast } from './theme/color';
 import { humanize, parentOf } from './tokens/format';
 import { logoDenialUnder } from '../../core/checker/logo-rules.js';
 import { paintContrast } from '../../core/checker/contrast.js';
-import { logoCandidatesOf, selectLogo, type LogoFiles } from '../../core/logo/judge.js';
+import { logoCandidatesOf, selectInkedLogo, selectLogo, type LogoFiles } from '../../core/logo/judge.js';
 
 /** Token types shown on the Motion page and on the Strokes & effects page. */
 export const MOTION_TYPES: readonly string[] = ['duration', 'cubicBezier', 'transition'];
@@ -159,7 +159,7 @@ export function logoCandidates(data: BlazonData): LogoCandidate[] {
  * The logo for a paint (a color or gradient), chosen by core's `selectLogo`, the rule `blazon logo --on` applies: `logo.deny` on `background`
  * (the token the paint comes from) removes a logo, a colorway that names the background sets the bar for its logo, the rest need 3:1 by the
  * shared measure (a gradient by the average luminance of its stops). A logo whose sidecar declares an `ink` that reaches the bar is used in
- * its place of a plain configured file, the highest ratio winning; with none, the plain `onDark` file is used where white reaches the bar, else `onLight`.
+ * its place of a plain configured file, the highest ratio winning; with none, a plain configured file is chosen by `dark`, which the caller states (white at 3:1 for a color token, the text color for a theme surface).
  *
  * When nothing reaches the bar, or the paint cannot be measured (none: a cover that follows the page's mode), the result is the configured
  * variant `dark` names (the other one when the brand has only one, unless `fallback` is false), unless `logo.deny` forbids it, which then gives nothing.
@@ -169,7 +169,9 @@ export function logoOn(data: BlazonData, paint: string | undefined, dark: boolea
   const variant = fallback ? (dark ? (logo?.onDark ? 'onDark' : 'onLight') : logo?.onLight ? 'onLight' : 'onDark') : dark ? 'onDark' : 'onLight';
   const picked = logo?.[variant] && !logoDeniedOn(data, background, variant) ? logo[variant] : undefined;
   if (paint === undefined) return picked;
-  const chosen = selectLogo(data, { background, ratioOn: (ink) => paintContrast(ink, paint), files: viewerFiles(data), lockup }).winner?.file;
+  const input = { background, ratioOn: (ink: string) => paintContrast(ink, paint), files: viewerFiles(data) };
+  // A plain configured file is chosen by `dark`, an input core does not have; only an inked logo is judged by ratio
+  const chosen = (lockup === undefined ? selectInkedLogo(data, input) : selectLogo(data, { ...input, lockup })).winner?.file;
   return chosen ?? picked;
 }
 

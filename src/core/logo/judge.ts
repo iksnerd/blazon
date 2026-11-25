@@ -137,10 +137,27 @@ export interface Selection {
  * configured files with no declared ink are judged, as white (`onDark`) and black (`onLight`): `onDark` is used wherever it reaches the bar, else
  * `onLight` if it does, so the dark-surface variant wins over a higher ratio. With a lockup, the assets of that lockup compete together.
  */
-export function selectLogo(
-  data: BlazonData,
-  input: { background: TokenItem | undefined; ratioOn: (ink: string) => number | undefined; files: LogoFiles; lockup?: string },
-): Selection {
+export function selectLogo(data: BlazonData, input: SelectInput): Selection {
+  return select(data, input, true);
+}
+
+/**
+ * Rule 1 of `selectLogo` on its own, for a caller that states the plain files' choice itself (the viewer's `dark` flag): only the candidates
+ * that declare an ink compete, under `logo.deny` and the colorways' bars, the highest ratio winning and a tie going to the configured file.
+ * A lockup is not read here; `selectLogo` handles it.
+ */
+export function selectInkedLogo(data: BlazonData, input: Omit<SelectInput, 'lockup'>): Selection {
+  return select(data, input, false);
+}
+
+interface SelectInput {
+  background: TokenItem | undefined;
+  ratioOn: (ink: string) => number | undefined;
+  files: LogoFiles;
+  lockup?: string;
+}
+
+function select(data: BlazonData, input: SelectInput, plain: boolean): Selection {
   const { background, ratioOn, files, lockup } = input;
   const { configured, others } = logoCandidatesOf(data, files);
   const lockupOf = (id: string) => data.assets.logos.find((a) => a.id === id)?.meta?.lockup;
@@ -157,7 +174,7 @@ export function selectLogo(
   const winner =
     lockup !== undefined
       ? bestOf(judge([...withLockup(configured), ...withLockup(others)]))
-      : (bestOf(judge([...configured, ...others].filter((c) => c.declared))) ?? darkSurfaceFirst(judge(configured.filter((c) => !c.declared)), configured));
+      : (bestOf(judge([...configured, ...others].filter((c) => c.declared))) ?? (plain ? darkSurfaceFirst(judge(configured.filter((c) => !c.declared)), configured) : undefined));
   if (!winner) return { winner: undefined, denied, weak };
   const { configured: _configured, ...rest } = winner;
   return { winner: rest, denied, weak };
