@@ -15,9 +15,19 @@ const MAX_LINE = 256;
 /** Links followed on the way to a file before it is taken to be a loop. */
 const MAX_LINKS = 40;
 
+/**
+ * Why an interpreter was refused, as data the fix is made from (the message is for the person who reads the finding, this is for the fix):
+ * `line` the `#!` line breaks the rules; `env-missing` the name after env is in none of the trusted directories (`dropped` are the operator's
+ * directories that were left out); `chain` a link on the way to the interpreter is not trusted.
+ */
+export type Refusal = { kind: 'line' } | { kind: 'env-missing'; name: string; dropped: string[] } | { kind: 'chain'; interpreter: string; fault: ChainFault };
+
 /** The interpreter of a pinned plugin cannot be trusted, with the reason and what to change. */
 export class InterpreterRefused extends Error {
-  constructor(reason: string) {
+  constructor(
+    reason: string,
+    readonly refusal: Refusal = { kind: 'line' },
+  ) {
     super(reason);
     this.name = 'InterpreterRefused';
   }
@@ -83,6 +93,10 @@ export function chainProblem(file: string, options: ChainOptions = {}): string |
 /** A refused link of the chain: the message, and for a folder or file others can write, which path and its permission bits. */
 export interface ChainFault {
   message: string;
+  /** What is wrong: `writable` group or others can write it, `owner` it belongs to another user, `absent` it is not there, `not-dir`, `not-file` and `not-exec` it is the wrong kind, `links` a loop of links */
+  kind: 'writable' | 'owner' | 'absent' | 'not-dir' | 'not-file' | 'not-exec' | 'links';
+  /** The place the fault is at: a folder or file on the way */
+  path: string;
   /** Set when the fault is a mode that others can write */
   writable?: { path: string; mode: number; uid: number };
 }
@@ -91,8 +105,8 @@ export interface ChainFault {
 export function chainFault(file: string, options: ChainOptions = {}): ChainFault | undefined {
   const uid = options.uid ?? process.getuid?.() ?? 0;
   const unsafe = (place: string, stat: fs.Stats): ChainFault | undefined => {
-    if (stat.uid !== 0 && stat.uid !== uid) return { message: `${place} is owned by user ${stat.uid}, who is neither you nor root` };
-    if (stat.mode & 0o022) return { message: `${place} can be written by group or others`, writable: { path: place, mode: stat.mode & 0o7777, uid: stat.uid } };
+    if (stat.uid !== 0 && stat.uid !== uid) return { kind: 'owner', path: place, message: `${place} is owned by user ${stat.uid}, who is neither you nor root` };
+    if (stat.mode & 0o022) return { kind: 'writable', path: place, message: `${place} can be written by group or others`, writable: { path: place, mode: stat.mode & 0o7777, uid: stat.uid } };
     return undefined;
   };
   let current = '/';
@@ -112,29 +126,29 @@ export function chainFault(file: string, options: ChainOptions = {}): ChainFault
     try {
       stat = fs.lstatSync(next);
     } catch {
-      return { message: `${next} does not exist` };
+      return { kind: 'absent', path: next, message: `${next} does not exist` };
     }
     if (stat.isSymbolicLink()) {
-      if (++links > MAX_LINKS) return { message: `${file} has too many links on the way` };
+      if (++links > MAX_LINKS) return { kind: 'links', path: file, message: `${file} has too many links on the way` };
       const target = fs.readlinkSync(next);
       if (target.startsWith('/')) current = '/';
       pending.push(...target.split('/').filter((piece) => piece !== '' && piece !== '.').reverse());
       continue;
     }
     if (pending.length > 0 || options.final === 'dir') {
-      if (!stat.isDirectory()) return { message: `${next} is not a directory` };
+      if (!stat.isDirectory()) return { kind: 'not-dir', path: next, message: `${next} is not a directory` };
       const problem = unsafe(next, stat);
       if (problem) return problem;
       current = next;
       continue;
     }
-    if (!stat.isFile()) return { message: `${next} is not a regular file` };
+    if (!stat.isFile()) return { kind: 'not-file', path: next, message: `${next} is not a regular file` };
     const problem = unsafe(next, stat);
     if (problem) return problem;
-    if (!(stat.mode & 0o111)) return { message: `${next} is not executable` };
+    if (!(stat.mode & 0o111)) return { kind: 'not-exec', path: next, message: `${next} is not executable` };
     return undefined;
   }
-  return options.final === 'dir' ? undefined : { message: `${file} does not exist` };
+  return options.final === 'dir' ? undefined : { kind: 'absent', path: file, message: `${file} does not exist` };
 }
 
 export interface TrustedPath {
@@ -176,8 +190,8 @@ export function launchFor(file: string, env: Readonly<Record<string, string | un
   const shebang = readShebang(file);
   if (!shebang) return { program: file, args: [], path: pathValue };
   if (!shebang.viaEnv) {
-    const problem = chainProblem(shebang.interpreter);
-    if (problem) throw new InterpreterRefused(`${problem}; the interpreter ${shebang.interpreter} cannot be trusted`);
+    const fault = chainFault(shebang.interpreter);
+    if (fault) throw new InterpreterRefused(`${fault.message}; the interpreter ${shebang.interpreter} cannot be trusted`, { kind: 'chain', interpreter: shebang.interpreter, fault });
     return { program: shebang.interpreter, args: [...(shebang.arg !== undefined ? [shebang.arg] : []), file], path: pathValue };
   }
   for (const dir of trusted.dirs) {
@@ -187,12 +201,13 @@ export function launchFor(file: string, env: Readonly<Record<string, string | un
     } catch {
       continue;
     }
-    const problem = chainProblem(candidate);
-    if (problem) throw new InterpreterRefused(`${problem}; the interpreter ${candidate} cannot be trusted`);
+    const fault = chainFault(candidate);
+    if (fault) throw new InterpreterRefused(`${fault.message}; the interpreter ${candidate} cannot be trusted`, { kind: 'chain', interpreter: candidate, fault });
     return { program: candidate, args: [file], path: pathValue };
   }
   const left = trusted.dropped.map(({ dir, why }) => `${dir}: ${why}`);
   throw new InterpreterRefused(
-    `${shebang.interpreter} is not in the directories blazon trusts for a pinned plugin (${pathValue}); add the directory that holds it to BLAZON_PLUGIN_PATH${left.length > 0 ? ` (left out: ${left.join('; ')})` : ''}`
+    `${shebang.interpreter} is not in the directories blazon trusts for a pinned plugin (${pathValue}); add the directory that holds it to BLAZON_PLUGIN_PATH${left.length > 0 ? ` (left out: ${left.join('; ')})` : ''}`,
+    { kind: 'env-missing', name: shebang.interpreter, dropped: trusted.dropped.map(({ dir }) => dir) },
   );
 }

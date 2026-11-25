@@ -55,6 +55,14 @@ describe('emitTokenOutputs and the files the brand reads', () => {
 });
 
 describe('the inventory of what a compile reads', () => {
+  it('has blazon.json, so no output folder may hold or overwrite it', async () => {
+    const root = project('extras/dark.json');
+    fs.writeFileSync(path.join(root, 'blazon.json'), '{}');
+    expect(projectInputs(DEFAULT_CONFIG, root).some((i) => i.path === path.join(root, 'blazon.json') && !i.folder)).toBe(true);
+    const config = { ...TEST_CONFIG, tokensOutDir: '.' };
+    await expect(emitTokenOutputs(await compileBlazonData(config, root), config, root)).rejects.toThrow(/blazon\.json/);
+  });
+
   it('has every kind of path the config and the resolver name', () => {
     const root = project('extras/dark.json');
     fs.mkdirSync(path.join(root, 'shared/photos'), { recursive: true });
@@ -76,6 +84,7 @@ describe('the inventory of what a compile reads', () => {
       [
         '.',
         'assets',
+        'blazon.json',
         'brand/dark.svg',
         'brand/light.svg',
         'docs',

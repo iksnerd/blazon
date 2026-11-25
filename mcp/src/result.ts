@@ -126,6 +126,30 @@ export function limitItems(document: Record<string, unknown>, key: string, limit
   return build(low);
 }
 
+/**
+ * Keeps the first characters of the string at `key`, as many as leave the whole answer under MAX_TEXT once it is written as JSON (where a quote
+ * or a newline takes two), so `answerWith` never has to cut the answer and drop the string. When it cut, sets `truncated` and a `notice` that
+ * `what` names. A string that fits is left alone, and so is a `truncated` the command already set.
+ */
+export function limitText(document: Record<string, unknown>, key: string, what: string, warnings: string[] = []): Record<string, unknown> {
+  const value = document[key];
+  if (typeof value !== 'string') return document;
+  const points = Array.from(value);
+  const noticeOf = (n: number) =>
+    `Showing the first ${n} of ${points.length} characters of ${what}, so that the whole answer stays under ${MAX_TEXT} characters; the rest is in the file itself.`;
+  const build = (n: number) => ({ ...document, [key]: points.slice(0, n).join(''), truncated: true, notice: noticeOf(n) });
+  const fits = (n: number) => JSON.stringify({ ...build(n), warnings, brandHasErrors: false }).length <= MAX_TEXT;
+  if (JSON.stringify({ ...document, warnings, brandHasErrors: false }).length <= MAX_TEXT) return document;
+  let low = 0;
+  let high = points.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (fits(mid)) low = mid;
+    else high = mid - 1;
+  }
+  return build(low);
+}
+
 /** One rule of a check answer: how many findings carry its code, at what severity, and the first one as an example. */
 export interface RuleGroup {
   code: string;
