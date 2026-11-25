@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { environment } from '../wire/environment.js';
-import { InterpreterRefused, launchFor, type Launch } from '../pins/interpreter.js';
+import { InterpreterRefused, launchFor, type Launch, type Refusal } from '../pins/interpreter.js';
 import { DEFAULT_TIMEOUT, STDERR_KEEP, STDOUT_LIMIT } from '../wire/limits.js';
 import type { Pin } from '../pins/pin.js';
 import { shippedLaunch, shippedTrouble, type Shipped } from '../pins/shipped.js';
@@ -67,6 +67,8 @@ export interface Result {
   cause?: BreakCause;
   /** For a `place` break caused by a mode: the path, its mode bits and its owner, so the fix can name the chmod */
   open?: { path: string; mode: number; uid: number };
+  /** For an `interpreter` break: why the interpreter was refused, so the fix can name the path and the command */
+  refusal?: Refusal;
 }
 
 /**
@@ -155,7 +157,7 @@ export async function run(call: Call): Promise<Result> {
         launch = launchFor(verified.program, process.env);
       } catch (err) {
         if (!(err instanceof InterpreterRefused)) throw err;
-        return broke(`unavailable: interpreter: ${err.message}`, 'interpreter');
+        return { ...broke(`unavailable: interpreter: ${err.message}`, 'interpreter'), refusal: err.refusal };
       }
       return await started(call, launch.program, path.dirname(verified.program), launch);
     } finally {

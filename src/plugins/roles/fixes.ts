@@ -1,4 +1,5 @@
 import type { BreakCause } from '../host/call.js';
+import type { Refusal } from '../pins/interpreter.js';
 import { TIMEOUT_CAP } from '../wire/limits.js';
 
 // What to do about each cause of a plugin-failed finding. The catalogue gives the code one fix, which cannot be right for
@@ -25,7 +26,12 @@ export const writableFix = (place: string): string =>
  * Otherwise (a shared folder such as /tmp, or one root owns) the folder is not the user's to change: move the install.
  */
 export function openPlaceFix(found: { path: string; mode: number; uid: number } | undefined, uid: number = process.getuid?.() ?? 0): string {
-  if (!found || found.uid !== uid || found.mode & 0o1000) return breakFix('place', '')!;
+  return chmodAdvice(found, uid) ?? breakFix('place', '')!;
+}
+
+/** The sentence that names a writable path, its mode, the bits and the chmod, when it is the user's own and not a shared (sticky) folder. */
+function chmodAdvice(found: { path: string; mode: number; uid: number } | undefined, uid: number): string | undefined {
+  if (!found || found.uid !== uid || found.mode & 0o1000) return undefined;
   const group = (found.mode & 0o020) !== 0;
   const others = (found.mode & 0o002) !== 0;
   const bits = group && others ? 'group-writable and other-writable (g+w and o+w)' : group ? 'group-writable (g+w)' : 'other-writable (o+w)';
@@ -34,8 +40,40 @@ export function openPlaceFix(found: { path: string; mode: number; uid: number } 
   return `${found.path} has mode ${mode}, so it is ${bits}. If it is yours, run: chmod ${flag} ${found.path}`;
 }
 
+const MANUAL_PLUGINS = 'docs/manual/12-plugins.md';
+const ELSEWHERE = `install the interpreter in a folder that only you or root can write, and name that folder in BLAZON_PLUGIN_PATH (${MANUAL_PLUGINS})`;
+
+/**
+ * The fix for an interpreter the host refused, by the reason. The policy is the host's and stays as strict as it is; this only says what
+ * to change: the `#!` line, the one path and its chmod, or where to put the interpreter. `pin` is the plugin's lock path when it is pinned.
+ */
+export function interpreterFix(refusal: Refusal | undefined, name: string, pin?: string, uid: number = process.getuid?.() ?? 0): string {
+  const repin = `blazon plugin pin ${pin ?? '<path>'} --name ${name}`;
+  if (!refusal || refusal.kind === 'line') return `Edit the first line (#!) of the plugin's program as the message says, then pin it again: ${repin}.`;
+  if (refusal.kind === 'env-missing') {
+    const left = refusal.dropped.length > 0 ? ` BLAZON_PLUGIN_PATH names ${refusal.dropped.join(', ')}, which was left out: the message says why.` : '';
+    return `Install ${refusal.name} in a folder that only you or root can write, and add that folder to BLAZON_PLUGIN_PATH (${MANUAL_PLUGINS}); or change the #! line to an absolute path.${left}`;
+  }
+  const { fault, interpreter } = refusal;
+  switch (fault.kind) {
+    case 'writable':
+      return chmodAdvice(fault.writable, uid) ?? `${fault.path} can be written by other users and is not yours to change: ${ELSEWHERE}.`;
+    case 'owner':
+      return `${fault.path} belongs to another user: ${ELSEWHERE}.`;
+    case 'absent':
+      return `${fault.path} does not exist. Install the interpreter there, or change the #! line to where it is, then pin the plugin again: ${repin}.`;
+    case 'not-exec':
+      return `${fault.path} is not executable. If it is yours, run: chmod +x ${fault.path}`;
+    case 'links':
+      return `${interpreter} leads through a loop of links. Point the #! line at the real interpreter, then pin the plugin again: ${repin}.`;
+    default:
+      return `${fault.path} is not the kind of file an interpreter is. Point the #! line at a regular program file, then pin the plugin again: ${repin}.`;
+  }
+}
+
 /** The fix for a call that did not answer: the folder's own mode when that was the cause, else the cause's fixed text. */
-export function fixOf(result: { cause?: BreakCause; open?: { path: string; mode: number; uid: number } }, name: string, pin?: string): string | undefined {
+export function fixOf(result: { cause?: BreakCause; open?: { path: string; mode: number; uid: number }; refusal?: Refusal }, name: string, pin?: string): string | undefined {
+  if (result.cause === 'interpreter') return interpreterFix(result.refusal, name, pin);
   return result.cause === 'place' ? openPlaceFix(result.open) : breakFix(result.cause, name, pin);
 }
 

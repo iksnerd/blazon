@@ -12,6 +12,7 @@ import { buildPageText, INSTRUCTIONS } from './prompts.js';
 import { VERSIONS } from './version.js';
 import {
   answerWith,
+  limitText,
   failure,
   groupByRule,
   hasBrandErrors,
@@ -110,6 +111,11 @@ const LOOKUPS: Record<string, Lookup> = {
   },
   get_fonts: { narrow: NARROW_NONE },
   get_logo: { narrow: NARROW_NONE },
+  // The file text is cut to what leaves the whole answer under the limit, so the answer is never cut with `text` in it
+  get_outputs: {
+    narrow: NARROW_NONE,
+    shape: (document, args, warnings) => limitText(document, 'text', `the file ${String(args.file)}`, warnings),
+  },
 };
 
 /** A schema as `tools/list` sends it: the JSON Schema dialect named, as the protocol's own schema generator does. */

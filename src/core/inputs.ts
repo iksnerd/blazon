@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { BlazonConfig, Finding } from '../types/index.js';
 import { finding } from './checker/catalogue.js';
+import { CONFIG_FILE } from './config/index.js';
 import { inProject, outsideMessage } from './confine.js';
 import { licenseFileIn } from './fonts.js';
 import { categoryDirs } from './assets/categories.js';
@@ -38,6 +39,8 @@ export function projectInputs(config: BlazonConfig, cwd: string): Input[] {
   const file = (name: string, as: unknown) => {
     if (typeof as === 'string' && as !== '') found.push({ name, as, path: path.resolve(cwd, as), folder: false });
   };
+  // The config itself: a change to theme, logo, fonts or plugins changes the output with no other file touched
+  file('the config file', CONFIG_FILE);
   // The resolver document, and every token file its sources name, which may be anywhere in the project
   const resolver = path.resolve(cwd, config.resolver ?? DEFAULT_RESOLVER_FILE);
   for (const input of resolverInputs(resolver))

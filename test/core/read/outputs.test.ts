@@ -67,6 +67,15 @@ describe('describeOutputs', () => {
     expect(describeOutputs(config, root).files.every((f) => f.state === 'fresh')).toBe(true);
   });
 
+  it('calls every file stale once blazon.json is newer: a config-only change is a change to the brand', () => {
+    const file = path.join(root, 'blazon.json');
+    const before = fs.statSync(file).mtimeMs / 1000;
+    touch(file, now() + 3 * hour);
+    expect(describeOutputs(config, root).files.every((f) => f.state === 'stale')).toBe(true);
+    touch(file, before);
+    expect(describeOutputs(config, root).files.every((f) => f.state === 'fresh')).toBe(true);
+  });
+
   it('gives no files, every configured plugin missing and the fix when the folder is gone, and creates nothing', () => {
     const copy = tempDir('blazon-outputs-');
     fs.cpSync(root, copy, { recursive: true });
