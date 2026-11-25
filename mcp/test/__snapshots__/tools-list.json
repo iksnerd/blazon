@@ -1070,7 +1070,7 @@
   {
     "name": "get_logo",
     "title": "Read the brand logo",
-    "description": "Gets the brand logo variants for light and dark surfaces, their files, and the rules for each logo: clear space, minimum size, lockups, and the backgrounds that forbid it. Use it before placing a logo. Give `on`, a background color token, to have blazon pick the logo for it: the answer then has `pick`, the file that reads best there with its contrast, or a `refused` that says whether a `logo` deny rule, too little contrast or an unmeasurable background left none. For the brand's other rules use get_rules.",
+    "description": "Gets the brand logo variants for light and dark surfaces, their files, and the rules for each logo: clear space, minimum size, lockups, and the backgrounds that forbid it. Use it before placing a logo. Give `on`, a background color token, to have blazon pick the logo for it: the answer then has `pick`, the file blazon picks there (a logo whose sidecar states an `ink` that reaches the bar first, else the dark-surface variant where white reaches 3:1, else the light one, never one a `logo` deny rule forbids) with its contrast, or a `refused` that says whether a `logo` deny rule, too little contrast or an unmeasurable background left none. For the brand's other rules use get_rules.",
     "inputSchema": {
       "type": "object",
       "properties": {

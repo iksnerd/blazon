@@ -41,9 +41,10 @@ const SURFACE_ROLE = { primary: 'background', inverse: 'inverse' } as const;
 const DARK_BELOW = 0.4;
 
 /**
- * Applies the brand's `logo.deny` to the surfaces the template draws (`theme.tokens`: background and inverse), with core's `judgeLogos`, the rule
- * `pickLogo` runs. A surface whose token denies no candidate keeps what `chooseLogos` picked. One that does gets the best candidate that is allowed
- * and reaches its bar (the logo made for the surface wins a tie), or none, with a finding.
+ * Applies the brand's `logo.deny` to the surfaces the template draws (`theme.tokens`: background and inverse), with core's `judgeLogos`, the deny
+ * and bar `pickLogo` applies. A surface whose token denies no candidate keeps what `chooseLogos` picked. One that does gets the highest-ratio candidate
+ * that is allowed and reaches its bar (the logo made for the surface wins a tie), or none, with a finding. That choice is not `pickLogo`'s
+ * inked-first order.
  */
 export function logosBySurface(brand: BrandRead, chosen: { light?: LogoAsset; dark?: LogoAsset }): { logos: SurfaceLogos; findings: Finding[] } {
   const logos: SurfaceLogos = {};
