@@ -4,6 +4,13 @@ import { finding } from './catalogue.js';
 /** The two configured logo variants; a logo asset is named by its id (`logos/white`). */
 export const CONFIGURED_LOGO_VARIANTS = ['onLight', 'onDark'] as const;
 
+/** What the deny lookup reads of a token: core's `TokenItem` and a token of brand.json both have it */
+export interface LogoRuleItem {
+  path: string;
+  aliasOf?: string;
+  blazon?: { logo?: { deny?: string[]; reason?: string } };
+}
+
 export interface LogoDenial {
   /** The token that states the rule: the background itself, or one it aliases */
   path: string;
@@ -14,7 +21,7 @@ export interface LogoDenial {
  * Whether the brand forbids this logo variant on a background token, whatever its contrast. A token's
  * own rule (or its group's) wins; failing that, the first rule on the tokens it aliases, as for usage.
  */
-export function logoDenial(item: TokenItem, items: readonly TokenItem[], variant: string): LogoDenial | undefined {
+export function logoDenial(item: LogoRuleItem, items: readonly LogoRuleItem[], variant: string): LogoDenial | undefined {
   const denial = logoDenialUnder(item, items, [variant]);
   return denial && { path: denial.path, ...(denial.reason !== undefined && { reason: denial.reason }) };
 }
@@ -23,11 +30,11 @@ export function logoDenial(item: TokenItem, items: readonly TokenItem[], variant
  * The same lookup for a file that answers to several names: a configured file is `onLight` or `onDark` and, when it is a logo asset, its id too.
  * A rule that names any of them denies it. The reader that holds the asset passes both names, so a `deny` written as an id is never missed.
  */
-export function logoDenialUnder(item: TokenItem, items: readonly TokenItem[], names: readonly string[]): (LogoDenial & { name: string }) | undefined {
+export function logoDenialUnder(item: LogoRuleItem, items: readonly LogoRuleItem[], names: readonly string[]): (LogoDenial & { name: string }) | undefined {
   const seen = new Set<string>();
-  for (let at: TokenItem | undefined = item; at && !seen.has(at.path); at = at.aliasOf ? items.find((t) => t.path === at!.aliasOf) : undefined) {
+  for (let at: LogoRuleItem | undefined = item; at && !seen.has(at.path); at = at.aliasOf ? items.find((t) => t.path === at!.aliasOf) : undefined) {
     seen.add(at.path);
-    const rule = at.blazon.logo;
+    const rule = at.blazon?.logo;
     const name = Array.isArray(rule?.deny) ? names.find((n) => rule.deny!.includes(n)) : undefined;
     if (name !== undefined) return { name, path: at.path, ...(typeof rule!.reason === 'string' && { reason: rule!.reason }) };
   }

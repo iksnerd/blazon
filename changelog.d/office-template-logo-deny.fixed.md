@@ -1,0 +1,1 @@
+The Office template honours `logo.deny`: a logo the brand forbids on the background or inverse color is left off that surface, or swapped for an allowed logo that reads, and the plugin reports `logo-denied`.

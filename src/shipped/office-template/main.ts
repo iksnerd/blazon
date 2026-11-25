@@ -4,7 +4,7 @@ import { runPlugin } from '../shared/plugin.js';
 import { siteFile } from '../shared/site.js';
 import { readBrand, type LogoAsset } from './brand.js';
 import { planFonts, planHeading } from './fonts.js';
-import { chooseLogos, logoFindings } from './logo.js';
+import { chooseLogos, logoFindings, logosBySurface } from './logo.js';
 import { buildPackage, type Media } from './ooxml.js';
 import { finding, parseOptions, type Finding } from './options.js';
 import { slug } from '../shared/slug.js';
@@ -63,10 +63,13 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   const logos = chooseLogos(brand, options);
   findings.push(...paletteFindings, ...fonts.findings, ...logoFindings(brand, logos));
 
+  const surfaces = logosBySurface(brand, logos);
+  findings.push(...surfaces.findings);
+
+  // Every logo the plan may draw is read once: the light and the dark one, and what a denied surface swapped in
   const media = new Map<string, Media>();
-  const usable: { light?: LogoAsset; dark?: LogoAsset } = {};
-  for (const surface of ['light', 'dark'] as const) {
-    const asset = logos[surface];
+  const readable = new Set<string>();
+  for (const asset of new Set([logos.light, logos.dark, ...Object.values(surfaces.logos)])) {
     if (!asset || !asset.size) continue;
     if (!media.has(asset.id)) {
       const data = siteFile(job.siteDir, asset.file);
@@ -78,10 +81,13 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
       if (!item) continue;
       media.set(asset.id, item);
     }
-    usable[surface] = asset;
+    readable.add(asset.id);
   }
+  const usable: { light?: LogoAsset; dark?: LogoAsset } = {};
+  for (const surface of ['light', 'dark'] as const) if (logos[surface] && readable.has(logos[surface]!.id)) usable[surface] = logos[surface];
+  const bySurface = Object.fromEntries(Object.entries(surfaces.logos).map(([surface, asset]) => [surface, asset && readable.has(asset.id) ? asset : null]));
 
-  const plan = planLayouts(palette, usable);
+  const plan = planLayouts(palette, usable, bySurface);
   const name = options.name ?? slug(brand.title, 'brand-template');
   // Written once, whole, after the work is done: a call that ends earlier leaves out_dir empty
   const files = options.formats.map((ext) => [`${name}.${ext}`, buildPackage({ title: brand.title, palette, fonts, heading, plan, media, ext })] as const);

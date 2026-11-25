@@ -8,7 +8,7 @@ import { spawnSync } from '../../support/spawn';
 import { readBrand as readBrandRaw } from '../../../src/shipped/office-template/brand.js';
 import { contrast, luminance, mix, parseColor, toHex } from '../../../src/shipped/shared/color.js';
 import { FALLBACK_LINE_HEIGHT, fontOf, planFonts, planHeading } from '../../../src/shipped/office-template/fonts.js';
-import { chooseLogos, sizeLogo } from '../../../src/shipped/office-template/logo.js';
+import { chooseLogos, logosBySurface, sizeLogo } from '../../../src/shipped/office-template/logo.js';
 import { parseOptions } from '../../../src/shipped/office-template/options.js';
 import { slug } from '../../../src/shipped/shared/slug.js';
 import { planPalette } from '../../../src/shipped/office-template/palette.js';
@@ -333,6 +333,36 @@ describe('the layouts', () => {
     const light = planLayouts(palette, { light: chooseLogos(read, {}).light });
     expect(light.layouts[0]!.logo).toBeUndefined();
     expect(light.master.logo).toBeDefined();
+  });
+});
+
+describe('logo.deny on the surfaces', () => {
+  // the primary surface is the background token, the inverse surface the inverse token; the brand forbids the dark-surface logo on the second
+  const tokens = [
+    { path: 'color.paper', type: 'color', value: '#F2F0EB' },
+    { path: 'color.ink', type: 'color', value: '#1E1F21', blazon: { logo: { deny: ['logos/mark-dark'], reason: 'Acme never prints it on ink' } } },
+  ];
+  const themed = (over: object = {}) => brandOf({ tokens, theme: { roles, tokens: { background: 'color.paper', inverse: 'color.ink' } }, ...over });
+
+  it('leaves out a denied logo on that surface, and the other surfaces keep theirs', () => {
+    const read = readBrand(themed());
+    const { logos, findings } = logosBySurface(read, chooseLogos(read, {}));
+    expect(logos.primary).toBeUndefined();
+    expect(logos.inverse).toBeNull();
+    expect(findings.map((f) => f.code)).toEqual([`${NAME}/logo-denied`]);
+    const plan = planLayouts(planPalette(read).palette, chooseLogos(read, {}), logos);
+    expect(plan.layouts.filter((l) => l.surface === 'inverse').every((l) => !l.logo)).toBe(true);
+    expect(plan.master.logo!.asset.id).toBe('logos/mark-light');
+  });
+
+  it('swaps in the other logo when it is allowed and reads', () => {
+    const read = readBrand(themed({ tokens: [tokens[0], { ...tokens[1]!, blazon: { logo: { deny: ['logos/mark-dark'] } } }], assets: [LOGOS[0]!, { ...LOGOS[1]!, meta: { background: 'dark', ink: '#FFFFFF' } }, asset('logos/mark-ink', { meta: { background: 'dark', ink: '#FFFFFF' } })] }));
+    expect(logosBySurface(read, chooseLogos(read, {})).logos.inverse?.id).toBe('logos/mark-ink');
+  });
+
+  it('keeps the old choice when the brand names no surface tokens', () => {
+    const read = readBrand(brandOf());
+    expect(logosBySurface(read, chooseLogos(read, {}))).toEqual({ logos: {}, findings: [] });
   });
 });
 
