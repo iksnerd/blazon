@@ -118,6 +118,12 @@ export function logoCandidatesOf(data: BlazonData, files: LogoFiles): { configur
   return { configured, others };
 }
 
+/** Of the plain configured files that reached the bar, `onDark` if it did, else `onLight` */
+function darkSurfaceFirst<T extends { file: string }>(reached: readonly T[], configured: readonly Candidate[]): T | undefined {
+  const fileOf = (variant: string) => configured.find((c) => c.names[0] === variant)?.file;
+  return reached.find((c) => c.file === fileOf('onDark')) ?? reached.find((c) => c.file === fileOf('onLight'));
+}
+
 export interface Selection {
   winner: LogoChosen | undefined;
   denied: Judged['denied'];
@@ -128,8 +134,8 @@ export interface Selection {
  * The one choice of a logo for a surface, which `pickLogo` makes for a background token and the viewer makes for a paint. `logo.deny`, the
  * colorways' bars and the shared contrast measure decide. Without a lockup, the candidates that declare an ink (an asset's sidecar `ink`,
  * a configured file's included) come first and the highest ratio wins, a tie to the configured file; only when none reaches the bar are the
- * configured files with no declared ink judged, as black on light and white on dark, by the same rule. With a lockup, the assets of that
- * lockup compete together.
+ * configured files with no declared ink are judged, as white (`onDark`) and black (`onLight`): `onDark` is used wherever it reaches the bar, else
+ * `onLight` if it does, so the dark-surface variant wins over a higher ratio. With a lockup, the assets of that lockup compete together.
  */
 export function selectLogo(
   data: BlazonData,
@@ -151,7 +157,7 @@ export function selectLogo(
   const winner =
     lockup !== undefined
       ? bestOf(judge([...withLockup(configured), ...withLockup(others)]))
-      : (bestOf(judge([...configured, ...others].filter((c) => c.declared))) ?? bestOf(judge(configured.filter((c) => !c.declared))));
+      : (bestOf(judge([...configured, ...others].filter((c) => c.declared))) ?? darkSurfaceFirst(judge(configured.filter((c) => !c.declared)), configured));
   if (!winner) return { winner: undefined, denied, weak };
   const { configured: _configured, ...rest } = winner;
   return { winner: rest, denied, weak };

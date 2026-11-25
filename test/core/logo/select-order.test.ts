@@ -68,12 +68,36 @@ describe('selectLogo order', () => {
     expect(pick(data, NIGHT).winner?.asset).toBe('logos/acme-cream');
   });
 
-  it('falls to the plain configured files when no declared ink reaches the bar, black or white by ratio', () => {
+  it('falls to the plain configured files when no declared ink reaches the bar', () => {
     const data = brand({ assets: [{ id: 'logos/acme-gold', ink: '#d4af37' }] });
-    expect(pick(data, MID).winner).toMatchObject({ file: 'black.svg' });
+    expect(pick(data, MID).winner).toMatchObject({ file: 'white.svg' });
     const dark = token('color.acme.black', '#101010');
     const dim = brand({ assets: [{ id: 'logos/acme-dim', ink: '#303030' }], tokens: [dark] });
     expect(pick(dim, dark).winner).toMatchObject({ file: 'white.svg' });
+  });
+
+  it('uses the plain onDark file wherever it reaches the bar, though the plain onLight file has a higher ratio', () => {
+    // On #808080 black is about 5.3:1 and white about 4.0:1; both reach 3:1, so the dark-surface file wins
+    expect(pick(brand({}), MID).winner).toMatchObject({ file: 'white.svg' });
+  });
+
+  it('uses the plain onLight file when onDark is denied', () => {
+    const mid = token('color.acme.mid', '#808080', { deny: ['onDark'], reason: 'No white on mid grey' });
+    expect(pick(brand({ tokens: [mid] }), mid).winner).toMatchObject({ file: 'black.svg' });
+  });
+
+  it('uses the plain onLight file when onDark does not reach the bar', () => {
+    const paper = token('color.acme.paper', '#f0f0f0');
+    expect(pick(brand({ tokens: [paper] }), paper).winner).toMatchObject({ file: 'black.svg' });
+  });
+
+  it('has no winner when neither plain file reaches the bar', () => {
+    // No colour fails both black and white at 3:1, so deny onDark and use a colour that onLight misses
+    const dark = token('color.acme.deep', '#101010', { deny: ['onDark'], reason: 'No white on deep' });
+    const result = pick(brand({ tokens: [dark] }), dark);
+    expect(result.winner).toBeUndefined();
+    expect(result.denied.length).toBe(1);
+    expect(result.weak.length).toBe(1);
   });
 
   it('judges a configured file that declares an ink as that ink, among the inked candidates', () => {
