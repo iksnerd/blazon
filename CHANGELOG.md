@@ -6,6 +6,34 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.8.0 (2026-11-25)
+
+### Added
+
+- `blazon check` warns `font-license-duplicate` when a font folder holds more than
+  one license file. Only the first is read, as before; the warning names the
+  folder and the files and says which one is used.
+
+### Changed
+
+- The `plugin-failed` fix for a refused plugin interpreter now fits the reason: a
+  bad `#!` line, an interpreter that env cannot find, a folder or file others can
+  write (with its path, mode and `chmod`), another owner, a missing or
+  non-executable file, or a loop of links. The checks themselves are unchanged.
+
+### Fixed
+
+- `get_outputs` over MCP keeps the text of a file near the size limit. The text
+  is cut to what leaves the whole answer under the limit, and the answer says
+  which file was cut and why, where it used to lose the text and fail validation.
+- The brand book and the print book set code in the brand's monospace font. A new
+  `fontMono` theme role (found as `font.family.mono` when `theme` is not set) feeds
+  the viewer's code styling, which used the browser's Menlo before.
+- The Office template honours `logo.deny`: a logo the brand forbids on the background or inverse color is left off that surface, or swapped for an allowed logo that reads, and the plugin reports `logo-denied`.
+- `blazon outputs` and `get_outputs` call the generated files stale when only
+  `blazon.json` changed, and the dev server and the output folder checks treat it
+  as an input like any other.
+
 ## 0.7.1 (2026-11-24)
 
 ### Changed
