@@ -1,9 +1,7 @@
 import type { Asset, AssetRules, DocItem, Finding, BlazonData, GroupMeta, ThemeRole, TokenItem } from '../../types/index.js';
-import { blackContrast, whiteContrast } from './theme/color';
+import { blackContrast, contrastBetween, GRAPHIC_CONTRAST, whiteContrast } from './theme/color';
 import { humanize, parentOf } from './tokens/format';
 import { logoDenialUnder } from '../../core/checker/logo-rules.js';
-import { paintContrast } from '../../core/checker/contrast.js';
-import { logoCandidatesOf, selectLogo, type LogoFiles } from '../../core/logo/judge.js';
 
 /** Token types shown on the Motion page and on the Strokes & effects page. */
 export const MOTION_TYPES: readonly string[] = ['duration', 'cubicBezier', 'transition'];
@@ -115,6 +113,18 @@ export function logoDeniedOn(data: BlazonData, token: TokenItem | undefined, var
   return Boolean(logoDenialUnder(token, data.tokens.items, asset ? [variant, asset] : [variant]));
 }
 
+/** A logo asset whose sidecar declares the artwork's `ink`, as a candidate for a background. */
+export interface InkedLogo {
+  name: string;
+  src: string;
+  ink: string;
+}
+
+/** The `logos` assets that declare an `ink`. */
+export function inkedLogos(data: BlazonData): InkedLogo[] {
+  return data.assets.logos.flatMap((asset) => (asset.meta?.ink ? [{ name: asset.id, src: asset.url, ink: asset.meta.ink }] : []));
+}
+
 /** A logo as `blazon:logo-contrast` judges it: the file, the names a `logo.deny` rule may call it, and its contrast on a paint. */
 export interface LogoCandidate {
   /** `onLight` or `onDark` for a configured file, else the asset id */
@@ -125,45 +135,51 @@ export interface LogoCandidate {
   ratio: (paint: string) => number | undefined;
 }
 
-/** The files the viewer shows: a configured variant's `src` and an asset's `url`, where core's `pickLogo` uses project paths */
-function viewerFiles(data: BlazonData): LogoFiles {
-  return {
-    variant: (variant) => data.logo?.[variant],
-    asset: (id) => data.assets.logos.find((a) => a.id === id)?.url,
-  };
-}
-
 /**
- * The logos the contrast grid lists, once each: the candidates core's `pickLogo` weighs. A configured file is judged as the ink its sidecar
- * declares, and as black (`onLight`) or white (`onDark`) when it declares none. A `logos` asset that declares an ink and is not a configured
- * file follows as a row of its own.
+ * The logos the contrast grid lists, once each. A configured file is judged as the ink its sidecar declares,
+ * and as black (`onLight`) or white (`onDark`) when it declares none. A `logos` asset that declares an ink
+ * and is not a configured file follows as a row of its own.
  */
 export function logoCandidates(data: BlazonData): LogoCandidate[] {
-  const { configured, others } = logoCandidatesOf(data, viewerFiles(data));
-  return [...configured, ...others.filter((c) => c.declared)].map((c): LogoCandidate => ({
-    name: c.configured ? c.names[0]! : c.asset!,
-    names: c.names,
-    src: c.file,
-    ratio: (paint) => paintContrast(c.ink, paint),
-  }));
+  const logo = data.logo;
+  if (!logo) return [];
+  const configured = (name: string, src: string | undefined, asset: string | undefined, ink: string | undefined, plain: LogoCandidate['ratio']): LogoCandidate[] =>
+    src ? [{ name, names: asset ? [name, asset] : [name], src, ratio: ink ? (paint) => contrastBetween(ink, paint) : plain }] : [];
+  const taken = new Set([logo.onLightAsset, logo.onDarkAsset]);
+  return [
+    ...configured('onLight', logo.onLight, logo.onLightAsset, logo.onLightInk, blackContrast),
+    ...configured('onDark', logo.onDark, logo.onDarkAsset, logo.onDarkInk, whiteContrast),
+    ...inkedLogos(data)
+      .filter((v) => !taken.has(v.name))
+      .map((v): LogoCandidate => ({ name: v.name, names: [v.name], src: v.src, ratio: (paint) => contrastBetween(v.ink, paint) })),
+  ];
 }
 
 /**
- * The logo for a paint (a color or gradient), chosen by core's `selectLogo`, the rule `pickLogo` and `blazon logo --on` apply: `logo.deny` on
- * `background` (the token the paint comes from) removes a logo, a colorway that names the background sets the bar for its logo, the rest need
- * AA-large (3:1) by the shared measure, the highest ratio wins and a tie goes to a configured file. A gradient is measured by the average
- * luminance of its stops. `lockup` limits the choice to the logo assets of that lockup.
+ * The logo for a paint (a color or gradient). `dark` says which configured variant would stand on it
+ * today: onDark when true, onLight when false, the other one when the brand has only one (unless
+ * `fallback` is false). A logo asset that declares an `ink` replaces that pick when its ink reaches
+ * graphic contrast (3:1) on the paint, the highest contrast winning among several. A configured file
+ * is one of those candidates when its sidecar declares an ink, and is otherwise assumed black or white,
+ * which cannot be beaten by ratio, so a brand's own color is used wherever it reads. With no declared
+ * ink, or none that reads, the result is the pick.
  *
- * A paint the viewer cannot measure (none: a cover that follows the page's mode) falls back to the configured variant for `dark` (the other one
- * when the brand has only one, unless `fallback` is false), unless `logo.deny` forbids it.
+ * `background` is the token the paint comes from. A logo its `logo.deny` rule forbids, under the variant name or the asset id, is never
+ * chosen: not as a candidate, and not as the pick, which then gives nothing. `blazon logo --on` applies the same rule (`pickLogo`).
  */
-export function logoOn(data: BlazonData, paint: string | undefined, dark: boolean, fallback = true, background?: TokenItem, lockup?: string): string | undefined {
-  if (paint !== undefined) {
-    return selectLogo(data, { background, ratioOn: (ink) => paintContrast(ink, paint), files: viewerFiles(data), lockup }).winner?.file;
-  }
+export function logoOn(data: BlazonData, paint: string | undefined, dark: boolean, fallback = true, background?: TokenItem): string | undefined {
   const logo = data.logo;
   const variant = fallback ? (dark ? (logo?.onDark ? 'onDark' : 'onLight') : logo?.onLight ? 'onLight' : 'onDark') : dark ? 'onDark' : 'onLight';
-  return logo?.[variant] && !logoDeniedOn(data, background, variant) ? logo[variant] : undefined;
+  const picked = logo?.[variant] && !logoDeniedOn(data, background, variant) ? logo[variant] : undefined;
+  if (paint === undefined) return picked;
+  const denied = (name: string) =>
+    Boolean(background && logoDenialUnder(background, data.tokens.items, name === logo?.onLightAsset ? ['onLight', name] : name === logo?.onDarkAsset ? ['onDark', name] : [name]));
+  const best = inkedLogos(data)
+    .filter((candidate) => !denied(candidate.name))
+    .map((candidate) => ({ candidate, ratio: contrastBetween(candidate.ink, paint) }))
+    .filter((c): c is { candidate: InkedLogo; ratio: number } => c.ratio !== undefined && c.ratio >= GRAPHIC_CONTRAST)
+    .sort((a, b) => b.ratio - a.ratio)[0];
+  return best?.candidate.src ?? picked;
 }
 
 /**
