@@ -6,6 +6,12 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.9.0 (2026-11-26)
+
+### Changed
+
+- `blazon logo --on` and `get_logo` now use a logo whose sidecar states an `ink` in place of a plain configured `onLight` or `onDark` file wherever that ink reaches the bar, the highest ratio winning, as the manual says. Where no inked logo reaches the bar, they pick the dark-surface variant wherever white reaches 3:1 (and its `logo.deny` and colorway allow it), else the light one, where 0.8.0 picked the higher ratio of the two. The viewer measures a gradient or a color with core's contrast function, and its copy is gone: a translucent color token now has no measured ratio for the plain variants (the old copy ignored alpha), and oklch and hsl tokens are measured instead of falling to the light variant.
+
 ## 0.8.0 (2026-11-25)
 
 ### Added
