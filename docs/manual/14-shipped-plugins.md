@@ -555,7 +555,7 @@ It writes into `dist/tokens/blazon.shadcn/`:
 
 - `shadcn.json`: for each variable blazon supplies, `{ "token", "value", "from", "role"? }` (`value` is the default context's; `from` is `theme` or `config`); `unsupplied`, the variables nothing supplies; and, when the brand declares contrast `pairs`, `pairs`, each shadcn text-on-surface pair with `declared`, whether a `pairs` rule covers its two tokens. [Chapter 19](19-building-a-website.md#using-shadcnui) says how to use it.
 - `shadcn.css`: a `:root` block with each supplied variable, and, for each other context, a block under that context's selector with the variables whose token it changes. A header names the variables nothing supplies, which keep shadcn's own value. Colors are written as authored unless `format` says otherwise.
-- `shadcn-theme.css`, only when `themeInline` is `true`: the `@custom-variant dark` line and an `@theme inline` block with a `--color-<name>: var(--<name>);` line for each color variable `shadcn.css` supplies and the `--radius-sm`, `--radius-md`, `--radius-lg` and `--radius-xl` steps derived from `--radius`, as shadcn v4's own scaffold writes them.
+- `shadcn-theme.css`, only when `themeInline` is `true` (Tailwind v4 needs it; `shadcn.css` alone is variables only): the `@custom-variant dark` line and an `@theme inline` block with a `--color-<name>: var(--<name>);` line for each color variable `shadcn.css` supplies and the `--radius-sm`, `--radius-md`, `--radius-lg` and `--radius-xl` steps derived from `--radius`, as shadcn v4's own scaffold writes them.
 
 A variable takes its value from the theme role it reads, or from the token the `variables` option names. `destructive` and `chart-1` to `chart-5` have no role, so only the option fills them.
 
@@ -563,7 +563,7 @@ A variable takes its value from the theme role it reads, or from the token the `
 |---|---|---|
 | `variables` | none | An object of shadcn variable names (no leading dashes) to token paths. A pick wins over the role |
 | `format` | `"as-authored"` | How `shadcn.css` writes colors: `"as-authored"` (the token's value, unchanged), `"oklch"` (`oklch(0.6 0.2 30)`, which shadcn v4 uses) or `"hex"` (`#rrggbb`, with two more digits for alpha). A color outside sRGB is brought into it for `"hex"`. `shadcn.json` always holds the authored value. A value that is not a color keeps its authored text and is a warning |
-| `themeInline` | `false` | `true` also writes `shadcn-theme.css`. `shadcn.css` is the same either way |
+| `themeInline` | `false` | `true` also writes `shadcn-theme.css`. `shadcn.css` is the same either way. Required for Tailwind v4: without the theme file `bg-primary`, `text-foreground`, `border-border`, `ring-ring` and `bg-chart-*` generate no CSS and `rounded-md` keeps Tailwind's 6px. [Chapter 19](19-building-a-website.md#shadcn-v4-oklch-dark-theme-inline-charts) has the CSS entry to import both files |
 | `chart` | none | A token group path, such as `color.chart`. Its first five color tokens, in source order, fill `chart-1` to `chart-5`, and a `variables` entry for the same name wins. A group with fewer than five is a warning |
 | `allowSame` | none | `{ "destructive": "primary" }` names a pair that may be one color, so the clash warning skips it. The partner is `primary`, `accent` or `ring`, or a list of them. Only that pair is skipped |
 

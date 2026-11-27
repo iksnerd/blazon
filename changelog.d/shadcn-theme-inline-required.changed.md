@@ -1,0 +1,1 @@
+The shadcn docs now say that Tailwind v4 needs `themeInline`: without `shadcn-theme.css`, `bg-primary` and the other color utilities generate no CSS and `rounded-md` keeps Tailwind's 6px. They give the two-file import, checked with a real Tailwind 4 compile. The default output is unchanged.

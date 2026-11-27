@@ -20,7 +20,13 @@ A variable takes its value from the theme role it reads (`background` for `--bac
 
 - `variables`: an object of shadcn variable names (without the leading dashes) to token paths. A pick wins over the role.
 - `format`: `"as-authored"` (default), `"oklch"` or `"hex"`, the notation of the colors in `shadcn.css`.
-- `themeInline`: `true` also writes `shadcn-theme.css`. Default `false`.
+- `themeInline`: `true` also writes `shadcn-theme.css`. Default `false`. Tailwind v4 needs it: with `shadcn.css` alone, `bg-primary`, `text-foreground`, `border-border`, `ring-ring` and `bg-chart-*` generate no CSS and `rounded-md` keeps Tailwind's 6px. Import both files after Tailwind:
+
+```css
+@import "tailwindcss";
+@import "./dist/tokens/blazon.shadcn/shadcn.css";
+@import "./dist/tokens/blazon.shadcn/shadcn-theme.css";
+```
 - `chart`: a token group path whose first five color tokens fill `chart-1` to `chart-5`. A `variables` pick wins.
 - `allowSame`: `{ "destructive": "primary" }`, a pair the clash warning skips (`primary`, `accent` or `ring`, or a list).
 

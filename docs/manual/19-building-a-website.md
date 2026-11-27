@@ -167,6 +167,16 @@ Then write the CSS yourself, from the tokens: set each shadcn variable to `var(-
 
 A project made with shadcn/ui v4 writes its colors as `oklch(...)`, switches dark mode with a `.dark` class and hands the variables to Tailwind in an `@theme inline` block. Blazon's defaults differ on each point, and three options of `blazon.shadcn` close the gap. None changes the default output: a brand that sets none of them gets the same files as before.
 
+**Tailwind v4 needs `themeInline`.** `shadcn.css` alone gives CSS variables and nothing else. Tailwind v4 makes a utility such as `bg-primary`, `text-foreground`, `border-border`, `ring-ring` or `bg-chart-1` only for a color named in an `@theme` block, so without `shadcn-theme.css` those classes generate no CSS (the background stays transparent) and `rounded-md` keeps Tailwind's own 6px (`0.375rem`) instead of the brand's radius. Set `"themeInline": true` and import both files after Tailwind, in this order:
+
+```css
+@import "tailwindcss";
+@import "./dist/tokens/blazon.shadcn/shadcn.css";
+@import "./dist/tokens/blazon.shadcn/shadcn-theme.css";
+```
+
+Checked with Tailwind 4.3.5 on a page of `<button class="bg-primary text-primary-foreground rounded-md border-border">Acme</button>`: with both files the compiled CSS has `.bg-primary { background-color: var(--primary); }` and `.rounded-md { border-radius: calc(var(--radius) * 0.8); }`; with `shadcn.css` alone it has no `.bg-primary` rule at all and `.rounded-md` reads Tailwind's `--radius-md: 0.375rem`. The default is still `false`, so a brand that does not use Tailwind v4 gets no extra file.
+
 ```json
 {
   "contextSelectors": { "theme": ".{context}" },
@@ -181,7 +191,7 @@ A project made with shadcn/ui v4 writes its colors as `oklch(...)`, switches dar
 
 - **OKLCH.** The plugin writes each token's value as authored, with no conversion, so a brand written in hex gives hex. `"format": "oklch"` writes `oklch(0.6 0.2 30)` for every color in `shadcn.css`, in `:root` and in each context block; `"hex"` writes `#rrggbb`. A color that sRGB cannot show is brought into sRGB for hex. A value that is not a color, such as a `var()`, stays as authored and is the warning `blazon.shadcn/format-unconverted`. `shadcn.json` keeps the authored value either way.
 - **`.dark`.** The plugin has no selector option of its own: a context block uses the selector blazon gives the context, and the default for a `theme` modifier with a `dark` context is `[data-theme="dark"]`. The `contextSelectors` key in `blazon.json` above changes it to `.dark`, and then `shadcn.css` and `theme.css` both write `.dark { ... }` ([chapter 4](04-contexts.md#what-blazon-writes)). This is a key in the config, not an option of the plugin, so every output follows it.
-- **`@theme inline`.** `"themeInline": true` also writes `shadcn-theme.css`: `@custom-variant dark (&:is(.dark *));`, then an `@theme inline` block with `--color-<name>: var(--<name>);` for each color variable `shadcn.css` supplies, and `--radius-sm`, `--radius-md`, `--radius-lg` and `--radius-xl` derived from `--radius` (`calc(var(--radius) * 0.6)`, `* 0.8`, `var(--radius)` and `* 1.4`), the lines shadcn v4's own scaffold writes. Import it beside `shadcn.css`, and delete the same lines from the project's `globals.css`. When the brand has no `radius` role token, `--radius` is shadcn's own. The `--radius-*` steps here come from the one `--radius`; a brand with its own `radius` group still takes the advice under "Weights, sizes and radius" below.
+- **`@theme inline`.** Required for Tailwind v4 (above). `"themeInline": true` also writes `shadcn-theme.css`: `@custom-variant dark (&:is(.dark *));`, then an `@theme inline` block with `--color-<name>: var(--<name>);` for each color variable `shadcn.css` supplies, and `--radius-sm`, `--radius-md`, `--radius-lg` and `--radius-xl` derived from `--radius` (`calc(var(--radius) * 0.6)`, `* 0.8`, `var(--radius)` and `* 1.4`), the lines shadcn v4's own scaffold writes. Import it beside `shadcn.css`, and delete the same lines from the project's `globals.css`. When the brand has no `radius` role token, `--radius` is shadcn's own. The `--radius-*` steps here come from the one `--radius`; a brand with its own `radius` group still takes the advice under "Weights, sizes and radius" below.
 - **Charts.** `"chart": "color.chart"` fills `chart-1` to `chart-5` from the first five color tokens of that group, in the order the source lists them, so the brand's palette order is the chart order. A group with fewer than five is the warning `blazon.shadcn/chart-group-short`, and the variables it cannot fill stay in `unsupplied`. A `variables` entry for a chart variable wins over the group.
 
 #### The clash warning
