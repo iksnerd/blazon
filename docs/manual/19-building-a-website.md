@@ -163,11 +163,42 @@ When `pairs` is present, the brand declares contrast `pairs`, and each entry say
 
 Then write the CSS yourself, from the tokens: set each shadcn variable to `var(--path)` from `theme.css`, or to the `value` for a project that does not load it. Dark mode is yours too: `value` is the default context only. The tokens a context changes are in `contexts` of `brand.json` and in the CSS ([chapter 4](04-contexts.md)).
 
+### shadcn v4: OKLCH, `.dark`, `@theme inline`, charts
+
+A project made with shadcn/ui v4 writes its colors as `oklch(...)`, switches dark mode with a `.dark` class and hands the variables to Tailwind in an `@theme inline` block. Blazon's defaults differ on each point, and three options of `blazon.shadcn` close the gap. None changes the default output: a brand that sets none of them gets the same files as before.
+
+```json
+{
+  "contextSelectors": { "theme": ".{context}" },
+  "plugins": [
+    {
+      "name": "blazon.shadcn",
+      "options": { "format": "oklch", "themeInline": true, "chart": "color.chart", "variables": { "destructive": "color.signal.danger" } }
+    }
+  ]
+}
+```
+
+- **OKLCH.** The plugin writes each token's value as authored, with no conversion, so a brand written in hex gives hex. `"format": "oklch"` writes `oklch(0.6 0.2 30)` for every color in `shadcn.css`, in `:root` and in each context block; `"hex"` writes `#rrggbb`. A color that sRGB cannot show is brought into sRGB for hex. A value that is not a color, such as a `var()`, stays as authored and is the warning `blazon.shadcn/format-unconverted`. `shadcn.json` keeps the authored value either way.
+- **`.dark`.** The plugin has no selector option of its own: a context block uses the selector blazon gives the context, and the default for a `theme` modifier with a `dark` context is `[data-theme="dark"]`. The `contextSelectors` key in `blazon.json` above changes it to `.dark`, and then `shadcn.css` and `theme.css` both write `.dark { ... }` ([chapter 4](04-contexts.md#what-blazon-writes)). This is a key in the config, not an option of the plugin, so every output follows it.
+- **`@theme inline`.** `"themeInline": true` also writes `shadcn-theme.css`: `@custom-variant dark (&:is(.dark *));`, then an `@theme inline` block with `--color-<name>: var(--<name>);` for each color variable `shadcn.css` supplies, and `--radius-sm`, `--radius-md`, `--radius-lg` and `--radius-xl` derived from `--radius` (`calc(var(--radius) * 0.6)`, `* 0.8`, `var(--radius)` and `* 1.4`), the lines shadcn v4's own scaffold writes. Import it beside `shadcn.css`, and delete the same lines from the project's `globals.css`. When the brand has no `radius` role token, `--radius` is shadcn's own. The `--radius-*` steps here come from the one `--radius`; a brand with its own `radius` group still takes the advice under "Weights, sizes and radius" below.
+- **Charts.** `"chart": "color.chart"` fills `chart-1` to `chart-5` from the first five color tokens of that group, in the order the source lists them, so the brand's palette order is the chart order. A group with fewer than five is the warning `blazon.shadcn/chart-group-short`, and the variables it cannot fill stay in `unsupplied`. A `variables` entry for a chart variable wins over the group.
+
+#### The clash warning
+
+`destructive` has no theme role, so the brand picks its token, and a brand with one strong color often picks the same one it uses for `primary`. Then a delete button looks like the main action. The plugin's check role compares colors, not text (`#E00`, `#ee0000` and the same OKLCH are one color), in every context, and warns `blazon.shadcn/destructive-duplicate` when `destructive` equals `primary`, `accent` or `ring`:
+
+```text
+`destructive` ({color.signal.primary}, #2563eb) is the same color as `primary` ({interactive.primary}) in the default context: an error looks like a main action. Point `variables.destructive` at a color that differs from primary, or list the pair in `allowSame`.
+```
+
+The warning shows in `blazon check`, `blazon tokens`, `blazon build` and `blazon dev`. A brand that means it, such as a monochrome one with no red, silences exactly that pair: `"allowSame": { "destructive": "ring" }` (a list names several partners). A later change that makes `destructive` equal `primary` still warns.
+
 ### Weights, sizes and radius in shadcn's components
 
 shadcn/ui's registry components hard-code Tailwind classes such as `font-medium` on a button. After the reset in `tailwind-reset.css` ([chapter 8](08-using-the-outputs.md#tailwind)), `font-medium` generates nothing unless the brand has a `fontWeight` token named `medium`: the reset removes every default weight when the brand has one. Do not keep the class and do not add a token for it. Set each component's weight and size from the brand's type role instead: use the brand's `.type-*` class from `typography.css`, or the variables of its `typography` token, such as `--type-button-font-weight` and `--type-button-font-size` (a token `type.button` writes `--type-button-font-*`, one per part). A brand's own weight token is the variable `--font-weight-<name>` (`--font-weight-heavy` for `font.weight.heavy`) in `theme.css`, and the utility `font-<name>` in `tailwind.css`. The same holds for `text-sm`, `rounded-md` and other size and radius classes: check each against what the brand defines.
 
-For radius, `blazon.shadcn` writes `--radius` when the brand has a `radius` role token (`radius.default`, `radius.base` or `radius.md`, [chapter 7](07-theme-and-config.md)) and writes nothing else for it. The `--radius-sm`, `--radius-md` and `--radius-lg` lines that shadcn's own `globals.css` derives from `--radius` are shadcn's. When the brand has a `radius` group, `blazon.tailwind` writes the brand's steps as `--radius-<token name>` (`radius.card` is `--radius-card`), and the brand's scale is the one to use: delete shadcn's derived `--radius-*` lines, or keep one only for a step the brand does not define.
+For radius, `blazon.shadcn` writes `--radius` when the brand has a `radius` role token (`radius.default`, `radius.base` or `radius.md`, [chapter 7](07-theme-and-config.md)) and writes nothing else for it. The `--radius-sm`, `--radius-md` and `--radius-lg` lines that shadcn's own `globals.css` derives from `--radius` are shadcn's (the `themeInline` option writes the same lines, [above](#shadcn-v4-oklch-dark-theme-inline-charts)). When the brand has a `radius` group, `blazon.tailwind` writes the brand's steps as `--radius-<token name>` (`radius.card` is `--radius-card`), and the brand's scale is the one to use: delete shadcn's derived `--radius-*` lines, or keep one only for a step the brand does not define.
 
 ### Motion and easing
 
