@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runPlugin } from '../shared/plugin.js';
 import { readBrand, type TokenRead } from './brand.js';
-import { clashFindings } from './clash.js';
+import { clashFindings, foregroundFindings } from './clash.js';
 import { convertColor, type ColorFormat } from './color.js';
 import { formatShadcnCss, formatShadcnJson, formatShadcnTheme, type ColorWriter } from './css.js';
 import { deriveShadcn, type ShadcnVariable } from './derive.js';
@@ -67,7 +67,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   const mapping = deriveShadcn(brand.roles, brand.roleTokens, picks, brand.tokens, brand.pairs);
 
   // The check role judges; the build role writes. A finding is in one of them, so a `blazon build` does not say it twice
-  if (job.type === 'check') return { findings: clashFindings(mapping, brand.contexts, options.allowSame) };
+  if (job.type === 'check') return { findings: [...clashFindings(mapping, brand.contexts, options.allowSame), ...foregroundFindings(mapping, options.themeInline)] };
 
   // A pick that names no token is reported and left out, so the variable falls back to its role
   const known = new Set(brand.tokens.map((token) => token.path));

@@ -1,0 +1,1 @@
+blazon.shadcn takes `destructive-foreground` in `variables` and, with `themeInline` on and `destructive` supplied but no foreground, reports the info finding `blazon.shadcn/destructive-foreground-missing`. Adding the variable silences it. The default output is unchanged.

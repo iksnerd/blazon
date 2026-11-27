@@ -18,7 +18,7 @@ A variable takes its value from the theme role it reads (`background` for `--bac
 
 ## Options
 
-- `variables`: an object of shadcn variable names (without the leading dashes) to token paths. A pick wins over the role.
+- `variables`: an object of shadcn variable names (without the leading dashes) to token paths. A pick wins over the role. It also takes `destructive-foreground`, for example `{ "destructive": "color.acme.red", "destructive-foreground": "color.acme.white" }`; no role fills it.
 - `format`: `"as-authored"` (default), `"oklch"` or `"hex"`, the notation of the colors in `shadcn.css`.
 - `themeInline`: `true` also writes `shadcn-theme.css`. Default `false`. Tailwind v4 needs it: with `shadcn.css` alone, `bg-primary`, `text-foreground`, `border-border`, `ring-ring` and `bg-chart-*` generate no CSS and `rounded-md` keeps Tailwind's 6px. Import both files after Tailwind:
 
@@ -39,3 +39,4 @@ A variable takes its value from the theme role it reads (`background` for `--bac
 | `blazon.shadcn/format-unconverted` | warning | `format` is `oklch` or `hex` and a value is not a color; the authored value is kept |
 | `blazon.shadcn/chart-group-short` | warning | The `chart` group has fewer than five color tokens |
 | `blazon.shadcn/destructive-duplicate` | warning | `destructive` is the same color as `primary`, `accent` or `ring` in a context (check role) |
+| `blazon.shadcn/destructive-foreground-missing` | info | `themeInline` is on and `destructive` is supplied but `destructive-foreground` is not; add the variable to silence it (check role) |

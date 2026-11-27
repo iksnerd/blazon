@@ -194,6 +194,16 @@ Checked with Tailwind 4.3.5 on a page of `<button class="bg-primary text-primary
 - **`@theme inline`.** Required for Tailwind v4 (above). `"themeInline": true` also writes `shadcn-theme.css`: `@custom-variant dark (&:is(.dark *));`, then an `@theme inline` block with `--color-<name>: var(--<name>);` for each color variable `shadcn.css` supplies, and `--radius-sm`, `--radius-md`, `--radius-lg` and `--radius-xl` derived from `--radius` (`calc(var(--radius) * 0.6)`, `* 0.8`, `var(--radius)` and `* 1.4`), the lines shadcn v4's own scaffold writes. Import it beside `shadcn.css`, and delete the same lines from the project's `globals.css`. When the brand has no `radius` role token, `--radius` is shadcn's own. The `--radius-*` steps here come from the one `--radius`; a brand with its own `radius` group still takes the advice under "Weights, sizes and radius" below.
 - **Charts.** `"chart": "color.chart"` fills `chart-1` to `chart-5` from the first five color tokens of that group, in the order the source lists them, so the brand's palette order is the chart order. A group with fewer than five is the warning `blazon.shadcn/chart-group-short`, and the variables it cannot fill stay in `unsupplied`. A `variables` entry for a chart variable wins over the group.
 
+#### `destructive-foreground`
+
+shadcn v4 has no `--destructive-foreground`: its components write `text-white` on a destructive surface. Older scaffolds and some registry components still use `text-destructive-foreground`, and with no variable behind it that class computes to the inherited text color, with no error. Blazon defines no theme role for it. If you use such a component, name a token in `variables` (it accepts any shadcn variable name, and a pick wins over a role):
+
+```json
+{ "name": "blazon.shadcn", "options": { "themeInline": true, "variables": { "destructive": "color.acme.red", "destructive-foreground": "color.acme.white" } } }
+```
+
+`shadcn.css` then writes `--destructive-foreground` after `--destructive`, and `shadcn-theme.css` writes `--color-destructive-foreground`. To say this, the check role raises one info finding, `blazon.shadcn/destructive-foreground-missing`, only when `themeInline` is on and `destructive` is supplied but `destructive-foreground` is not. Adding the variable silences it. The variable is never in `unsupplied`, and a brand that sets neither shows no change.
+
 #### The clash warning
 
 `destructive` has no theme role, so the brand picks its token, and a brand with one strong color often picks the same one it uses for `primary`. Then a delete button looks like the main action. The plugin's check role compares colors, not text (`#E00`, `#ee0000` and the same OKLCH are one color), in every context, and warns `blazon.shadcn/destructive-duplicate` when `destructive` equals `primary`, `accent` or `ring`:

@@ -1,5 +1,5 @@
 import type { ContextRead } from './brand.js';
-import { SHADCN_VARIABLES, type ShadcnMapping, type ShadcnVariable } from './derive.js';
+import { WRITABLE_VARIABLES, type ShadcnMapping, type ShadcnVariable } from './derive.js';
 
 /** What a value is written as in shadcn.css: the identity unless the `format` option asks for another color notation. */
 export type ColorWriter = (variable: ShadcnVariable, value: string, token?: string) => string;
@@ -25,8 +25,8 @@ export function formatShadcnCss(mapping: ShadcnMapping, contexts: readonly Conte
     ' */',
     '',
   ];
-  const lines = (values: (name: (typeof SHADCN_VARIABLES)[number]) => string | undefined) =>
-    SHADCN_VARIABLES.flatMap((name) => {
+  const lines = (values: (name: ShadcnVariable) => string | undefined) =>
+    WRITABLE_VARIABLES.flatMap((name) => {
       const value = values(name);
       return value === undefined ? [] : [`  --${name}: ${write(name, value)};`];
     });
@@ -48,7 +48,7 @@ export function formatShadcnCss(mapping: ShadcnMapping, contexts: readonly Conte
  * (the `@theme inline` block of a project made by `shadcn init`, as blazon's own `src/viewer/index.css` has it), limited to what the plugin supplies.
  */
 export function formatShadcnTheme(mapping: ShadcnMapping): string {
-  const colors = SHADCN_VARIABLES.filter((name) => name !== 'radius' && mapping.variables[name]).map((name) => `  --color-${name}: var(--${name});`);
+  const colors = WRITABLE_VARIABLES.filter((name) => name !== 'radius' && mapping.variables[name]).map((name) => `  --color-${name}: var(--${name});`);
   return [
     '/**',
     ' * Blazon Design Tokens, as the Tailwind theme shadcn/ui v4 reads',

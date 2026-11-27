@@ -561,7 +561,7 @@ A variable takes its value from the theme role it reads, or from the token the `
 
 | Option | Default | Does |
 |---|---|---|
-| `variables` | none | An object of shadcn variable names (no leading dashes) to token paths. A pick wins over the role |
+| `variables` | none | An object of shadcn variable names (no leading dashes) to token paths. A pick wins over the role. Besides shadcn's variables it takes `destructive-foreground`, which no role fills and `unsupplied` never lists |
 | `format` | `"as-authored"` | How `shadcn.css` writes colors: `"as-authored"` (the token's value, unchanged), `"oklch"` (`oklch(0.6 0.2 30)`, which shadcn v4 uses) or `"hex"` (`#rrggbb`, with two more digits for alpha). A color outside sRGB is brought into it for `"hex"`. `shadcn.json` always holds the authored value. A value that is not a color keeps its authored text and is a warning |
 | `themeInline` | `false` | `true` also writes `shadcn-theme.css`. `shadcn.css` is the same either way. Required for Tailwind v4: without the theme file `bg-primary`, `text-foreground`, `border-border`, `ring-ring` and `bg-chart-*` generate no CSS and `rounded-md` keeps Tailwind's 6px. [Chapter 19](19-building-a-website.md#shadcn-v4-oklch-dark-theme-inline-charts) has the CSS entry to import both files |
 | `chart` | none | A token group path, such as `color.chart`. Its first five color tokens, in source order, fill `chart-1` to `chart-5`, and a `variables` entry for the same name wins. A group with fewer than five is a warning |
@@ -576,6 +576,7 @@ This is what the `shadcn` key of `blazon.json` did before it became this option;
 | `blazon.shadcn/format-unconverted` | warning | `format` is `oklch` or `hex` and a variable's value is not a color (a `var()`, say). The authored value is written |
 | `blazon.shadcn/chart-group-short` | warning | The `chart` group has fewer than five color tokens, or none. The chart variables it cannot fill are not supplied by it |
 | `blazon.shadcn/destructive-duplicate` | warning | `destructive` is the same color as `primary`, `accent` or `ring` in some context. Colors are compared as colors, so `#E00`, `#ee0000` and the same OKLCH are one. Point `variables.destructive` at another color, or list the pair in `allowSame`. Raised by the check role, so `blazon build` does not say it a second time |
+| `blazon.shadcn/destructive-foreground-missing` | info | `themeInline` is on and `destructive` is supplied but `destructive-foreground` is not, so `text-destructive-foreground` takes the inherited text color. Current shadcn v4 uses `text-white`; add `variables: { "destructive-foreground": "<token>" }` if a component of yours uses the class, and the note goes away. Raised by the check role |
 
 ### blazon.social-cards
 
