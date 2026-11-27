@@ -8,8 +8,9 @@ import zlib from 'node:zlib';
 // How blazon reads a public web page (`init --from`, `drift <url>`). The address is a stranger's, so the fetch is held to a policy:
 // - only http and https, and no user name or password in the address;
 // - the host is resolved first and every address it gives must be public: loopback, private (RFC 1918), shared (100.64/10), link-local
-//   (169.254/16, with the 169.254.169.254 metadata address), unique-local and link-local IPv6, IPv4-mapped IPv6, multicast and the reserved
-//   ranges are refused, and so is the name `localhost`;
+//   (169.254/16, with the 169.254.169.254 metadata address), unique-local and link-local IPv6, IPv4-mapped and IPv4-translated IPv6,
+//   local-use NAT64, Teredo, the documentation and relay ranges, multicast and the reserved ranges are refused, and so is the name
+//   `localhost`;
 // - the connection goes to the address that was checked: the request's `lookup` returns it, so the name is not resolved a second time and a
 //   DNS answer that changes between the check and the connection (rebinding) is never used;
 // - a redirect is a new request held to the same checks, at most 5 of them;
@@ -94,8 +95,12 @@ const V4_REFUSED: [number[], number, string][] = [
   [[169, 254, 0, 0], 16, 'a link-local address'],
   [[172, 16, 0, 0], 12, 'a private address (RFC 1918)'],
   [[192, 0, 0, 0], 24, 'a reserved address (IETF protocol assignments)'],
+  [[192, 0, 2, 0], 24, 'a documentation address (TEST-NET-1, RFC 5737)'],
+  [[192, 88, 99, 0], 24, 'a 6to4 relay anycast address (RFC 7526)'],
   [[192, 168, 0, 0], 16, 'a private address (RFC 1918)'],
   [[198, 18, 0, 0], 15, 'a reserved address (benchmarking)'],
+  [[198, 51, 100, 0], 24, 'a documentation address (TEST-NET-2, RFC 5737)'],
+  [[203, 0, 113, 0], 24, 'a documentation address (TEST-NET-3, RFC 5737)'],
   [[224, 0, 0, 0], 4, 'a multicast address'],
   [[240, 0, 0, 0], 4, 'a reserved address'],
 ];
@@ -116,6 +121,11 @@ export function refusedAddress(address: string): string | undefined {
   // ::ffff:a.b.c.d reaches IPv4 on a dual-stack socket, and ::a.b.c.d is the old compatible form: a public name has no reason to give either
   if (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff) return 'an IPv4-mapped IPv6 address';
   if (g.slice(0, 6).every((x) => x === 0)) return 'an IPv4-compatible IPv6 address';
+  // ::ffff:0:a.b.c.d is the IPv4-translated form (RFC 2765), another way to write an IPv4 address in IPv6
+  if (g.slice(0, 4).every((x) => x === 0) && g[4] === 0xffff && g[5] === 0) return 'an IPv4-translated IPv6 address (::ffff:0:0/96)';
+  // The local-use NAT64 prefix (RFC 8215) is refused outright, whatever IPv4 address it carries: the operator picks its own prefix length
+  // (/48 to /96), so where the IPv4 address sits is not knowable from outside, and it translates inside one network, never a public one
+  if (g[0] === 0x64 && g[1] === 0xff9b && g[2] === 1) return 'a local-use NAT64 address (64:ff9b:1::/48, RFC 8215)';
   // NAT64 (64:ff9b::/96) and 6to4 (2002::/16) carry an IPv4 address: it is held to the IPv4 rules
   if (g[0] === 0x64 && g[1] === 0xff9b && g.slice(2, 6).every((x) => x === 0)) {
     const inner = refusedV4(embedded(g[6]!, g[7]!));
@@ -125,6 +135,11 @@ export function refusedAddress(address: string): string | undefined {
     const inner = refusedV4(embedded(g[1]!, g[2]!));
     return inner && `a 6to4 address of ${inner}`;
   }
+  // Teredo tunnels to an IPv4 client through relays, and its addresses carry IPv4 addresses; a public name has no reason to give one
+  if (g[0] === 0x2001 && g[1] === 0) return 'a Teredo address (2001::/32)';
+  if (g[0] === 0x2001 && g[1] === 0xdb8) return 'a documentation address (2001:db8::/32)';
+  if (g[0] === 0x3fff && (g[1]! & 0xf000) === 0) return 'a documentation address (3fff::/20)';
+  if (g[0] === 0x5f00) return 'an SRv6 segment identifier (5f00::/16)';
   if ((g[0]! & 0xfe00) === 0xfc00) return 'a unique-local IPv6 address (fc00::/7)';
   if ((g[0]! & 0xffc0) === 0xfe80) return 'a link-local IPv6 address (fe80::/10)';
   if ((g[0]! & 0xffc0) === 0xfec0) return 'a site-local IPv6 address (fec0::/10)';

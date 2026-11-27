@@ -83,6 +83,39 @@ describe('the addresses blazon refuses', () => {
   });
 });
 
+describe('the special ranges, each with an address inside and its neighbour outside', () => {
+  // `outside` is the nearest address that is not in the range. It is public (allowed) where one exists; where every neighbour is itself
+  // special, it is refused for another reason, never this range's. A range written too wide fails on its neighbour.
+  it.each([
+    ['192.0.2.0/24 (TEST-NET-1)', ['192.0.2.1', '192.0.2.255'], /documentation.*TEST-NET-1/, ['192.0.3.1', '192.0.1.255']],
+    ['198.51.100.0/24 (TEST-NET-2)', ['198.51.100.1', '198.51.100.254'], /documentation.*TEST-NET-2/, ['198.51.101.1', '198.51.99.255']],
+    ['203.0.113.0/24 (TEST-NET-3)', ['203.0.113.1', '203.0.113.254'], /documentation.*TEST-NET-3/, ['203.0.114.1', '203.0.112.255']],
+    ['192.88.99.0/24 (6to4 relay anycast)', ['192.88.99.1', '192.88.99.254'], /6to4 relay/, ['192.88.100.1', '192.88.98.255']],
+    ['64:ff9b:1::/48 (local-use NAT64)', ['64:ff9b:1::808:808', '64:ff9b:1:ffff:ffff::1', '64:ff9b:1::a00:1'], /local-use NAT64/, ['64:ff9b::808:808', '64:ff9b:2::808:808']],
+    ['::ffff:0:0/96 (IPv4-translated)', ['::ffff:0:7f00:1', '::ffff:0:808:808', '::ffff:0:127.0.0.1'], /IPv4-translated/, ['::ffff:808:808']],
+    ['2001::/32 (Teredo)', ['2001::1', '2001:0:ffff:ffff::1'], /Teredo/, ['2001:200::1', '2001:4860::8888']],
+    ['2001:db8::/32 (documentation)', ['2001:db8::1', '2001:db8:ffff:ffff::1'], /documentation.*2001:db8/, ['2001:db9::1', '2001:db7:ffff::1']],
+    ['3fff::/20 (documentation)', ['3fff::1', '3fff:fff:ffff::1'], /documentation.*3fff::\/20/, ['3fff:1000::1', '3ffe:ffff::1']],
+    ['5f00::/16 (SRv6 segment identifiers)', ['5f00::1', '5f00:ffff:ffff::1'], /SRv6/, ['5f01::1', '5eff:ffff::1']],
+  ])('%s', (_range, inside, reason, outside) => {
+    for (const address of inside) expect(refusedAddress(address), address).toMatch(reason);
+    for (const address of outside) expect(refusedAddress(address) ?? 'allowed', address).not.toMatch(reason);
+  });
+
+  it.each(['192.0.3.1', '198.51.101.1', '203.0.114.1', '192.88.100.1', '64:ff9b::808:808', '2001:200::1', '2001:db9::1', '3fff:1000::1'])(
+    'allows the public neighbour %s',
+    (address) => {
+      expect(refusedAddress(address)).toBeUndefined();
+    },
+  );
+
+  it('refuses the IPv4-translated form of a loopback address in a URL', async () => {
+    const network = stubNetwork({});
+    await expect(safeFetch('http://[::ffff:0:7f00:1]/', 'page', network)).rejects.toThrow(/IPv4-translated/);
+    expect(network.calls).toEqual([]);
+  });
+});
+
 describe('a fetch to a refused address', () => {
   // No server listens on these: the refusal comes before a connection, so the test never waits on the network
   it.each([
