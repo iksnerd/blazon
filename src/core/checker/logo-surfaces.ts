@@ -2,6 +2,8 @@ import type { Finding, LogoSet, ThemeRole, TokenItem } from '../../types/index.j
 import { logoDenialUnder } from './logo-rules.js';
 import { contrastBetween, contrastRatio, parseColor } from './contrast.js';
 import { finding } from './catalogue.js';
+import { isInvisible, property, styleOf, UNPAINTED } from '../svg/paint.js';
+import { parseXml, XmlError, type XmlElement } from '../svg/xml.js';
 
 // The brand book shows each configured logo on the surface it is made for (the `blazon:logo-usage` tiles): the light logo on a light surface
 // and the dark-surface logo on a dark one, judged for the background, the inverse surface and the accent by the text color each is paired with. A part of the logo that is
@@ -29,7 +31,66 @@ export function paintedColors(src: string): string[] {
   } catch {
     return [];
   }
-  return [...new Set([...text.matchAll(COLOR)].map((m) => m[1]!).filter((color) => !NOT_A_COLOR.has(color.toLowerCase())))];
+  let found: string[];
+  try {
+    found = colorsOf(parseXml(text));
+    // A stylesheet is text, which the reader drops: its colors are read as written, as they always were
+    for (const sheet of text.matchAll(/<style\b[^>]*>(.*?)<\/style>/gs)) found.push(...[...sheet[1]!.matchAll(COLOR)].map((m) => m[1]!));
+  } catch (error) {
+    if (!(error instanceof XmlError)) throw error;
+    // Not well-formed enough to take apart: read the text as it was before, every fill and stroke in it
+    found = [...text.matchAll(COLOR)].map((m) => m[1]!);
+  }
+  return [...new Set(found.filter((color) => !NOT_A_COLOR.has(color.toLowerCase())))];
+}
+
+/** The ids a `<use>` points at, from `href` or `xlink:href`. */
+function usedIds(element: XmlElement, into: Set<string>): Set<string> {
+  const href = element.tag === 'use' ? (element.attrs.get('href') ?? element.attrs.get('xlink:href')) : undefined;
+  if (href?.startsWith('#')) into.add(href.slice(1));
+  for (const child of element.children) usedIds(child, into);
+  return into;
+}
+
+/** The colors of an element's own fill and stroke, in the order written: a fill, then a stroke, each from the attribute or the style. */
+function ownColors(element: XmlElement, style: Map<string, string>): string[] {
+  const found: string[] = [];
+  for (const name of ['fill', 'stroke']) {
+    const value = property(element, style, name);
+    if (value !== undefined) for (const m of `${name}=${value}`.matchAll(COLOR)) found.push(m[1]!);
+  }
+  return found;
+}
+
+/**
+ * The colors a logo can paint: those of the elements that are drawn. A clip path, a mask, a pattern, a filter, a marker, a `<defs>`, a
+ * `<symbol>` no `<use>` draws, a title and an element that is hidden paint nothing, so a white rectangle that only shapes a clip is not
+ * ink. Gradients are read as before and not followed: a gradient fill is `url(#id)`, which is not a color here, and the `stop-color`s
+ * of the gradient are not read.
+ */
+function colorsOf(root: XmlElement): string[] {
+  const used = usedIds(root, new Set());
+  const colors: string[] = [];
+  const walk = (element: XmlElement): void => {
+    const style = styleOf(element);
+    if (property(element, style, 'display') === 'none' || isInvisible(element, style)) return;
+    const symbolDrawn = element.tag === 'symbol' && used.has(element.attrs.get('id') ?? '');
+    if (UNPAINTED.has(element.tag) && !symbolDrawn) {
+      if (element.tag === 'defs' || element.tag === 'symbol') look(element);
+      return;
+    }
+    colors.push(...ownColors(element, style));
+    for (const child of element.children) walk(child);
+  };
+  /** Inside a container that draws nothing by itself, only what a `<use>` points at is drawn. */
+  const look = (element: XmlElement): void => {
+    for (const child of element.children) {
+      if (used.has(child.attrs.get('id') ?? '') && !UNPAINTED.has(child.tag)) walk(child);
+      else if (child.tag === 'defs' || child.tag === 'symbol' || child.tag === 'g') look(child);
+    }
+  };
+  walk(root);
+  return colors;
 }
 
 const WHITE = parseColor('#ffffff')!;

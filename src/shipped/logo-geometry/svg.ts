@@ -1,14 +1,14 @@
 import { Unsupported, type Box, type Point, type Shape } from './geometry.js';
 import { pathSubpaths } from './path.js';
 import { apply, compose, IDENTITY, parseTransform, type Matrix } from './transform.js';
-import { parseXml, XmlError, type XmlElement } from './xml.js';
+import { isInvisible, property, styleOf, UNPAINTED } from '../../core/svg/paint.js';
+import { parseXml, XmlError, type XmlElement } from '../../core/svg/xml.js';
 
 // An SVG logo as the shapes it paints, in the order it paints them. Read: rect (rounded too), polygon, polyline, circle, ellipse and path
 // (M L H V C S Q T A Z, absolute or relative), with transforms, groups, and a fill from an attribute, a style or a group. Not read, and
 // named when they matter: strokes, a stylesheet, text, <use>, embedded images and masks. Their absence shows in `notes`.
 
 const ELLIPSE_STEPS = 96;
-const SKIPPED = new Set(['defs', 'clipPath', 'mask', 'symbol', 'title', 'desc', 'metadata', 'style', 'linearGradient', 'radialGradient', 'pattern', 'filter', 'marker']);
 const REFUSED: Record<string, string> = {
   text: '<text> is live text: convert it to outlines in the design tool first',
   tspan: '<tspan> is live text: convert it to outlines in the design tool first',
@@ -25,18 +25,6 @@ export interface Svg {
 }
 
 export const numbers = (text: string | undefined): number[] => (text?.match(/[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g) ?? []).map(Number);
-
-function styleOf(element: XmlElement): Map<string, string> {
-  const style = new Map<string, string>();
-  for (const part of (element.attrs.get('style') ?? '').split(';')) {
-    const colon = part.indexOf(':');
-    if (colon > 0) style.set(part.slice(0, colon).trim(), part.slice(colon + 1).trim());
-  }
-  return style;
-}
-
-/** A property of an element: its style, then its attribute. */
-const property = (element: XmlElement, style: Map<string, string>, name: string): string | undefined => style.get(name) ?? element.attrs.get(name);
 
 interface Inherited {
   fill: string | undefined;
@@ -111,7 +99,7 @@ export function readSvg(text: string): Svg {
   const walk = (element: XmlElement, inherited: Inherited): void => {
     const tag = element.tag;
     if (tag === 'style') styled = true;
-    if (SKIPPED.has(tag)) return;
+    if (UNPAINTED.has(tag)) return;
     const refusal = REFUSED[tag];
     if (refusal) throw new Unsupported(refusal);
     const style = styleOf(element);
@@ -124,11 +112,7 @@ export function readSvg(text: string): Svg {
     const stroke = strokeText === undefined ? inherited.stroke : strokeText.trim().toLowerCase();
     const ruleText = property(element, style, 'fill-rule');
     const rule = ruleText === 'evenodd' || ruleText === 'nonzero' ? ruleText : inherited.rule;
-    const invisible =
-      inherited.invisible ||
-      property(element, style, 'visibility') === 'hidden' ||
-      Number(property(element, style, 'opacity') ?? 1) === 0 ||
-      Number(property(element, style, 'fill-opacity') ?? 1) === 0;
+    const invisible = inherited.invisible || isInvisible(element, style);
     if (element.attrs.has('class')) classed = true;
 
     let polygons: Point[][] = [];
