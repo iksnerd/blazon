@@ -1,5 +1,6 @@
 import type { Browser, BrowserContext, Page } from 'playwright-core';
 import { serve } from '../print-book/site.js';
+import { guardNetwork } from '../shared/network.js';
 import { findByFile } from '../../core/assets/representations.js';
 import { colorOf, type BrandAsset, type BrandRead } from './brand.js';
 import {
@@ -62,13 +63,24 @@ export async function drawCards(browser: Browser, job: Job, brand: BrandRead, ca
   }
 }
 
-async function open(browser: Browser, origin: string, html: string, size: { width: number; height: number }, scale: number): Promise<{ context: BrowserContext; page: Page }> {
+async function open(
+  browser: Browser,
+  origin: string,
+  file: string,
+  html: string,
+  size: { width: number; height: number },
+  scale: number,
+): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext({ viewport: size, deviceScaleFactor: scale });
   // tsx wraps functions with a __name helper that does not exist in the page; the built plugin has none, and this is harmless there
   await context.addInitScript('globalThis.__name = (fn) => fn;');
   const page = await context.newPage();
   page.setDefaultTimeout(20_000);
-  await page.route(`**${CARD_PATH}`, (route) => route.fulfill({ contentType: 'text/html; charset=utf-8', body: html }));
+  await guardNetwork(page, {
+    page: file,
+    origins: [origin],
+    serve: (url, route) => (url.pathname === CARD_PATH ? route.fulfill({ contentType: 'text/html; charset=utf-8', body: html }) : route.continue()),
+  });
   await page.goto(`${origin}${CARD_PATH}`, { waitUntil: 'load', timeout: 25_000 }).catch(async () => {
     // A font stylesheet that does not answer must not stop the card: draw it in the fallback faces
     await page.goto(`${origin}${CARD_PATH}`, { waitUntil: 'domcontentloaded' });
@@ -195,7 +207,7 @@ async function drawCard(browser: Browser, origin: string, brand: BrandRead, card
     ...(inset && { inset }),
   };
 
-  const probe = await open(browser, origin, pageHtml(base), size, 1);
+  const probe = await open(browser, origin, `${card.id}.png`, pageHtml(base), size, 1);
   let look: Look;
   try {
     // 1. The largest type step at which the text fits its room and its width
@@ -241,7 +253,7 @@ async function drawCard(browser: Browser, origin: string, brand: BrandRead, card
   const files = new Map<string, Buffer>();
   const html = pageHtml(look);
   for (const factor of scale === 2 ? [1, 2] : [1]) {
-    const { context, page } = await open(browser, origin, html, size, factor);
+    const { context, page } = await open(browser, origin, `${card.id}.png`, html, size, factor);
     try {
       if (factor === 1 && (plan || card.keepClear)) {
         const found = await boxes(page);

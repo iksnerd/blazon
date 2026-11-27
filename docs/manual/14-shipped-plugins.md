@@ -6,6 +6,8 @@ Blazon's package carries plugins of its own. To use one, allow it by name in `bl
 
 **Variables.** A shipped plugin starts with an empty environment like any other, and the config approves each variable its manifest lists, in the `env` of its entry ([Writing a plugin](13-writing-a-plugin.md#what-a-plugin-is)). The seven plugins that draw in Chrome (`blazon.brand-deck`, `blazon.favicons`, `blazon.logo-geometry`, `blazon.logo-kit`, `blazon.press-kit`, `blazon.print-book`, `blazon.social-cards`) list `BLAZON_CHROME`, `HOME` and `TMPDIR`, and `blazon.brand-deck` also `BLAZON_DECK_FONTS`. `blazon.copy`, `blazon.office-template`, `blazon.platform-tokens`, `blazon.shadcn` and `blazon.tailwind` list none. The snippets below leave `env` out to stay short; without it a set `HOME` stops the plugin with a message that says what to add.
 
+**No network.** A page one of these seven plugins draws can load nothing from the network. The browser answers a request to the plugin's own local server, a `data:` address, a `blob:` address and `about:blank`, and refuses every other, whatever address it names (a private, loopback or link-local one included). Each distinct origin it refused is a warning, `<plugin>/network-blocked`, that names the origin and the file the page makes, never the full address. A brand that depended on a remote file, such as a stylesheet from Google Fonts that the book or a social card used to pull in at draw time, now draws in the fallback fonts: put the file in the project and list it in `fonts` of `blazon.json` as `{ "family": "Acme Sans", "file": "fonts/AcmeSans.woff2" }`, which blazon embeds ([Theme and config](07-theme-and-config.md#logo-and-fonts)); an image goes in the brand's assets.
+
 ## The plugins
 
 ### blazon.brand-deck

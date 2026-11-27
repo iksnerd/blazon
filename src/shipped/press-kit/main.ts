@@ -7,6 +7,7 @@ import { colorsCss, colorsJson, colorsText, planColors } from './colors.js';
 import { pdfFallbacks, planFonts } from './fonts.js';
 import { chooseLogos, logoIds, logosText } from './logos.js';
 import { finding, parseOptions, type Finding } from './options.js';
+import { takeBlocked } from '../shared/network.js';
 import { kitPage } from './html.js';
 import { drawPdf } from './pdf.js';
 import { jobFor, MANIFEST, NAME } from './request.js';
@@ -102,6 +103,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   const folder = path.join(job.outDir, options.name);
   replaceFolder(folder, entries);
   writeFolder(job.outDir, [[`${options.name}.zip`, zipOf(entries.map(([file, content]) => [`${options.name}/${file}`, content]))]]);
+  findings.push(...takeBlocked(NAME));
   return { findings };
 }
 

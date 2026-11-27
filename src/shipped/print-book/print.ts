@@ -1,5 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import { errors, type Browser } from 'playwright-core';
+import { guardNetwork } from '../shared/network.js';
 import { Cannot, type Job } from './request.js';
 import { serve } from './site.js';
 
@@ -55,6 +56,7 @@ export async function printBook(browser: Browser, job: Job, seconds: number, dea
   try {
     const page = await browser.newPage({ viewport: SLIDE, deviceScaleFactor: PICTURE_SCALE });
     page.setDefaultTimeout(Math.min(PRINT_SECONDS * 1000, left()));
+    await guardNetwork(page, { page: `${job.name}.pdf`, origins: [site.origin] });
     await page.emulateMedia({ media: 'print' });
     await page.goto(`${site.origin}/index.html${job.hash}`, { waitUntil: 'domcontentloaded', timeout: waitFor(seconds, deadline) });
     try {

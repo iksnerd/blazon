@@ -12,6 +12,7 @@ import { labelRaster } from './labels.js';
 import { analyzeRaster, analyzeSvg, type Measurement } from './measure.js';
 import { fixed } from './numbers.js';
 import { finding, parseOptions, type Finding, type Target } from './options.js';
+import { takeBlocked } from '../shared/network.js';
 import { jobFor, MANIFEST, NAME } from './request.js';
 
 // blazon.logo-geometry: blazon's build role. Reads one request on standard input and measures each logo of the brand: how closely it matches
@@ -159,6 +160,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   // Written once, whole, after the work is done: a call that ends earlier leaves out_dir empty
   if (options.report && Object.keys(report).length > 0) fs.writeFileSync(path.join(job.outDir, DEFAULT_REPORT), stable(report));
   for (const [name, data] of figures) fs.writeFileSync(path.join(job.outDir, name), data);
+  findings.push(...takeBlocked(NAME));
   return { findings };
 }
 

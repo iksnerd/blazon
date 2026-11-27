@@ -1,4 +1,5 @@
 import type { Browser, Page } from 'playwright-core';
+import { guardNetwork } from '../shared/network.js';
 
 /**
  * Gets the page ready for its picture. Chrome draws an image shown smaller than it is in two steps, a first raster and a
@@ -36,7 +37,7 @@ export async function png(browser: Browser, svg: string, size: number, transpare
   const page = await browser.newPage({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
   try {
     // Offline, so nothing in the markup could be fetched
-    await page.route('**/*', (route) => route.abort());
+    await guardNetwork(page, { page: 'a favicon' });
     await page.setContent(`<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:${transparent ? 'transparent' : '#fff'}}svg{display:block}</style>${svg}`);
     await settle(page);
     return await page.screenshot({ type: 'png', omitBackground: transparent, clip: { x: 0, y: 0, width: size, height: size } });
@@ -49,7 +50,7 @@ export async function png(browser: Browser, svg: string, size: number, transpare
 export async function sheet(browser: Browser, html: string, width: number, height: number, style: string): Promise<Buffer> {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
   try {
-    await page.route('**/*', (route) => route.abort());
+    await guardNetwork(page, { page: 'a preview sheet' });
     await page.setContent(`<!doctype html><meta charset="utf-8"><style>${style}</style>${html}`);
     await settle(page);
     return await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height } });
@@ -65,7 +66,7 @@ export async function sheet(browser: Browser, html: string, width: number, heigh
 export async function reach(browser: Browser, image: Buffer, size: number): Promise<number> {
   const page = await browser.newPage();
   try {
-    await page.route('**/*', (route) => route.abort());
+    await guardNetwork(page, { page: 'the favicon check' });
     await page.setContent('<!doctype html><meta charset="utf-8">');
     return await page.evaluate(
       async ({ uri, side }) => {

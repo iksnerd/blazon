@@ -6,6 +6,7 @@ import { siteFile } from '../shared/site.js';
 import { readBrand, type KitAsset } from './brand.js';
 import { planPieces } from './kit.js';
 import { finding, parseOptions, type Finding } from './options.js';
+import { takeBlocked } from '../shared/network.js';
 import { svgToPng } from './render.js';
 import { jobFor, MANIFEST, NAME } from './request.js';
 import { clearSpaceSvg, initiativeSvg, partnershipSvg } from './svg.js';
@@ -68,7 +69,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   }
   // Written once, whole, after the work is done: a call that ends earlier leaves out_dir empty
   for (const [name, data] of files) fs.writeFileSync(path.join(job.outDir, name), data);
-  return { findings };
+  return { findings: [...findings, ...takeBlocked(NAME)] };
 }
 
 // Not a top-level await: the built program is CommonJS (scripts/build-plugins.mjs), which has none.
