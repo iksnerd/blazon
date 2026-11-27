@@ -351,6 +351,15 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
       });
     if (unknown === undefined)
       refuse(`${where}: ${sentence(error.message)}. Run ${where} --help for the options.`, 'missing-argument', { stack, fix: `Run ${where} --help for the options.` });
+    // `--dir brand`: every command that reads a brand takes the folder as its last argument, and `--cwd` works on all of them
+    if (dashes === '--' && ['dir', 'project', 'path'].includes(unknown)) {
+      const takesDir = cli.matchedCommand?.args.some((arg) => arg.value === 'dir');
+      refuse(
+        `${where}: unknown option --${unknown}: ${takesDir ? `give the folder as the last argument, ${where} <dir>, or use --cwd <dir>` : 'use --cwd <dir> to run it in another folder'}`,
+        'unknown-option',
+        { stack, fix: takesDir ? `Write ${where} <dir>, or use --cwd <dir>.` : 'Use --cwd <dir>.' },
+      );
+    }
     const known = [...(cli.matchedCommand?.options ?? []), ...cli.globalCommand.options].map((option) => option.name);
     const meant = closest(unknown, known);
     refuse(`${where}: unknown option "${dashes}${unknown}"${meant ? `; did you mean "--${meant}"?` : '.'} Run ${where} --help for the options.`, 'unknown-option', {

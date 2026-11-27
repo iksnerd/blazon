@@ -31,6 +31,14 @@ describe('blazon check --json', () => {
     expect(JSON.parse(ran.stdout)).toEqual({ command, passed: false, error: { code, message: expect.stringContaining(message), fix: expect.any(String) } });
   });
 
+  it.each(['--dir', '--project', '--path'])('says how to name the folder when %s is typed', (flag) => {
+    const ran = blazon('check', flag, 'brand');
+    expect(ran.status).toBe(2);
+    expect(ran.stderr).toContain(`blazon check: unknown option ${flag}: give the folder as the last argument, blazon check <dir>, or use --cwd <dir>`);
+    const json = JSON.parse(blazon('check', flag, 'brand', '--json').stdout);
+    expect(json.error).toMatchObject({ code: 'unknown-option', message: expect.stringContaining('give the folder as the last argument'), fix: expect.stringContaining('--cwd') });
+  });
+
   it('puts the fix in its own field, and keeps the message as it was', () => {
     const { error } = JSON.parse(blazon('check', path.join(REPO, 'no-such-folder'), '--json').stdout);
     expect(error.fix).toMatch(/^Run blazon init /);
