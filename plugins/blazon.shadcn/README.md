@@ -12,7 +12,7 @@ To `<tokensOutDir>/blazon.shadcn/` (`dist/tokens/blazon.shadcn/`):
 |---|---|
 | `shadcn.json` | For each shadcn variable blazon supplies, the token it takes, its value in the default context and where the pick came from (`theme` or `config`); `unsupplied`, the variables nothing supplies; and, when the brand declares contrast `pairs`, `pairs`, each shadcn text-on-surface pair with whether a rule covers its two tokens |
 | `shadcn.css` | A `:root` block with each supplied variable, and a block under the selector of each other context for the variables that context changes |
-| `shadcn-theme.css` | Only with `themeInline`: `@custom-variant dark` and an `@theme inline` block of `--color-<name>` lines and the `--radius-*` steps, for Tailwind v4 |
+| `shadcn-theme.css` | Only with `themeInline`: `@custom-variant dark` and an `@theme inline` block of `--color-<name>` lines and the `--radius-sm` to `--radius-4xl` steps, for Tailwind v4 |
 
 A variable takes its value from the theme role it reads (`background` for `--background`, `accent` for `--primary`, and so on, the same picks the brand book's own components use), or from the token the `variables` option names for it. `destructive` and `chart-1` to `chart-5` have no role, so only the option fills them.
 

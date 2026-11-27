@@ -146,7 +146,15 @@ describe('themeInline', () => {
     for (const name of Object.keys(mapping.variables).filter((n) => n !== 'radius')) expect(theme).toContain(`  --color-${name}: var(--${name});`);
     expect(theme).not.toContain('--color-radius');
     expect(theme).not.toContain('--color-chart-1');
-    for (const line of ['--radius-sm: calc(var(--radius) * 0.6);', '--radius-md: calc(var(--radius) * 0.8);', '--radius-lg: var(--radius);', '--radius-xl: calc(var(--radius) * 1.4);'])
+    for (const line of [
+      '--radius-sm: calc(var(--radius) * 0.6);',
+      '--radius-md: calc(var(--radius) * 0.8);',
+      '--radius-lg: var(--radius);',
+      '--radius-xl: calc(var(--radius) * 1.4);',
+      '--radius-2xl: calc(var(--radius) * 1.8);',
+      '--radius-3xl: calc(var(--radius) * 2.2);',
+      '--radius-4xl: calc(var(--radius) * 2.6);',
+    ])
       expect(theme).toContain(`  ${line}`);
   });
 
