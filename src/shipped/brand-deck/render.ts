@@ -7,6 +7,7 @@ import { Images } from './images.js';
 import { Measure } from './measure.js';
 import { Painter } from './paint/index.js';
 import { PAGE, plan, type Slide } from './plan/index.js';
+import { guardNetwork } from '../shared/network.js';
 
 // Draws the deck in a real browser: lays the slides out as HTML (paint/), measures what the layout needed to know, lays them out
 // again until nothing new is asked, and prints the page to a PDF with the slide as the page size, as blazon.print-book prints the book.
@@ -42,10 +43,15 @@ export interface Drawing {
   skip: readonly string[];
 }
 
-async function serveFrom(page: Page, answer: (path: string) => { type: string; body: Buffer | string } | undefined): Promise<void> {
-  await page.route(`${ORIGIN}/**`, (route) => {
-    const found = answer(new URL(route.request().url()).pathname);
-    return found ? route.fulfill({ contentType: found.type, body: found.body }) : route.fulfill({ status: 404, body: '' });
+/** The deck's own origin answers from memory; every other request is refused (shared/network.ts) and named in a finding. */
+async function serveFrom(page: Page, label: string, answer: (path: string) => { type: string; body: Buffer | string } | undefined): Promise<void> {
+  await guardNetwork(page, {
+    page: label,
+    origins: [ORIGIN],
+    serve: (url, route) => {
+      const found = answer(url.pathname);
+      return found ? route.fulfill({ contentType: found.type, body: found.body }) : route.fulfill({ status: 404, body: '' });
+    },
   });
 }
 
@@ -70,7 +76,7 @@ export async function drawDeck(browser: Browser, drawing: Drawing): Promise<Deck
 
     const probe = await context.newPage();
     probe.setDefaultTimeout(RESOURCE_SECONDS * 1000);
-    await serveFrom(probe, answer);
+    await serveFrom(probe, 'the deck', answer);
     let probeRules: string | undefined;
 
     let slides: Slide[] = [];
@@ -95,7 +101,7 @@ export async function drawDeck(browser: Browser, drawing: Drawing): Promise<Deck
     pages.deck = `<!doctype html><meta charset="utf-8"><title>${brand.brand.title.replace(/</g, '&lt;')}</title><style>${table.rules('/fonts')}\n${STYLE}</style><body>${sections.join('')}`;
     const page = await context.newPage();
     page.setDefaultTimeout(RESOURCE_SECONDS * 1000);
-    await serveFrom(page, answer);
+    await serveFrom(page, 'the deck', answer);
     await page.goto(`${ORIGIN}/deck.html`, { waitUntil: 'load' });
     await page.evaluate(async () => {
       await document.fonts.ready;

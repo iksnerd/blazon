@@ -15,7 +15,7 @@ import zlib from 'node:zlib';
 //   DNS answer that changes between the check and the connection (rebinding) is never used;
 // - a redirect is a new request held to the same checks, at most 5 of them, and never from https to http;
 // - the body is at most 5 MB (after decompression) and the whole read, redirects included, at most 10 s;
-// - the content type must be what was asked for: an HTML page, a stylesheet, a manifest or an image;
+// - the content type must be what was asked for: an HTML page, a stylesheet, a manifest, an image or a font;
 // - no cookies, no credentials and no scripts: the bytes are read as text or as a file, never run.
 
 export const MAX_BYTES = 5 * 1024 * 1024;
@@ -54,7 +54,7 @@ function trustedCa(network: Network): string | string[] | undefined {
   return undefined;
 }
 
-export type FetchKind = 'page' | 'stylesheet' | 'manifest' | 'image';
+export type FetchKind = 'page' | 'stylesheet' | 'manifest' | 'image' | 'font';
 
 const ACCEPT: Record<FetchKind, { types: (type: string) => boolean; what: string; header: string }> = {
   page: { types: (t) => t === 'text/html' || t === 'application/xhtml+xml', what: 'an HTML page', header: 'text/html,application/xhtml+xml' },
@@ -65,6 +65,13 @@ const ACCEPT: Record<FetchKind, { types: (type: string) => boolean; what: string
     header: 'application/manifest+json,application/json',
   },
   image: { types: (t) => t.startsWith('image/'), what: 'an image', header: 'image/*' },
+  // What a font file is served as: the registered font/* types, and the older names (RFC 8081 lists them) that servers still send
+  font: {
+    types: (t) =>
+      t.startsWith('font/') || t === 'application/font-woff' || t === 'application/font-woff2' || t.startsWith('application/x-font-') || t === 'application/vnd.ms-fontobject',
+    what: 'a font file',
+    header: 'font/*',
+  },
 };
 
 function ipv4Parts(text: string): number[] | undefined {
@@ -280,6 +287,11 @@ function endedEarly(err: unknown): boolean {
  * connect (the public network unless a test passes another).
  */
 export async function safeFetch(address: string, kind: FetchKind, network: Network = PUBLIC_NETWORK): Promise<Buffer> {
+  return (await safeFetchTyped(address, kind, network)).body;
+}
+
+/** `safeFetch` with the content type the server sent (without its parameters, lower case), for a caller that passes the bytes on. */
+export async function safeFetchTyped(address: string, kind: FetchKind, network: Network = PUBLIC_NETWORK): Promise<{ body: Buffer; type: string }> {
   const policy = networkOf(network);
   const limit = policy.timeoutMs ?? TIMEOUT_MS;
   const signal = AbortSignal.timeout(limit);
@@ -352,6 +364,6 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       const why = timedOut(err) ? `no answer in ${limit / 1000} s` : endedEarly(err) ? `the connection closed before the whole body arrived (${reasonOf(err)})` : reasonOf(err);
       throw new Error(`could not read ${label(url)}: ${why}`, { cause: err });
     }
-    return Buffer.concat(chunks);
+    return { body: Buffer.concat(chunks), type };
   }
 }

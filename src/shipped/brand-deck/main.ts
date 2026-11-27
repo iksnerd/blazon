@@ -3,6 +3,7 @@ import path from 'node:path';
 import { deckFileName, readBrand, type Brand } from './brand.js';
 import { launch } from './browser.js';
 import { readOptions, type Finding } from './checks.js';
+import { takeBlocked } from '../shared/network.js';
 import { DeckError, readFavicons } from './favicons.js';
 import { FontTable, fontFolders } from './fonts.js';
 import { drawDeck, type Deck } from './render.js';
@@ -58,6 +59,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
       message: `the deck planned ${deck.slides.length} slides, and the PDF has ${deck.pages} pages`,
     });
   }
+  findings.push(...takeBlocked(NAME));
   // Written once, whole, after the browser is done: a call that ends earlier leaves nothing behind
   writeFolder(job.outDir, [[deckFileName(brand), deck.pdf]]);
   return { findings };

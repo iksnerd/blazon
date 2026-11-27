@@ -4,6 +4,7 @@ import { launch } from './browser.js';
 import { pptxOf } from './pptx.js';
 import { BUDGET_SECONDS, printBook, waitSeconds, type Printed } from './print.js';
 import { Cannot, jobFor, MANIFEST, NAME, OptionError, type Job } from './request.js';
+import { takeBlocked } from '../shared/network.js';
 import { findingFor, optionFinding, runPlugin, type Finding } from '../shared/plugin.js';
 
 // blazon.print-book: blazon's build role. Reads one request on standard input, prints the brand book to a PDF and a
@@ -67,7 +68,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   // Written once, whole, after the browser is done: a call that ends earlier leaves out_dir empty
   fs.writeFileSync(path.join(job.outDir, `${job.name}.pdf`), printed.pdf);
   fs.writeFileSync(path.join(job.outDir, `${job.name}.pptx`), pptx);
-  return { findings: [...findings(job, printed), ...clipped(job, printed), ...favicons(job)] };
+  return { findings: [...findings(job, printed), ...clipped(job, printed), ...favicons(job), ...takeBlocked(NAME)] };
 }
 
 // Not a top-level await: the built program is CommonJS (scripts/build-plugins.mjs), which has none.

@@ -1,5 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import { launchChrome } from '../shared/chrome.js';
+import { guardNetwork } from '../shared/network.js';
 import { luminance, parseColor } from '../shared/color.js';
 import { fontOf } from '../shared/font-stack.js';
 import type { BrandRead } from './brand.js';
@@ -122,7 +123,7 @@ export async function drawPdf(input: PageInput, env: NodeJS.ProcessEnv): Promise
   const browser = await launchChrome(env, 'draw the PDF with');
   try {
     const page = await browser.newPage({ viewport: PAGE });
-    await page.route('**/*', (route) => route.abort());
+    await guardNetwork(page, { page: 'press-kit.pdf' });
     await page.setContent(pageHtml(input));
     await page.evaluate(async () => {
       await document.fonts.ready;

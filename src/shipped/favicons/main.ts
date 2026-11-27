@@ -5,6 +5,7 @@ import { planFor, type Plan } from './plan.js';
 import { ico, png, reach, sheet } from './raster.js';
 import { MANIFEST, requestFrom, NAME } from './request.js';
 import { writeFolder } from '../shared/folder.js';
+import { takeBlocked } from '../shared/network.js';
 import { OptionError, optionFinding, runPlugin } from '../shared/plugin.js';
 import { checkSite, copyToSite } from './site.js';
 import { tileSvg } from './symbol.js';
@@ -81,7 +82,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
   files.set('head.html', headSnippet(plan));
   files.set('site.webmanifest', webManifest(plan));
   files.set('favicons.json', previewData(plan, supplied, far));
-  findings.push(...safeZones(plan, far));
+  findings.push(...safeZones(plan, far), ...takeBlocked(NAME));
   for (const file of supplied)
     findings.push({ code: `${NAME}/supplied`, severity: 'info', path: file, message: `${file} is the project's own file, used in place of the one drawn from ${plan.symbolId}` });
   writeFolder(

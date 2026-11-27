@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { readBrand, type BrandRead } from './brand.js';
 import { boundFindings } from './bound.js';
+import { takeBlocked } from '../shared/network.js';
 import { launch } from './browser.js';
 import type { Finding } from './checks.js';
 import { parseOptions, type Known } from './options.js';
@@ -45,6 +46,7 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
     for (const [name, png] of card.files) fs.writeFileSync(path.join(job.outDir, name), png);
     findings.push(...card.findings);
   }
+  findings.push(...takeBlocked(NAME));
   return { findings: boundFindings(findings) };
 }
 

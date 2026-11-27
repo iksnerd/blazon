@@ -1,4 +1,5 @@
 import type { Browser } from 'playwright-core';
+import { guardNetwork } from '../shared/network.js';
 import { Unsupported, type Box } from './geometry.js';
 
 // A PNG or WebP as RGBA pixels. Node has no decoder for either, so the browser the other plugins draw with does it: the file is decoded as
@@ -23,7 +24,7 @@ export async function decodeRaster(browser: Browser, bytes: Buffer, format: stri
   if (!media) throw new Unsupported(`${format} is not a format this plugin reads; use SVG, PNG or WebP`);
   const page = await browser.newPage();
   try {
-    await page.route('**/*', (route) => (route.request().url().startsWith('data:') ? route.continue() : route.abort()));
+    await guardNetwork(page, { page: 'a logo picture' });
     await page.setContent('<!doctype html><meta charset="utf-8">');
     const result = await page.evaluate(
       async ({ source, region, max, limit }) => {
