@@ -3,7 +3,7 @@ import { blackContrast, whiteContrast } from './theme/color';
 import { humanize, parentOf } from './tokens/format';
 import { logoDenialUnder } from '../../core/checker/logo-rules.js';
 import { paintContrast } from '../../core/checker/contrast.js';
-import { darkSurfaceOn, logoCandidatesOf, selectInkedLogo, selectLogo, type LogoFiles } from '../../core/logo/judge.js';
+import { darkSurfaceOn, logoCandidatesOf, selectInkedLogo, type LogoFiles } from '../../core/logo/judge.js';
 
 /** Token types shown on the Motion page and on the Strokes & effects page. */
 export const MOTION_TYPES: readonly string[] = ['duration', 'cubicBezier', 'transition'];
@@ -164,14 +164,14 @@ export function logoCandidates(data: BlazonData): LogoCandidate[] {
  * When nothing reaches the bar, or the paint cannot be measured (none: a cover that follows the page's mode), the result is the configured
  * variant `dark` names (the other one when the brand has only one, unless `fallback` is false), unless `logo.deny` forbids it, which then gives nothing.
  */
-export function logoOn(data: BlazonData, paint: string | undefined, dark: boolean, fallback = true, background?: TokenItem, lockup?: string): string | undefined {
+export function logoOn(data: BlazonData, paint: string | undefined, dark: boolean, fallback = true, background?: TokenItem): string | undefined {
   const logo = data.logo;
   const variant = fallback ? (dark ? (logo?.onDark ? 'onDark' : 'onLight') : logo?.onLight ? 'onLight' : 'onDark') : dark ? 'onDark' : 'onLight';
   const picked = logo?.[variant] && !logoDeniedOn(data, background, variant) ? logo[variant] : undefined;
   if (paint === undefined) return picked;
   const input = { background, ratioOn: (ink: string) => paintContrast(ink, paint), files: viewerFiles(data) };
   // A plain configured file is chosen by `dark`, an input core does not have; only an inked logo is judged by ratio
-  const chosen = (lockup === undefined ? selectInkedLogo(data, input) : selectLogo(data, { ...input, lockup })).winner?.file;
+  const chosen = selectInkedLogo(data, input).winner?.file;
   return chosen ?? picked;
 }
 
