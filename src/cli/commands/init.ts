@@ -2,13 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import pc from '../../core/colors.js';
 import { copyStarter, ensureBuildIgnored, getTemplateDir } from '../../core/starter.js';
-import { applyFromSite, type FromSiteResult } from '../../core/init/from-site/index.js';
+import { applyFromSite, savedSite, type FromSiteResult, type SiteInput } from '../../core/init/from-site/index.js';
 import { applyAnswers, parseColor, parseDescription, parseFont, parseLogo, parseName, type Answers } from '../../core/init/answers.js';
 import { readJson, writeJson } from '../../core/init/vocabulary.js';
 import { clackPrompter, PromptCancelled, type Prompter } from '../../core/init/prompts.js';
 import { runGuided, type Plan } from '../init-flow.js';
 import { lookFor, type Look } from '../init-ui.js';
 import type { ErrorCode } from '../errors.js';
+import type { Network } from '../../core/drift/fetch.js';
 import { blazonCommand, inDir, shownDir } from '../where.js';
 
 /** The last line of the next steps: the folder, not its name, is what makes a project. */
@@ -69,6 +70,8 @@ function brandTitle(dir: string): string {
 export interface InitOptions {
   /** An http(s) address to read the first colors, fonts and logo from */
   from?: string;
+  /** A folder holding a saved copy of a site (`index.html`, or the `.html` file named, and its stylesheets): the same reading as `from`, offline */
+  fromDir?: string;
   /** The config title, as given */
   name?: string;
   /** One sentence on the brand */
@@ -97,6 +100,11 @@ export interface InitOptions {
   startDev?: (dir: string) => Promise<void>;
   /** Told what was made, once the starter is in place: the folder, the files written and those that were already there (relative paths) */
   report?: (made: InitReport) => void;
+  /**
+   * Where a fetch may connect. Only a test passes one (to reach the server it started on 127.0.0.1): the command line has no flag for it and
+   * a value that is not a pair of functions is ignored, so a user cannot switch the public-address rule off.
+   */
+  network?: Network;
   /** Told why init ended with a status other than 0, as the code and the sentence `--json` carries */
   failure?: (failure: { code: ErrorCode; message: string }) => void;
 }
@@ -125,6 +133,23 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     options.failure?.({ code: 'invalid-option-value', message });
     return 2;
   }
+  if (options.from !== undefined && options.fromDir !== undefined) {
+    const message = '--from reads a live site and --from-dir a saved copy: give one of them';
+    console.error(pc.red(`blazon init: ${message}`));
+    options.failure?.({ code: 'conflicting-options', message });
+    return 2;
+  }
+  let saved: SiteInput | undefined;
+  if (options.fromDir !== undefined) {
+    try {
+      saved = savedSite(path.resolve(process.cwd(), String(options.fromDir)));
+    } catch (err) {
+      const message = err instanceof Error ? err.message.replace(path.resolve(process.cwd(), String(options.fromDir)), String(options.fromDir)) : String(err);
+      console.error(pc.red(`blazon init: ${message}`));
+      options.failure?.({ code: 'no-file', message });
+      return 2;
+    }
+  }
   const answers: Answers = {};
   for (const [flag, key, parse] of FLAGS) {
     const given = options[key];
@@ -142,7 +167,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   if (!fs.existsSync(templateDir)) throw new Error(`Template directory not found at ${templateDir}`);
 
   const tty = options.tty ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
-  const givenAny = [options.from, options.name, options.description, options.color, options.font, options.logo].some((v) => v !== undefined);
+  const givenAny = [options.from, options.fromDir, options.name, options.description, options.color, options.font, options.logo].some((v) => v !== undefined);
   const guided = tty && !givenAny && !options.yes && options.input !== false;
   const prompter = guided ? (options.prompter ?? clackPrompter()) : undefined;
   const look = options.look ?? lookFor(process.env, tty);
@@ -179,7 +204,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   let plan: Plan = { answers };
   if (prompter) {
     try {
-      plan = await runGuided({ prompter, look, dir: destDir, kept: kept.length });
+      plan = await runGuided({ prompter, look, dir: destDir, kept: kept.length, network: options.network });
     } catch (err) {
       if (err instanceof PromptCancelled) {
         prompter.cancel('Stopped. The starter was copied as it is, and nothing else was changed.');
@@ -195,16 +220,17 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   }
 
   // Apply
-  const from = plan.site?.url ?? options.from;
+  const from: string | SiteInput | undefined = plan.site?.url ?? options.from ?? saved;
+  const fromLabel = typeof from === 'string' ? from : from?.label;
   let code = 0;
   let site: FromSiteResult | undefined;
   const spin = prompter?.spinner();
   spin?.start('Writing the brand book');
   if (from !== undefined) {
     try {
-      site = await applyFromSite(destDir, from, created, new Date(), { page: plan.site?.findings.page, skipVars: plan.site?.skipVars });
+      site = await applyFromSite(destDir, from, created, new Date(), { page: plan.site?.findings.page, skipVars: plan.site?.skipVars, network: options.network });
       if (!prompter) {
-        console.log(pc.bold(`Read from ${from}:`));
+        console.log(pc.bold(`Read from ${fromLabel}:`));
         for (const file of site.written) console.log(`  ${pc.green('✔')} Wrote ${file}`);
         for (const item of site.removed) console.log(`  ${pc.green('✔')} Removed ${item}`);
         for (const item of site.repointed) console.log(`  ${pc.green('✔')} Re-pointed ${item}`);
@@ -216,7 +242,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
       options.failure?.({ code: 'site-unreadable', message: reason });
       if (prompter)
         prompter.log.error(
-          `Could not read ${from}: ${reason}\nThe starter was copied as it is. To start from the site, run blazon init again with --from in a new folder (a folder that already has the starter is kept as it is), or carry on with the starter.`,
+          `Could not read ${fromLabel}: ${reason}\nThe starter was copied as it is. To start from the site, run blazon init again with --from in a new folder (a folder that already has the starter is kept as it is), or carry on with the starter.`,
         );
       else {
         console.error(pc.red(`blazon init: ${reason}`));
@@ -270,7 +296,8 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
       : `Edit ${colors} with your colors`;
   if (prompter) {
     const wrote = [...created_lines.map((l) => `Created ${l}`), ...updated_lines.map((l) => `Updated ${l}`)];
-    if (site) wrote.push(`Read from ${from}: ${site.written.length} files written, ${site.removed.length} starter files removed`, ...site.missing.map((m) => `Not found: ${m}`));
+    if (site)
+      wrote.push(`Read from ${fromLabel}: ${site.written.length} files written, ${site.removed.length} starter files removed`, ...site.missing.map((m) => `Not found: ${m}`));
     for (const item of applied.set) wrote.push(`Set ${item}`);
     wrote.push(...applied.hints.map((h) => `Note: ${h}`));
     prompter.note(wrote.join('\n'), 'What was written');

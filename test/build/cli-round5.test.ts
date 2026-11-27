@@ -11,6 +11,7 @@ import { starterProject } from '../support/init-project';
 import { compileBlazonData } from '../../src/core/index.js';
 import { loadConfig } from '../../src/core/config/index.js';
 import { fetchBytes } from '../../src/core/drift/read.js';
+import { TEST_LOOPBACK } from '../support/network.js';
 
 // A fifth outside review found small edges, each one something a person or an agent hits in the first hour.
 
@@ -120,7 +121,7 @@ describe('a fetch that fails', () => {
     const port = (server.address() as net.AddressInfo).port;
     await new Promise((closed) => server.close(closed));
     const url = `http://127.0.0.1:${port}/`;
-    const error = (await fetchBytes(url).then(
+    const error = (await fetchBytes(url, 'page', TEST_LOOPBACK).then(
       () => undefined,
       (e: unknown) => e,
     )) as Error;

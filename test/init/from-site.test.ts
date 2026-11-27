@@ -3,14 +3,19 @@ import http from 'node:http';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { runInit } from '../../src/cli/commands/init.js';
-import { runDrift } from '../../src/cli/commands/drift.js';
+import { runInit as runInitReal } from '../../src/cli/commands/init.js';
+import { runDrift as runDriftReal } from '../../src/cli/commands/drift.js';
 import { cleanTitle } from '../../src/core/init/from-site/index.js';
 import { toHex } from '../../src/core/init/shared/hex.js';
 import { loadConfig } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';
 import { REPO } from '../support/paths.js';
 import { tempDir } from '../support/project';
+import { TEST_LOOPBACK } from '../support/network.js';
+
+// The server below listens on 127.0.0.1, which the fetch refuses: the tests pass a network that allows it
+const runInit: typeof runInitReal = (where, options = {}) => runInitReal(where, { network: TEST_LOOPBACK, ...options });
+const runDrift: typeof runDriftReal = (where, options = {}) => runDriftReal(where, { network: TEST_LOOPBACK, ...options });
 
 // `blazon init --from <url>`: the first colors, fonts and logo come from a live site. No test touches the network:
 // the page and its stylesheet are served from a local server on a free port.
@@ -22,6 +27,7 @@ const SHEET = `
   --color-secondary: #112233;
   --surface-page: #fafafa;
   --space-md: 1rem;
+  --radius-md: 6px;
   --font-body: 'Inter', system-ui, sans-serif;
 }
 body { font-family: var(--font-body); }
@@ -76,7 +82,7 @@ beforeAll(async () => {
     if (req.url === '/named.css') return void res.setHeader('content-type', 'text/css').end(SHEET_NAMED);
     if (req.url === '/site.css') return void res.setHeader('content-type', 'text/css').end(SHEET);
     if (req.url === '/empty') return void res.setHeader('content-type', 'text/html').end('<html><head><title>Empty</title></head><body></body></html>');
-    if (req.url === '/touch.png') return void res.end(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    if (req.url === '/touch.png') return void res.setHeader('content-type', 'image/png').end(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
     res.statusCode = 404;
     res.end('not found');
   });
@@ -93,12 +99,13 @@ const quiet = () => {
 const json = (dir: string, file: string) => JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
 
 describe('reading values', () => {
-  it('converts rgb() to hex and refuses other colors', () => {
+  it('converts rgb() and the other CSS color forms to hex', () => {
     expect(toHex('#ABC')).toEqual({ hex: '#aabbcc', exact: true });
     expect(toHex('rgb(0, 200, 120)')).toEqual({ hex: '#00c878', exact: false });
     expect(toHex('rgba(0 0 0 / 50%)')?.hex).toBe('#00000080');
     expect(toHex('rgba(0, 0, 0, 0.5)')?.hex).toBe('#00000080');
-    expect(toHex('hsl(10, 10%, 10%)')).toBeUndefined();
+    expect(toHex('hsl(10, 10%, 10%)')).toEqual({ hex: '#1c1817', exact: false });
+    expect(toHex('var(--brand)')).toBeUndefined();
   });
 
   it('cuts a tagline from a title', () => {
@@ -171,6 +178,8 @@ describe('blazon init --from', () => {
     // the project still loads, and every token that names a variable matches the site
     const data = await compileBlazonData(await loadConfig(dir), dir);
     expect(data.tokens.items.some((t) => t.blazon.source?.cssVar === '--brand-primary')).toBe(true);
+    // a radius named in a custom property is a token that names it, and drift compares it too
+    expect(json(dir, 'tokens/form.json').radius.md.$extensions['dev.blazon'].source.cssVar).toBe('--radius-md');
     expect(await runDrift(`${base}/`, { cwd: dir })).toBe(0);
   });
 

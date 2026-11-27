@@ -1,4 +1,4 @@
-import { fetchText } from '../../drift/read.js';
+import type { SiteInput } from './types.js';
 
 // What a page's HTML says about the brand: its name, from a meta tag, its web app manifest or its title.
 
@@ -43,14 +43,14 @@ export function pageTitle(html: string): string | undefined {
 }
 
 /** The short name in the page's web app manifest (`<link rel="manifest">`), else its name without a tagline. */
-export async function manifestName(html: string, pageUrl: string): Promise<string | undefined> {
+export async function manifestName(html: string, site: SiteInput): Promise<string | undefined> {
   const tag = (html.match(/<link\b[^>]*>/gi) ?? []).find((l) => attrOf(l, 'rel')?.toLowerCase() === 'manifest');
   const href = tag && attrOf(tag, 'href');
   if (!href) return undefined;
   try {
-    const url = new URL(href, pageUrl);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined;
-    const manifest = JSON.parse(await fetchText(url.href)) as { name?: unknown; short_name?: unknown };
+    const where = site.resolve(href);
+    if (!('ref' in where)) return undefined;
+    const manifest = JSON.parse((await site.read(where.ref, 'manifest')).toString('utf8')) as { name?: unknown; short_name?: unknown };
     const short = typeof manifest.short_name === 'string' ? manifest.short_name.trim() : '';
     const name = typeof manifest.name === 'string' ? cleanTitle(manifest.name) : '';
     return short || name || undefined;

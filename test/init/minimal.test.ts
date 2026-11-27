@@ -3,10 +3,14 @@ import http from 'node:http';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { runInit } from '../../src/cli/commands/init.js';
+import { runInit as runInitReal } from '../../src/cli/commands/init.js';
 import { loadConfig } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';
 import { tempDir } from '../support/project';
+import { TEST_LOOPBACK } from '../support/network.js';
+
+// The server below listens on 127.0.0.1, which the fetch refuses: the tests pass a network that allows it
+const runInit: typeof runInitReal = (where, options = {}) => runInitReal(where, { network: TEST_LOOPBACK, ...options });
 
 // `blazon init --minimal` with the options that edit the files a minimal book does not have: the fonts, the pages, the dark theme and the
 // resolver. Each edit tolerates their absence and leaves a project that compiles with no error.

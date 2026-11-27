@@ -327,7 +327,7 @@ blazon drift https://example.com
 blazon drift ./public/site.css --json
 ```
 
-The argument is a page or a CSS file. For an `http` or `https` address blazon fetches the page, finds each `<link rel="stylesheet" href>` in it and reads those files. A relative `href` is resolved against the page; anything that is not `http` or `https` is skipped. It reads at most 20 stylesheets of at most 5 MB each (the page too), and gives each request 10 seconds. For a file path it reads that file.
+The argument is a page or a CSS file. For an `http` or `https` address blazon fetches the page, finds each `<link rel="stylesheet" href>` in it and reads those files. A relative `href` is resolved against the page; anything that is not `http` or `https` is skipped. It reads at most 20 stylesheets of at most 5 MB each (the page too), and gives each request 10 seconds. Every request is held to the rules in [What blazon fetches](01-getting-started.md#what-blazon-fetches): public addresses only, checked again on each of at most 5 redirects, `text/html` for the page and `text/css` for a stylesheet. For a file path it reads that file.
 
 It prints one line per token that has a `cssVar`, then a summary:
 

@@ -11,7 +11,7 @@ export function applyColors(ctx: Ctx, skipVars?: Set<string>) {
   const { destDir, vars, result, note, review, source, mayChange } = ctx;
   const picks = pickColors(vars).filter((p) => !skipVars?.has(p.cssVar));
   if (picks.length === 0)
-    result.missing.push('no brand color: no custom property named brand, primary, secondary, accent, background, foreground or surface holds a hex or rgb() color');
+    result.missing.push('no brand color: no custom property named brand, primary, secondary, accent, background, foreground or surface holds an opaque CSS color');
   else if (mayChange(rel('tokens', 'colors.json'))) {
     const file = path.join(destDir, 'tokens', 'colors.json');
     const tree = readJson(file);

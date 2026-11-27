@@ -4,6 +4,7 @@ import { inspectLogo, isWebAddress, parseColor, parseDescription, parseFont, par
 import { inspectSite, type SiteFindings } from '../core/init/from-site/index.js';
 import { googleFontsUrl } from '../core/init/shared/google-fonts.js';
 import type { Prompter, Validate } from '../core/init/prompts.js';
+import type { Network } from '../core/drift/fetch.js';
 import { contrastLines, kilobytes, labelNote, stepTitle, swatch, type Look } from './init-ui.js';
 
 // The questions of the guided start, in order. It writes nothing: it returns what the user chose, and `runInit` applies it.
@@ -17,6 +18,8 @@ export interface FlowContext {
   kept?: number;
   /** Reads a site; replaced in tests */
   inspect?: (url: string) => Promise<SiteFindings>;
+  /** Where a fetch may connect: only a test passes one */
+  network?: Network;
 }
 
 export interface Plan {
@@ -145,7 +148,7 @@ export async function runGuided(ctx: FlowContext): Promise<Plan> {
 /** Reads the site with a spinner, shows what was found, and returns the user's selection; undefined to go manual. */
 async function readSite(ctx: FlowContext): Promise<Plan['site'] | undefined> {
   const { prompter: p, look } = ctx;
-  const inspect = ctx.inspect ?? inspectSite;
+  const inspect = ctx.inspect ?? ((url: string) => inspectSite(url, ctx.network));
   for (;;) {
     const url = (
       await p.text({

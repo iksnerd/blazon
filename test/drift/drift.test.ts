@@ -3,13 +3,18 @@ import http from 'node:http';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { runDrift } from '../../src/cli/commands/drift.js';
+import { runDrift as runDriftReal } from '../../src/cli/commands/drift.js';
 import { compareValues, customProperties, normalizeColor, normalizeDimension } from '../../src/core/drift/compare.js';
-import { readCss } from '../../src/core/drift/read.js';
+import { readCss as readCssReal } from '../../src/core/drift/read.js';
 import { loadConfig } from '../../src/core/config/index.js';
 import { compileBlazonData } from '../../src/core/index.js';
 import { checkTokens } from '../../src/core/checker/index.js';
 import { tempDir, tempProject } from '../support/project';
+import { TEST_LOOPBACK } from '../support/network.js';
+
+// The server below listens on 127.0.0.1, which the fetch refuses: the tests pass a network that allows it
+const runDrift: typeof runDriftReal = (where, options = {}) => runDriftReal(where, { network: TEST_LOOPBACK, ...options });
+const readCss = (target: string) => readCssReal(target, TEST_LOOPBACK);
 
 // `blazon drift`: tokens that declare the CSS variable they were read from are compared with the live stylesheet.
 // No test touches the network: a page and its stylesheet are served from a local server on a free port.
@@ -41,8 +46,8 @@ beforeAll(async () => {
   server = http.createServer((req, res) => {
     if (req.url === '/') return void res.setHeader('content-type', 'text/html').end(PAGE);
     if (req.url === '/site.css') return void res.setHeader('content-type', 'text/css').end(SHEET);
-    if (req.url === '/big') return void res.end(Buffer.alloc(5 * 1024 * 1024 + 1, 97));
-    if (req.url === '/broken') return void res.end('<link rel="stylesheet" href="/missing.css">');
+    if (req.url === '/big') return void res.setHeader('content-type', 'text/html').end(Buffer.alloc(5 * 1024 * 1024 + 1, 97));
+    if (req.url === '/broken') return void res.setHeader('content-type', 'text/html').end('<link rel="stylesheet" href="/missing.css">');
     res.statusCode = 404;
     res.end('not found');
   });
