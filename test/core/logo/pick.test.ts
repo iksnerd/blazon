@@ -126,4 +126,17 @@ describe('pickLogo', () => {
     const answer = await pick({ sidecars: { 'blazon-bone': strict, 'blazon-graphite': strict } }, MID);
     expect(refusal(answer)).toMatchObject({ rule: 'contrast', from: MID });
   });
+
+  it("refuses the starter's logo on Signal Orange itself and on what aliases it, with one rule and one reason", async () => {
+    for (const on of ['color.signal.orange', 'interactive.primary']) {
+      const answer = await pick({}, on);
+      expect(refusal(answer), on).toMatchObject({ rule: 'deny' });
+      expect(refusal(answer)!.reason).toContain('The fold of the mark is Signal Orange');
+    }
+    expect(refusal(await pick({}, 'color.signal.orange'))!.from).toBe('color.signal.orange');
+  });
+
+  it('does not forbid the starter logo on Hazard Yellow', async () => {
+    expect(await pick({}, 'color.signal.hazard')).toMatchObject({ asset: 'logos/blazon-graphite' });
+  });
 });
