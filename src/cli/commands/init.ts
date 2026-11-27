@@ -9,6 +9,7 @@ import { clackPrompter, PromptCancelled, type Prompter } from '../../core/init/p
 import { runGuided, type Plan } from '../init-flow.js';
 import { lookFor, type Look } from '../init-ui.js';
 import type { ErrorCode } from '../errors.js';
+import type { Network } from '../../core/drift/fetch.js';
 import { blazonCommand, inDir, shownDir } from '../where.js';
 
 /** The last line of the next steps: the folder, not its name, is what makes a project. */
@@ -97,6 +98,11 @@ export interface InitOptions {
   startDev?: (dir: string) => Promise<void>;
   /** Told what was made, once the starter is in place: the folder, the files written and those that were already there (relative paths) */
   report?: (made: InitReport) => void;
+  /**
+   * Where a fetch may connect. Only a test passes one (to reach the server it started on 127.0.0.1): the command line has no flag for it and
+   * a value that is not a pair of functions is ignored, so a user cannot switch the public-address rule off.
+   */
+  network?: Network;
   /** Told why init ended with a status other than 0, as the code and the sentence `--json` carries */
   failure?: (failure: { code: ErrorCode; message: string }) => void;
 }
@@ -179,7 +185,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   let plan: Plan = { answers };
   if (prompter) {
     try {
-      plan = await runGuided({ prompter, look, dir: destDir, kept: kept.length });
+      plan = await runGuided({ prompter, look, dir: destDir, kept: kept.length, network: options.network });
     } catch (err) {
       if (err instanceof PromptCancelled) {
         prompter.cancel('Stopped. The starter was copied as it is, and nothing else was changed.');
@@ -202,7 +208,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   spin?.start('Writing the brand book');
   if (from !== undefined) {
     try {
-      site = await applyFromSite(destDir, from, created, new Date(), { page: plan.site?.findings.page, skipVars: plan.site?.skipVars });
+      site = await applyFromSite(destDir, from, created, new Date(), { page: plan.site?.findings.page, skipVars: plan.site?.skipVars, network: options.network });
       if (!prompter) {
         console.log(pc.bold(`Read from ${from}:`));
         for (const file of site.written) console.log(`  ${pc.green('✔')} Wrote ${file}`);

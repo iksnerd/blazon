@@ -1,5 +1,6 @@
 import type { SitePage, FromSiteResult } from './types.js';
 import type { Json } from './tree.js';
+import type { Network } from '../../drift/fetch.js';
 
 /** What every part of `applyFromSite` shares: where it writes, what it read, and the findings it adds to. */
 export interface Ctx {
@@ -10,6 +11,8 @@ export interface Ctx {
   /** The project-relative paths `blazon init` made in this run: a file it did not make is never changed */
   created: Set<string>;
   page: SitePage;
+  /** Where a fetch may connect: the public network unless a test passes another */
+  network?: Network;
   /** The custom properties in the page's stylesheets */
   vars: Map<string, string>;
   result: FromSiteResult;

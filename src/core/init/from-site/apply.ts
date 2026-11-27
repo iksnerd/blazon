@@ -17,7 +17,7 @@ import type { Json } from './tree.js';
  */
 export async function applyFromSite(destDir: string, url: string, created: Set<string>, now: Date = new Date(), options: ApplyOptions = {}): Promise<FromSiteResult> {
   const date = now.toISOString().slice(0, 10);
-  const page = options.page ?? (await readPage(url));
+  const page = options.page ?? (await readPage(url, options.network));
   const result: FromSiteResult = { written: [], missing: [], removed: [], repointed: [] };
   const note = `Read from ${url} on ${date}: confirm with the brand owner.`;
   const ctx: Ctx = {
@@ -26,6 +26,7 @@ export async function applyFromSite(destDir: string, url: string, created: Set<s
     date,
     created,
     page,
+    network: options.network,
     vars: customProperties(page.css),
     result,
     note,

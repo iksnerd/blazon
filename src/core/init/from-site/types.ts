@@ -1,4 +1,5 @@
 import type { readPage } from '../../drift/read.js';
+import type { Network } from '../../drift/fetch.js';
 
 export interface FromSiteResult {
   /** Project-relative paths of the files it wrote or changed */
@@ -18,6 +19,8 @@ export interface ApplyOptions {
   page?: SitePage;
   /** Custom properties (`--brand-primary`) the user unticked: their colors are left out */
   skipVars?: Set<string>;
+  /** Where a fetch may connect. Only a test passes one; the command line has no way to */
+  network?: Network;
 }
 
 export interface SiteFindings {

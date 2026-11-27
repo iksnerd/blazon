@@ -6,6 +6,7 @@ import { loadProject } from '../project.js';
 import { compileBlazonData } from '../../core/index.js';
 import { customProperties, driftFinding, type DriftFinding } from '../../core/drift/compare.js';
 import { readCss } from '../../core/drift/read.js';
+import type { Network } from '../../core/drift/fetch.js';
 
 export interface DriftOptions {
   /** The project folder; the current folder by default */
@@ -14,6 +15,8 @@ export interface DriftOptions {
   json?: boolean;
   /** The tokens folder, instead of the one the config names */
   tokens?: string;
+  /** Where a fetch may connect. Only a test passes one; the command line has no flag for it */
+  network?: Network;
 }
 
 /** Compares every token that names a `cssVar` with the live CSS. Returns the exit status: 0 no drift, 1 drift or missing, 2 usage or fetch error. */
@@ -34,7 +37,7 @@ export async function runDrift(target: string | undefined, options: DriftOptions
   try {
     const config = await loadProject(cwd, options.tokens ? { tokensDir: options.tokens } : undefined);
     const data = await compileBlazonData(config, cwd);
-    const css = await readCss(target);
+    const css = await readCss(target, options.network);
     sources = css.sources;
     const vars = customProperties(css.css);
     findings = data.tokens.items.flatMap((item) => {

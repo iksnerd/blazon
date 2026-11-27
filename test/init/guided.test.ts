@@ -3,10 +3,14 @@ import http from 'node:http';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { runInit } from '../../src/cli/commands/init.js';
+import { runInit as runInitReal } from '../../src/cli/commands/init.js';
 import { PLAIN } from '../../src/cli/init-ui.js';
 import { CANCEL, scriptedPrompter } from '../../src/core/init/prompts.js';
 import { tempDir } from '../support/project';
+import { TEST_LOOPBACK } from '../support/network.js';
+
+// The server below listens on 127.0.0.1, which the fetch refuses: the tests pass a network that allows it
+const runInit: typeof runInitReal = (where, options = {}) => runInitReal(where, { network: TEST_LOOPBACK, ...options });
 
 // The guided start, answered by a scripted prompter: no terminal. The website answer reads a local server.
 

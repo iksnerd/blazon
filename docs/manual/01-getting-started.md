@@ -161,7 +161,7 @@ Then run `blazon dev` in that folder. The page shows both colors as cards, and `
 
 `blazon init acme-brand --from https://acme.com` copies the starter as usual, then replaces blazon's colors, fonts and logo with what the company's site shows, so the first `blazon dev` already wears the brand's colors, fonts and logo. It is a starting point: the brand owner has not confirmed any of it.
 
-It reads the page and up to 20 of its stylesheets (5 MB and 10 s each, http and https only, the same limits as `blazon drift`), and writes:
+It reads the page and up to 20 of its stylesheets (5 MB and 10 s each, http and https only, the same limits as `blazon drift`; see [What blazon fetches](#what-blazon-fetches)), and writes:
 
 - **Colors.** The first 40 custom properties whose name has `brand`, `primary`, `secondary`, `accent`, `background`, `foreground` or `surface` in it, when the value is an opaque hex color or `rgb()` (converted to hex). A color with alpha is an overlay and is skipped, and so is a property that holds the text on a color: a name ending in `-foreground` (but not `--foreground` itself), `-on-dark` or `-on-light`. `--brand-primary` becomes the token `color.brand.primary`. The starter's `interactive.primary` then aliases the site's primary, and keeps blazon's orange when the site names none. The site's other brand colors are kept as primitives that nothing aliases: the starter has no secondary or accent role to point at them.
 - **Fonts.** The first family that is not generic in the `font-family` of `body` and of the headings, as `font.family.body` and `font.family.display` (the body family fills both when the headings name none). `font.family.mono` stays blazon's and is marked `needs-review`. A family from a short built-in list of common Google Fonts gets its stylesheet added to `fonts` in `blazon.json`. For any other family the token says in its review note that the stylesheet must be added.
@@ -173,6 +173,19 @@ Each token that came from a stylesheet variable names it in `source.cssVar`, so 
 Then it tidies the starter. A starter color that no token aliases (followed through other aliases) and that no page or `blazon.json` names is deleted: with a site primary, that is blazon's orange and hazard yellow. `text.primary`, `surface.background` and `surface.canvas` move to a site color named for the role (`foreground`, `background`, `card`) and stay as they were without one. The contrast pair for `text.onSignal` follows the site's primary, and the ink on it is graphite, or bone when graphite is under AA (4.5:1) on that color and bone is not, or, when neither reaches it, white or near-black if one does (written as a new `color.base.white` or `color.base.black` token that `text.onSignal` aliases); when none of the four reaches it, the output says so and `blazon check` reports the pair. When a logo was written, blazon's `blazon-graphite` and `blazon-bone` files (`.svg` and `.json`) are deleted, none of the numbers in their sidecars (clear space 24px, minimum size 32px) are carried over: the site logo's sidecar gets a clear space of 0.3 of the artwork's height as a stand-in, no minimum size, and a description that says both are to be set, and `docs/01-principles.md` is rewritten with the site's name, description, address and the date. Each removal and change is printed on its own line.
 
 It never overwrites: it changes only the files `blazon init` created in the same run, and a logo file that already exists is kept. It sends no cookies, runs no script from the site (SVG scripts and event handlers are removed) and never makes up a logo. It prints each file it wrote and each thing it could not find. If the site cannot be fetched, the starter stays as copied, the error is printed and the exit status is 2.
+
+### What blazon fetches
+
+`--from` and `blazon drift <url>` read a stranger's address, so every request is held to the same rules, and a request that breaks one is refused with the reason:
+
+- Only `http` and `https`, and no user name or password in the address. Blazon sends no cookies and no credentials, and runs nothing it reads.
+- The host name is resolved before blazon connects, and every address it resolves to must be public. Refused: `localhost`, loopback (`127.0.0.0/8`, `::1`), private (`10/8`, `172.16/12`, `192.168/16`), shared (`100.64/10`), link-local (`169.254/16`, which holds the cloud metadata address `169.254.169.254`, and `fe80::/10`), unique-local IPv6 (`fc00::/7`), IPv4-mapped IPv6 (`::ffff:a.b.c.d`), multicast and the reserved ranges. A public name that resolves to a private address is refused, and so is an answer that mixes the two.
+- Blazon connects to the address it checked. The name is not resolved a second time for the connection, so a DNS answer that changes in between (DNS rebinding) is never used.
+- A redirect is a new request under the same rules, and at most 5 are followed.
+- Each response is at most 5 MB and the whole read, redirects included, at most 10 seconds.
+- The content type must be what was asked for: `text/html` or `application/xhtml+xml` for the page, `text/css` for a stylesheet, JSON for a web app manifest, an image for a logo or icon. Anything else is refused with the type the server sent.
+
+There is no flag or environment variable that turns these rules off. A site on your own network cannot be read with `--from`.
 
 ## The guided start
 

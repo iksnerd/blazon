@@ -49,7 +49,7 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
     locator = logo.locator;
   } else if (logo?.kind === 'url') {
     try {
-      svg = (await fetchBytes(logo.url)).toString('utf8');
+      svg = (await fetchBytes(logo.url, 'image', ctx.network)).toString('utf8');
       locator = `${logo.locator} (${logo.url})`;
     } catch (err) {
       result.missing.push(`the header logo could not be read: ${err instanceof Error ? err.message : String(err)}`);
@@ -64,7 +64,7 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
     icon = favicon(page.html, url);
     if (icon?.svg) {
       try {
-        svg = (await fetchBytes(icon.url)).toString('utf8');
+        svg = (await fetchBytes(icon.url, 'image', ctx.network)).toString('utf8');
         locator = `${icon.locator} (${icon.url})`;
         if (!/<svg\b/i.test(svg)) svg = undefined;
       } catch (err) {
@@ -99,7 +99,7 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
     } else {
       try {
         const file = `assets/logos/${name}${icon.ext === '.jpeg' ? '.jpg' : icon.ext}`;
-        if (writeAsset(file, await fetchBytes(icon.url))) {
+        if (writeAsset(file, await fetchBytes(icon.url, 'image', ctx.network))) {
           sidecar(file, icon.locator, { title: 'Site icon' });
           logoFiles.single = `./${file}`;
           result.missing.push(`no SVG logo was found: ${file} is the site's raster icon (${icon.url}), not a logo, so replace it with the real one`);
