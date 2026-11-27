@@ -31,9 +31,18 @@ export async function inspectSite(from: string | SiteInput, network?: Network): 
   const name = metaContent(page.html, 'og:site_name') ?? metaContent(page.html, 'application-name') ?? (await manifestName(page.html, site)) ?? pageTitle(page.html);
   const missing: string[] = [];
   missing.push(...(page.notRead ?? []));
-  if (picks.length === 0) missing.push('no brand colors: no custom property named brand, primary, secondary, accent, background, foreground or surface holds a hex or rgb() color');
+  if (picks.length === 0) missing.push('no brand colors: no custom property named brand, primary, secondary, accent, background, foreground or surface holds an opaque CSS color');
   if (fonts.length === 0) missing.push('no font: no body or heading rule names a font-family');
   if (!logo) missing.push('no logo: no SVG in the header and no icon link on the page');
   if (!name) missing.push('no site name: the brand name stays as you typed it');
-  return { page, name, description: metaContent(page.html, 'description'), colors: picks.map((p) => ({ cssVar: p.cssVar, hex: p.hex })), fonts, logo, missing };
+  return {
+    page,
+    name,
+    description: metaContent(page.html, 'description'),
+    themeColor: metaContent(page.html, 'theme-color'),
+    colors: picks.map((p) => ({ cssVar: p.cssVar, hex: p.hex })),
+    fonts,
+    logo,
+    missing,
+  };
 }

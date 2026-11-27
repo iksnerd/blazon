@@ -59,6 +59,8 @@ export interface SiteFindings {
   page: SitePage;
   name?: string;
   description?: string;
+  /** The page's `<meta name="theme-color">`, as written: evidence only, never a token */
+  themeColor?: string;
   colors: { cssVar: string; hex: string }[];
   fonts: { family: string; role: 'body' | 'headings'; stylesheet: boolean }[];
   /** Where the logo would come from, in words; undefined when there is none */

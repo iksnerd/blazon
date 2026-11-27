@@ -145,6 +145,41 @@ export function fontOf(css: string, vars: Map<string, string>, selectors: RegExp
   return found;
 }
 
+export interface WeightPick {
+  weight: number;
+  locator: string;
+}
+
+const WEIGHT_WORDS: Record<string, number> = { normal: 400, bold: 700 };
+
+/**
+ * The `font-weight` of a rule whose selector list holds one of `selectors`: the first rule that names `prefer` (`h1` for the headings), else
+ * the last that matches. A weight is 1 to 1000, `normal` (400) or `bold` (700); `bolder`, `lighter` and a `var()` that is neither are not read.
+ */
+export function weightOf(css: string, vars: Map<string, string>, selectors: RegExp, prefer?: string): WeightPick | undefined {
+  let last: WeightPick | undefined;
+  for (const rule of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+    const parts = rule[1]!.split(',').map((s) => s.trim().toLowerCase());
+    const match = parts.find((s) => selectors.test(s));
+    if (!match) continue;
+    const decl = rule[2]!.match(/(?:^|;)\s*font-weight\s*:\s*([^;]+)/i);
+    if (!decl) continue;
+    let value = decl[1]!
+      .replace(/!important/i, '')
+      .trim()
+      .toLowerCase();
+    const ref = value.match(/^var\(\s*(--[A-Za-z0-9_-]+)\s*(?:,\s*(.+))?\)$/);
+    if (ref) value = (vars.get(ref[1]!) ?? ref[2] ?? '').trim().toLowerCase();
+    const weight = WEIGHT_WORDS[value] ?? (/^\d+(\.\d+)?$/.test(value) ? Number(value) : NaN);
+    if (!(weight >= 1 && weight <= 1000)) continue;
+    const named = prefer !== undefined && parts.includes(prefer);
+    const pick = { weight, locator: `${named ? prefer : match} { font-weight }` };
+    if (named) return pick;
+    last = pick;
+  }
+  return last;
+}
+
 export function fontValue(pick: FontPick): string[] {
   const generic = pick.stack.find((f) => GENERIC_KEYWORDS.has(f.toLowerCase()));
   return [pick.family, (generic ?? 'sans-serif').toLowerCase()];

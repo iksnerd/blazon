@@ -7,6 +7,7 @@ import { pruneTokenDirectives } from './sections/directives.js';
 import { applyFonts } from './sections/fonts.js';
 import { writeIntro } from './sections/intro.js';
 import { applyLogo } from './sections/logo.js';
+import { applyRadius } from './sections/radius.js';
 import { removePlaceholderLogo } from './sections/placeholder.js';
 import type { ApplyOptions, FromSiteResult, SiteInput } from './types.js';
 import type { Json } from './tree.js';
@@ -44,6 +45,7 @@ export async function applyFromSite(destDir: string, from: string | SiteInput, c
   result.missing.push(...(page.notRead ?? []));
   applyColors(ctx, options.skipVars);
   const fonts = applyFonts(ctx);
+  applyRadius(ctx);
   const logoFiles = await applyLogo(ctx);
   const { title, description, configLogo } = await applyConfig(ctx, logoFiles, fonts);
   removePlaceholderLogo(ctx, logoFiles, configLogo);

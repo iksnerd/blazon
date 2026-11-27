@@ -27,6 +27,7 @@ const SHEET = `
   --color-secondary: #112233;
   --surface-page: #fafafa;
   --space-md: 1rem;
+  --radius-md: 6px;
   --font-body: 'Inter', system-ui, sans-serif;
 }
 body { font-family: var(--font-body); }
@@ -98,12 +99,13 @@ const quiet = () => {
 const json = (dir: string, file: string) => JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
 
 describe('reading values', () => {
-  it('converts rgb() to hex and refuses other colors', () => {
+  it('converts rgb() and the other CSS color forms to hex', () => {
     expect(toHex('#ABC')).toEqual({ hex: '#aabbcc', exact: true });
     expect(toHex('rgb(0, 200, 120)')).toEqual({ hex: '#00c878', exact: false });
     expect(toHex('rgba(0 0 0 / 50%)')?.hex).toBe('#00000080');
     expect(toHex('rgba(0, 0, 0, 0.5)')?.hex).toBe('#00000080');
-    expect(toHex('hsl(10, 10%, 10%)')).toBeUndefined();
+    expect(toHex('hsl(10, 10%, 10%)')).toEqual({ hex: '#1c1817', exact: false });
+    expect(toHex('var(--brand)')).toBeUndefined();
   });
 
   it('cuts a tagline from a title', () => {
@@ -176,6 +178,8 @@ describe('blazon init --from', () => {
     // the project still loads, and every token that names a variable matches the site
     const data = await compileBlazonData(await loadConfig(dir), dir);
     expect(data.tokens.items.some((t) => t.blazon.source?.cssVar === '--brand-primary')).toBe(true);
+    // a radius named in a custom property is a token that names it, and drift compares it too
+    expect(json(dir, 'tokens/form.json').radius.md.$extensions['dev.blazon'].source.cssVar).toBe('--radius-md');
     expect(await runDrift(`${base}/`, { cwd: dir })).toBe(0);
   });
 
