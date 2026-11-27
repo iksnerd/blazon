@@ -161,12 +161,37 @@ function select(data: BlazonData, input: SelectInput, plain: boolean): Selection
   const { background, ratioOn, files, lockup } = input;
   const { configured, others } = logoCandidatesOf(data, files);
   const lockupOf = (id: string) => data.assets.logos.find((a) => a.id === id)?.meta?.lockup;
-  const withLockup = (list: Candidate[]) => (lockup === undefined ? list : list.filter((c) => c.asset !== undefined && lockupOf(c.asset) === lockup));
   const colorways: BarColorway[] = data.assets.logos.flatMap((owner) => (owner.meta?.colorways ?? []).map((cw) => ({ ...cw, asset: cw.variant ?? owner.id })));
+  return chooseLogo({ background, items: data.tokens.items, ratioOn, configured, others, colorways, lockupOf, ...(lockup !== undefined && { lockup }), plain });
+}
+
+export interface ChooseInput {
+  background: LogoBackground | undefined;
+  items: readonly LogoRuleItem[];
+  ratioOn: (ink: string) => number | undefined;
+  /** The configured files (`logo.onLight`, `logo.onDark`) as candidates, and the other `logos` assets that state an ink */
+  configured: Candidate[];
+  others: Candidate[];
+  colorways: readonly BarColorway[];
+  /** The lockup of an asset id, and the lockup that is asked for: then the assets of that lockup compete together */
+  lockupOf?: (id: string) => string | undefined;
+  lockup?: string;
+  /** Whether the plain configured files are judged when no declared ink reaches the bar */
+  plain: boolean;
+}
+
+/**
+ * The order itself, on candidates the caller has built: `selectLogo` builds them from core's data, and a plugin that reads brand.json builds them from
+ * what it holds. Declared inks first (the highest ratio, a tie to the configured file), then, when `plain`, the dark-surface file wherever it reaches
+ * the bar, else the light-surface one. With a lockup, the assets of that lockup compete together.
+ */
+export function chooseLogo(input: ChooseInput): Selection {
+  const { background, items, ratioOn, configured, others, colorways, lockupOf, lockup, plain } = input;
+  const withLockup = (list: Candidate[]) => (lockup === undefined ? list : list.filter((c) => c.asset !== undefined && lockupOf?.(c.asset) === lockup));
   const denied: Judged['denied'] = [];
   const weak: string[] = [];
   const judge = (list: Candidate[]): Judged['chosen'] => {
-    const result = judgeLogos({ background, items: data.tokens.items, ratioOn, candidates: list, colorways });
+    const result = judgeLogos({ background, items, ratioOn, candidates: list, colorways });
     denied.push(...result.denied);
     weak.push(...result.weak);
     return result.chosen;
