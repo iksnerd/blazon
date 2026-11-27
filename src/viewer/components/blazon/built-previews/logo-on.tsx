@@ -1,14 +1,12 @@
 import type { BlazonData } from '../../../../types/index.js';
-import { logoOn } from '@/lib/brand';
-import { GRAPHIC_CONTRAST, whiteContrast } from '@/lib/theme/color';
+import { isDarkPaint, logoOn } from '@/lib/brand';
 import { tokenTitle } from '@/components/blazon/token-preview';
 import { TokenPath } from '@/components/blazon/token-path';
 import { Missing, paints } from './shared';
 
-/** WCAG's minimum contrast for graphics: at this or more, the logo made for dark backgrounds reads well. */
 /**
  * The `<!-- blazon:logo-on <path> ... -->` directive: the logo on each color or gradient token. The
- * variant for dark backgrounds wherever white reaches graphic contrast, as on a saturated brand color;
+ * variant for dark backgrounds wherever white reaches the bar (3:1, or the level of a colorway that names the token for it), as on a saturated brand color;
  * the variant for light backgrounds elsewhere.
  */
 export function LogoOn({ data, args }: { data: BlazonData; args: string[] }) {
@@ -19,7 +17,7 @@ export function LogoOn({ data, args }: { data: BlazonData; args: string[] }) {
       {paints(data, args).map((item) => {
         if ('missing' in item) return <Missing key={item.missing}>No token at {item.missing}</Missing>;
         const paint = String(item.value);
-        const dark = (whiteContrast(paint) ?? 0) >= GRAPHIC_CONTRAST;
+        const dark = isDarkPaint(data, paint, item);
         const ink = dark ? '#fff' : '#000';
         const src = logoOn(data, paint, dark, true, item);
         return (

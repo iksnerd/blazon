@@ -3,7 +3,7 @@ import { blackContrast, whiteContrast } from './theme/color';
 import { humanize, parentOf } from './tokens/format';
 import { logoDenialUnder } from '../../core/checker/logo-rules.js';
 import { paintContrast } from '../../core/checker/contrast.js';
-import { logoCandidatesOf, selectInkedLogo, selectLogo, type LogoFiles } from '../../core/logo/judge.js';
+import { darkSurfaceOn, logoCandidatesOf, selectInkedLogo, selectLogo, type LogoFiles } from '../../core/logo/judge.js';
 
 /** Token types shown on the Motion page and on the Strokes & effects page. */
 export const MOTION_TYPES: readonly string[] = ['duration', 'cubicBezier', 'transition'];
@@ -173,6 +173,14 @@ export function logoOn(data: BlazonData, paint: string | undefined, dark: boolea
   // A plain configured file is chosen by `dark`, an input core does not have; only an inked logo is judged by ratio
   const chosen = (lockup === undefined ? selectInkedLogo(data, input) : selectLogo(data, { ...input, lockup })).winner?.file;
   return chosen ?? picked;
+}
+
+/**
+ * Whether a color or gradient token is a surface for the dark-surface logo: white reaches the bar there, which core's `darkSurfaceOn` states (the level of a
+ * colorway that names the token for the `onDark` asset, else 3:1), as `blazon logo --on` holds its plain `onDark` file to.
+ */
+export function isDarkPaint(data: BlazonData, paint: string, background?: TokenItem): boolean {
+  return darkSurfaceOn(data, { background, ratioOn: (ink) => paintContrast(ink, paint) });
 }
 
 /**

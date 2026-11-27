@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ratioOnColor, selectInkedLogo, selectLogo, type LogoFiles } from '../../../src/core/logo/judge.js';
+import { darkSurfaceOn, ratioOnColor, selectInkedLogo, selectLogo, type LogoFiles } from '../../../src/core/logo/judge.js';
 import { parseColor } from '../../../src/core/checker/contrast.js';
 import type { BlazonData, TokenItem } from '../../../src/types/index.js';
 
@@ -148,5 +148,51 @@ describe('selectLogo order', () => {
     const inked = brand({ assets: [{ id: 'logos/acme-ink', ink: '#101010' }] });
     expect(selectInkedLogo(inked, input).winner?.asset).toBe('logos/acme-ink');
     expect(selectLogo(inked, input).winner?.asset).toBe('logos/acme-ink');
+  });
+});
+
+describe('darkSurfaceOn, the dark-surface decision', () => {
+  // On #808080 white is about 3.95:1: it reaches 3:1 but not AA (4.5:1)
+  const raised = (min: 'AA-large' | 'AA'): BlazonData =>
+    ({
+      ...brand({}),
+      assets: {
+        logos: [
+          { id: 'logos/acme-black', meta: {} },
+          { id: 'logos/acme-white', meta: { colorways: [{ name: 'mid', on: 'color.acme.mid', min }] } },
+        ],
+      },
+    }) as unknown as BlazonData;
+  const ask = (data: BlazonData, background: TokenItem) => darkSurfaceOn(data, { background, ratioOn: ratioOnColor(parseColor(String(background.value))!) });
+
+  it('is true where white reaches 3:1 and false where it does not', () => {
+    expect(ask(brand({}), MID)).toBe(true);
+    expect(ask(brand({}), token('color.acme.paper', '#f0f0f0'))).toBe(false);
+  });
+
+  it('holds white to the level of a colorway that names the background for the onDark asset, as selectLogo does', () => {
+    const data = raised('AA');
+    expect(ask(data, MID)).toBe(false);
+    expect(pick(data, MID).winner).toMatchObject({ file: 'black.svg' });
+    const same = raised('AA-large');
+    expect(ask(same, MID)).toBe(true);
+    expect(pick(same, MID).winner).toMatchObject({ file: 'white.svg' });
+  });
+
+  it('ignores a colorway of the onLight asset, and one that names another background', () => {
+    const other = {
+      ...brand({}),
+      assets: {
+        logos: [
+          { id: 'logos/acme-black', meta: { colorways: [{ name: 'mid', on: 'color.acme.mid', min: 'AA' }] } },
+          { id: 'logos/acme-white', meta: { colorways: [{ name: 'night', on: 'color.acme.night', min: 'AA' }] } },
+        ],
+      },
+    } as unknown as BlazonData;
+    expect(ask(other, MID)).toBe(true);
+  });
+
+  it('is false for a background that cannot be measured', () => {
+    expect(darkSurfaceOn(brand({}), { background: MID, ratioOn: () => undefined })).toBe(false);
   });
 });
