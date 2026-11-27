@@ -115,7 +115,17 @@ It then runs the tests the staged paths ask for, and never the whole suite (`npm
 
 Both hooks run the cheap steps first (secret scan, typecheck, lint, format, syntax checks, the whole-tree guards) and run every one of them to the end, so you see all of their errors at once. The test steps come last, and only when every cheap step passed: after a failure the hook prints `tests not run: <steps> failed; fix those first` and exits non-zero. Skipped tests are not recorded as passed, so the next attempt runs them.
 
-Test steps queue on one lock for each repository: a gate that is about to run tests while another gate (another session, another worktree of the checkout) is running its own waits, and says so (`tests: waiting for another gate to finish: pre-push in <worktree>, pid N, running for 4m10s`, again every 30 seconds). Only the test steps wait; format, lint and the other cheap steps run at once, and a tree that already passed takes no lock. The lock is the directory `blazon-hook-test.lock` in the common git folder, with a record of who holds it. A holder that is gone (the process is dead, or its pid now belongs to another process) is taken over, with a notice. After 40 minutes of waiting a gate runs its tests without the lock, so the lock never skips a test (`BLAZON_HOOK_LOCK_WAIT_SECONDS` changes the 2400 seconds). `BLAZON_HOOK_NO_LOCK=1` does not use the lock. A gate that waited prints `waited 3m12s for the test lock` at its end.
+Test steps run in one of a few slots for each repository, shared by every session and worktree of the checkout. The limit is for the CPU: each test run is vitest with four workers, and gates share no build output or port (each tests its own exported snapshot, the test servers listen on port 0, and Chrome has its own limit, below). The number of slots is `BLAZON_HOOK_TEST_SLOTS`, else a quarter of the cores, from 1 to 3 (3 on a 12-core Mac). A `pre-push` full suite takes one slot like a commit does. A gate that finds every slot taken waits its turn in a queue, in the order the gates came, and says who holds each slot, how many gates are ahead and what to look at, again every 30 seconds:
+
+```text
+  – tests: waiting for a test slot: 3 of 3 in use, 1 ahead of this one
+      pre-push in /path/to/worktree, pid 4242, for 4m10s
+      pre-commit in /path/to/other, pid 4300, for 35s
+      pre-commit in /path/to/third, pid 4377, for 12s
+      stuck? the slots are in .git/blazon-hook-test-slots; `ps -o pid,lstart,command -p 4242,4300,4377` shows whether their holders still run. ...
+```
+
+Only the test steps wait; format, lint and the other cheap steps run at once, and a tree that already passed takes no slot. A slot is a directory `slot-<i>` in `blazon-hook-test-slots` in the common git folder, with a record of who holds it, and the queue is its `queue/` folder. A slot or a place in the queue whose process is gone (dead, or its pid now belongs to another process) is freed by the next gate, with a notice, so there is no need to remove one by hand; if you do, check with `ps` first that the pid in its `owner` file is not running. After 40 minutes of waiting a gate runs its tests without a slot, so the wait never skips a test (`BLAZON_HOOK_LOCK_WAIT_SECONDS` changes the 2400 seconds). `BLAZON_HOOK_NO_LOCK=1` takes no slot. A gate that waited prints `waited 3m12s for a test slot` at its end.
 
 A tree that already passed a step is not run through it again: a reset and a second commit, or a push of a tree that `pre-commit` checked. The memory is in `.git/blazon-hook-cache`, shared by every worktree of the repository, and `BLAZON_HOOK_NO_CACHE=1` ignores it. Each step names the tree it ran on, so a tree you change is run again.
 

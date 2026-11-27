@@ -2,13 +2,16 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { execFileSync, spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { BASE, git, hookEnv, repo, stage, write } from '../support/hook-commit';
+import { BASE, HOOKS, git, hookEnv, repo, stage, write } from '../support/hook-commit';
 import * as pushing from '../support/hook-push';
 import { tempDir } from '../support/project';
 
-// Test steps run one gate at a time for each repository, across worktrees and sessions: a lock directory in the common git folder
-// (lock_dir in .githooks/lib.sh). The stub below stands for the suite: it logs its start and end with the time and sleeps. The cheap steps
-// are stubs too, so each hook takes about a second beyond the stub.
+// Test steps run in one of a few slots for each repository, across worktrees and sessions: slot-<i> directories in the common git folder
+// (acquire_test_lock in .githooks/lib.sh), with a queue so that a gate that comes later does not go first. The end-to-end tests below run
+// real commits with one slot (KNOBS); the stub stands for the suite: it logs its start and end with the time and sleeps. The cheap steps
+// are stubs too, so each hook takes about a second beyond the stub. Every repository here is a throwaway one with its own common git
+// folder, so these tests never queue on the slots of the checkout that runs them. The tests of the slots and the queue themselves
+// ("the test slots") call lib.sh directly and wait on files the test writes, not on time.
 
 const STUB = [
   "const fs = require('fs');",
@@ -24,7 +27,7 @@ const manifest = () => {
   return JSON.stringify({ ...base, scripts: { ...base.scripts, typecheck: 'true', lint: 'true', 'test:related': 'node stub.js' } });
 };
 
-const KNOBS = { BLAZON_HOOK_LOCK_POLL_SECONDS: '1', BLAZON_HOOK_LOCK_NOTICE_SECONDS: '2' };
+const KNOBS = { BLAZON_HOOK_LOCK_POLL_SECONDS: '1', BLAZON_HOOK_LOCK_NOTICE_SECONDS: '2', BLAZON_HOOK_TEST_SLOTS: '1' };
 
 const logFile = () => path.join(tempDir('blazon-lock-log-'), 'log');
 const events = (log: string) =>
@@ -43,7 +46,8 @@ const until = async (what: string, test: () => boolean, ms = 30_000) => {
 };
 
 const commonDir = (dir: string) => path.resolve(dir, git(dir, ['rev-parse', '--git-common-dir']).stdout.trim());
-const lockPath = (dir: string) => path.join(commonDir(dir), 'blazon-hook-test.lock');
+const slotsPath = (dir: string) => path.join(commonDir(dir), 'blazon-hook-test-slots');
+const lockPath = (dir: string) => path.join(slotsPath(dir), 'slot-0');
 const ownerPid = (dir: string) => {
   const file = path.join(lockPath(dir), 'owner');
   return fs.existsSync(file) ? Number(/^pid=(\d+)$/m.exec(fs.readFileSync(file, 'utf-8'))?.[1]) : 0;
@@ -107,7 +111,7 @@ const spawnPs = (pid: number) =>
 /** Write a lock record by hand: who holds it, and the start time recorded for that pid. */
 function plantLock(dir: string, pid: number, lstart: string, hook = 'pre-push') {
   const lock = lockPath(dir);
-  fs.mkdirSync(lock);
+  fs.mkdirSync(lock, { recursive: true });
   fs.writeFileSync(path.join(lock, 'owner'), `pid=${pid}\nhook=${hook}\nworktree=/elsewhere/Acme\nstarted=${Math.floor(Date.now() / 1000) - 250}\nlstart=${lstart}\n`);
 }
 const deadPid = () => {
@@ -115,7 +119,7 @@ const deadPid = () => {
   return Number(run.stdout);
 };
 
-describe('the test lock', () => {
+describe('the test slots, end to end', () => {
   it('(a) makes the second gate wait for the first one test steps, and both pass', async () => {
     const { main, other } = twoWorktrees();
     const log = logFile();
@@ -128,13 +132,13 @@ describe('the test lock', () => {
     expect(one.status, one.out).toBe(0);
     expect(two.status, two.out).toBe(0);
     expect(order(log)).toEqual(['start A', 'end A', 'start B', 'end B']);
-    expect(two.out).toMatch(/tests: waiting for another gate to finish: pre-commit in \S+, pid \d+, running for \d+s/);
-    expect(two.out).toMatch(/waited \d+s for the test lock/);
-    expect(one.out).not.toContain('waiting for another gate');
+    expect(two.out).toMatch(/tests: waiting for a test slot: 1 of 1 in use, 0 ahead of this one\n {6}pre-commit in \S+, pid \d+, for \d+s/);
+    expect(two.out).toMatch(/waited \d+s for a test slot/);
+    expect(one.out).not.toContain('waiting for a test slot');
     expect(fs.existsSync(lockPath(main))).toBe(false);
   }, 120_000);
 
-  it('(a2) measures two simultaneous gates, with the lock and without it', async () => {
+  it('(a2) measures two simultaneous gates: without slots, with one, and with two', async () => {
     const wall = async (env: Record<string, string>) => {
       const { main, other } = twoWorktrees();
       const log = logFile();
@@ -151,11 +155,13 @@ describe('the test lock', () => {
       return { seconds: (Date.now() - t0) / 1000, overlap: a.start < b.end && b.start < a.end };
     };
     const without = await wall({ BLAZON_HOOK_NO_LOCK: '1' });
-    const locked = await wall({});
-    console.log(`two gates at once, stub suites of 2s: without the lock ${without.seconds.toFixed(1)}s, with it ${locked.seconds.toFixed(1)}s`);
+    const one = await wall({});
+    const two = await wall({ BLAZON_HOOK_TEST_SLOTS: '2' });
+    console.log(`two gates at once, stub suites of 2s: without slots ${without.seconds.toFixed(1)}s, one slot ${one.seconds.toFixed(1)}s, two slots ${two.seconds.toFixed(1)}s`);
     expect(without.overlap).toBe(true);
-    expect(locked.overlap).toBe(false);
-  }, 180_000);
+    expect(one.overlap).toBe(false);
+    expect(two.overlap).toBe(true);
+  }, 240_000);
 
   it('(b) is released when the holder tests fail, and the waiting gate goes on', async () => {
     const { main, other } = twoWorktrees();
@@ -182,7 +188,7 @@ describe('the test lock', () => {
     const result = await gate.done;
     expect(result.status, result.out).toBe(0);
     expect(result.out).toMatch(/taking it over/);
-    expect(result.out).not.toContain('waiting for another gate');
+    expect(result.out).not.toContain('waiting for a test slot');
     expect(order(log)).toEqual(['start A', 'end A']);
     expect(fs.existsSync(lockPath(main))).toBe(false);
   }, 120_000);
@@ -195,7 +201,7 @@ describe('the test lock', () => {
     const result = await startCommit(main, { STUB_LOG: log, STUB_ID: 'A', STUB_MS: '100' }).done;
     expect(result.status, result.out).toBe(0);
     expect(result.out).toMatch(/taking it over/);
-    expect(result.out).not.toContain('waiting for another gate');
+    expect(result.out).not.toContain('waiting for a test slot');
     expect(order(log)).toEqual(['start A', 'end A']);
   }, 120_000);
 
@@ -219,7 +225,7 @@ describe('the test lock', () => {
     const { main } = twoWorktrees();
     const log = logFile();
     const lock = lockPath(main);
-    fs.mkdirSync(lock);
+    fs.mkdirSync(lock, { recursive: true });
     const old = new Date(Date.now() - 60_000);
     fs.utimesSync(lock, old, old);
     edit(main, 2);
@@ -243,7 +249,7 @@ describe('the test lock', () => {
     const again = await startCommit(main, { STUB_LOG: log, STUB_ID: 'B', STUB_MS: '100', BLAZON_HOOK_LOCK_WAIT_SECONDS: '3' }).done;
     expect(again.status, again.out).toBe(0);
     expect(again.out).toMatch(/tests: related to the staged files \(this tree passed before\)/);
-    expect(again.out).not.toMatch(/waiting|without the lock|test lock/);
+    expect(again.out).not.toMatch(/waiting|without one|test slot/);
     expect(order(log)).toEqual(['start A', 'end A']);
     expect(fs.readFileSync(path.join(lockPath(main), 'owner'), 'utf-8')).toContain(`pid=${pid}`);
   }, 120_000);
@@ -256,7 +262,7 @@ describe('the test lock', () => {
     edit(main, 2);
     const result = await startCommit(main, { STUB_LOG: log, STUB_ID: 'A', STUB_MS: '100', BLAZON_HOOK_NO_LOCK: '1' }).done;
     expect(result.status, result.out).toBe(0);
-    expect(result.out).not.toMatch(/waiting|test lock/);
+    expect(result.out).not.toMatch(/waiting|test slot/);
     expect(order(log)).toEqual(['start A', 'end A']);
     expect(ownerPid(main)).toBe(pid);
   }, 120_000);
@@ -270,8 +276,8 @@ describe('the test lock', () => {
     const t0 = Date.now();
     const result = await startCommit(main, { STUB_LOG: log, STUB_ID: 'A', STUB_MS: '100', BLAZON_HOOK_LOCK_WAIT_SECONDS: '3' }).done;
     expect(result.status, result.out).toBe(0);
-    expect(result.out).toContain('tests: waiting for another gate to finish: pre-push in /elsewhere/Acme');
-    expect(result.out).toMatch(/waited \d+s for the test lock; running the tests without it/);
+    expect(result.out).toMatch(/tests: waiting for a test slot: 1 of 1 in use, 0 ahead of this one\n {6}pre-push in \/elsewhere\/Acme, pid \d+, for 4m\d\ds/);
+    expect(result.out).toMatch(/waited \d+s for a test slot; running the tests without one/);
     expect(order(log)).toEqual(['start A', 'end A']);
     expect(Date.now() - t0).toBeLessThan(60_000);
     expect(ownerPid(main)).toBe(pid);
@@ -288,8 +294,8 @@ describe('the test lock', () => {
     expect(at('✓ typecheck')).toBeGreaterThanOrEqual(0);
     expect(at('✓ lint')).toBeGreaterThanOrEqual(0);
     expect(at('✓ format')).toBeGreaterThanOrEqual(0);
-    expect(at('waiting for another gate')).toBeGreaterThan(at('✓ format'));
-    expect(at('waiting for another gate')).toBeGreaterThan(at('✓ lint'));
+    expect(at('waiting for a test slot')).toBeGreaterThan(at('✓ format'));
+    expect(at('waiting for a test slot')).toBeGreaterThan(at('✓ lint'));
   }, 120_000);
 
   it('(i) a hook that gets SIGTERM releases the lock; one that gets SIGKILL leaves a lock the next gate takes over', async () => {
@@ -321,11 +327,11 @@ describe('the test lock', () => {
     const next = await startCommit(other, { STUB_LOG: log2, STUB_ID: 'D', STUB_MS: '100' }).done;
     expect(next.status, next.out).toBe(0);
     expect(next.out).toMatch(/taking it over/);
-    expect(next.out).not.toContain('waiting for another gate');
+    expect(next.out).not.toContain('waiting for a test slot');
   }, 180_000);
 });
 
-describe('the test lock in pre-push', () => {
+describe('the test slots in pre-push', () => {
   it('is taken by the push, and gives way after the patience', () => {
     const counter = pushing.counterFile();
     const { dir } = pushing.clone(counter);
@@ -333,15 +339,149 @@ describe('the test lock in pre-push', () => {
     pushing.commit(dir, { 'examples/x/blazon.json': '// a brand\n' });
     const common = path.resolve(dir, pushing.git(dir, ['rev-parse', '--git-common-dir']).stdout.trim());
     const holder = aliveProcess();
-    fs.mkdirSync(path.join(common, 'blazon-hook-test.lock'));
-    write(path.join(common, 'blazon-hook-test.lock'), {
+    fs.mkdirSync(path.join(common, 'blazon-hook-test-slots', 'slot-0'), { recursive: true });
+    write(path.join(common, 'blazon-hook-test-slots', 'slot-0'), {
       owner: `pid=${holder}\nhook=pre-commit\nworktree=/elsewhere/Acme\nstarted=${Math.floor(Date.now() / 1000)}\nlstart=${spawnPs(holder)}\n`,
     });
     const result = pushing.git(dir, ['push', 'origin', 'main'], { ...KNOBS, BLAZON_HOOK_LOCK_WAIT_SECONDS: '2' });
     const out = result.stdout + result.stderr;
     expect(result.status, out).toBe(0);
-    expect(out).toContain('tests: waiting for another gate to finish: pre-commit in /elsewhere/Acme');
-    expect(out).toMatch(/running the tests without it/);
+    expect(out).toContain('pre-commit in /elsewhere/Acme, pid');
+    expect(out).toMatch(/running the tests without one/);
     expect(pushing.count(counter)).toBeGreaterThan(0);
+  }, 120_000);
+});
+
+// The slots and the queue, through lib.sh itself: a gate here is `bash` that sources lib.sh in a throwaway repository, takes a slot, logs
+// `start <id>`, and holds the slot until the test writes the file go/<id>. Nothing waits on a clock: each step waits for a line the gate
+// printed or a file it wrote.
+const LIB = path.join(HOOKS, 'lib.sh');
+const GATE = [
+  '. "$LIB"',
+  'trap release_test_lock EXIT',
+  'acquire_test_lock',
+  'echo "start $ID" >> "$LOG"',
+  'while [ ! -e "$GO/$ID" ]; do sleep 0.1; done',
+  'echo "end $ID" >> "$LOG"',
+].join('\n');
+
+function slotRepo() {
+  const dir = tempDir('blazon-slots-');
+  expect(git(dir, ['init', '-q', '-b', 'main']).status).toBe(0);
+  const signals = path.join(dir, '.git', 'go');
+  fs.mkdirSync(signals);
+  return { dir, go: signals, log: path.join(dir, '.git', 'log') };
+}
+type Slots = ReturnType<typeof slotRepo>;
+const lines = (log: string) => (fs.existsSync(log) ? fs.readFileSync(log, 'utf-8').trim().split('\n').filter(Boolean) : []);
+
+function gate(at: Slots, id: string, env: Record<string, string> = {}): Gate {
+  const child = spawn('bash', ['-c', GATE], {
+    cwd: at.dir,
+    env: { ...hookEnv, LIB, ID: id, LOG: at.log, GO: at.go, BLAZON_HOOK_LOCK_POLL_SECONDS: '0.2', BLAZON_HOOK_LOCK_NOTICE_SECONDS: '600', ...env } as NodeJS.ProcessEnv,
+  });
+  children.push(child);
+  let out = '';
+  child.stdout.on('data', (d) => (out += d));
+  child.stderr.on('data', (d) => (out += d));
+  const done = new Promise<{ status: number | null; out: string }>((resolve) => child.on('close', (status) => resolve({ status, out })));
+  return { child, done, out: () => out };
+}
+const go = (at: Slots, id: string) => fs.writeFileSync(path.join(at.go, id), '');
+const started = (at: Slots) => lines(at.log).filter((l) => l.startsWith('start '));
+// the notice is several lines; its last one starts with 'stuck?'
+const waiting = (g: Gate) => g.out().includes('waiting for a test slot') && g.out().includes('stuck?');
+
+describe('the test slots', () => {
+  it('takes the slot count from BLAZON_HOOK_TEST_SLOTS, else a quarter of the cores, between 1 and 3', () => {
+    const bin = tempDir('blazon-getconf-');
+    const slots = (cores: string, override?: string) => {
+      fs.writeFileSync(path.join(bin, 'getconf'), `#!/bin/sh\necho ${cores}\n`, { mode: 0o755 });
+      const env: Record<string, string> = { ...(hookEnv as Record<string, string>), PATH: `${bin}:${process.env.PATH ?? ''}` };
+      if (override !== undefined) env.BLAZON_HOOK_TEST_SLOTS = override;
+      const run = spawnSync('bash', ['-c', `. '${LIB}'; test_slots`], { encoding: 'utf-8', env });
+      expect(run.status, run.stderr).toBe(0);
+      return run.stdout.trim();
+    };
+    expect([slots('12'), slots('16'), slots('64'), slots('8'), slots('4'), slots('2'), slots('1')]).toEqual(['3', '3', '3', '2', '1', '1', '1']);
+    expect(slots('12', '5')).toBe('5');
+    expect(slots('12', '08')).toBe('8');
+    expect([slots('12', '0'), slots('12', 'many'), slots('12', '')]).toEqual(['3', '3', '3']);
+  });
+
+  it('lets as many gates run as there are slots; the next one waits, says who holds them, and goes when one is given back', async () => {
+    const at = slotRepo();
+    const env = { BLAZON_HOOK_TEST_SLOTS: '2' };
+    const a = gate(at, 'A', env);
+    const b = gate(at, 'B', env);
+    await until('two gates to start', () => started(at).length === 2);
+    const c = gate(at, 'C', env);
+    await until('the third gate to wait', () => waiting(c));
+    expect(started(at)).not.toContain('start C');
+    const out = c.out();
+    expect(out).toMatch(/tests: waiting for a test slot: 2 of 2 in use, 0 ahead of this one\n/);
+    // one line for each holder: which hook, which worktree, its pid, and for how long
+    expect(out.match(/^ {6}bash in \S+, pid \d+, for \d+s$/gm)).toHaveLength(2);
+    // and what to do if it looks stuck: where to look, the command that shows whether the holders live, and that a dead one is freed without help
+    expect(out).toContain('blazon-hook-test-slots');
+    expect(out).toMatch(/ps -o pid,lstart,command -p \d+,\d+/);
+    expect(out).toMatch(/freed by the next gate/);
+    expect(out).not.toMatch(/rm -rf/);
+    const first = started(at)[0]!.split(' ')[1]!;
+    go(at, first);
+    await until('the third gate to start', () => started(at).includes('start C'));
+    for (const id of ['A', 'B', 'C']) go(at, id);
+    for (const g of [a, b, c]) expect((await g.done).status).toBe(0);
+    const root = path.join(commonDir(at.dir), 'blazon-hook-test-slots');
+    expect(fs.readdirSync(root)).toEqual(['queue']);
+    expect(fs.readdirSync(path.join(root, 'queue'))).toEqual([]);
+  }, 120_000);
+
+  it('gives a freed slot to the gate that has waited longest, not to one that came later and asks more often', async () => {
+    const at = slotRepo();
+    const one = { BLAZON_HOOK_TEST_SLOTS: '1' };
+    const holder = gate(at, 'H', one);
+    await until('the holder to start', () => started(at).includes('start H'));
+    const early = gate(at, 'EARLY', { ...one, BLAZON_HOOK_LOCK_POLL_SECONDS: '1' });
+    await until('the first waiter to queue', () => waiting(early));
+    const late = gate(at, 'LATE', { ...one, BLAZON_HOOK_LOCK_POLL_SECONDS: '0.1' });
+    await until('the second waiter to queue', () => waiting(late));
+    expect(late.out()).toMatch(/1 of 1 in use, 1 ahead of this one/);
+    go(at, 'H');
+    await until('a waiter to start', () => started(at).length === 2);
+    expect(started(at)).toEqual(['start H', 'start EARLY']);
+    go(at, 'EARLY');
+    await until('the later waiter to start', () => started(at).length === 3);
+    go(at, 'LATE');
+    for (const g of [holder, early, late]) expect((await g.done).status).toBe(0);
+  }, 120_000);
+
+  it('does not count a queued gate whose process is gone, and frees a slot whose holder is gone; a live holder keeps its slot', async () => {
+    const at = slotRepo();
+    const root = path.join(commonDir(at.dir), 'blazon-hook-test-slots');
+    // a ticket left by a gate that was killed, older than any other
+    const dead = deadPid();
+    const ticket = path.join(root, 'queue', `${'0'.repeat(19)}1-${dead}`);
+    fs.mkdirSync(ticket, { recursive: true });
+    fs.writeFileSync(path.join(ticket, 'owner'), `pid=${dead}\nhook=pre-commit\nworktree=/elsewhere/Acme\nstarted=1\nlstart=Mon Jan  1 00:00:00 2001\n`);
+    // slot-0 held by a live process, slot-1 by a dead one
+    const live = aliveProcess();
+    for (const [slot, pid, lstart] of [
+      ['slot-0', live, spawnPs(live)],
+      ['slot-1', dead, 'Mon Jan  1 00:00:00 2001'],
+    ] as const) {
+      fs.mkdirSync(path.join(root, slot));
+      fs.writeFileSync(path.join(root, slot, 'owner'), `pid=${pid}\nhook=pre-push\nworktree=/elsewhere/Acme\nstarted=1\nlstart=${lstart}\n`);
+    }
+    const g = gate(at, 'A', { BLAZON_HOOK_TEST_SLOTS: '2' });
+    await until('the gate to start', () => started(at).includes('start A'));
+    expect(g.out()).toMatch(/the test slot slot-1 was left by pid \d+, which is not running; taking it over/);
+    expect(g.out()).not.toContain('waiting for a test slot');
+    expect(fs.existsSync(ticket)).toBe(false);
+    expect(fs.readFileSync(path.join(root, 'slot-0', 'owner'), 'utf-8')).toContain(`pid=${live}`);
+    expect(fs.readFileSync(path.join(root, 'slot-1', 'owner'), 'utf-8')).toContain(`pid=${g.child.pid}`);
+    go(at, 'A');
+    expect((await g.done).status).toBe(0);
+    expect(fs.readFileSync(path.join(root, 'slot-0', 'owner'), 'utf-8')).toContain(`pid=${live}`);
   }, 120_000);
 });

@@ -20,6 +20,7 @@ const {
   BLAZON_HOOK_LOCK_WAIT_SECONDS: _wait,
   BLAZON_HOOK_LOCK_POLL_SECONDS: _poll,
   BLAZON_HOOK_LOCK_NOTICE_SECONDS: _notice,
+  BLAZON_HOOK_TEST_SLOTS: _slots,
   ...inherited
 } = process.env;
 export const git = (cwd: string, args: string[], env: Record<string, string> = {}) =>

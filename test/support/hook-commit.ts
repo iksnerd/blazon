@@ -57,6 +57,7 @@ const {
   BLAZON_HOOK_LOCK_WAIT_SECONDS: _wait,
   BLAZON_HOOK_LOCK_POLL_SECONDS: _poll,
   BLAZON_HOOK_LOCK_NOTICE_SECONDS: _notice,
+  BLAZON_HOOK_TEST_SLOTS: _slots,
   ...inherited
 } = process.env;
 /** The environment a throwaway repo's hook runs in: this process's, without the knobs of the hook being run. */

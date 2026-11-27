@@ -17,9 +17,10 @@
 #   otherwise           only the suites those files ask for, on the pushed tree, and always the whole-tree guards (no private name
 #                       in any tracked file, the layers of src/); the whole suite holds them already
 #
-# Test lock: the test steps (not the cheap ones) run one gate at a time for each repository, across worktrees and sessions, behind a lock
-# directory in the common git folder (acquire_test_lock in lib.sh). A gate that waits says who holds it; a holder that is gone is taken
-# over; after BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) it runs without the lock, never skipping a test. BLAZON_HOOK_NO_LOCK=1 does not use it.
+# Test slots: the test steps (not the cheap ones) run in one of a few slots for each repository, across worktrees and sessions
+# (acquire_test_lock in lib.sh). The whole suite takes one slot like a commit's tests. Gates that wait queue in the order they came and
+# say who holds the slots; a holder that is gone is taken over; after BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) a gate runs without a slot,
+# never skipping a test. BLAZON_HOOK_NO_LOCK=1 takes none.
 #
 # Install:   npm run hooks   (runs `git config core.hooksPath .githooks`; not a prepare script, so the published package carries none)
 # Bypass:    git push --no-verify
