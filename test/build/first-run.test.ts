@@ -107,6 +107,9 @@ describe('blazon init output', () => {
     expect(out).toMatch(new RegExp(`2\\. Run\\s+blazon dev ${literal(dir)}`));
     expect(out).toContain(`3. Replace blazon's artwork in ${dir}/assets/ and the text in ${dir}/docs/`);
     expect(out).toMatch(new RegExp(`4\\. Run\\s+blazon check ${literal(dir)}`));
+    // The last line says what the project is, since the folder name does not matter
+    expect(out).toContain('This folder is your project: the one holding blazon.json. Run blazon here, or give its path.');
+    expect(out.trimEnd().split('\n').at(-1)!.trim()).toBe('This folder is your project: the one holding blazon.json. Run blazon here, or give its path.');
     expect(out).not.toMatch(/The manual:|vercel\.app/);
   });
 });

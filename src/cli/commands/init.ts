@@ -11,6 +11,9 @@ import { lookFor, type Look } from '../init-ui.js';
 import type { ErrorCode } from '../errors.js';
 import { blazonCommand, inDir, shownDir } from '../where.js';
 
+/** The last line of the next steps: the folder, not its name, is what makes a project. */
+const PROJECT_LINE = 'This folder is your project: the one holding blazon.json. Run blazon here, or give its path.';
+
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
 /** What was written under one top-level folder, in words: its files, or its pages, or the folders the files sit in. */
@@ -262,7 +265,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     for (const item of applied.set) wrote.push(`Set ${item}`);
     wrote.push(...applied.hints.map((h) => `Note: ${h}`));
     prompter.note(wrote.join('\n'), 'What was written');
-    if (code === 0) prompter.note(nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n'), 'Next steps');
+    if (code === 0) prompter.note([...nextSteps.map((s, i) => `${i + 1}. ${s}`), '', PROJECT_LINE].join('\n'), 'Next steps');
     let dev: boolean;
     try {
       dev = options.dev ?? (await prompter.confirm({ message: 'Start the dev server now?', initialValue: false }));
@@ -282,6 +285,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     console.log(pc.bold('Next steps:'));
     console.log(`  1. ${colorStep}`);
     nextSteps.forEach((step, i) => console.log(`  ${i + 2}. ${step}`));
+    console.log(`\n  ${PROJECT_LINE}`);
   }
   console.log();
   if (options.dev) await (options.startDev ?? startDev)(destDir);

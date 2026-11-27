@@ -15,7 +15,13 @@ npx blazon init my-brand
 npx blazon dev my-brand
 ```
 
+A project is any folder that holds `blazon.json`, with `tokens/` beside it; the folder name does not matter.
+
 After the install, `npx blazon` runs the installed program, and so does `./node_modules/.bin/blazon`. To run it once without installing, write `npx @iksnerd/blazon <command>`. The rest of this manual writes `blazon` for either. If port 3000 is busy, the dev server takes the next free port and prints it; `--strict-port` exits 2 instead.
+
+## Former names
+
+Blazon was called folio before it was renamed. A `<!-- folio: -->` directive in a page and a `dev.folio` extension on a token are ignored, and `blazon check` warns about each (`directive-deprecated` and `token-extension-deprecated`, see [chapter 3](03-checks.md)). Rename them to `blazon:` and `dev.blazon`.
 
 ## Install from a clone
 
@@ -88,6 +94,8 @@ Next steps:
   3. Replace blazon's artwork in acme-brand/assets/ and the text in acme-brand/docs/
   4. Run blazon check acme-brand to see what is left
   5. Point a coding agent at acme-brand/AGENTS.md: it is the guide for editing this brand
+
+  This folder is your project: the one holding blazon.json. Run blazon here, or give its path.
 ```
 
 The list names every top-level folder and file `init` wrote. `.gitignore` keeps the build output (`dist/`) out of git: a folder that has one gets the line added at the end, once, and nothing else in it changes. Each step works from the folder you ran `blazon init` in. With `--color`, the first step says the primary color is set and the rest of the palette is still blazon's.
