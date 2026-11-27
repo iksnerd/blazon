@@ -17,6 +17,8 @@ export interface SitePage {
   css: string;
   /** Where each stylesheet came from: its URL, or its path in a saved folder */
   sources: string[];
+  /** Each stylesheet's own text, in the order of `sources`, for the record of where a value came from */
+  sheets?: { source: string; css: string }[];
   /** Stylesheets that were not read, and why (a URL in a saved folder, a path outside it) */
   notRead?: string[];
 }

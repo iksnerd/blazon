@@ -8,6 +8,7 @@ import { applyFonts } from './sections/fonts.js';
 import { writeIntro } from './sections/intro.js';
 import { applyLogo } from './sections/logo.js';
 import { applyRadius } from './sections/radius.js';
+import { writeProof } from './sections/proof.js';
 import { removePlaceholderLogo } from './sections/placeholder.js';
 import type { ApplyOptions, FromSiteResult, SiteInput } from './types.js';
 import type { Json } from './tree.js';
@@ -22,7 +23,8 @@ export async function applyFromSite(destDir: string, from: string | SiteInput, c
   const url = site.label;
   const page = options.page ?? (await site.page());
   const result: FromSiteResult = { written: [], missing: [], removed: [], repointed: [] };
-  const note = `Read from ${url} on ${date}: confirm with the brand owner.`;
+  // A person confirms each value with the brand owner and records it the way every approval is recorded (manual chapter 2, `review`)
+  const note = `Read from ${url} on ${date}. A person confirms it with the brand owner. Then record the approval in this review: status ok, by (who) and at (the date). blazon approvals prints the fingerprint for value.`;
   const ctx: Ctx = {
     destDir,
     url,
@@ -51,5 +53,6 @@ export async function applyFromSite(destDir: string, from: string | SiteInput, c
   removePlaceholderLogo(ctx, logoFiles, configLogo);
   writeIntro(ctx, title, description);
   pruneTokenDirectives(ctx);
+  writeProof(ctx, options.skipVars);
   return result;
 }

@@ -71,7 +71,7 @@ export function readSavedPage(folder: string, page: string): SitePage {
       queue.push({ href: target, from: where.file, via: where.file });
     }
   }
-  return { html, css: sheets.join('\n'), sources, notRead };
+  return { html, css: sheets.join('\n'), sources, sheets: sources.map((source, i) => ({ source, css: sheets[i]! })), notRead };
 }
 
 /** A slug for logo file names: the folder's name, else `site`. */

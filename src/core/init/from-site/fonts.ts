@@ -125,7 +125,11 @@ export interface FontPick {
 export function fontOf(css: string, vars: Map<string, string>, selectors: RegExp): FontPick | undefined {
   let found: FontPick | undefined;
   for (const rule of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
-    const parts = rule[1]!.split(',').map((s) => s.trim().toLowerCase());
+    const parts = rule[1]!
+      .split(';')
+      .pop()!
+      .split(',')
+      .map((s) => s.trim().toLowerCase());
     const match = parts.find((s) => selectors.test(s));
     if (!match) continue;
     const decl = rule[2]!.match(/(?:^|;)\s*font-family\s*:\s*([^;]+)/i);
@@ -159,7 +163,11 @@ const WEIGHT_WORDS: Record<string, number> = { normal: 400, bold: 700 };
 export function weightOf(css: string, vars: Map<string, string>, selectors: RegExp, prefer?: string): WeightPick | undefined {
   let last: WeightPick | undefined;
   for (const rule of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
-    const parts = rule[1]!.split(',').map((s) => s.trim().toLowerCase());
+    const parts = rule[1]!
+      .split(';')
+      .pop()!
+      .split(',')
+      .map((s) => s.trim().toLowerCase());
     const match = parts.find((s) => selectors.test(s));
     if (!match) continue;
     const decl = rule[2]!.match(/(?:^|;)\s*font-weight\s*:\s*([^;]+)/i);

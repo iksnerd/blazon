@@ -73,10 +73,10 @@ export async function readCss(target: string, network?: Network): Promise<CssSou
 }
 
 /** A page and the CSS of the stylesheets it links (at most 20). Only http(s) addresses are read. */
-export async function readPage(url: string, network?: Network): Promise<{ html: string; css: string; sources: string[] }> {
+export async function readPage(url: string, network?: Network): Promise<{ html: string; css: string; sources: string[]; sheets: { source: string; css: string }[] }> {
   if (!/^https?:\/\//i.test(url)) throw new Error(`${url} is not an http(s) address`);
   const html = await fetchText(url, 'page', network);
   const sources = stylesheetLinks(html, url).slice(0, MAX_STYLESHEETS);
   const sheets = await Promise.all(sources.map((link) => fetchText(link, 'stylesheet', network)));
-  return { html, css: sheets.join('\n'), sources };
+  return { html, css: sheets.join('\n'), sources, sheets: sources.map((source, i) => ({ source, css: sheets[i]! })) };
 }
