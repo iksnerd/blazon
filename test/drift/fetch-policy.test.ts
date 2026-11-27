@@ -3,7 +3,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import zlib from 'node:zlib';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { refusedAddress, safeFetch, type Network } from '../../src/core/drift/fetch.js';
+import { redirectRefusal, refusedAddress, safeFetch, type Network } from '../../src/core/drift/fetch.js';
 import { readPage } from '../../src/core/drift/read.js';
 import { stubNetwork } from '../support/network.js';
 
@@ -171,6 +171,15 @@ describe('redirects', () => {
     await expect(safeFetch(`http://acme.test:${port}/to-name`, 'page', net())).rejects.toThrow(/internal\.acme\.test resolves to 192\.168\.0\.10/);
     await expect(safeFetch(`http://acme.test:${port}/to-metadata`, 'page', net())).rejects.toThrow(/metadata/);
     await expect(safeFetch(`http://acme.test:${port}/to-file`, 'page', net())).rejects.toThrow(/only http and https/);
+  });
+
+  it('refuses a redirect from https to http, and takes one that keeps or raises the scheme', () => {
+    // No test serves TLS: the decision is the function safeFetch calls on every redirect, tested on its own
+    expect(redirectRefusal(new URL('https://acme.test/a'), new URL('http://acme.test/b'))).toMatch(/from https to http.*downgrade/);
+    expect(redirectRefusal(new URL('https://acme.test/a'), new URL('HTTP://cdn.acme.test:80/b'))).toMatch(/downgrade/);
+    expect(redirectRefusal(new URL('https://acme.test/a'), new URL('https://cdn.acme.test/b'))).toBeUndefined();
+    expect(redirectRefusal(new URL('http://acme.test/a'), new URL('https://acme.test/b'))).toBeUndefined();
+    expect(redirectRefusal(new URL('http://acme.test/a'), new URL('http://acme.test/b'))).toBeUndefined();
   });
 
   it('sends no cookie or credentials, even after a redirect sets one', async () => {

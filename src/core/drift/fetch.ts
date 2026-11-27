@@ -13,7 +13,7 @@ import zlib from 'node:zlib';
 //   `localhost`;
 // - the connection goes to the address that was checked: the request's `lookup` returns it, so the name is not resolved a second time and a
 //   DNS answer that changes between the check and the connection (rebinding) is never used;
-// - a redirect is a new request held to the same checks, at most 5 of them;
+// - a redirect is a new request held to the same checks, at most 5 of them, and never from https to http;
 // - the body is at most 5 MB (after decompression) and the whole read, redirects included, at most 10 s;
 // - the content type must be what was asked for: an HTML page, a stylesheet, a manifest or an image;
 // - no cookies, no credentials and no scripts: the bytes are read as text or as a file, never run.
@@ -162,6 +162,12 @@ export const networkOf = (given: unknown): Network =>
     ? (given as Network)
     : PUBLIC_NETWORK;
 
+/** Why a redirect may not be followed, in words; undefined when it may. One from https to http would send the rest of the read in clear text. */
+export function redirectRefusal(from: URL, to: URL): string | undefined {
+  if (from.protocol === 'https:' && to.protocol === 'http:') return `it redirects from https to http (${to.href}), and blazon does not downgrade a read to clear text`;
+  return undefined;
+}
+
 /** A fetch blazon would not make, with the reason. */
 export class FetchRefused extends Error {
   override name = 'FetchRefused';
@@ -284,11 +290,15 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
     if (hop.status >= 300 && hop.status < 400 && location) {
       hop.body.destroy();
       if (redirects >= MAX_REDIRECTS) throw new FetchRefused(`refused ${first}: more than ${MAX_REDIRECTS} redirects`);
+      let next: URL;
       try {
-        url = new URL(location, url);
+        next = new URL(location, url);
       } catch {
         throw new FetchRefused(`refused ${label(url)}: it redirects to "${location}", which is not a web address`);
       }
+      const downgrade = redirectRefusal(url, next);
+      if (downgrade) throw new FetchRefused(`refused ${label(url)}: ${downgrade}`);
+      url = next;
       continue;
     }
     if (hop.status < 200 || hop.status >= 300) {
