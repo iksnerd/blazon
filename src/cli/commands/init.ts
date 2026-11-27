@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import pc from '../../core/colors.js';
 import { copyStarter, ensureBuildIgnored, getTemplateDir } from '../../core/starter.js';
-import { applyFromSite, savedSite, type FromSiteResult, type SiteInput } from '../../core/init/from-site/index.js';
+import { applyFromSite, savedSite, webSite, type FromSiteResult, type SiteInput, type SitePage } from '../../core/init/from-site/index.js';
 import { applyAnswers, parseColor, parseDescription, parseFont, parseLogo, parseName, type Answers } from '../../core/init/answers.js';
 import { readJson, writeJson } from '../../core/init/vocabulary.js';
 import { clackPrompter, PromptCancelled, type Prompter } from '../../core/init/prompts.js';
@@ -162,6 +162,20 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     }
     answers[key] = parsed.value;
   }
+  // The page and its stylesheets are read before anything is copied, as a saved folder is: a page that cannot be read (refused by the
+  // fetch policy, an error status, no answer) leaves nothing behind. What is missing once the page is read is a note further down.
+  let page: SitePage | undefined;
+  if (options.from !== undefined) {
+    try {
+      page = await webSite(options.from, options.network).page();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(pc.red(`blazon init: ${message}`));
+      console.error(pc.dim('  Nothing was written.\n'));
+      options.failure?.({ code: 'site-unreadable', message });
+      return 2;
+    }
+  }
   const destDir = path.resolve(process.cwd(), targetDir);
   const templateDir = getTemplateDir();
   if (!fs.existsSync(templateDir)) throw new Error(`Template directory not found at ${templateDir}`);
@@ -228,7 +242,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   spin?.start('Writing the brand book');
   if (from !== undefined) {
     try {
-      site = await applyFromSite(destDir, from, created, new Date(), { page: plan.site?.findings.page, skipVars: plan.site?.skipVars, network: options.network });
+      site = await applyFromSite(destDir, from, created, new Date(), { page: plan.site?.findings.page ?? page, skipVars: plan.site?.skipVars, network: options.network });
       if (!prompter) {
         console.log(pc.bold(`Read from ${fromLabel}:`));
         for (const file of site.written) console.log(`  ${pc.green('✔')} Wrote ${file}`);

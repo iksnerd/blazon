@@ -207,13 +207,12 @@ describe('blazon init --from', () => {
     expect(log.mock.calls.flat().join('\n')).toMatch(/raster icon/);
   });
 
-  it('exits 2 and leaves the starter copy when the site cannot be read', async () => {
+  // Each reason a page cannot be read, and what is still a note once it is: test/init/from-site-refused.test.ts
+  it('exits 2 and writes nothing when the page cannot be read', async () => {
     quiet();
     const dir = path.join(tempDir(), 'x');
     expect(await runInit(dir, { from: `${base}/missing` })).toBe(2);
-    expect(fs.existsSync(path.join(dir, 'tokens/colors.json'))).toBe(true);
-    expect(json(dir, 'tokens/colors.json').color.signal.orange.$value).toBe('#FF5A1F');
-    expect(fs.existsSync(path.join(dir, 'assets/logos/site.svg'))).toBe(false);
+    expect(fs.existsSync(dir)).toBe(false);
   });
 
   it('says nothing was read when the site gives no color, font or logo, and tells the user to add a logo', async () => {
@@ -238,14 +237,14 @@ describe('blazon init --from', () => {
     expect(intro).toMatch(/The fonts and logo were not found, so they are still blazon's own starter: replace them/);
   });
 
-  it('prints no next steps after a site that could not be read, and says how to start from it', async () => {
+  it('prints no next steps after a site that could not be read, and says nothing was written', async () => {
     quiet();
     const err = vi.mocked(console.error);
     const log = vi.mocked(console.log);
     const dir = path.join(tempDir(), 'u');
     expect(await runInit(dir, { from: `${base}/missing` })).toBe(2);
     expect(log.mock.calls.flat().join('\n')).not.toContain('Next steps');
-    expect(err.mock.calls.flat().join('\n')).toMatch(/run blazon init again with --from in a new folder/);
+    expect(err.mock.calls.flat().join('\n')).toMatch(/Nothing was written/);
   });
 
   it('refuses an address that is not http(s) before writing anything', async () => {
