@@ -6,6 +6,21 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.10.1 (2026-11-27)
+
+### Fixed
+
+- `blazon init --from <url>` reads the page and its stylesheets before it copies
+  anything. A page the fetch rules refuse (a private address, a scheme, a redirect,
+  a content type, the size or time limit, a body that ends early), or one that
+  answers with an error or not at all, now leaves nothing behind and exits 2 with
+  the reason, as `--from-dir` does. Before, the starter was already copied.
+- The shipped plugins that draw in a browser no longer let Chrome connect to a remote host. A brand's CSS, font or SVG that named a remote
+  address, a private one such as 169.254.169.254 included, made blazon.brand-deck and blazon.print-book request it from your machine. Now the
+  page loads only what the plugin serves, plus, for blazon.print-book and blazon.social-cards, a stylesheet, font or image that blazon fetches
+  under the same address policy as `init --from`, so a brand's Google Fonts keep working. Every refused or failed origin is a `network-blocked`
+  warning.
+
 ## 0.10.0 (2026-11-27)
 
 ### Added
