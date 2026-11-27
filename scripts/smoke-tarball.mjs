@@ -2,13 +2,31 @@
 // would run first. It proves the package works from its own files, not from this checkout. The release job runs it on the tarball
 // it is about to attach (ci.yml); run it by hand the same way:
 //   npm pack && node scripts/smoke-tarball.mjs iksnerd-blazon-<version>.tgz
-// Nothing here reads the repository but test/first-run/expected.json (what a fresh project's check may report): the tarball and a temporary folder are all else it uses. blazon refuses to run a plugin that has a
+// Nothing here reads the repository but test/first-run/expected.json and expected-minimal.json (what a fresh project's check may report): the tarball and a temporary folder are all else it uses. blazon refuses to run a plugin that has a
 // folder others can write above it, so on a machine where the system temp folder is one, set BLAZON_SMOKE_DIR to a folder under home.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { firstRunProblems } from './first-run-expectation.mjs';
+
+// `blazon init --minimal` ships twelve files; nothing here may add or lose one without this list changing on purpose
+const MINIMAL_FILES = [
+  '.gitignore',
+  'assets/logos/blazon-bone.json',
+  'assets/logos/blazon-bone.svg',
+  'assets/logos/blazon-graphite.json',
+  'assets/logos/blazon-graphite.svg',
+  'assets/logos/blazon-mark.json',
+  'assets/logos/blazon-mark.svg',
+  'blazon.json',
+  'tokens/colors.json',
+  'tokens/form.json',
+  'tokens/spacing.json',
+  'tokens/typography.json',
+];
+const filesUnder = (dir, prefix = '') =>
+  fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? filesUnder(path.join(dir, e.name), `${prefix}${e.name}/`) : [`${prefix}${e.name}`]));
 
 const tarball = process.argv[2] ? path.resolve(process.argv[2]) : undefined;
 if (!tarball || !fs.existsSync(tarball)) {
@@ -120,6 +138,30 @@ try {
     throw new Error('first run');
   }
   step('blazon build', blazon, ['build', 'brand']);
+  // The smallest brand, from the packed starter: its files, a first-run check judged against its own file, and a build with its plugins
+  step('blazon init --minimal', blazon, ['init', 'brand-min', '--minimal', '--yes']);
+  const minimalFiles = filesUnder(path.join(work, 'brand-min')).sort();
+  if (JSON.stringify(minimalFiles) !== JSON.stringify(MINIMAL_FILES)) {
+    failed = true;
+    console.error(`FAIL blazon init --minimal wrote ${JSON.stringify(minimalFiles)}, expected ${JSON.stringify(MINIMAL_FILES)}`);
+    throw new Error('init --minimal');
+  }
+  const freshMinimal = step('blazon check --json (minimal)', blazon, ['check', 'brand-min', '--json']);
+  const expectedMinimal = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'test', 'first-run', 'expected-minimal.json'), 'utf-8'));
+  const minimalDrift = firstRunProblems(JSON.parse(freshMinimal.stdout), expectedMinimal);
+  if (minimalDrift.length > 0) {
+    failed = true;
+    console.error(`FAIL the packed minimal brand's first run differs from test/first-run/expected-minimal.json:\n${minimalDrift.map((line) => `  ${line}`).join('\n')}`);
+    throw new Error('first run (minimal)');
+  }
+  step('blazon build (minimal)', blazon, ['build', 'brand-min']);
+  for (const file of ['theme.css', 'blazon.tailwind/tailwind.css', 'blazon.shadcn/shadcn.css']) {
+    if (!fs.existsSync(path.join(work, 'brand-min', 'dist', 'tokens', file))) {
+      failed = true;
+      console.error(`FAIL the minimal brand's build wrote no dist/tokens/${file}`);
+      throw new Error('build (minimal)');
+    }
+  }
   const name = 'blazon.copy';
   step(`blazon plugin check --core (${name})`, blazon, ['plugin', 'check', path.join(programs, name, 'bin', `blazon-${name}.🔌`), '--core']);
   step('blazon doctor', blazon, ['doctor'], { cwd: path.join(work, 'brand') });

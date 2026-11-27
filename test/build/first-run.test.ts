@@ -8,6 +8,7 @@ import { starterProject } from '../support/init-project';
 import { literal, starterFacts } from '../support/starter-facts';
 import { firstRunProblems } from '../../scripts/first-run-expectation.mjs';
 import expected from '../first-run/expected.json';
+import expectedMinimal from '../first-run/expected-minimal.json';
 import { runInit } from '../../src/cli/commands/init.js';
 
 // What a new user sees: `blazon init`, then `blazon check` on the starter. The findings stay one for each file in the
@@ -80,6 +81,65 @@ describe('blazon check on the starter', () => {
   }, 60_000);
 });
 
+describe('blazon init --minimal', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const files = (dir: string): string[] =>
+    fs
+      .readdirSync(dir, { withFileTypes: true, recursive: true })
+      .filter((e) => e.isFile())
+      .map((e) => path.relative(dir, path.join(e.parentPath, e.name)).split(path.sep).join('/'))
+      .sort();
+
+  it('writes the 12 files of the smallest brand, and no pages, fonts, resolver, dark theme or agent guide', async () => {
+    const root = await starterProject({ plugins: 'starter', minimal: true });
+    expect(files(root)).toEqual([
+      '.gitignore',
+      'assets/logos/blazon-bone.json',
+      'assets/logos/blazon-bone.svg',
+      'assets/logos/blazon-graphite.json',
+      'assets/logos/blazon-graphite.svg',
+      'assets/logos/blazon-mark.json',
+      'assets/logos/blazon-mark.svg',
+      'blazon.json',
+      'tokens/colors.json',
+      'tokens/form.json',
+      'tokens/spacing.json',
+      'tokens/typography.json',
+    ]);
+    const config = JSON.parse(fs.readFileSync(path.join(root, 'blazon.json'), 'utf-8'));
+    expect(config.sections).toEqual([]);
+    expect(config.fonts).toBeUndefined();
+    expect(config.resolver).toBeUndefined();
+    expect(config.plugins.map((p: { name: string }) => p.name)).toEqual(['blazon.copy', 'blazon.tailwind', 'blazon.shadcn']);
+  });
+
+  it('reports only what test/first-run/expected-minimal.json allows, and builds with its plugins', async () => {
+    const root = await starterProject({ plugins: 'starter', minimal: true });
+    const result = blazon('check', root, '--json');
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(firstRunProblems(JSON.parse(result.stdout), expectedMinimal)).toEqual([]);
+    const built = blazon('build', root);
+    expect(built.status, built.stdout + built.stderr).toBe(0);
+    for (const file of ['theme.css', 'tokens.json', 'blazon.tailwind/tailwind.css', 'blazon.shadcn/shadcn.css'])
+      expect(fs.existsSync(path.join(root, 'dist/tokens', file)), file).toBe(true);
+  }, 120_000);
+
+  it('says what it made in words that are true: no pages, no agent guide, a next step that names no docs folder', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const dir = tempDir('blazon-init-');
+    await runInit(dir, { minimal: true });
+    const out = log.mock.calls.map((c) => c.join(' ')).join('\n');
+    expect(out).toContain('Created tokens/ (4 files: colors.json, form.json, spacing.json, typography.json)');
+    expect(out).toContain('Created assets/ (6 files in 1 folder: logos)');
+    expect(out).toContain('Created blazon.json');
+    expect(out).toContain('Created .gitignore (dist/)');
+    expect(out).not.toMatch(/Created (docs|fonts)\/|AGENTS\.md|CLAUDE\.md|blazon\.resolver|pages/);
+    expect(out).toContain(`Replace blazon's logo in ${dir}/assets/logos/`);
+    expect(out).toContain('This folder is your project');
+  });
+});
+
 describe('blazon init output', () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -107,6 +167,9 @@ describe('blazon init output', () => {
     expect(out).toMatch(new RegExp(`2\\. Run\\s+blazon dev ${literal(dir)}`));
     expect(out).toContain(`3. Replace blazon's artwork in ${dir}/assets/ and the text in ${dir}/docs/`);
     expect(out).toMatch(new RegExp(`4\\. Run\\s+blazon check ${literal(dir)}`));
+    // The last line says what the project is, since the folder name does not matter
+    expect(out).toContain('This folder is your project: the one holding blazon.json. Run blazon here, or give its path.');
+    expect(out.trimEnd().split('\n').at(-1)!.trim()).toBe('This folder is your project: the one holding blazon.json. Run blazon here, or give its path.');
     expect(out).not.toMatch(/The manual:|vercel\.app/);
   });
 });

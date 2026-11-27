@@ -72,6 +72,51 @@ describe("the starter's config", () => {
   });
 });
 
+describe('the minimal copy', () => {
+  it('is the 11 files the smallest passing brand needs, 12 with the .gitignore init writes', () => {
+    const dest = tempDir('blazon-minimal-');
+    const { written } = copyStarter(dest, getTemplateDir(), { minimal: true });
+    expect(written.map((f) => path.relative(dest, f).split(path.sep).join('/')).sort()).toEqual([
+      'assets/logos/blazon-bone.json',
+      'assets/logos/blazon-bone.svg',
+      'assets/logos/blazon-graphite.json',
+      'assets/logos/blazon-graphite.svg',
+      'assets/logos/blazon-mark.json',
+      'assets/logos/blazon-mark.svg',
+      'blazon.json',
+      'tokens/colors.json',
+      'tokens/form.json',
+      'tokens/spacing.json',
+      'tokens/typography.json',
+    ]);
+  });
+
+  it('has an empty sections list, no fonts, no resolver, and keeps the three Node-only plugins', () => {
+    const config = JSON.parse(starterConfig(read(path.join(EXAMPLE, 'blazon.json')), { minimal: true })) as Record<string, unknown> & { plugins: { name: string }[] };
+    expect(config.sections).toEqual([]);
+    expect(config).not.toHaveProperty('fonts');
+    expect(config).not.toHaveProperty('customSections');
+    expect(config).not.toHaveProperty('resolver');
+    expect(config.plugins.map((p) => p.name)).toEqual(['blazon.copy', 'blazon.tailwind', 'blazon.shadcn']);
+  });
+
+  it('compiles with no error and no finding but the starter notes and logo warnings, and its plugins write their files', async () => {
+    const dest = tempDir('blazon-minimal-');
+    copyStarter(dest, getTemplateDir(), { minimal: true });
+    const config = await loadConfig(dest);
+    const data = await compileBlazonData(config, dest);
+    expect(data.findings.filter((f) => f.severity === 'error')).toEqual([]);
+    expect(data.findings.some((f) => f.code === 'theme-unresolved')).toBe(false);
+  });
+
+  it('takes any filter, and leaves the config as the full starter has it when none says minimal', () => {
+    const dest = tempDir('blazon-filter-');
+    const { written } = copyStarter(dest, getTemplateDir(), { filter: (rel) => rel === 'blazon.json' });
+    expect(written).toHaveLength(1);
+    expect(JSON.parse(read(path.join(dest, 'blazon.json'))).sections.length).toBeGreaterThan(0);
+  });
+});
+
 describe("the starter's depth", () => {
   // The Form and motion page: every shadow is a hard Graphite offset, and a key's travel is the plate's offset less the shim's.
   type Shadow = { color: string; inset?: boolean; offsetX: { value: number }; offsetY: { value: number }; blur: { value: number }; spread: { value: number } };

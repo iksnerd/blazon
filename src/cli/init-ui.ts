@@ -47,11 +47,11 @@ export function contrastLines(hex: string, look: Look, c: Contrast = contrastOf(
   ];
 }
 
-/** What the label on the color will be: blazon's labels are graphite, bone when graphite is under AA, and a warning when neither reaches it. */
+/** What the label on the color will be: blazon's labels are graphite, bone when graphite is under AA, white or black when neither starter ink reaches it, and a warning when nothing does. */
 export function labelNote(hex: string): string {
   const { ink, ratio, aa } = labelOn(hex);
   if (!aa)
-    return `Neither graphite nor bone reaches AA (4.5:1) as a label on ${hex} (best is ${ink} at ${ratio.toFixed(1)}:1). blazon check will report it; a lighter or darker color fixes that.`;
+    return `None of graphite, bone, white or black reaches AA (4.5:1) as a label on ${hex} (best is ${ink} at ${ratio.toFixed(1)}:1). blazon check will report it; a lighter or darker color fixes that.`;
   return `Labels on ${hex} will be ${ink} (${ratio.toFixed(1)}:1).`;
 }
 

@@ -11,6 +11,9 @@ import { lookFor, type Look } from '../init-ui.js';
 import type { ErrorCode } from '../errors.js';
 import { blazonCommand, inDir, shownDir } from '../where.js';
 
+/** The last line of the next steps: the folder, not its name, is what makes a project. */
+const PROJECT_LINE = 'This folder is your project: the one holding blazon.json. Run blazon here, or give its path.';
+
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
 /** What was written under one top-level folder, in words: its files, or its pages, or the folders the files sit in. */
@@ -76,6 +79,8 @@ export interface InitOptions {
   font?: string;
   /** A logo file to copy in */
   logo?: string;
+  /** Copy only what the smallest brand needs: four token files, the logo and the config, with no pages, fonts, dark theme or agent guide */
+  minimal?: boolean;
   /** Start `blazon dev` in the folder when init is done */
   dev?: boolean;
   /** Accept every default and never ask */
@@ -146,7 +151,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
 
   const configPath = path.join(destDir, 'blazon.json');
   const hadConfig = fs.existsSync(configPath);
-  const copied = copyStarter(destDir, templateDir);
+  const copied = copyStarter(destDir, templateDir, { minimal: options.minimal });
   const kept = copied.kept;
   const written = copied.written.map((f) => path.relative(destDir, f).split(path.sep).join('/')).sort();
   // The build output stays out of git (manual chapter 15). Written here, never copied from the starter: npm leaves a `.gitignore` out of a package
@@ -236,12 +241,19 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
   // Report. Every step is a command or a path that works from the folder blazon was run in: `blazon init a` says `blazon dev a`.
   const em = (t: string): string => (look.color ? pc.cyan(t) : t);
   const dir = shownDir(destDir);
-  const nextSteps = [
-    `Run ${em(blazonCommand('dev', dir))} to see the book`,
-    `Replace blazon's artwork in ${em(inDir(dir, 'assets/'))} and the text in ${em(inDir(dir, 'docs/'))}`,
-    `Run ${em(blazonCommand('check', dir))} to see what is left`,
-    `Point a coding agent at ${em(inDir(dir, 'AGENTS.md'))}: it is the guide for editing this brand`,
-  ];
+  // A minimal book has no pages and no agent guide, so its steps name neither
+  const nextSteps = options.minimal
+    ? [
+        `Run ${em(blazonCommand('dev', dir))} to see the book`,
+        `Replace blazon's logo in ${em(inDir(dir, 'assets/logos/'))}`,
+        `Run ${em(blazonCommand('check', dir))} to see what is left`,
+      ]
+    : [
+        `Run ${em(blazonCommand('dev', dir))} to see the book`,
+        `Replace blazon's artwork in ${em(inDir(dir, 'assets/'))} and the text in ${em(inDir(dir, 'docs/'))}`,
+        `Run ${em(blazonCommand('check', dir))} to see what is left`,
+        `Point a coding agent at ${em(inDir(dir, 'AGENTS.md'))}: it is the guide for editing this brand`,
+      ];
   // A site that gave no logo leaves blazon's own: say what to do, since blazon check warns about it
   if (site && !site.written.some((file) => file.startsWith('assets/logos/')))
     nextSteps.splice(
@@ -262,7 +274,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     for (const item of applied.set) wrote.push(`Set ${item}`);
     wrote.push(...applied.hints.map((h) => `Note: ${h}`));
     prompter.note(wrote.join('\n'), 'What was written');
-    if (code === 0) prompter.note(nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n'), 'Next steps');
+    if (code === 0) prompter.note([...nextSteps.map((s, i) => `${i + 1}. ${s}`), '', PROJECT_LINE].join('\n'), 'Next steps');
     let dev: boolean;
     try {
       dev = options.dev ?? (await prompter.confirm({ message: 'Start the dev server now?', initialValue: false }));
@@ -282,6 +294,7 @@ export async function runInit(targetDir: string = '.', options: InitOptions = {}
     console.log(pc.bold('Next steps:'));
     console.log(`  1. ${colorStep}`);
     nextSteps.forEach((step, i) => console.log(`  ${i + 2}. ${step}`));
+    console.log(`\n  ${PROJECT_LINE}`);
   }
   console.log();
   if (options.dev) await (options.startDev ?? startDev)(destDir);

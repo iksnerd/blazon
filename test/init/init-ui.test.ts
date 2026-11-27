@@ -42,7 +42,8 @@ describe('what the lines say', () => {
   it('names the ink on the color: graphite where it reaches AA, bone where only bone does, a warning where neither does', () => {
     expect(labelNote('#ffd24a')).toMatch(/will be graphite/);
     expect(labelNote('#2563eb')).toMatch(/will be bone/);
-    expect(labelNote('#808080')).toMatch(/Neither graphite nor bone reaches AA/);
+    expect(labelNote('#e00000')).toMatch(/will be white/);
+    expect(labelNote('#777777')).toMatch(/None of graphite, bone, white or black reaches AA/);
   });
   it('writes sizes in words', () => {
     expect([kilobytes(500), kilobytes(2048)]).toEqual(['500 bytes', '2.0 KB']);

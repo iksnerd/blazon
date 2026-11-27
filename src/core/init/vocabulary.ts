@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { BONE, contrast, GRAPHITE } from './palette.js';
+import { contrast, GRAPHITE, labelOn, NEAR_BLACK, type LabelInk } from './palette.js';
 
 // The token names `blazon init` writes: the starter is blazon's own brand book, so they are blazon's (surface.*, text.*,
 // interactive.*, rule.*), the vocabulary `inferTheme` already reads. One signal color is the brand's action color:
@@ -36,7 +36,7 @@ export function flagReview(token: Json, note: string): void {
  * `hex`. The ink on it, `text.onSignal`, becomes bone when graphite would not reach AA on the color and bone would; its
  * contrast pair then names the primary alone, because bone on hazard yellow would fail. Returns what the user still has to know.
  */
-export function setSignal(tree: Json, hex: string): { hints: string[]; label: 'graphite' | 'bone' } {
+export function setSignal(tree: Json, hex: string): { hints: string[]; label: LabelInk } {
   const hints: string[] = [];
   const colors = tree['color'] as Json | undefined;
   const group = colors?.['signal'] as Json | undefined;
@@ -61,31 +61,50 @@ export function setSignal(tree: Json, hex: string): { hints: string[]; label: 'g
   return { hints, label: ink.label };
 }
 
+/** The base token an extra ink is written as. White and black are not in the starter: they are added when a brand needs them. */
+const EXTRA_INKS = {
+  white: { hex: '#FFFFFF', note: 'White: the label on the brand color, because graphite and bone are under AA there' },
+  black: { hex: NEAR_BLACK, note: 'Near-black: the label on the brand color, because graphite, bone and white are under AA there' },
+} as const;
+
+/** Adds `color.base.white` or `color.base.black` to the tree when the brand needs it as a label ink, and returns its alias. */
+function baseInk(tree: Json, ink: 'white' | 'black'): string | undefined {
+  const base = (tree['color'] as Json | undefined)?.['base'] as Json | undefined;
+  if (!base) return undefined;
+  if (!isToken(base[ink])) base[ink] = { $value: EXTRA_INKS[ink].hex, $description: EXTRA_INKS[ink].note };
+  return `{color.base.${ink}}`;
+}
+
 /**
  * Chooses the ink on a color: blazon's labels are graphite; bone when graphite fails AA on the brand's color and bone does
- * not. `text.onSignal` follows, and so does its contrast pair, which named every signal color (`{color.signal.*}`): it now
- * names `ref` alone (always with `pairAlways`, else only when the ink changed, because bone on hazard yellow would fail).
+ * not; white or black, added as base tokens, when neither starter ink reaches AA and one of them does. `text.onSignal`
+ * follows, and so does its contrast pair, which named every signal color (`{color.signal.*}`): it now names `ref` alone
+ * (always with `pairAlways`, else only when the ink changed, because the new ink on hazard yellow would fail).
  */
-export function setLabelInk(tree: Json, hex: string, ref: string, pairAlways = false): { hints: string[]; label: 'graphite' | 'bone' } {
+export function setLabelInk(tree: Json, hex: string, ref: string, pairAlways = false): { hints: string[]; label: LabelInk } {
   const hints: string[] = [];
-  const graphite = contrast(hex, GRAPHITE);
-  const bone = contrast(hex, BONE);
+  const pick = labelOn(hex);
   const onSignal = tokenAt(tree, 'text.onSignal');
-  const useBone = graphite < 4.5 && bone >= 4.5 && onSignal !== undefined;
-  if (useBone) {
-    onSignal['$value'] = '{color.base.bone}';
-    onSignal['$description'] = 'Labels on the brand color are bone';
-    hints.push(`Labels on ${hex} are bone, because graphite is ${graphite.toFixed(1)}:1 there; blazon's hazard yellow has no label pair now`);
-  } else if (graphite < 4.5) {
+  let label: LabelInk = 'graphite';
+  if (pick.aa && pick.ink !== 'graphite' && onSignal !== undefined) {
+    const alias = pick.ink === 'bone' ? '{color.base.bone}' : baseInk(tree, pick.ink);
+    if (alias) {
+      label = pick.ink;
+      onSignal['$value'] = alias;
+      onSignal['$description'] = `Labels on the brand color are ${pick.ink}`;
+      hints.push(`Labels on ${hex} are ${pick.ink}, because graphite is ${contrast(hex, GRAPHITE).toFixed(1)}:1 there; blazon's hazard yellow has no label pair now`);
+    }
+  }
+  if (!pick.aa) {
     hints.push(
-      `Neither graphite (${graphite.toFixed(1)}:1) nor bone (${bone.toFixed(1)}:1) reaches AA (4.5:1) as a label on ${hex}: blazon check will report text.onSignal, so choose a lighter or darker color`,
+      `None of graphite, bone, white or black reaches AA (4.5:1) as a label on ${hex} (best is ${pick.ink} at ${pick.ratio.toFixed(1)}:1): blazon check will report text.onSignal, so choose a lighter or darker color`,
     );
   }
-  if (useBone || pairAlways) {
+  if (label !== 'graphite' || pairAlways) {
     const blazon = ((tree['text'] as Json | undefined)?.['$extensions'] as Json | undefined)?.['dev.blazon'] as Json | undefined;
     for (const pair of (blazon?.['pairs'] ?? []) as Json[]) if (pair['bg'] === '{color.signal.*}') pair['bg'] = ref;
   }
-  return { hints, label: useBone ? 'bone' : 'graphite' };
+  return { hints, label };
 }
 
 /** Reads a JSON file as an object. */
@@ -106,3 +125,17 @@ export const STARTER_LOGOS = ['blazon-graphite', 'blazon-bone'];
 
 /** Every logo asset the starter has: the two above and blazon's mark. A brand's own logo replaces all of them, and none stays behind under the brand's name. */
 export const STARTER_LOGO_FILES = [...STARTER_LOGOS, 'blazon-mark'];
+
+/**
+ * A clear space for a logo that replaces blazon's mark: 0.3 of the artwork's height in px (the share blazon's own mark uses, measured on the
+ * brand's file), or 16px when the file has no readable height (a raster). It is a stand-in, not a rule: the sidecar says so. Blazon's own
+ * numbers are never carried, and the starter's logo page needs some clear space or minimum size in a sidecar to draw.
+ */
+export function estimateClearSpace(file: { svg: boolean; text?: string }): { value: number; unit: 'px' } {
+  const art = file.svg ? ((file.text ?? '').match(/<svg\b[^>]*>/i)?.[0] ?? '') : '';
+  const box = art.match(/viewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+[\d.]+[\s,]+([\d.]+)/i)?.[1] ?? art.match(/\sheight\s*=\s*["']?([\d.]+)/i)?.[1];
+  return { value: box && Number(box) > 0 ? Math.max(1, Math.round(Number(box) * 0.3 * 100) / 100) : 16, unit: 'px' };
+}
+
+/** What a sidecar says of the clear space and minimum size it holds in place of blazon's. */
+export const LOGO_RULES_NOTE = 'Clear space is a stand-in: 0.3 of the artwork height, or 16px for a raster. Minimum size is not set. Set both.';

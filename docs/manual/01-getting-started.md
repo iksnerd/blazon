@@ -15,7 +15,13 @@ npx blazon init my-brand
 npx blazon dev my-brand
 ```
 
+A project is any folder that holds `blazon.json`, with `tokens/` beside it; the folder name does not matter.
+
 After the install, `npx blazon` runs the installed program, and so does `./node_modules/.bin/blazon`. To run it once without installing, write `npx @iksnerd/blazon <command>`. The rest of this manual writes `blazon` for either. If port 3000 is busy, the dev server takes the next free port and prints it; `--strict-port` exits 2 instead.
+
+## Former names
+
+Blazon was called folio before it was renamed. A `<!-- folio: -->` directive in a page and a `dev.folio` extension on a token are ignored, and `blazon check` warns about each (`directive-deprecated` and `token-extension-deprecated`, see [chapter 3](03-checks.md)). Rename them to `blazon:` and `dev.blazon`.
 
 ## Install from a clone
 
@@ -35,6 +41,8 @@ node bin/blazon.js dev my-brand
 ## What `blazon init` creates
 
 `blazon init` copies blazon's own brand book, `examples/blazon/`, into the folder. A new book starts as blazon's brand and becomes yours as you replace it, one file at a time.
+
+For a small brand without the pages, fonts and dark theme, use [`--minimal`](#a-minimal-brand) instead.
 
 ```text
 my-brand/
@@ -88,11 +96,29 @@ Next steps:
   3. Replace blazon's artwork in acme-brand/assets/ and the text in acme-brand/docs/
   4. Run blazon check acme-brand to see what is left
   5. Point a coding agent at acme-brand/AGENTS.md: it is the guide for editing this brand
+
+  This folder is your project: the one holding blazon.json. Run blazon here, or give its path.
 ```
 
 The list names every top-level folder and file `init` wrote. `.gitignore` keeps the build output (`dist/`) out of git: a folder that has one gets the line added at the end, once, and nothing else in it changes. Each step works from the folder you ran `blazon init` in. With `--color`, the first step says the primary color is set and the rest of the palette is still blazon's.
 
 Run `blazon check acme-brand` straight away and it exits 0: it reports 0 errors, 2 warnings and 43 notes. The notes are every starter file in `docs/`, `tokens/`, `assets/` and `fonts/`, grouped by folder. `AGENTS.md` and `CLAUDE.md` get none. The warnings are `starter-logo-unchanged`: the two logos in `blazon.json` are still blazon's own mark, and the book would show it under your name until you replace them. It then repeats the first three steps under `Next:`. The list shrinks as you replace files. [Chapter 3](03-checks.md#how-the-findings-are-printed) explains the grouping.
+
+## A minimal brand
+
+`blazon init my-brand --minimal` copies only what the smallest brand needs, 12 files:
+
+```text
+my-brand/
+├── tokens/        colors.json, form.json, spacing.json, typography.json
+├── assets/        logos/ (blazon's mark on light and on dark and the mark alone, each with a sidecar)
+├── blazon.json    `sections` is empty; there is no `fonts` list and no resolver
+└── .gitignore     dist/
+```
+
+There are no pages, no fonts, no dark theme (`blazon.resolver.json` and `tokens/theme/dark.json`), no icons, backgrounds or social formats, and no `AGENTS.md` or `CLAUDE.md`: that guide describes the pages, the resolver and the dark theme a minimal brand does not have. `form.json` stays because the theme's `radius` role names a token in it; without it `blazon check` reports `theme-unresolved`. The three plugins of the full starter stay, because they read tokens and need no pages or fonts: `blazon.copy`, `blazon.tailwind` and `blazon.shadcn`, so a web app still gets its Tailwind theme and shadcn/ui variables from `blazon build`.
+
+`blazon check` on it exits 0 with the two `starter-logo-unchanged` warnings and the `starter-file-unchanged` notes, and `blazon build` writes the tokens and the plugin files. Every other option works with it: `--color`, `--font`, `--logo`, `--name`, `--description` and `--from` edit the files that are there (`--font` adds a `fonts` list with the stylesheet, and the mono font in `typography.json` then needs a file or stylesheet of its own: `font-family-missing` says so). To add pages later, create `docs/` and name its sections in `sections` ([chapter 5](05-pages.md)).
 
 ## The smallest project
 
@@ -144,7 +170,7 @@ It reads the page and up to 20 of its stylesheets (5 MB and 10 s each, http and 
 
 Each token that came from a stylesheet variable names it in `source.cssVar`, so `blazon drift https://acme.com` compares it afterwards. A color that was `rgb()` is written without a `cssVar`, because the hex form would never match, and so are fonts. Every new color group, alias, font token and logo sidecar is marked `needs-review` with the note "Read from <url> on <date>: confirm with the brand owner.", so `blazon check` lists them until someone confirms and removes the mark.
 
-Then it tidies the starter. A starter color that no token aliases (followed through other aliases) and that no page or `blazon.json` names is deleted: with a site primary, that is blazon's orange and hazard yellow. `text.primary`, `surface.background` and `surface.canvas` move to a site color named for the role (`foreground`, `background`, `card`) and stay as they were without one. The contrast pair for `text.onSignal` follows the site's primary, and the ink on it is graphite, or bone when graphite is under AA (4.5:1) on that color and bone is not; when neither reaches it, the output says so and `blazon check` reports the pair. When a logo was written, blazon's `blazon-graphite` and `blazon-bone` files (`.svg` and `.json`) are deleted, their rules (clear space, minimum size, placement, partnership) move to the site logo's sidecar as defaults to set, and `docs/01-principles.md` is rewritten with the site's name, description, address and the date. Each removal and change is printed on its own line.
+Then it tidies the starter. A starter color that no token aliases (followed through other aliases) and that no page or `blazon.json` names is deleted: with a site primary, that is blazon's orange and hazard yellow. `text.primary`, `surface.background` and `surface.canvas` move to a site color named for the role (`foreground`, `background`, `card`) and stay as they were without one. The contrast pair for `text.onSignal` follows the site's primary, and the ink on it is graphite, or bone when graphite is under AA (4.5:1) on that color and bone is not, or, when neither reaches it, white or near-black if one does (written as a new `color.base.white` or `color.base.black` token that `text.onSignal` aliases); when none of the four reaches it, the output says so and `blazon check` reports the pair. When a logo was written, blazon's `blazon-graphite` and `blazon-bone` files (`.svg` and `.json`) are deleted, none of the numbers in their sidecars (clear space 24px, minimum size 32px) are carried over: the site logo's sidecar gets a clear space of 0.3 of the artwork's height as a stand-in, no minimum size, and a description that says both are to be set, and `docs/01-principles.md` is rewritten with the site's name, description, address and the date. Each removal and change is printed on its own line.
 
 It never overwrites: it changes only the files `blazon init` created in the same run, and a logo file that already exists is kept. It sends no cookies, runs no script from the site (SVG scripts and event handlers are removed) and never makes up a logo. It prints each file it wrote and each thing it could not find. If the site cannot be fetched, the starter stays as copied, the error is printed and the exit status is 2.
 
@@ -153,9 +179,9 @@ It never overwrites: it changes only the files `blazon init` created in the same
 Run `blazon init` in a terminal with no options and it copies the starter, then walks you through four short steps. Each question has a line under it saying why it is asked, and Enter accepts the default:
 
 1. **Brand.** The brand name becomes the config `title` as you typed it, with no "Brand Book" added. Enter keeps the name taken from the folder. Then a one-line description, which becomes the config `description`; Enter skips it and leaves the plain line `init` wrote. The pages are not touched: they are blazon's until you write yours. Then choose where the rest comes from: type it here, or read it from your website.
-2. **Colors.** The primary color, as hex. It prints a swatch and its contrast on white and on near-black, and says which ink the labels on it will be: graphite, bone where graphite is under 4.5:1 and bone is not, or a note, without stopping you, that neither reaches AA. The color is written to `color.signal.primary` (the starter's `color.signal.orange`, renamed, with every alias following), which `interactive.primary` uses. A color you typed is not marked `needs-review`. The starter's `color.signal.hazard` was not chosen to go with your primary, so blazon marks it `needs-review` until you set your own or delete it. The rest of the palette (bone, concrete, graphite, steel) is blazon's neutral set and is left as it is.
+2. **Colors.** The primary color, as hex. It prints a swatch and its contrast on white and on near-black, and says which ink the labels on it will be: graphite, bone where graphite is under 4.5:1 and bone is not, white or near-black where neither does and one of them reaches it, or a note, without stopping you, that none reaches AA. The color is written to `color.signal.primary` (the starter's `color.signal.orange`, renamed, with every alias following), which `interactive.primary` uses. A color you typed is not marked `needs-review`. The starter's `color.signal.hazard` was not chosen to go with your primary, so blazon marks it `needs-review` until you set your own or delete it. The rest of the palette (bone, concrete, graphite, steel) is blazon's neutral set and is left as it is.
 3. **Type.** A Google Fonts family name. It sets `font.family.display` and `font.family.body` and says whether the family is on blazon's short built-in list: if it is, its stylesheet is added to `fonts` in `blazon.json`; if not, only the name is written and you add the stylesheet yourself.
-4. **Logo.** The path to an SVG or PNG. It checks that the file exists and is an image blazon can show, says its size and whether an SVG draws in `currentColor`, then copies it to `assets/logos/`, deletes blazon's `blazon-graphite` and `blazon-bone` files and sets the config `logo`.
+4. **Logo.** The path to an SVG or PNG. It checks that the file exists and is an image blazon can show, says its size and whether an SVG draws in `currentColor`, then copies it to `assets/logos/`, deletes blazon's `blazon-graphite` and `blazon-bone` files and sets the config `logo`. The sidecar it writes for your logo holds a stand-in clear space (0.3 of an SVG's height, 16px for a raster) and no minimum size, and init's output says so: blazon's numbers belong to blazon's mark.
 
 Every color, font and logo question can be skipped with Enter. A value that is not valid is refused with a one-line message and asked again.
 
@@ -163,7 +189,7 @@ If you choose your website, leave the address empty to go back to typing the val
 
 At the end a box lists what was written, a second box gives three next steps, and "Start the dev server now?" (default no) runs `blazon dev` in the folder when you say yes. Press Ctrl-C at any question to stop: the starter stays as copied and the exit status is 130.
 
-Each question has a flag, so a script can give the same answers: `--name <text>`, `--description <text>` (one sentence, 240 characters at most), `--color <hex>`, `--font <family>`, `--logo <file>` and `--dev`. `--from <url>` writes everything the site shows, as accepting every box in the review would. `--name` may be combined with `--from`, and then wins over the site's title. An invalid value exits 2 before anything is copied. A file that already existed is kept, as everywhere in `blazon init`.
+Each question has a flag, so a script can give the same answers: `--name <text>`, `--description <text>` (one sentence, 240 characters at most), `--color <hex>`, `--font <family>`, `--logo <file>`, `--minimal` (the smallest brand, see [A minimal brand](#a-minimal-brand)) and `--dev`. `--from <url>` writes everything the site shows, as accepting every box in the review would. `--name` may be combined with `--from`, and then wins over the site's title. An invalid value exits 2 before anything is copied. A file that already existed is kept, as everywhere in `blazon init`.
 
 `blazon init` never asks when `--yes` or `--no-input` is given (the same thing), when any of `--from`, `--name`, `--description`, `--color`, `--font` or `--logo` is given, or when stdin or stdout is not a terminal. CI and scripts therefore never wait for input, and `blazon init --yes` runs the whole flow with every default. Colors in the guided output are turned off by `NO_COLOR`, `TERM=dumb` and a non-terminal; swatches then print as `[#2563eb]`, with the same facts.
 
@@ -177,7 +203,7 @@ Each question has a flag, so a script can give the same answers: `--name <text>`
 
 | Command | Does |
 |---|---|
-| `blazon init [dir]` | Copy the starter template into `dir`, and in a terminal ask for a name, colors, font and logo, see [The guided start](#the-guided-start). `--name`, `--description`, `--color`, `--font` and `--logo` answer without asking, `--dev` starts the dev server, `--yes` or `--no-input` accept every default. `--from <url>` fills it from a live site, see [Starting from a live site](#starting-from-a-live-site). Exits 2 when a value is not valid, the address is not `http` or `https`, or the site cannot be read; 130 when the questions are cut short |
+| `blazon init [dir]` | Copy the starter template into `dir`, and in a terminal ask for a name, colors, font and logo, see [The guided start](#the-guided-start). `--name`, `--description`, `--color`, `--font` and `--logo` answer without asking, `--minimal` copies only the smallest brand (see [A minimal brand](#a-minimal-brand)), `--dev` starts the dev server, `--yes` or `--no-input` accept every default. `--from <url>` fills it from a live site, see [Starting from a live site](#starting-from-a-live-site). Exits 2 when a value is not valid, the address is not `http` or `https`, or the site cannot be read; 130 when the questions are cut short |
 | `blazon dev [dir]` | Start the dev server with live reload; it says each error in the terminal as it appears, with the file and line and what to do, and says when they are fixed. `-p, --port <port>` sets the port (default: `port` in `blazon.json`, else 3000); `--strict-port` exits 2 when that port is in use instead of taking the next free one; `--host` listens on every network interface and `--host <address>` on one address (default: this machine only, so nobody else on the network can read the brand's files or the folder paths `/__blazon/mcp-config` returns). It answers only requests whose `Host` is this machine, an IP address or the `--host` address, so a web page cannot reach it by rebinding a name, and it sends no CORS header, so a page on another origin cannot read a response. It answers 404 on Vite's `/__open-in-editor` route, which would make a running editor open a local path for any page that can reach this machine, and reads files over `/@fs/` only from the viewer's own folder, never from the brand or from a folder above blazon. It has no endpoint that writes |
 | `blazon check [dir]` | Print the findings. Exits 1 on errors, and then ends with the next step for each kind of error. `--strict` also exits 1 on warnings. `--json` prints them as JSON, see [For scripts and agents](03-checks.md#for-scripts-and-agents); `--severity <level>` cuts that list. `--no-plugins` runs no plugin, and `--plugin <program>` runs one the lock does not pin, once ([chapter 12](12-plugins.md)) |
 | `blazon tokens [dir]` | Check, then write `dist/tokens/`, then run the `build` plugins with no site: those that work from the brand alone write into `dist/tokens/<name>/`, and those that need the built site say so and write nothing. `--no-plugins` runs no plugin, so no browser is needed. `--plugin <program>`, `--json` and `--severity <level>` work as for `blazon check` |

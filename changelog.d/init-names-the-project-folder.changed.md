@@ -1,0 +1,1 @@
+Init ends its next steps with a line that says the project is the folder that holds `blazon.json`. The manual says the same on its first page and has a short "Former names" section: the old name was folio, and its directives and `dev.folio` keys are ignored.

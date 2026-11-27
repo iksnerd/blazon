@@ -25,6 +25,8 @@ describe('the ink on a color', () => {
   it("is blazon's graphite where it reaches AA, then bone, and says when neither does", () => {
     expect(labelOn('#ff5a1f')).toMatchObject({ ink: 'graphite', aa: true });
     expect(labelOn('#2563eb')).toMatchObject({ ink: 'bone', aa: true });
-    expect(labelOn('#808080')).toMatchObject({ aa: false });
+    expect(labelOn('#e00000')).toMatchObject({ ink: 'white', aa: true });
+    expect(labelOn('#808080')).toMatchObject({ ink: 'black', aa: true });
+    expect(labelOn('#777777')).toMatchObject({ aa: false });
   });
 });
