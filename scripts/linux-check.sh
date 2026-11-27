@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run a few tests on Linux (Docker, node:24) against a clean export of HEAD, so a failure only Linux shows is caught before a release
 # tag is pushed. Usage: scripts/linux-check.sh [test file ...]   (default: the dev-plugin and test-lock tests)
-# It tests HEAD, not the working tree: commit first. It removes its export folder and its container when it ends.
+# It tests HEAD, not the working tree: commit first. It removes its export folder, its containers and its volume when it ends.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)" || exit 1
 
@@ -19,7 +19,8 @@ EXPORT="$(mktemp -d "$HOME/.blazon-linux-check.XXXXXX")" || { echo "linux-check:
 NAME="blazon-linux-check-$$"
 
 cleanup() {
-  docker rm -f "$NAME" >/dev/null 2>&1
+  docker rm -f "$NAME-install" "$NAME" >/dev/null 2>&1
+  docker volume rm -f "$NAME" >/dev/null 2>&1
   rm -rf "$EXPORT"
 }
 trap cleanup EXIT
@@ -31,12 +32,22 @@ if ! git -C "$ROOT" archive HEAD | tar -x -C "$EXPORT"; then
 fi
 
 # localhost resolves to ::1 in the container, so the dev-server WebSocket needs ipv4first. 0.4 CPUs is slow on purpose: a starved run
-# exposed a watcher race that passed at full speed. The test files are passed as arguments to sh, never spliced into the command.
-docker run --rm --name "$NAME" --cpus=0.4 \
+# exposed a watcher race that passed at full speed. Only the tests are starved: `npm ci` and the build run first, in their own container
+# without the limit, into a volume (a Linux file system, as /app was before) that the test container then uses. At 0.4 CPUs the install
+# and the build took about three minutes before the first test. The test files are passed as arguments to sh, never spliced into the command.
+docker volume create "$NAME" >/dev/null || { echo "linux-check: FAIL (could not create a volume)"; exit 1; }
+docker run --rm --name "$NAME-install" \
   -e NODE_OPTIONS=--dns-result-order=ipv4first \
-  -v "$EXPORT:/src:ro" node:24 \
-  sh -c 'cp -r /src /app && cd /app && npm ci && npm run build && npx vitest run "$@"' sh "$@"
+  -v "$EXPORT:/src:ro" -v "$NAME:/app" node:24 \
+  sh -c 'cp -r /src/. /app && cd /app && npm ci && npm run build'
 STATUS=$?
+if [ "$STATUS" -eq 0 ]; then
+  docker run --rm --name "$NAME" --cpus=0.4 \
+    -e NODE_OPTIONS=--dns-result-order=ipv4first \
+    -v "$NAME:/app" node:24 \
+    sh -c 'cd /app && npx vitest run "$@"' sh "$@"
+  STATUS=$?
+fi
 
 if [ "$STATUS" -eq 0 ]; then
   echo "linux-check: PASS ($*)"
