@@ -123,7 +123,10 @@ async function build(text: string): Promise<{ findings: Finding[] }> {
         });
         keep(target, measurement, notes);
         if (options.figures)
-          figures.set(figureName(figures, target.id), constructionSvg(svg, measurement as Measurement & { box: NonNullable<Measurement['box']> }, accent, target.id));
+          figures.set(
+            figureName(figures, target.id),
+            constructionSvg(svg, measurement as Measurement & { box: NonNullable<Measurement['box']> }, accent, target.id, brand.bodyFont),
+          );
       } catch (error) {
         if (!(error instanceof Unsupported)) throw error;
         cannot(target, error.message);

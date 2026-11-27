@@ -55,7 +55,18 @@
       },
       "orange": {
         "$value": "#FF5A1F",
-        "$description": "Signal Orange"
+        "$description": "Signal Orange",
+        "$extensions": {
+          "dev.blazon": {
+            "logo": {
+              "deny": [
+                "onLight",
+                "onDark"
+              ],
+              "reason": "The fold of the mark is Signal Orange, so on Signal Orange it is not there"
+            }
+          }
+        }
       },
       "hazard": {
         "$value": "#F2C230",
@@ -176,14 +187,7 @@
     "$extensions": {
       "dev.blazon": {
         "tier": "semantic",
-        "role": "interactive",
-        "logo": {
-          "deny": [
-            "onLight",
-            "onDark"
-          ],
-          "reason": "The fold of the mark is Signal Orange, so on Signal Orange it is not there"
-        }
+        "role": "interactive"
       }
     },
     "primary": {

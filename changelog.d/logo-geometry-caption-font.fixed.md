@@ -1,0 +1,1 @@
+The `blazon.logo-geometry` construction figure sets its caption in the brand's body font (the `fontBody` role) before its Helvetica fallback, so the print book no longer embeds a system Helvetica for it. A brand with no body font gets the same figure as before.

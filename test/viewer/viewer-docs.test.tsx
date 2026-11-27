@@ -509,8 +509,8 @@ describe('the page cover logo', () => {
   it('is left out of an accent cover when the brand forbids the logo on the accent color', () => {
     const accent = data.themeTokens?.accent ?? 'color.primary.indigo';
     const cover = (rule?: { deny: string[]; reason: string }): BlazonData => {
-      // the token's own logo rule, if the fixture has one, is replaced: this test says what the rule does
-      const items = data.tokens.items.map((t) => (t.path === accent ? { ...t, blazon: { ...t.blazon, logo: rule } } : t));
+      // every logo rule the fixture has, on the accent or on a token it aliases, is replaced: this test says what the rule does
+      const items = data.tokens.items.map((t) => ({ ...t, blazon: { ...t.blazon, logo: t.path === accent ? rule : undefined } }));
       return { ...withDoc('<h2>Body</h2><p>Text.</p>', { opener: 'full', cover: 'accent' }), themeTokens: { ...data.themeTokens, accent }, tokens: { ...data.tokens, items } };
     };
     openViewer('#doc/guide', cover());
