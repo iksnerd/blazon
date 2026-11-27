@@ -1,12 +1,15 @@
 // A reader for the SVG a logo is: elements and their attributes, nothing else. It is not an XML parser. It does not expand entities beyond the
 // five the language defines and character references, it never reads a DOCTYPE, and it fetches nothing, so a logo cannot make it open a
-// file or a URL. Text is dropped: the geometry is in the attributes.
+// file or a URL. The geometry is in the attributes; an element's own text (a `<style>` sheet, say) is kept as `text`, for a reader that must
+// judge it.
 
 export interface XmlElement {
   /** The tag without its namespace prefix: `svg:rect` is `rect` */
   tag: string;
   attrs: Map<string, string>;
   children: XmlElement[];
+  /** The element's own text and CDATA, decoded and joined, without its children's */
+  text: string;
 }
 
 /** The document is not something this reader can take apart; the message says where. */
@@ -56,10 +59,14 @@ export function parseXml(source: string): XmlElement {
   let at = 0;
   while (at < text.length) {
     const open = text.indexOf('<', at);
+    const top = stack[stack.length - 1];
+    if (top) top.text += decode(text.slice(at, open < 0 ? text.length : open));
     if (open < 0) break;
     if (text.startsWith('<!--', open)) at = after(text, '-->', open + 4, 'a comment');
-    else if (text.startsWith('<![CDATA[', open)) at = after(text, ']]>', open + 9, 'a CDATA section');
-    else if (text.startsWith('<?', open)) at = after(text, '?>', open + 2, 'a processing instruction');
+    else if (text.startsWith('<![CDATA[', open)) {
+      at = after(text, ']]>', open + 9, 'a CDATA section');
+      if (top) top.text += text.slice(open + 9, at - 3);
+    } else if (text.startsWith('<?', open)) at = after(text, '?>', open + 2, 'a processing instruction');
     else if (text.startsWith('<!', open)) at = afterDoctype(text, open + 2);
     else if (text.startsWith('</', open)) {
       const end = after(text, '>', open + 2, 'a closing tag');
@@ -70,7 +77,7 @@ export function parseXml(source: string): XmlElement {
     } else {
       const named = /^<([^\s/>]+)/.exec(text.slice(open, open + 256));
       if (!named) throw new XmlError('a < that opens no tag');
-      const element: XmlElement = { tag: local(named[1]!), attrs: new Map(), children: [] };
+      const element: XmlElement = { tag: local(named[1]!), attrs: new Map(), children: [], text: '' };
       let cursor = open + named[0].length;
       for (;;) {
         while (cursor < text.length && /\s/.test(text[cursor]!)) cursor++;

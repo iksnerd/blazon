@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Ctx } from '../context.js';
-import { cleanSvg } from '../../shared/svg.js';
+import { cleanSvg, svgRefusal } from '../../shared/svg.js';
 import { favicon, headerLogo, type Favicon } from '../logo.js';
 import { writeJson, type Json } from '../tree.js';
 
@@ -71,7 +71,12 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
       }
     }
   }
-  if (svg !== undefined) {
+  // A site's SVG that holds anything that runs or loads is not imported at all: the placeholder logo stays, and the reason is said once
+  const refused = svg === undefined ? undefined : svgRefusal(svg);
+  if (svg !== undefined && refused) {
+    ctx.logoRefused = refused;
+    result.missing.push(`the logo was not imported: ${locator} holds ${refused}, so blazon's placeholder logo stays`);
+  } else if (svg !== undefined) {
     const clean = cleanSvg(svg);
     if (/<use\b/i.test(clean) && !/<symbol\b/i.test(clean)) result.missing.push('the logo uses <use> to point at a sprite elsewhere on the page, so it may draw nothing: check it');
     if (/currentColor/i.test(clean)) {

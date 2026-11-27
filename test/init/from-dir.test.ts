@@ -77,8 +77,7 @@ describe('blazon init --from-dir', () => {
     expect(type.font.family.body.$value).toEqual(['Inter', 'sans-serif']);
     expect(type.font.family.display.$value).toEqual(['Space Grotesk', 'sans-serif']);
 
-    const logo = fs.readFileSync(path.join(dir, 'assets/logos/acme-site.svg'), 'utf8');
-    expect(logo).not.toContain('script');
+    expect(fs.readFileSync(path.join(dir, 'assets/logos/acme-site.svg'), 'utf8')).toContain('fill="#111111"');
     expect(json(dir, 'assets/logos/acme-site.json').source.doc).toMatch(/index\.html in the saved folder acme-site/);
 
     const config = json(dir, 'blazon.json');

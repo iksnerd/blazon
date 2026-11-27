@@ -24,6 +24,8 @@ export interface Ctx {
   source: (locator: string, cssVar?: string) => Json;
   /** Whether a file may be rewritten: only one this run made. Says so in `result.missing` when it may not. */
   mayChange: (file: string) => boolean;
+  /** Why the logo the site gave was not imported (it holds active or remote content), for extract.json; set by applyLogo */
+  logoRefused?: string;
 }
 
 export const rel = (...parts: string[]): string => parts.join('/');
