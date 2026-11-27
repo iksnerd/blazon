@@ -29,6 +29,14 @@ describe('blazon contrast', () => {
     expect(Array.isArray(body.brandPairs)).toBe(true);
   }, 120_000);
 
+  it('puts the ratio, the level and the tokens on the first line of the text', () => {
+    const ran = blazon('contrast', 'text.primary', 'surface.canvas', root);
+    const body = JSON.parse(blazon('contrast', 'text.primary', 'surface.canvas', root, '--json').stdout);
+    const first = ran.stdout.split('\n').find((line) => line.trim() !== '')!;
+    expect(first.trim()).toBe(`${body.ratio.toFixed(2)}:1  ${body.level}  text.primary on surface.canvas`);
+    expect(ran.stdout).toContain('non-text');
+  }, 120_000);
+
   it('exits 0 for a ratio below every level, and prints text for a person', () => {
     const ran = blazon('contrast', 'surface.canvas', 'surface.canvas', root);
     expect(ran.status).toBe(0);

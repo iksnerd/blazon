@@ -53,7 +53,7 @@ const folderOf = (f: Finding): string => f.path.split('/')[0]!;
 
 /**
  * The text of one severity's findings, a line each, except two kinds that would repeat: `starter-file-unchanged` notes (one line
- * for each folder), `review-pending` warnings with one message (one line) and `page-review-pending` warnings (one line
+ * for each folder), `review-pending` warnings (one line, after the rest) and `page-review-pending` warnings (one line
  * with the page count, each page's own message stays in the findings). The findings themselves stay one for each file.
  * A finding that names a file starts with `file:line` from where blazon was run (`dir`), as compilers print it, so a terminal
  * or an editor opens it at the line.
@@ -66,13 +66,15 @@ function lines(findings: Finding[], dir: string): string[] {
   const inUse = findings.filter((f) => f.code === 'page-review-pending');
   for (const f of findings) {
     if (f.code === 'starter-file-unchanged') starters.set(folderOf(f), [...(starters.get(folderOf(f)) ?? []), f]);
-    if (f.code === 'review-pending') reviews.set(f.message, [...(reviews.get(f.message) ?? []), f]);
+    if (f.code === 'review-pending') reviews.set(f.code, [...(reviews.get(f.code) ?? []), f]);
   }
+  // The `review-pending` line goes after the rest of its severity: a real warning must not sit among a long run of notes to review
+  const afterwards: string[] = [];
 
   for (const f of findings) {
     if (folded.has(f)) continue;
     const star = f.code === 'starter-file-unchanged' ? starters.get(folderOf(f))! : undefined;
-    const review = f.code === 'review-pending' ? reviews.get(f.message)! : undefined;
+    const review = f.code === 'review-pending' ? reviews.get(f.code)! : undefined;
     if (f.code === 'page-review-pending' && inUse.length > 1) {
       inUse.forEach((x) => folded.add(x));
       out.push(
@@ -85,14 +87,16 @@ function lines(findings: Finding[], dir: string): string[] {
       out.push(`${pc.bold(`${folder}/`)}: ${star.length} files are still the starter's text (${listNames(names)}) ${pc.dim('[starter-file-unchanged]')}`);
     } else if (review && review.length > 1) {
       review.forEach((x) => folded.add(x));
-      out.push(`${pc.bold(`review-pending (${review.length})`)}: ${listNames(review.map(where))}: ${f.message} ${pc.dim('[review-pending]')}`);
+      // One message for all of them is said once; notes that differ stay in the findings and in --json
+      const same = review.every((x) => x.message === f.message);
+      afterwards.push(`${pc.bold(`review-pending (${review.length})`)}: ${listNames(review.map(where))}${same ? `: ${f.message}` : ''} ${pc.dim('[review-pending]')}`);
     } else {
       const at = findingLocation(f, dir);
       const subject = at === undefined ? pc.bold(where(f)) : f.path === f.file ? pc.bold(at) : `${pc.bold(at)}  ${where(f)}`;
       out.push(`${subject}: ${f.message} ${pc.dim(`[${f.code}]`)}`);
     }
   }
-  return out;
+  return [...out, ...afterwards];
 }
 
 /** Every command that reports findings in text (check, tokens, build) prints them here. `dir` is the project as shownDir gives it. */

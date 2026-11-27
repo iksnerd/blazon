@@ -3,6 +3,7 @@ import { formatsAt, patternsAt } from '../tokens/groups.js';
 import { finding } from '../checker/catalogue.js';
 import { pickRepresentation } from '../assets/representations.js';
 import { isMisuseKind, unknownMisuseMessage } from '../logo/misuse.js';
+import { closest } from '../suggest.js';
 
 /** Which tokens a directive argument may name. */
 export type TokenKind = 'any' | 'paint' | 'border' | 'paint-or-border';
@@ -175,9 +176,23 @@ function folders(assets: AssetCatalog): Record<string, AssetCatalog['all']> {
   return found;
 }
 
+/** `; did you mean blazon:logo-usage?`: the nearest directive name by spelling, else the names that start with what was typed (`logo` is the start of ten), else nothing. */
+function didYouMean(typed: string): string {
+  const names = Object.keys(DIRECTIVES);
+  const near = closest(typed, names);
+  const lower = typed.toLowerCase();
+  const starts = lower ? names.filter((name) => name.startsWith(lower)) : [];
+  const picks = near ? [near] : starts;
+  if (picks.length === 0) return '';
+  const shown = picks.slice(0, 3).map((name) => `blazon:${name}`);
+  const named = shown.length > 1 ? `${shown.slice(0, -1).join(', ')} or ${shown.at(-1)}` : shown[0]!;
+  const more = picks.length > shown.length ? ` (${picks.length - shown.length} more start with ${typed})` : '';
+  return `; did you mean ${named}${more}?`;
+}
+
 function problems(directive: PlacedDirective, context: DirectiveContext): string[] {
   if (!isDirective(directive.name)) {
-    return [`unknown directive blazon:${directive.name}; known: ${Object.keys(DIRECTIVES).join(', ')}`];
+    return [`unknown directive blazon:${directive.name}; known: ${Object.keys(DIRECTIVES).join(', ')}${didYouMean(directive.name)}`];
   }
   const spec: DirectiveSpec = DIRECTIVES[directive.name];
   const { args } = directive;

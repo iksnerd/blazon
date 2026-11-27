@@ -37,7 +37,14 @@ export async function asJson(
     console.log = log;
   }
   const result = summarizeFindings(findings, { strict });
-  const counts = { errors: result.errors.length, warnings: result.warnings.length, info: result.infos.length };
+  const byCode: Record<string, number> = {};
+  for (const finding of result.all) byCode[finding.code] = (byCode[finding.code] ?? 0) + 1;
+  const counts = {
+    errors: result.errors.length,
+    warnings: result.warnings.length,
+    info: result.infos.length,
+    byCode: Object.fromEntries(Object.entries(byCode).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))),
+  };
   const { mismatch } = blazonPinState(cwd);
   const pinMismatch = mismatch && { pinned: mismatch.pinned, running: mismatch.running, message: mismatch.message };
   process.stdout.write(

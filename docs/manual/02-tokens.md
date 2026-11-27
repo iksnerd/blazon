@@ -157,6 +157,27 @@ Write `pairs` on a group, and name the tokens by path:
 
 `min` is `AA` (4.5:1), `AA-large` (3:1) or `AAA` (7:1). A pair below its level is an error (`contrast-insufficient`). `fg` and `bg` take a token or `{group.*}` for every color under a group. A pair that matches no color tokens, or names an unknown level, is an error (`contrast-pair-invalid`). Any CSS color is measured: hex, `rgb()`, `hsl()`, `lab()`, `oklch()`, `color()` or a name. A value that is not a color, such as a gradient or a `var()`, is a warning (`contrast-unknown`).
 
+#### A color that is known to fall short of AA
+
+There is no key for "fails AA, accepted by design", and none is needed. Declare the pair at the level the color does reach, `AA-large` (3:1), and say where the color may be used with `usage`. A pair has no `reason` field, so the reason goes in the token's `$description`. Acme's muted grey is about 3.4:1 on white:
+
+```json
+"acme": {
+  "$type": "color",
+  "$extensions": { "dev.blazon": {
+    "pairs": [ { "fg": "{acme.grey.muted}", "bg": "{acme.white}", "min": "AA-large" } ]
+  } },
+  "white": { "$value": "#FFFFFF" },
+  "grey": { "muted": {
+    "$value": "#8C8C8C",
+    "$description": "Does not reach AA (4.5:1) on white, accepted by design: Acme uses it for rules and icons, where 3:1 is the bar.",
+    "$extensions": { "dev.blazon": { "usage": { "allow": ["border", "icon"] } } }
+  } }
+}
+```
+
+`blazon check` passes with no finding for these tokens, because the pair meets the level it states. If someone changes the grey so that it drops under 3:1, the pair becomes a `contrast-insufficient` error. `blazon can acme.grey.muted acme.white` says `denied`, with `{acme.grey.muted} allows only "border", "icon", not "text"` and `pairs on acme list {acme.grey.muted} on {acme.white}: AA-large needs 3:1, this is 3.36:1`. `blazon can acme.grey.muted acme.white --role ui` says `allowed`, with `non-text contrast needs 3:1, this is 3.36:1`. `blazon contrast acme.grey.muted acme.white` prints `3.36:1  AA-large  acme.grey.muted on acme.white`.
+
 ### Forbidden logo backgrounds
 
 Contrast says whether a logo reads on a background, not whether the brand allows it: white on Magenta can pass 3:1 and still be against the rules. State it on the background token, or on a group of them, as `logo`:

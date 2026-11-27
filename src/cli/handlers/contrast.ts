@@ -31,9 +31,8 @@ export const measureContrastHandler: Handler = async ({ fg, bg, with: overlay, w
 
 function print(answer: ContrastMeasure): void {
   const tint = answer.with === undefined ? '' : `, with ${answer.with} at ${answer.withAlpha} over it`;
-  console.log(`\n  ${pc.bold(`${answer.ratio.toFixed(2)}:1`)}  ${answer.fg} on ${answer.bg}${tint}${answer.theme ? ` (theme ${answer.theme})` : ''}`);
+  console.log(`\n  ${pc.bold(`${answer.ratio.toFixed(2)}:1`)}  ${answer.level}  ${answer.fg} on ${answer.bg}${tint}${answer.theme ? ` (theme ${answer.theme})` : ''}`);
   printRows([
-    ['level', answer.level],
     ['non-text', answer.nonText ? 'reaches 3:1' : 'below 3:1'],
     ['seen', `${answer.seen.fg} on ${answer.seen.bg}`],
     ['alpha', answer.alpha === undefined ? undefined : String(answer.alpha)],

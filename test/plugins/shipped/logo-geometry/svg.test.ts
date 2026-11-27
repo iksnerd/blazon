@@ -4,7 +4,7 @@ import { analyzeSvg } from '../../../../src/shipped/logo-geometry/measure.js';
 import { arcPoints, pathSubpaths } from '../../../../src/shipped/logo-geometry/path.js';
 import { readSvg } from '../../../../src/shipped/logo-geometry/svg.js';
 import { parseTransform } from '../../../../src/shipped/logo-geometry/transform.js';
-import { parseXml } from '../../../../src/shipped/logo-geometry/xml.js';
+import { parseXml } from '../../../../src/core/svg/xml.js';
 
 // What the reader takes from an SVG, and what it refuses by name. The expected values come from the drawing.
 

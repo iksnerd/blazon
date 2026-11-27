@@ -1,0 +1,1 @@
+`blazon contrast` prints the ratio, the level and the two tokens on its first line (`16.59:1  AAA  color.base.carbon on color.base.bone`), and no longer repeats the level as a row below. `--json` is unchanged.

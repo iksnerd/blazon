@@ -31,6 +31,46 @@ describe('the colors a logo paints', () => {
   });
 });
 
+describe('colors in elements that are never painted', () => {
+  const ink = '<path d="M0 0h5v5z" fill="#1E1F21"/>';
+  const white = '<rect width="9" height="9" fill="white"/>';
+  const wrap = (inner: string) => `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">${ink}${inner}</svg>`;
+  const unpainted: Record<string, string> = {
+    clipPath: `<clipPath id="c">${white}</clipPath>`,
+    mask: `<mask id="m">${white}</mask>`,
+    defs: `<defs>${white}</defs>`,
+    symbol: `<symbol id="s">${white}</symbol>`,
+    pattern: `<pattern id="p">${white}</pattern>`,
+    filter: `<filter id="f">${white}</filter>`,
+    marker: `<marker id="k">${white}</marker>`,
+    title: '<title fill="white">Acme</title>',
+    desc: '<desc fill="white">Acme</desc>',
+    metadata: '<metadata fill="white"/>',
+    'display:none': '<rect width="9" height="9" fill="white" style="display:none"/>',
+    'visibility:hidden': '<rect width="9" height="9" fill="white" visibility="hidden"/>',
+    'opacity=0': '<rect width="9" height="9" fill="white" opacity="0"/>',
+    'fill-opacity=0': '<rect width="9" height="9" fill="white" fill-opacity="0"/>',
+    'a group with display:none': `<g display="none">${white}</g>`,
+  };
+  for (const [name, inner] of Object.entries(unpainted)) {
+    it(`does not count a white shape in ${name}`, () => {
+      expect(paintedColors(uri(wrap(inner)))).toEqual(['#1E1F21']);
+      expect(logoSurfaceFindings({ onLight: uri(wrap(inner)), onDark: uri(svg(['#F2F0EB'])) }, { background: '#ffffff' }, {}, [])).toEqual([]);
+    });
+  }
+  it('counts a white shape that is painted', () => {
+    expect(logoSurfaceFindings({ onLight: uri(wrap(white)), onDark: uri(svg(['#F2F0EB'])) }, { background: '#ffffff' }, {}, [])).toHaveLength(1);
+  });
+  it('counts a symbol or a definition that a <use> draws', () => {
+    expect(paintedColors(uri(wrap(`<symbol id="s">${white}</symbol><use href="#s"/>`)))).toEqual(['#1E1F21', 'white']);
+    expect(paintedColors(uri(wrap(`<defs><g id="g">${white}</g></defs><use xlink:href="#g"/>`)))).toEqual(['#1E1F21', 'white']);
+  });
+  it('still reads a color from a <style> sheet and from text that is not well-formed XML', () => {
+    expect(paintedColors(uri('<svg><style>.a{fill:#abc}</style><path class="a"/></svg>'))).toEqual(['#abc']);
+    expect(paintedColors(uri('<svg><path fill="#abc"></svg>'))).toEqual(['#abc']);
+  });
+});
+
 describe('logo-contrast-insufficient', () => {
   const orange = '#FF5A1F';
   const logo = { onLight: uri(svg(['#1E1F21', orange])), onDark: uri(svg(['#F2F0EB', orange])) };
