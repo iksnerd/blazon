@@ -96,13 +96,14 @@ describe('the brand book stylesheet', () => {
 
 describe('the options', () => {
   it('takes a map of variables to token paths', () => {
-    expect(parseOptions({ variables: { ring: 'text.primary' } })).toEqual({ options: { variables: { ring: 'text.primary' } }, findings: [] });
-    expect(parseOptions({})).toEqual({ options: { variables: {} }, findings: [] });
+    const defaults = { format: 'as-authored', themeInline: false, allowSame: [] };
+    expect(parseOptions({ variables: { ring: 'text.primary' } })).toEqual({ options: { variables: { ring: 'text.primary' }, ...defaults }, findings: [] });
+    expect(parseOptions({})).toEqual({ options: { variables: {}, ...defaults }, findings: [] });
   });
 
   it.each([
     ['options that are not an object', [], 'options must be an object'],
-    ['an unknown option', { colors: {} }, 'unknown option "colors"; the option is variables'],
+    ['an unknown option', { colors: {} }, 'unknown option "colors"; the options are variables, format, themeInline, chart, allowSame'],
     ['variables that are not an object', { variables: ['ring'] }, 'variables must be an object of shadcn variable names to token paths'],
     ['a variable shadcn does not have', { variables: { glow: 'a.b' } }, 'variables has unknown variable "glow"; known: background,'],
     ['a pick that is not a path', { variables: { ring: 7 } }, 'variables.ring must be a token path (a string)'],

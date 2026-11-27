@@ -178,6 +178,9 @@
           "chart-3": "surface.canvas",
           "chart-4": "rule.default",
           "chart-5": "rule.quiet"
+        },
+        "allowSame": {
+          "destructive": "ring"
         }
       }
     },
