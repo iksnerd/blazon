@@ -12,15 +12,21 @@ To `<tokensOutDir>/blazon.shadcn/` (`dist/tokens/blazon.shadcn/`):
 |---|---|
 | `shadcn.json` | For each shadcn variable blazon supplies, the token it takes, its value in the default context and where the pick came from (`theme` or `config`); `unsupplied`, the variables nothing supplies; and, when the brand declares contrast `pairs`, `pairs`, each shadcn text-on-surface pair with whether a rule covers its two tokens |
 | `shadcn.css` | A `:root` block with each supplied variable, and a block under the selector of each other context for the variables that context changes |
-| `shadcn-theme.css` | Only with `themeInline`: `@custom-variant dark` and an `@theme inline` block of `--color-<name>` lines and the `--radius-*` steps, for Tailwind v4 |
+| `shadcn-theme.css` | Only with `themeInline`: `@custom-variant dark` and an `@theme inline` block of `--color-<name>` lines and the `--radius-sm` to `--radius-4xl` steps, for Tailwind v4 |
 
 A variable takes its value from the theme role it reads (`background` for `--background`, `accent` for `--primary`, and so on, the same picks the brand book's own components use), or from the token the `variables` option names for it. `destructive` and `chart-1` to `chart-5` have no role, so only the option fills them.
 
 ## Options
 
-- `variables`: an object of shadcn variable names (without the leading dashes) to token paths. A pick wins over the role.
+- `variables`: an object of shadcn variable names (without the leading dashes) to token paths. A pick wins over the role. It also takes `destructive-foreground`, for example `{ "destructive": "color.acme.red", "destructive-foreground": "color.acme.white" }`; no role fills it.
 - `format`: `"as-authored"` (default), `"oklch"` or `"hex"`, the notation of the colors in `shadcn.css`.
-- `themeInline`: `true` also writes `shadcn-theme.css`. Default `false`.
+- `themeInline`: `true` also writes `shadcn-theme.css`. Default `false`. Tailwind v4 needs it: with `shadcn.css` alone, `bg-primary`, `text-foreground`, `border-border`, `ring-ring` and `bg-chart-*` generate no CSS and `rounded-md` keeps Tailwind's 6px. Import both files after Tailwind:
+
+```css
+@import "tailwindcss";
+@import "./dist/tokens/blazon.shadcn/shadcn.css";
+@import "./dist/tokens/blazon.shadcn/shadcn-theme.css";
+```
 - `chart`: a token group path whose first five color tokens fill `chart-1` to `chart-5`. A `variables` pick wins.
 - `allowSame`: `{ "destructive": "primary" }`, a pair the clash warning skips (`primary`, `accent` or `ring`, or a list).
 
@@ -33,3 +39,4 @@ A variable takes its value from the theme role it reads (`background` for `--bac
 | `blazon.shadcn/format-unconverted` | warning | `format` is `oklch` or `hex` and a value is not a color; the authored value is kept |
 | `blazon.shadcn/chart-group-short` | warning | The `chart` group has fewer than five color tokens |
 | `blazon.shadcn/destructive-duplicate` | warning | `destructive` is the same color as `primary`, `accent` or `ring` in a context (check role) |
+| `blazon.shadcn/destructive-foreground-missing` | info | `themeInline` is on and `destructive` is supplied but `destructive-foreground` is not; add the variable to silence it (check role) |

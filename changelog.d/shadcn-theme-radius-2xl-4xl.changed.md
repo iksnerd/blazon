@@ -1,0 +1,1 @@
+The `shadcn-theme.css` that `themeInline` writes now defines `--radius-2xl`, `--radius-3xl` and `--radius-4xl` as well, with the multiples shadcn v4 uses, so `rounded-2xl` and larger follow the brand radius. `shadcn.css` is unchanged.

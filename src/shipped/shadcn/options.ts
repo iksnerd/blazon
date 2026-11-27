@@ -1,7 +1,7 @@
 import { NAME } from './request.js';
 import { findingFor, isObject, type Finding } from '../shared/plugin.js';
 import type { ColorFormat } from './color.js';
-import { SHADCN_VARIABLES, type ShadcnVariable } from './derive.js';
+import { WRITABLE_VARIABLES, type ShadcnVariable } from './derive.js';
 
 export type { Finding };
 export const finding = findingFor(NAME);
@@ -64,7 +64,7 @@ export function parseOptions(raw: unknown): { options: Options; findings: Findin
   if (raw.variables === undefined) return { options, findings };
   if (!isObject(raw.variables)) return { options, findings: [...findings, invalid('variables must be an object of shadcn variable names to token paths')] };
   for (const [name, tokenPath] of Object.entries(raw.variables)) {
-    if (!(SHADCN_VARIABLES as readonly string[]).includes(name)) findings.push(invalid(`variables has unknown variable "${name}"; known: ${SHADCN_VARIABLES.join(', ')}`));
+    if (!(WRITABLE_VARIABLES as readonly string[]).includes(name)) findings.push(invalid(`variables has unknown variable "${name}"; known: ${WRITABLE_VARIABLES.join(', ')}`));
     else if (typeof tokenPath !== 'string' || tokenPath === '') findings.push(invalid(`variables.${name} must be a token path (a string)`));
     else options.variables[name as ShadcnVariable] = tokenPath;
   }

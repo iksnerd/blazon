@@ -38,7 +38,18 @@ export const SHADCN_VARIABLES = [
   'sidebar-ring',
 ] as const;
 
-export type ShadcnVariable = (typeof SHADCN_VARIABLES)[number];
+/**
+ * Variables the `variables` option accepts and the files write when a brand supplies them, but that are never listed as `unsupplied`: shadcn v4
+ * dropped `destructive-foreground` (its components use `text-white`), so a brand that does not name one has not left a gap. No theme role fills it.
+ */
+export const OPTIONAL_VARIABLES = ['destructive-foreground'] as const;
+
+export type ShadcnVariable = (typeof SHADCN_VARIABLES)[number] | (typeof OPTIONAL_VARIABLES)[number];
+
+/** Every variable the plugin can write, in shadcn's order: `destructive-foreground` follows `destructive`. */
+export const WRITABLE_VARIABLES: readonly ShadcnVariable[] = SHADCN_VARIABLES.flatMap((name): ShadcnVariable[] =>
+  name === 'destructive' ? [name, 'destructive-foreground'] : [name],
+);
 
 /**
  * The shadcn/ui variables the theme roles supply, and the role each one reads. The brand book's own stylesheet (`src/viewer/index.css`)
@@ -129,7 +140,7 @@ export function deriveShadcn(
 ): ShadcnMapping {
   const byPath = new Map(items.map((item) => [item.path, item]));
   const variables: ShadcnMapping['variables'] = {};
-  for (const name of SHADCN_VARIABLES) {
+  for (const name of WRITABLE_VARIABLES) {
     const picked = picks?.[name];
     const token = picked ? byPath.get(picked) : undefined;
     if (picked && token) {

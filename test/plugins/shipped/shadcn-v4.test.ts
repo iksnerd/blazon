@@ -146,7 +146,15 @@ describe('themeInline', () => {
     for (const name of Object.keys(mapping.variables).filter((n) => n !== 'radius')) expect(theme).toContain(`  --color-${name}: var(--${name});`);
     expect(theme).not.toContain('--color-radius');
     expect(theme).not.toContain('--color-chart-1');
-    for (const line of ['--radius-sm: calc(var(--radius) * 0.6);', '--radius-md: calc(var(--radius) * 0.8);', '--radius-lg: var(--radius);', '--radius-xl: calc(var(--radius) * 1.4);'])
+    for (const line of [
+      '--radius-sm: calc(var(--radius) * 0.6);',
+      '--radius-md: calc(var(--radius) * 0.8);',
+      '--radius-lg: var(--radius);',
+      '--radius-xl: calc(var(--radius) * 1.4);',
+      '--radius-2xl: calc(var(--radius) * 1.8);',
+      '--radius-3xl: calc(var(--radius) * 2.2);',
+      '--radius-4xl: calc(var(--radius) * 2.6);',
+    ])
       expect(theme).toContain(`  ${line}`);
   });
 
@@ -264,5 +272,38 @@ describe('the new options are validated', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({ code: `${NAME}/option-invalid`, severity: 'error', path: 'options' });
     expect(findings[0]!.message).toContain(message);
+  });
+});
+
+describe('destructive-foreground-missing (the check role)', () => {
+  const codes = (answer: { findings: { code: string }[] }) => answer.findings.map((f) => f.code);
+  const on = { themeInline: true, variables: { destructive: 'brand.other' } };
+
+  it('says once, as info, what to add when themeInline is on and destructive has no foreground', () => {
+    const { status, answer } = check(acmeBrand(), on);
+    expect(status).toBe(0);
+    expect(answer.findings).toHaveLength(1);
+    expect(answer.findings[0]).toMatchObject({ code: `${NAME}/destructive-foreground-missing`, severity: 'info', path: 'destructive-foreground' });
+    expect(answer.findings[0].message).toContain('variables: { "destructive-foreground"');
+    expect(answer.findings[0].message).toContain('text-white');
+  });
+
+  it('is silent without themeInline, without destructive, and once destructive-foreground is supplied', () => {
+    expect(codes(check(acmeBrand(), { variables: { destructive: 'brand.other' } }).answer)).toEqual([]);
+    expect(codes(check(acmeBrand(), { themeInline: true }).answer)).toEqual([]);
+    expect(codes(check(acmeBrand(), { ...on, variables: { destructive: 'brand.other', 'destructive-foreground': 'surface.bg' } }).answer)).toEqual([]);
+  });
+
+  it('is not said by the build role', () => {
+    expect(run({ brand: acmeBrand(), options: on }).answer).toEqual({ findings: [] });
+  });
+
+  it('accepts the variable, writes it after destructive in shadcn.css and as --color in the theme, and does not list it as unsupplied', () => {
+    const plain = run({ brand: acmeBrand() });
+    expect((JSON.parse(plain.files['shadcn.json']!) as ShadcnMapping).unsupplied).not.toContain('destructive-foreground');
+    const { files, answer } = run({ brand: acmeBrand(), options: { themeInline: true, variables: { destructive: 'brand.other', 'destructive-foreground': 'surface.bg' } } });
+    expect(answer).toEqual({ findings: [] });
+    expect(files['shadcn.css']).toContain('  --destructive: #0a7;\n  --destructive-foreground: #ffffff;\n');
+    expect(files['shadcn-theme.css']).toContain('  --color-destructive-foreground: var(--destructive-foreground);');
   });
 });
