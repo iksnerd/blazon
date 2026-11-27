@@ -91,7 +91,7 @@ describe('--json counts', () => {
   it('name the notes info, as the findings do, and have no notes', async () => {
     const project = await starterProject();
     const out = JSON.parse(blazon(REPO, 'check', project, '--json').stdout);
-    expect(out.counts).toEqual({ errors: 0, warnings: 2, info: expect.any(Number) });
+    expect(out.counts).toEqual({ errors: 0, warnings: 2, byCode: expect.any(Object), info: expect.any(Number) });
     expect(out.counts.info).toBeGreaterThan(0);
     expect(out.counts).not.toHaveProperty('notes');
   }, 60_000);

@@ -41,11 +41,17 @@ const MAPPINGS: Mapping[] = [
     // The tarball smoke test judges a packed starter by the same file; it runs in the release job, never in a hook.
     releaseOnly: ['scripts/smoke-tarball.mjs', 'scripts/first-run-expectation.mjs'],
   },
+  {
+    data: 'test/first-run/expected-minimal.json',
+    patterns: ['expected-minimal'],
+    tests: ['test/build/first-run.test.ts'],
+    releaseOnly: ['scripts/smoke-tarball.mjs', 'scripts/first-run-expectation.mjs'],
+  },
   { data: 'test/examples/golden/conformance/', patterns: ['examples/golden', 'golden/conformance'], tests: ['test/core/tokens/conformance.test.ts'] },
   {
     data: 'test/plugins/shipped/fixtures/tokens-plugins/',
     patterns: ['tokens-plugins', 'shipped/fixtures'],
-    tests: ['test/plugins/shipped/shadcn.test.ts', 'test/plugins/shipped/tailwind.test.ts'],
+    tests: ['test/plugins/shipped/shadcn.test.ts', 'test/plugins/shipped/shadcn-v4.test.ts', 'test/plugins/shipped/tailwind.test.ts'],
   },
   { data: 'test/plugins/shipped/logo-geometry/oracle/', patterns: ['logo-geometry/oracle', "'oracle'", '"oracle"'], tests: ['test/plugins/shipped/logo-geometry/oracle.test.ts'] },
 ];

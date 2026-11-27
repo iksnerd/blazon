@@ -239,9 +239,9 @@ classify_paths() {
             # Data files whose readers are a small, known set (test/hooks/data-file-mapping.test.ts greps the repository for them and fails when
             # a reader appears outside this list). A file read through a folder loader or by many tests stays in the full suite below.
             test/surface/public-surface.json) extra_tests="$extra_tests test/surface" ;;
-            test/first-run/expected.json) extra_tests="$extra_tests test/build/first-run.test.ts" ;;   # scripts/smoke-tarball.mjs reads it too, at release
+            test/first-run/expected.json|test/first-run/expected-minimal.json) extra_tests="$extra_tests test/build/first-run.test.ts" ;;   # scripts/smoke-tarball.mjs reads it too, at release
             test/examples/golden/conformance/*) extra_tests="$extra_tests test/core/tokens/conformance.test.ts" ;;
-            test/plugins/shipped/fixtures/tokens-plugins/*) extra_tests="$extra_tests test/plugins/shipped/shadcn.test.ts test/plugins/shipped/tailwind.test.ts" ;;
+            test/plugins/shipped/fixtures/tokens-plugins/*) extra_tests="$extra_tests test/plugins/shipped/shadcn.test.ts test/plugins/shipped/shadcn-v4.test.ts test/plugins/shipped/tailwind.test.ts" ;;
             test/plugins/shipped/logo-geometry/oracle/*) extra_tests="$extra_tests test/plugins/shipped/logo-geometry/oracle.test.ts" ;;
             # Only code is found through imports. Any other golden, corpus file or fixture is read by path, so it asks for the full suite.
             test/*.ts|test/*.tsx) [ -f "$root/$path" ] && related_files="$related_files $path" ;;
