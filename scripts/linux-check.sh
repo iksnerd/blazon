@@ -35,7 +35,7 @@ fi
 docker run --rm --name "$NAME" --cpus=0.4 \
   -e NODE_OPTIONS=--dns-result-order=ipv4first \
   -v "$EXPORT:/src:ro" node:24 \
-  sh -c 'cp -r /src /app && cd /app && npm ci && npm run build && npm run build -w mcp && npx vitest run "$@"' sh "$@"
+  sh -c 'cp -r /src /app && cd /app && npm ci && npm run build && npx vitest run "$@"' sh "$@"
 STATUS=$?
 
 if [ "$STATUS" -eq 0 ]; then
