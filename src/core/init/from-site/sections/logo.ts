@@ -2,9 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Ctx } from '../context.js';
 import { cleanSvg } from '../../shared/svg.js';
-import { favicon, headerLogo, logoName, type Favicon } from '../logo.js';
+import { favicon, headerLogo, type Favicon } from '../logo.js';
 import { writeJson, type Json } from '../tree.js';
-import { fetchBytes } from '../../../drift/read.js';
 
 export interface LogoFiles {
   onLight?: string;
@@ -14,14 +13,14 @@ export interface LogoFiles {
 
 /** The site's logo (the header's SVG, else the site icon) into assets/logos, with a sidecar marked for review. */
 export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
-  const { destDir, url, date, page, result, note, review } = ctx;
+  const { destDir, site, date, page, result, note, review } = ctx;
   const logoFiles: { onLight?: string; onDark?: string; single?: string } = {};
-  const name = logoName(url);
+  const name = site.logoName;
   const sidecar = (file: string, locator: string, extra: Json) => {
     writeJson(path.join(destDir, file.replace(/\.[a-z]+$/, '.json')), {
       description: note,
       ...extra,
-      source: { doc: `${url} page, read ${date}`, locator },
+      source: { doc: `${site.sourceDoc('page')}, read ${date}`, locator },
       review,
     });
     result.written.push(file.replace(/\.[a-z]+$/, '.json'));
@@ -41,7 +40,7 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
     result.written.push(file);
     return true;
   };
-  const logo = headerLogo(page.html, url);
+  const logo = headerLogo(page.html, site);
   let svg: string | undefined;
   let locator = '';
   if (logo?.kind === 'inline') {
@@ -49,7 +48,7 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
     locator = logo.locator;
   } else if (logo?.kind === 'url') {
     try {
-      svg = (await fetchBytes(logo.url, 'image', ctx.network)).toString('utf8');
+      svg = (await site.read(logo.url, 'image')).toString('utf8');
       locator = `${logo.locator} (${logo.url})`;
     } catch (err) {
       result.missing.push(`the header logo could not be read: ${err instanceof Error ? err.message : String(err)}`);
@@ -61,10 +60,10 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
   }
   let icon: Favicon | undefined;
   if (svg === undefined) {
-    icon = favicon(page.html, url);
+    icon = favicon(page.html, site);
     if (icon?.svg) {
       try {
-        svg = (await fetchBytes(icon.url, 'image', ctx.network)).toString('utf8');
+        svg = (await site.read(icon.url, 'image')).toString('utf8');
         locator = `${icon.locator} (${icon.url})`;
         if (!/<svg\b/i.test(svg)) svg = undefined;
       } catch (err) {
@@ -99,7 +98,7 @@ export async function applyLogo(ctx: Ctx): Promise<LogoFiles> {
     } else {
       try {
         const file = `assets/logos/${name}${icon.ext === '.jpeg' ? '.jpg' : icon.ext}`;
-        if (writeAsset(file, await fetchBytes(icon.url, 'image', ctx.network))) {
+        if (writeAsset(file, await site.read(icon.url, 'image'))) {
           sidecar(file, icon.locator, { title: 'Site icon' });
           logoFiles.single = `./${file}`;
           result.missing.push(`no SVG logo was found: ${file} is the site's raster icon (${icon.url}), not a logo, so replace it with the real one`);

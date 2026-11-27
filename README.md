@@ -185,7 +185,7 @@ getVar('interactive.primary'); // "var(--interactive-primary)"
 
 | Command | Does |
 |---|---|
-| `blazon init [dir]` | Copy the starter into `dir`, asking for a name, color, font and logo in a terminal. `--from <url>` starts from a live site, `--minimal` copies only the smallest brand |
+| `blazon init [dir]` | Copy the starter into `dir`, asking for a name, color, font and logo in a terminal. `--from <url>` starts from a live site, `--from-dir <folder>` from a saved copy of one (offline), `--minimal` copies only the smallest brand |
 | `blazon dev [dir]` | Start the dev server with live reload |
 | `blazon check [dir]` | Report findings; exits 1 on errors (`--strict` also fails on warnings, `--json` prints them as JSON) |
 | `blazon tokens [dir]` | Check, then write `dist/tokens/` |

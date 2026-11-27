@@ -250,6 +250,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
   cli
     .command('init [dir]', 'Scaffold a new Blazon brand book and design token structure')
     .option('--from <url>', 'Start from a live site: read its stylesheets and page for the brand colors, fonts, logo and title (all marked needs-review)')
+    .option('--from-dir <folder>', 'Start from a saved copy of a site, offline: its index.html (or the page named) and stylesheets, nothing outside it')
     .option('--name <text>', 'With `init`: the brand book title, as given')
     .option('--description <text>', 'With `init`: one sentence on the brand: the config description')
     .option('--color <hex>', 'With `init`: the primary color as hex, with or without the #: #2563eb, 2563eb or #26e')
@@ -263,7 +264,19 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     .action(
       async (
         dir?: string,
-        options?: { from?: string; name?: string; color?: string; font?: string; logo?: string; minimal?: boolean; dev?: boolean; yes?: boolean; input?: boolean; json?: boolean },
+        options?: {
+          from?: string;
+          fromDir?: string;
+          name?: string;
+          color?: string;
+          font?: string;
+          logo?: string;
+          minimal?: boolean;
+          dev?: boolean;
+          yes?: boolean;
+          input?: boolean;
+          json?: boolean;
+        },
       ) => {
         try {
           if (options?.json) {

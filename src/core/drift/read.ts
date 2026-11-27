@@ -22,17 +22,26 @@ export async function fetchText(url: string, kind: FetchKind, network?: Network)
   return (await fetchBytes(url, kind, network)).toString('utf8');
 }
 
-/** The `href` of every `<link rel="stylesheet">` in a page, resolved against the page; only http(s) addresses are kept. */
-export function stylesheetLinks(html: string, pageUrl: string): string[] {
-  const urls: string[] = [];
+/** The `href` of every `<link rel="stylesheet">` in a page, as written, in order. */
+export function stylesheetHrefs(html: string): string[] {
+  const hrefs: string[] = [];
   for (const [tag] of html.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<link\b[^>]*>/gi)) {
     const attr = (name: string) => tag.match(new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'));
     const rel = attr('rel');
     const href = attr('href');
     if (!rel || !href) continue;
     if (!(rel[1] ?? rel[2] ?? rel[3] ?? '').toLowerCase().split(/\s+/).includes('stylesheet')) continue;
+    hrefs.push((href[1] ?? href[2] ?? href[3] ?? '').trim());
+  }
+  return hrefs;
+}
+
+/** The `href` of every `<link rel="stylesheet">` in a page, resolved against the page; only http(s) addresses are kept. */
+export function stylesheetLinks(html: string, pageUrl: string): string[] {
+  const urls: string[] = [];
+  for (const href of stylesheetHrefs(html)) {
     try {
-      const url = new URL((href[1] ?? href[2] ?? href[3] ?? '').trim(), pageUrl);
+      const url = new URL(href, pageUrl);
       if ((url.protocol === 'http:' || url.protocol === 'https:') && !urls.includes(url.href)) urls.push(url.href);
     } catch {
       // not a URL: skipped

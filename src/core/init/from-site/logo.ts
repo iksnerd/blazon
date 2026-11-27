@@ -1,35 +1,27 @@
 import path from 'node:path';
 import { attrOf } from './html.js';
+import type { SiteInput } from './types.js';
 
 // The logo of a site: an SVG in the page header, else the site icon.
 
+/** An inline SVG, or the reference (`url`: a URL, or a path in a saved folder) of an SVG image. */
 export type LogoFound = { kind: 'inline'; svg: string; locator: string } | { kind: 'url'; url: string; locator: string };
 
-export function headerLogo(html: string, pageUrl: string): LogoFound | undefined {
+export function headerLogo(html: string, site: SiteInput): LogoFound | undefined {
   const header = html.replace(/<!--[\s\S]*?-->/g, '').match(/<header\b[^>]*>([\s\S]*?)<\/header>/i)?.[1];
   if (!header) return undefined;
   const homes: string[] = [];
   for (const m of header.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const href = attrOf(`<a${m[1]}>`, 'href');
-    if (href === undefined) continue;
-    try {
-      const url = new URL(href.trim(), pageUrl);
-      if (url.origin === new URL(pageUrl).origin && url.pathname === '/') homes.push(m[2]!);
-    } catch {
-      // not a URL: not the home link
-    }
+    if (href !== undefined && site.isHome(href)) homes.push(m[2]!);
   }
   const svgIn = (text: string) => text.match(/<svg\b[\s\S]*?<\/svg>/i)?.[0];
   const imgIn = (text: string): string | undefined => {
     for (const m of text.matchAll(/<img\b[^>]*>/gi)) {
       const src = attrOf(m[0], 'src');
       if (src && /\.svg(?:[?#]|$)/i.test(src)) {
-        try {
-          const url = new URL(src.trim(), pageUrl);
-          if (url.protocol === 'http:' || url.protocol === 'https:') return url.href;
-        } catch {
-          // skipped
-        }
+        const where = site.resolve(src);
+        if ('ref' in where) return where.ref;
       }
     }
     return undefined;
@@ -55,7 +47,7 @@ export interface Favicon {
   locator: string;
 }
 
-export function favicon(html: string, pageUrl: string): Favicon | undefined {
+export function favicon(html: string, site: SiteInput): Favicon | undefined {
   const found: (Favicon & { apple: boolean })[] = [];
   for (const [tag] of html.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<link\b[^>]*>/gi)) {
     const rel = (attrOf(tag, 'rel') ?? '').toLowerCase().split(/\s+/);
@@ -63,14 +55,10 @@ export function favicon(html: string, pageUrl: string): Favicon | undefined {
     if (!apple && !rel.includes('icon')) continue;
     const href = attrOf(tag, 'href');
     if (!href) continue;
-    try {
-      const url = new URL(href.trim(), pageUrl);
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') continue;
-      const ext = path.extname(url.pathname).toLowerCase() || (attrOf(tag, 'type') === 'image/svg+xml' ? '.svg' : '.png');
-      found.push({ url: url.href, svg: ext === '.svg', ext, apple, locator: `link rel="${rel.join(' ')}"` });
-    } catch {
-      // skipped
-    }
+    const where = site.resolve(href);
+    if (!('ref' in where)) continue;
+    const ext = path.extname(where.ref.replace(/[?#].*$/, '')).toLowerCase() || (attrOf(tag, 'type') === 'image/svg+xml' ? '.svg' : '.png');
+    found.push({ url: where.ref, svg: ext === '.svg', ext, apple, locator: `link rel="${rel.join(' ')}"` });
   }
   return found.find((f) => f.svg) ?? found.find((f) => f.apple) ?? found[0];
 }

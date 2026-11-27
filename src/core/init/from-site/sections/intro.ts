@@ -30,10 +30,10 @@ function provenance(ctx: Ctx): string {
 
 /** The intro page says where the values came from, in place of blazon's principles. */
 export function writeIntro(ctx: Ctx, title: string | undefined, description: string | undefined) {
-  const { destDir, url, created, result } = ctx;
+  const { destDir, site, created, result } = ctx;
   const introFile = 'docs/01-principles.md';
   if (created.has(introFile) && fs.existsSync(path.join(destDir, introFile))) {
-    const brand = title ?? new URL(url).hostname.replace(/^www\./, '');
+    const brand = title ?? site.fallbackName;
     const lines = [
       '---',
       'title: Introduction',

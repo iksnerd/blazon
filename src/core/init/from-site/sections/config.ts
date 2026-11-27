@@ -11,10 +11,10 @@ export async function applyConfig(
   logoFiles: LogoFiles,
   written: FontsWritten,
 ): Promise<{ title: string | undefined; description: string | undefined; configLogo: boolean }> {
-  const { destDir, url, page, result, mayChange } = ctx;
+  const { destDir, page, result, mayChange } = ctx;
   const { fontUrls } = written;
   const configFile = 'blazon.json';
-  const named = metaContent(page.html, 'og:site_name') ?? metaContent(page.html, 'application-name') ?? (await manifestName(page.html, url, ctx.network));
+  const named = metaContent(page.html, 'og:site_name') ?? metaContent(page.html, 'application-name') ?? (await manifestName(page.html, ctx.site));
   const title = named ?? pageTitle(page.html);
   const description = metaContent(page.html, 'description');
   if (!title) result.missing.push('no <title> on the page: the config title keeps the folder name');
