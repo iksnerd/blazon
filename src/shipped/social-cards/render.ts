@@ -52,11 +52,11 @@ export const logoOf = (brand: BrandRead, which: 'onLight' | 'onDark'): Logo | un
 const dark = '#1E1F21';
 
 /** Draws every card; the browser is the caller's to close. */
-export async function drawCards(browser: Browser, job: Job, brand: BrandRead, cards: readonly Card[], scale: 1 | 2): Promise<Drawn[]> {
+export async function drawCards(browser: Browser, job: Job, brand: BrandRead, cards: readonly Card[], scale: 1 | 2, network?: unknown): Promise<Drawn[]> {
   const site = await serve(job.siteDir);
   try {
     const drawn: Drawn[] = [];
-    for (const card of cards) drawn.push(await drawCard(browser, site.origin, brand, card, scale));
+    for (const card of cards) drawn.push(await drawCard(browser, site.origin, brand, card, scale, network));
     return drawn;
   } finally {
     await site.close();
@@ -70,6 +70,7 @@ async function open(
   html: string,
   size: { width: number; height: number },
   scale: number,
+  network: unknown,
 ): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext({ viewport: size, deviceScaleFactor: scale });
   // tsx wraps functions with a __name helper that does not exist in the page; the built plugin has none, and this is harmless there
@@ -79,6 +80,9 @@ async function open(
   await guardNetwork(page, {
     page: file,
     origins: [origin],
+    // The fonts a brand lists by address (Google Fonts, say) are read by blazon under the address policy, never by the browser
+    remote: 'policy',
+    network,
     serve: (url, route) => (url.pathname === CARD_PATH ? route.fulfill({ contentType: 'text/html; charset=utf-8', body: html }) : route.continue()),
   });
   await page.goto(`${origin}${CARD_PATH}`, { waitUntil: 'load', timeout: 25_000 }).catch(async () => {
@@ -160,7 +164,7 @@ async function pixelsUnder(page: Page, box: Rect, hide: string[]): Promise<numbe
   return pixels;
 }
 
-async function drawCard(browser: Browser, origin: string, brand: BrandRead, card: Card, scale: 1 | 2): Promise<Drawn> {
+async function drawCard(browser: Browser, origin: string, brand: BrandRead, card: Card, scale: 1 | 2, network: unknown): Promise<Drawn> {
   const format = brand.formats.get(card.format)!;
   const findings: Finding[] = [];
   const size = { width: format.width, height: format.height };
@@ -207,7 +211,7 @@ async function drawCard(browser: Browser, origin: string, brand: BrandRead, card
     ...(inset && { inset }),
   };
 
-  const probe = await open(browser, origin, `${card.id}.png`, pageHtml(base), size, 1);
+  const probe = await open(browser, origin, `${card.id}.png`, pageHtml(base), size, 1, network);
   let look: Look;
   try {
     // 1. The largest type step at which the text fits its room and its width
@@ -253,7 +257,7 @@ async function drawCard(browser: Browser, origin: string, brand: BrandRead, card
   const files = new Map<string, Buffer>();
   const html = pageHtml(look);
   for (const factor of scale === 2 ? [1, 2] : [1]) {
-    const { context, page } = await open(browser, origin, `${card.id}.png`, html, size, factor);
+    const { context, page } = await open(browser, origin, `${card.id}.png`, html, size, factor, network);
     try {
       if (factor === 1 && (plan || card.keepClear)) {
         const found = await boxes(page);

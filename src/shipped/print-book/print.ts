@@ -47,7 +47,7 @@ export function waitSeconds(value: string | undefined): number {
  * as they print), opens index.html<hash>, waits for window.__blazonPrint.ready, then prints with the page's own @page size
  * and takes a picture of each frame.
  */
-export async function printBook(browser: Browser, job: Job, seconds: number, deadline: number = Date.now() + BUDGET_SECONDS * 1000): Promise<Printed> {
+export async function printBook(browser: Browser, job: Job, seconds: number, deadline: number = Date.now() + BUDGET_SECONDS * 1000, network?: unknown): Promise<Printed> {
   const tooSlow = (step: string) =>
     new Cannot(`the book did not finish in ${BUDGET_SECONDS} seconds (${step}); print a smaller part of it with preset essentials or reference, or with pages`);
   const left = () => deadline - Date.now();
@@ -56,7 +56,13 @@ export async function printBook(browser: Browser, job: Job, seconds: number, dea
   try {
     const page = await browser.newPage({ viewport: SLIDE, deviceScaleFactor: PICTURE_SCALE });
     page.setDefaultTimeout(Math.min(PRINT_SECONDS * 1000, left()));
-    await guardNetwork(page, { page: `${job.name}.pdf`, origins: [site.origin] });
+    await guardNetwork(page, {
+      page: `${job.name}.pdf`,
+      origins: [site.origin],
+      // The fonts a brand lists by address (Google Fonts, say) are read by blazon under the address policy, never by the browser
+      remote: 'policy',
+      network,
+    });
     await page.emulateMedia({ media: 'print' });
     await page.goto(`${site.origin}/index.html${job.hash}`, { waitUntil: 'domcontentloaded', timeout: waitFor(seconds, deadline) });
     try {
