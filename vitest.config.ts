@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { ChromeSlotSequencer } from './test/support/sequencer';
 
 export default defineConfig({
   plugins: [react()],
@@ -21,5 +22,7 @@ export default defineConfig({
     // browser-setup.ts: a file listed in test/browser-tests.txt holds one of a few Chrome slots (test/support/chrome-limits.ts)
     setupFiles: ['test/support/setup-dom.ts', 'test/support/browser-setup.ts'],
     globalSetup: ['test/support/global-setup.ts'],
+    // Vitest's order with the files that start Chrome spread out, so no worker waits for a Chrome slot (test/support/schedule.ts)
+    sequence: { sequencer: ChromeSlotSequencer },
   },
 });

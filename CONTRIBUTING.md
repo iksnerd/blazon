@@ -125,6 +125,8 @@ The suites run with four workers and one retry, because a test that times out on
 
 However they are started, few run at once. Each listed file holds one of `BLAZON_CHROME_SLOTS` slots (default 2) from its first hook to its last, across every vitest worker and every run on the machine (`test/support/chrome-limits.ts`, where every limit is: a file waits at most 15 minutes for a slot and then fails saying so; a slot of a process that is gone or held more than 20 minutes is taken over). A test starts Chrome through `launchBrowser` in `test/support/chrome.ts`, which gives the start a 30 second limit, and every browser it started is closed at the end of the file, also when a test threw, so no Chrome or `playwright_chromiumdev_profile-*` folder stays behind. The vitest `testTimeout` and `hookTimeout` are unchanged.
 
+A file that waits for a slot holds its worker, and vitest's own order (the longest file first) puts the Chrome files at the front, so with four workers two of them used to wait for minutes. The suite's sequencer (`test/support/sequencer.ts`, set in `vitest.config.ts`) keeps vitest's order within the Chrome files and within the others, and interleaves the two by playing the run through with the last run's durations (`test/support/schedule.ts`): a worker gets a Chrome file when a slot is free and another file when none is. It changes only the order; every file still runs once.
+
 Keep a worktree under your home folder, not under `/tmp`: blazon refuses to run a plugin or an interpreter that has a folder others can write above it, so the plugin tests that need a clean path skip with a notice in a checkout under `/tmp`.
 
 ## Reference material (maintainers only)
