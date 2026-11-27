@@ -41,6 +41,29 @@ const json = (dir: string, file: string) => JSON.parse(fs.readFileSync(path.join
 const errors = async (dir: string) => (await compileBlazonData(await loadConfig(dir), dir)).findings.filter((f) => f.severity === 'error');
 const SVG = '<svg viewBox="0 0 10 10"><path fill="currentColor" d="M0 0h10v10z"/></svg>';
 
+describe('blazon init --minimal --font', () => {
+  const fontFindings = async (dir: string) => (await compileBlazonData(await loadConfig(dir), dir)).findings.filter((f) => f.code === 'font-family-missing');
+
+  it('does not name a mono family no `fonts` entry loads, so check has no font-family-missing', async () => {
+    quiet();
+    const dir = path.join(tempDir(), 'acme');
+    expect(await runInit(dir, { minimal: true, name: 'Acme', font: 'Inter' })).toBe(0);
+    const mono = json(dir, 'tokens/typography.json').font.family.mono;
+    expect(mono.$value).toEqual(['ui-monospace', 'monospace']);
+    expect(mono.$extensions['dev.blazon'].font).toBeUndefined();
+    expect(mono.$extensions['dev.blazon'].review.status).toBe('needs-review');
+    expect(await fontFindings(dir)).toEqual([]);
+  });
+
+  it('keeps the starter mono family when the full starter copies its file', async () => {
+    quiet();
+    const dir = path.join(tempDir(), 'acme');
+    expect(await runInit(dir, { name: 'Acme', font: 'Inter' })).toBe(0);
+    expect(json(dir, 'tokens/typography.json').font.family.mono.$value[0]).toBe('IBM Plex Mono');
+    expect(await fontFindings(dir)).toEqual([]);
+  });
+});
+
 describe('blazon init --minimal with answers', () => {
   it('sets the name, color, font and logo, adds a font stylesheet to a config that had none, and compiles clean', async () => {
     quiet();

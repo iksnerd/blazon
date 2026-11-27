@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { SYSTEM_FAMILIES } from '../fonts.js';
 import { googleFontsUrl } from './shared/google-fonts.js';
 import { toHex } from './shared/hex.js';
 import { cleanSvg } from './shared/svg.js';
@@ -132,10 +133,6 @@ export function applyAnswers(destDir: string, answers: Answers, created: Set<str
         // One family answers both: the display face and the body face. The mono face is still blazon's.
         display['$value'] = [answers.font, 'sans-serif'];
         body['$value'] = [answers.font, 'sans-serif'];
-        const mono = tokenAt(tree, 'font.family.mono');
-        if (mono) flagReview(mono, "Still blazon's mono font: it was not chosen to go with your font. Set the brand's own.");
-        fs.writeFileSync(file, `${JSON.stringify(tree, null, 2)}\n`);
-        applied.files.push('tokens/typography.json');
         const url = googleFontsUrl(answers.font);
         if (url && needsConfig('font stylesheet')) {
           config!['fonts'] = withFontStylesheets(config!['fonts'], [url]);
@@ -144,6 +141,24 @@ export function applyAnswers(destDir: string, answers: Answers, created: Set<str
           applied.set.push(`font ${answers.font} (font.family.display and font.family.body)`);
           applied.hints.push(`${answers.font} is not a font blazon knows a stylesheet for: add its stylesheet to fonts in blazon.json`);
         }
+        const mono = tokenAt(tree, 'font.family.mono');
+        if (mono) {
+          // The starter names its own mono family and carries the file in `fonts`. A minimal book copies no font files, so once `fonts` lists a stylesheet
+          // that does not load that family, naming it is a `font-family-missing` the brand did not cause: the stack keeps only the system's mono faces.
+          const stack = Array.isArray(mono['$value']) ? (mono['$value'] as unknown[]) : [];
+          const family = typeof stack[0] === 'string' ? stack[0] : undefined;
+          const fonts = config?.['fonts'];
+          const loaded =
+            Array.isArray(fonts) && fonts.some((entry) => typeof entry === 'object' && entry !== null && String((entry as Json)['family']).toLowerCase() === family?.toLowerCase());
+          if (family && Array.isArray(fonts) && fonts.length > 0 && !loaded && !SYSTEM_FAMILIES.has(family.toLowerCase())) {
+            mono['$value'] = stack.slice(1);
+            const blazon = (mono['$extensions'] as Json | undefined)?.['dev.blazon'] as Json | undefined;
+            if (blazon) delete blazon['font'];
+            flagReview(mono, `Blazon's mono font ${family} was not copied into this book, so the stack is the system's. Set the brand's own.`);
+          } else flagReview(mono, "Still blazon's mono font: it was not chosen to go with your font. Set the brand's own.");
+        }
+        fs.writeFileSync(file, `${JSON.stringify(tree, null, 2)}\n`);
+        applied.files.push('tokens/typography.json');
         applied.hints.push("font.family.mono and the type scale are still blazon's: set the brand's own");
       } else applied.hints.push('font.family.display and font.family.body were not found in tokens/typography.json, so the font was not set');
     }
