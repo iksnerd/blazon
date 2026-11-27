@@ -38,12 +38,31 @@ const STARTER_PLUGINS = ['blazon.copy', 'blazon.tailwind', 'blazon.shadcn'];
  * The example's config as a new book's: its `plugins` list cut to the ones in `STARTER_PLUGINS`. The others draw in Google Chrome or
  * write kits a new book has no use for yet, so a first `blazon build` does not need a browser; JSON has no comments, so they are
  * left out, and the manual (chapter 12) says how to add one. A config already cut comes back as it is.
+ *
+ * A minimal book (`blazon init --minimal`) also has no pages, no custom sections and no font list: `sections` is empty, and the fonts
+ * were the example's own files and stylesheets, which a minimal copy does not carry. Its three plugins stay: they read tokens, not pages
+ * or fonts.
  */
-export function starterConfig(source: string): string {
-  const config = JSON.parse(source) as { plugins?: { name: string }[] };
+export function starterConfig(source: string, { minimal = false }: { minimal?: boolean } = {}): string {
+  const config = JSON.parse(source) as { plugins?: { name: string }[]; sections?: string[]; customSections?: unknown; fonts?: unknown; resolver?: unknown };
   if (Array.isArray(config.plugins)) config.plugins = config.plugins.filter((entry) => STARTER_PLUGINS.includes(entry.name));
+  if (minimal) {
+    config.sections = [];
+    delete config.customSections;
+    delete config.fonts;
+    delete config.resolver;
+  }
   return `${JSON.stringify(config, null, 2)}\n`;
 }
+
+/**
+ * The files of a minimal book, the smallest brand that passes `blazon check` and `blazon build`: the four token files that give the book its
+ * colors, radius, spacing and type (without `form.json` the theme's `radius` role does not resolve), the logo folder (both logos, the mark and
+ * their sidecars) and the config. There is no dark theme and no resolver (the tokens load as they are), no pages, no fonts, no icons, no
+ * social formats, and no `AGENTS.md` or `CLAUDE.md`: that guide describes the pages, the resolver and the dark theme a minimal book does not have.
+ */
+const MINIMAL_FILES = new Set(['blazon.json', 'tokens/colors.json', 'tokens/form.json', 'tokens/spacing.json', 'tokens/typography.json']);
+export const isMinimalFile = (rel: string): boolean => MINIMAL_FILES.has(rel) || rel.startsWith('assets/logos/');
 
 /** The starter's files, as paths relative to its folder. */
 export function starterFiles(template: string = getTemplateDir()): string[] {
@@ -52,18 +71,26 @@ export function starterFiles(template: string = getTemplateDir()): string[] {
     .sort();
 }
 
-/** Copies the starter into `dest`, leaving a file that is already there as it is; returns the files it wrote and the ones it kept (absolute). */
-export function copyStarter(dest: string, template: string = getTemplateDir()): { written: string[]; kept: string[] } {
+/**
+ * Copies the starter into `dest`, leaving a file that is already there as it is; returns the files it wrote and the ones it kept (absolute).
+ * `filter` limits the copy to the files it accepts (relative paths); `minimal` is the filter of a minimal book and its config.
+ */
+export function copyStarter(
+  dest: string,
+  template: string = getTemplateDir(),
+  { filter, minimal = false }: { filter?: (rel: string) => boolean; minimal?: boolean } = {},
+): { written: string[]; kept: string[] } {
   const written: string[] = [];
   const kept: string[] = [];
-  for (const rel of starterFiles(template)) {
+  const wanted = filter ?? (minimal ? isMinimalFile : () => true);
+  for (const rel of starterFiles(template).filter(wanted)) {
     const to = path.join(dest, rel);
     if (fs.existsSync(to)) {
       kept.push(to);
       continue;
     }
     fs.mkdirSync(path.dirname(to), { recursive: true });
-    if (rel === 'blazon.json') fs.writeFileSync(to, starterConfig(fs.readFileSync(path.join(template, rel), 'utf-8')));
+    if (rel === 'blazon.json') fs.writeFileSync(to, starterConfig(fs.readFileSync(path.join(template, rel), 'utf-8'), { minimal }));
     else fs.copyFileSync(path.join(template, rel), to);
     written.push(to);
   }

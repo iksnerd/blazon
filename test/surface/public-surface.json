@@ -48,6 +48,7 @@
       "--key <path>",
       "--lockup <name>",
       "--logo <file>",
+      "--minimal",
       "--name <name>",
       "--name <text>",
       "--no-input",

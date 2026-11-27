@@ -255,6 +255,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     .option('--color <hex>', 'With `init`: the primary color as hex, with or without the #: #2563eb, 2563eb or #26e')
     .option('--font <family>', 'With `init`: the font family, a Google Fonts name')
     .option('--logo <file>', 'With `init`: an SVG or PNG file to use as the logo')
+    .option('--minimal', 'With `init`: copy only the smallest brand (four token files, the logo and the config), with no pages, fonts, dark theme or agent guide')
     .option('--dev', 'With `init`: start `blazon dev` when it is done')
     .option('--json', 'Print what init made as JSON on standard output; everything else goes to standard error (never asks)')
     .option('--yes', 'With `init`: accept every default and never ask')
@@ -262,7 +263,7 @@ export async function runCli(rawArgv: string[] = process.argv): Promise<void> {
     .action(
       async (
         dir?: string,
-        options?: { from?: string; name?: string; color?: string; font?: string; logo?: string; dev?: boolean; yes?: boolean; input?: boolean; json?: boolean },
+        options?: { from?: string; name?: string; color?: string; font?: string; logo?: string; minimal?: boolean; dev?: boolean; yes?: boolean; input?: boolean; json?: boolean },
       ) => {
         try {
           if (options?.json) {

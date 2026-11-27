@@ -42,6 +42,8 @@ node bin/blazon.js dev my-brand
 
 `blazon init` copies blazon's own brand book, `examples/blazon/`, into the folder. A new book starts as blazon's brand and becomes yours as you replace it, one file at a time.
 
+For a small brand without the pages, fonts and dark theme, use [`--minimal`](#a-minimal-brand) instead.
+
 ```text
 my-brand/
 ├── tokens/        colors.json, typography.json, spacing.json, form.json, social.json
@@ -101,6 +103,22 @@ Next steps:
 The list names every top-level folder and file `init` wrote. `.gitignore` keeps the build output (`dist/`) out of git: a folder that has one gets the line added at the end, once, and nothing else in it changes. Each step works from the folder you ran `blazon init` in. With `--color`, the first step says the primary color is set and the rest of the palette is still blazon's.
 
 Run `blazon check acme-brand` straight away and it exits 0: it reports 0 errors, 2 warnings and 43 notes. The notes are every starter file in `docs/`, `tokens/`, `assets/` and `fonts/`, grouped by folder. `AGENTS.md` and `CLAUDE.md` get none. The warnings are `starter-logo-unchanged`: the two logos in `blazon.json` are still blazon's own mark, and the book would show it under your name until you replace them. It then repeats the first three steps under `Next:`. The list shrinks as you replace files. [Chapter 3](03-checks.md#how-the-findings-are-printed) explains the grouping.
+
+## A minimal brand
+
+`blazon init my-brand --minimal` copies only what the smallest brand needs, 12 files:
+
+```text
+my-brand/
+├── tokens/        colors.json, form.json, spacing.json, typography.json
+├── assets/        logos/ (blazon's mark on light and on dark and the mark alone, each with a sidecar)
+├── blazon.json    `sections` is empty; there is no `fonts` list and no resolver
+└── .gitignore     dist/
+```
+
+There are no pages, no fonts, no dark theme (`blazon.resolver.json` and `tokens/theme/dark.json`), no icons, backgrounds or social formats, and no `AGENTS.md` or `CLAUDE.md`: that guide describes the pages, the resolver and the dark theme a minimal brand does not have. `form.json` stays because the theme's `radius` role names a token in it; without it `blazon check` reports `theme-unresolved`. The three plugins of the full starter stay, because they read tokens and need no pages or fonts: `blazon.copy`, `blazon.tailwind` and `blazon.shadcn`, so a web app still gets its Tailwind theme and shadcn/ui variables from `blazon build`.
+
+`blazon check` on it exits 0 with the two `starter-logo-unchanged` warnings and the `starter-file-unchanged` notes, and `blazon build` writes the tokens and the plugin files. Every other option works with it: `--color`, `--font`, `--logo`, `--name`, `--description` and `--from` edit the files that are there (`--font` adds a `fonts` list with the stylesheet, and the mono font in `typography.json` then needs a file or stylesheet of its own: `font-family-missing` says so). To add pages later, create `docs/` and name its sections in `sections` ([chapter 5](05-pages.md)).
 
 ## The smallest project
 
@@ -171,7 +189,7 @@ If you choose your website, leave the address empty to go back to typing the val
 
 At the end a box lists what was written, a second box gives three next steps, and "Start the dev server now?" (default no) runs `blazon dev` in the folder when you say yes. Press Ctrl-C at any question to stop: the starter stays as copied and the exit status is 130.
 
-Each question has a flag, so a script can give the same answers: `--name <text>`, `--description <text>` (one sentence, 240 characters at most), `--color <hex>`, `--font <family>`, `--logo <file>` and `--dev`. `--from <url>` writes everything the site shows, as accepting every box in the review would. `--name` may be combined with `--from`, and then wins over the site's title. An invalid value exits 2 before anything is copied. A file that already existed is kept, as everywhere in `blazon init`.
+Each question has a flag, so a script can give the same answers: `--name <text>`, `--description <text>` (one sentence, 240 characters at most), `--color <hex>`, `--font <family>`, `--logo <file>`, `--minimal` (the smallest brand, see [A minimal brand](#a-minimal-brand)) and `--dev`. `--from <url>` writes everything the site shows, as accepting every box in the review would. `--name` may be combined with `--from`, and then wins over the site's title. An invalid value exits 2 before anything is copied. A file that already existed is kept, as everywhere in `blazon init`.
 
 `blazon init` never asks when `--yes` or `--no-input` is given (the same thing), when any of `--from`, `--name`, `--description`, `--color`, `--font` or `--logo` is given, or when stdin or stdout is not a terminal. CI and scripts therefore never wait for input, and `blazon init --yes` runs the whole flow with every default. Colors in the guided output are turned off by `NO_COLOR`, `TERM=dumb` and a non-terminal; swatches then print as `[#2563eb]`, with the same facts.
 
@@ -185,7 +203,7 @@ Each question has a flag, so a script can give the same answers: `--name <text>`
 
 | Command | Does |
 |---|---|
-| `blazon init [dir]` | Copy the starter template into `dir`, and in a terminal ask for a name, colors, font and logo, see [The guided start](#the-guided-start). `--name`, `--description`, `--color`, `--font` and `--logo` answer without asking, `--dev` starts the dev server, `--yes` or `--no-input` accept every default. `--from <url>` fills it from a live site, see [Starting from a live site](#starting-from-a-live-site). Exits 2 when a value is not valid, the address is not `http` or `https`, or the site cannot be read; 130 when the questions are cut short |
+| `blazon init [dir]` | Copy the starter template into `dir`, and in a terminal ask for a name, colors, font and logo, see [The guided start](#the-guided-start). `--name`, `--description`, `--color`, `--font` and `--logo` answer without asking, `--minimal` copies only the smallest brand (see [A minimal brand](#a-minimal-brand)), `--dev` starts the dev server, `--yes` or `--no-input` accept every default. `--from <url>` fills it from a live site, see [Starting from a live site](#starting-from-a-live-site). Exits 2 when a value is not valid, the address is not `http` or `https`, or the site cannot be read; 130 when the questions are cut short |
 | `blazon dev [dir]` | Start the dev server with live reload; it says each error in the terminal as it appears, with the file and line and what to do, and says when they are fixed. `-p, --port <port>` sets the port (default: `port` in `blazon.json`, else 3000); `--strict-port` exits 2 when that port is in use instead of taking the next free one; `--host` listens on every network interface and `--host <address>` on one address (default: this machine only, so nobody else on the network can read the brand's files or the folder paths `/__blazon/mcp-config` returns). It answers only requests whose `Host` is this machine, an IP address or the `--host` address, so a web page cannot reach it by rebinding a name, and it sends no CORS header, so a page on another origin cannot read a response. It answers 404 on Vite's `/__open-in-editor` route, which would make a running editor open a local path for any page that can reach this machine, and reads files over `/@fs/` only from the viewer's own folder, never from the brand or from a folder above blazon. It has no endpoint that writes |
 | `blazon check [dir]` | Print the findings. Exits 1 on errors, and then ends with the next step for each kind of error. `--strict` also exits 1 on warnings. `--json` prints them as JSON, see [For scripts and agents](03-checks.md#for-scripts-and-agents); `--severity <level>` cuts that list. `--no-plugins` runs no plugin, and `--plugin <program>` runs one the lock does not pin, once ([chapter 12](12-plugins.md)) |
 | `blazon tokens [dir]` | Check, then write `dist/tokens/`, then run the `build` plugins with no site: those that work from the brand alone write into `dist/tokens/<name>/`, and those that need the built site say so and write nothing. `--no-plugins` runs no plugin, so no browser is needed. `--plugin <program>`, `--json` and `--severity <level>` work as for `blazon check` |

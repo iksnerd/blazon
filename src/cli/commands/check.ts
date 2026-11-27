@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import pc from '../../core/colors.js';
 import { loadProject } from '../project.js';
 import { blazonPinFindings } from '../../core/blazon-pin.js';
@@ -103,12 +105,17 @@ export function printFindings(result: CheckResult, dir: string = ''): void {
 /** A project that is still mostly the starter gets three steps to begin with. A nearly finished brand sees nothing extra. */
 const STARTER_NOTES_FOR_NEXT = 5;
 
-export function printNext(result: CheckResult, dir: string = ''): void {
+/** `docs` is whether the project has a docs folder: a minimal book has none, so its third step names the logo only. */
+export function printNext(result: CheckResult, dir: string = '', docs: boolean = true): void {
   if (result.infos.filter((f) => f.code === 'starter-file-unchanged').length < STARTER_NOTES_FOR_NEXT) return;
   console.log(pc.bold('Next:'));
   console.log(`  1. Edit ${pc.cyan(inDir(dir, 'tokens/colors.json'))} with your colors`);
   console.log(`  2. Run ${pc.cyan(blazonCommand('dev', dir))} to see the book`);
-  console.log(`  3. Replace blazon's artwork in ${pc.cyan(inDir(dir, 'assets/'))} and the text in ${pc.cyan(inDir(dir, 'docs/'))}`);
+  console.log(
+    docs
+      ? `  3. Replace blazon's artwork in ${pc.cyan(inDir(dir, 'assets/'))} and the text in ${pc.cyan(inDir(dir, 'docs/'))}`
+      : `  3. Replace blazon's artwork in ${pc.cyan(inDir(dir, 'assets/'))}`,
+  );
   console.log();
 }
 
@@ -174,7 +181,7 @@ export async function runCheck(cwd: string = process.cwd(), strict: boolean = fa
   console.log();
   // The starter's three steps are for a book that checks out; with errors, the next step is to fix them
   if (result.errors.length > 0) printFailed(result, dir);
-  else printNext(result, dir);
+  else printNext(result, dir, fs.existsSync(path.resolve(cwd, config.docsDir ?? './docs')));
 
   if (!result.passed) {
     console.error(pc.red(`✖ Check failed${strict ? ' (--strict treats warnings as errors)' : ''}.\n`));

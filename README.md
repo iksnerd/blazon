@@ -41,6 +41,8 @@ my-brand/
 
 The book starts as blazon's brand and becomes yours as you replace it. `blazon check` notes every file that is still the starter's text, which is the list of what is left to do, and warns about each logo that is still blazon's own. To start from a company's site instead, run `blazon init acme-brand --from https://acme.com`: blazon reads the page and its stylesheets for colors, fonts and the logo, and flags each value `needs-review` until the brand owner confirms it ([how](docs/manual/01-getting-started.md#starting-from-a-live-site)).
 
+For a small brand without the pages, fonts and dark theme, run `blazon init my-brand --minimal`: it writes 12 files (four token files, the logo with its sidecars and the config, and a `.gitignore`) that pass `blazon check` and `blazon build` ([what it holds](docs/manual/01-getting-started.md#a-minimal-brand)).
+
 To look at a finished book first, clone the repository and run blazon's own brand book with no build: `npm run dev:blazon` ([CONTRIBUTING](CONTRIBUTING.md#local-setup)).
 
 ## Set up with your agent
@@ -183,7 +185,7 @@ getVar('interactive.primary'); // "var(--interactive-primary)"
 
 | Command | Does |
 |---|---|
-| `blazon init [dir]` | Copy the starter into `dir`, asking for a name, color, font and logo in a terminal. `--from <url>` starts from a live site |
+| `blazon init [dir]` | Copy the starter into `dir`, asking for a name, color, font and logo in a terminal. `--from <url>` starts from a live site, `--minimal` copies only the smallest brand |
 | `blazon dev [dir]` | Start the dev server with live reload |
 | `blazon check [dir]` | Report findings; exits 1 on errors (`--strict` also fails on warnings, `--json` prints them as JSON) |
 | `blazon tokens [dir]` | Check, then write `dist/tokens/` |
