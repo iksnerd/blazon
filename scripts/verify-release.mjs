@@ -253,7 +253,13 @@ async function main() {
   await step(`download v${version} into ~/blazon-release-${version}`, () => {
     if (fs.existsSync(folder)) throw new Error(`${folder} exists; remove it or pick another version`);
     fs.mkdirSync(folder);
-    must(run('gh', ['release', 'download', `v${version}`, '--repo', REPO, '--dir', folder]), 'gh release download');
+    try {
+      must(run('gh', ['release', 'download', `v${version}`, '--repo', REPO, '--dir', folder]), 'gh release download');
+    } catch (error) {
+      // A failed download (no such release, no network) must not leave an empty folder: the next run would refuse to start on it.
+      if (fs.readdirSync(folder).length === 0) fs.rmdirSync(folder);
+      throw error;
+    }
     if (!fs.existsSync(tarball)) throw new Error(`no ${path.basename(tarball)} in the release`);
     if (!fs.existsSync(path.join(folder, 'SHA256SUMS'))) throw new Error('no SHA256SUMS in the release');
   });
