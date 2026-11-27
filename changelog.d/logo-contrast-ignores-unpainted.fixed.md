@@ -1,1 +1,0 @@
-`logo-contrast-insufficient` no longer counts colors in parts of a logo that are never painted: a white shape inside a `clipPath`, a `mask`, a `pattern`, a `filter`, a `marker`, `defs` or a `symbol` no `<use>` draws, a `title`, or an element that is hidden (`display:none`, `visibility:hidden`, zero opacity).

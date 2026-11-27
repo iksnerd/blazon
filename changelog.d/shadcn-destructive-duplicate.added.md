@@ -1,1 +1,0 @@
-`blazon.shadcn` fills the `check` role and warns with `blazon.shadcn/destructive-duplicate` when `destructive` is the same color as `primary`, `accent` or `ring` in any context. The option `allowSame` (`{ "destructive": "ring" }`) silences exactly that pair. The starter's config lists the `ring` pair, as its brand has no red.

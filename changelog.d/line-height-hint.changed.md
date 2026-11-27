@@ -1,1 +1,0 @@
-`token-value-invalid` on a typography `lineHeight` written as `38px`, `150%`, `normal` or `{"value":38,"unit":"px"}` now says what to write: a number, a multiple of `fontSize` (`38px` at `16px` is `2.375`). Those values are still refused, as DTCG defines `lineHeight` as a number.

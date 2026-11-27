@@ -1,1 +1,0 @@
-Init gives the text on a brand color white or near-black when neither graphite nor bone reaches AA on it and one of them does. It writes a `color.base.white` or `color.base.black` token for it, and the contrast pair names the brand color. The warning stays only when none of the four reaches AA.

@@ -6,6 +6,74 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.10.0 (2026-11-27)
+
+### Added
+
+- `blazon init --from` and `--from-dir` write `extract.json` beside
+  `blazon.json`: every value read with its source, selector, property and count,
+  and under `candidates` the colors, radii and weights the rules use most, which
+  are evidence and never a token or a role. The review note on each value says a
+  person confirms it with the brand owner and records `by` and `at`.
+- `blazon init --from-dir <folder>` reads a saved copy of a site offline, the
+  same way `--from` reads a live one: the page (`index.html` or the one named),
+  its stylesheets and their `@import`s, by relative path. Nothing outside the
+  folder is read: a URL, an absolute path, `..` and a link that leads out are
+  skipped, each with its reason in the output.
+- `blazon init --from` and `--from-dir` read colors in any CSS form (`oklch()`,
+  `hsl()`, `lab()`, named and the rest, through the core color parser), so a
+  Tailwind v4 site gives its colors; they also read radius custom properties into
+  `tokens/form.json` and the body and heading font weights into
+  `tokens/typography.json`, all marked needs-review. A color's role still comes
+  only from its custom property's name.
+- New flag `blazon init --minimal` copies only the smallest brand: four token files, the logo with its sidecars, the config and a `.gitignore`, 12 files with no pages, fonts, dark theme, resolver or agent guide. It passes `blazon check` and `blazon build`, and keeps the Tailwind and shadcn/ui plugins. `blazon check` also stops naming a docs folder in its next steps when the project has none.
+- `blazon.shadcn` fills the `check` role and warns with `blazon.shadcn/destructive-duplicate` when `destructive` is the same color as `primary`, `accent` or `ring` in any context. The option `allowSame` (`{ "destructive": "ring" }`) silences exactly that pair. The starter's config lists the `ring` pair, as its brand has no red.
+- `blazon.shadcn` writes shadcn v4 output on request: `format` (`oklch` or `hex`) for the colors in `shadcn.css`, `themeInline` for a third file `shadcn-theme.css` with the `@theme inline` block and the `--radius-*` steps, and `chart` to fill `chart-1` to `chart-5` from a token group. Without them the files are unchanged. A color it cannot convert, or a chart group with fewer than five colors, is a warning.
+
+### Changed
+
+- `blazon contrast` prints the ratio, the level and the two tokens on its first line (`16.59:1  AAA  color.base.carbon on color.base.bone`), and no longer repeats the level as a row below. `--json` is unchanged.
+- `blazon check --dir brand` (also `--project` and `--path`) now says to give the folder as the last argument, `blazon check <dir>`, or to use `--cwd <dir>`, instead of only "unknown option".
+- `directive-unknown` now says which directive was probably meant: `<!-- blazon:logo -->` gets `did you mean blazon:logo-usage, blazon:logo-on or blazon:logo-contrast (7 more start with logo)?`.
+- `blazon init --from` and `blazon drift <url>` fetch only public addresses. The
+  host is resolved first and a loopback, private, link-local (including the cloud
+  metadata address), unique-local or IPv4-mapped IPv6 address is refused, on
+  every redirect too (at most 5); the connection goes to the address that was
+  checked, so DNS rebinding cannot move it; and a page must be `text/html` and a
+  stylesheet `text/css`. No cookies or credentials are sent.
+- Init ends its next steps with a line that says the project is the folder that holds `blazon.json`. The manual says the same on its first page and has a short "Former names" section: the old name was folio, and its directives and `dev.folio` keys are ignored.
+- `token-value-invalid` on a typography `lineHeight` written as `38px`, `150%`, `normal` or `{"value":38,"unit":"px"}` now says what to write: a number, a multiple of `fontSize` (`38px` at `16px` is `2.375`). Those values are still refused, as DTCG defines `lineHeight` as a number.
+- `blazon check` prints all `review-pending` warnings as one line (`WARN review-pending (11): a, b, c, d, e and 6 more`) whatever their notes say, after the other warnings, so a real warning no longer sits among them. `--json` keeps every finding and note, and `counts` gains `byCode`, the number of findings for each code.
+
+### Fixed
+
+- `blazon drift <url>` and `blazon init --from` fail with a named reason when a
+  compressed response (gzip, deflate or br) stops before its end or runs past the
+  time limit. Before, the read never finished and `blazon drift` exited 0 with no
+  output, which a CI gate took for "no drift". A refused response or a redirect
+  now closes its connection at once instead of downloading until the time limit.
+- The fetch behind `init --from` and `drift <url>` refuses a redirect from https
+  to http, with the reason, instead of following it in clear text.
+- The fetch behind `init --from` and `drift <url>` also refuses the IPv4-translated
+  form `::ffff:0:a.b.c.d`, local-use NAT64 (`64:ff9b:1::/48`), Teredo
+  (`2001::/32`), the documentation ranges `2001:db8::/32`, `3fff::/20`,
+  `192.0.2.0/24`, `198.51.100.0/24` and `203.0.113.0/24`, SRv6 segment
+  identifiers (`5f00::/16`) and the 6to4 relay range `192.88.99.0/24`.
+- `init --from-dir` refuses a page (`index.html`, or the page named) that is a
+  link leading out of the folder, with the reason it gives such a stylesheet,
+  before it copies anything. Before, the page was read wherever the link led.
+- Init gives the text on a brand color white or near-black when neither graphite nor bone reaches AA on it and one of them does. It writes a `color.base.white` or `color.base.black` token for it, and the contrast pair names the brand color. The warning stays only when none of the four reaches AA.
+- Init no longer copies the clear space and minimum size of blazon's own mark into the sidecar of a logo that replaces it (`--logo`, the guided start and `--from`). The sidecar gets a stand-in clear space measured on the new artwork and no minimum size, and init says so.
+- `init --from` and `--from-dir` no longer import a site's SVG logo that holds a
+  script, a `foreignObject`, an iframe, embed or object, an event handler
+  attribute (quoted or not), an animation of `href`, an `href` or `src` that is
+  not `#id`, or a `javascript:`, `data:` or remote URL (entity-encoded, or in
+  `style`, a `<style>` sheet or an `@import`), or that is not well-formed XML.
+  Before, a pattern edit let such content through. Init keeps its placeholder
+  logo, says why on one line and records the reason as `refused` in
+  `extract.json`.
+- `logo-contrast-insufficient` no longer counts colors in parts of a logo that are never painted: a white shape inside a `clipPath`, a `mask`, a `pattern`, a `filter`, a `marker`, `defs` or a `symbol` no `<use>` draws, a `title`, or an element that is hidden (`display:none`, `visibility:hidden`, zero opacity).
+
 ## 0.9.0 (2026-11-26)
 
 ### Changed
