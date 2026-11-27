@@ -2,17 +2,18 @@ import dns from 'node:dns';
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
-import type { Readable } from 'node:stream';
+import { pipeline, type Readable } from 'node:stream';
 import zlib from 'node:zlib';
 
 // How blazon reads a public web page (`init --from`, `drift <url>`). The address is a stranger's, so the fetch is held to a policy:
 // - only http and https, and no user name or password in the address;
 // - the host is resolved first and every address it gives must be public: loopback, private (RFC 1918), shared (100.64/10), link-local
-//   (169.254/16, with the 169.254.169.254 metadata address), unique-local and link-local IPv6, IPv4-mapped IPv6, multicast and the reserved
-//   ranges are refused, and so is the name `localhost`;
+//   (169.254/16, with the 169.254.169.254 metadata address), unique-local and link-local IPv6, IPv4-mapped and IPv4-translated IPv6,
+//   local-use NAT64, Teredo, the documentation and relay ranges, multicast and the reserved ranges are refused, and so is the name
+//   `localhost`;
 // - the connection goes to the address that was checked: the request's `lookup` returns it, so the name is not resolved a second time and a
 //   DNS answer that changes between the check and the connection (rebinding) is never used;
-// - a redirect is a new request held to the same checks, at most 5 of them;
+// - a redirect is a new request held to the same checks, at most 5 of them, and never from https to http;
 // - the body is at most 5 MB (after decompression) and the whole read, redirects included, at most 10 s;
 // - the content type must be what was asked for: an HTML page, a stylesheet, a manifest or an image;
 // - no cookies, no credentials and no scripts: the bytes are read as text or as a file, never run.
@@ -36,6 +37,8 @@ export interface Network {
   resolve: (host: string) => Promise<ResolvedAddress[]>;
   /** Why an address may not be connected to, in words; undefined when it may */
   refused: (address: string) => string | undefined;
+  /** The time limit of a whole read, in milliseconds; TIMEOUT_MS when absent. Only a test sets it, so that it need not wait 10 s */
+  timeoutMs?: number;
 }
 
 export type FetchKind = 'page' | 'stylesheet' | 'manifest' | 'image';
@@ -92,8 +95,12 @@ const V4_REFUSED: [number[], number, string][] = [
   [[169, 254, 0, 0], 16, 'a link-local address'],
   [[172, 16, 0, 0], 12, 'a private address (RFC 1918)'],
   [[192, 0, 0, 0], 24, 'a reserved address (IETF protocol assignments)'],
+  [[192, 0, 2, 0], 24, 'a documentation address (TEST-NET-1, RFC 5737)'],
+  [[192, 88, 99, 0], 24, 'a 6to4 relay anycast address (RFC 7526)'],
   [[192, 168, 0, 0], 16, 'a private address (RFC 1918)'],
   [[198, 18, 0, 0], 15, 'a reserved address (benchmarking)'],
+  [[198, 51, 100, 0], 24, 'a documentation address (TEST-NET-2, RFC 5737)'],
+  [[203, 0, 113, 0], 24, 'a documentation address (TEST-NET-3, RFC 5737)'],
   [[224, 0, 0, 0], 4, 'a multicast address'],
   [[240, 0, 0, 0], 4, 'a reserved address'],
 ];
@@ -114,6 +121,11 @@ export function refusedAddress(address: string): string | undefined {
   // ::ffff:a.b.c.d reaches IPv4 on a dual-stack socket, and ::a.b.c.d is the old compatible form: a public name has no reason to give either
   if (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff) return 'an IPv4-mapped IPv6 address';
   if (g.slice(0, 6).every((x) => x === 0)) return 'an IPv4-compatible IPv6 address';
+  // ::ffff:0:a.b.c.d is the IPv4-translated form (RFC 2765), another way to write an IPv4 address in IPv6
+  if (g.slice(0, 4).every((x) => x === 0) && g[4] === 0xffff && g[5] === 0) return 'an IPv4-translated IPv6 address (::ffff:0:0/96)';
+  // The local-use NAT64 prefix (RFC 8215) is refused outright, whatever IPv4 address it carries: the operator picks its own prefix length
+  // (/48 to /96), so where the IPv4 address sits is not knowable from outside, and it translates inside one network, never a public one
+  if (g[0] === 0x64 && g[1] === 0xff9b && g[2] === 1) return 'a local-use NAT64 address (64:ff9b:1::/48, RFC 8215)';
   // NAT64 (64:ff9b::/96) and 6to4 (2002::/16) carry an IPv4 address: it is held to the IPv4 rules
   if (g[0] === 0x64 && g[1] === 0xff9b && g.slice(2, 6).every((x) => x === 0)) {
     const inner = refusedV4(embedded(g[6]!, g[7]!));
@@ -123,6 +135,11 @@ export function refusedAddress(address: string): string | undefined {
     const inner = refusedV4(embedded(g[1]!, g[2]!));
     return inner && `a 6to4 address of ${inner}`;
   }
+  // Teredo tunnels to an IPv4 client through relays, and its addresses carry IPv4 addresses; a public name has no reason to give one
+  if (g[0] === 0x2001 && g[1] === 0) return 'a Teredo address (2001::/32)';
+  if (g[0] === 0x2001 && g[1] === 0xdb8) return 'a documentation address (2001:db8::/32)';
+  if (g[0] === 0x3fff && (g[1]! & 0xf000) === 0) return 'a documentation address (3fff::/20)';
+  if (g[0] === 0x5f00) return 'an SRv6 segment identifier (5f00::/16)';
   if ((g[0]! & 0xfe00) === 0xfc00) return 'a unique-local IPv6 address (fc00::/7)';
   if ((g[0]! & 0xffc0) === 0xfe80) return 'a link-local IPv6 address (fe80::/10)';
   if ((g[0]! & 0xffc0) === 0xfec0) return 'a site-local IPv6 address (fec0::/10)';
@@ -144,6 +161,12 @@ export const networkOf = (given: unknown): Network =>
   typeof given === 'object' && given !== null && typeof (given as Network).resolve === 'function' && typeof (given as Network).refused === 'function'
     ? (given as Network)
     : PUBLIC_NETWORK;
+
+/** Why a redirect may not be followed, in words; undefined when it may. One from https to http would send the rest of the read in clear text. */
+export function redirectRefusal(from: URL, to: URL): string | undefined {
+  if (from.protocol === 'https:' && to.protocol === 'http:') return `it redirects from https to http (${to.href}), and blazon does not downgrade a read to clear text`;
+  return undefined;
+}
 
 /** A fetch blazon would not make, with the reason. */
 export class FetchRefused extends Error {
@@ -211,10 +234,13 @@ function decoded(hop: Hop, label: string): Readable {
     .toLowerCase()
     .trim();
   if (encoding === 'identity' || encoding === '') return hop.body;
-  if (encoding === 'gzip' || encoding === 'x-gzip') return hop.body.pipe(zlib.createGunzip());
-  if (encoding === 'deflate') return hop.body.pipe(zlib.createInflate());
-  if (encoding === 'br') return hop.body.pipe(zlib.createBrotliDecompress());
-  hop.body.resume();
+  // pipeline, not pipe: pipe does not pass the source's error or early close on, so a connection that dies mid-body (or the time limit)
+  // would leave the decompressor open and the read waiting forever. pipeline destroys the decompressor with the source's error.
+  const through = (decompressor: zlib.Gunzip | zlib.Inflate | zlib.BrotliDecompress) => pipeline(hop.body, decompressor, () => {});
+  if (encoding === 'gzip' || encoding === 'x-gzip') return through(zlib.createGunzip());
+  if (encoding === 'deflate') return through(zlib.createInflate());
+  if (encoding === 'br') return through(zlib.createBrotliDecompress());
+  hop.body.destroy();
   throw new FetchRefused(`refused ${label}: the server sent it in an encoding blazon does not read (${encoding})`);
 }
 
@@ -225,13 +251,21 @@ function reasonOf(err: unknown): string {
   return cause instanceof Error && cause.message && cause.message !== message ? `${message}: ${cause.message}` : message;
 }
 
+/** Whether a read failed because the body stopped before its end: the connection closed, or the compressed stream was cut short. */
+function endedEarly(err: unknown): boolean {
+  const code = (err as { code?: unknown } | undefined)?.code;
+  const message = err instanceof Error ? err.message : '';
+  return code === 'ECONNRESET' || code === 'ERR_STREAM_PREMATURE_CLOSE' || code === 'Z_BUF_ERROR' || message === 'aborted' || /unexpected end of file/i.test(message);
+}
+
 /**
  * The bytes at an http(s) address, held to the policy above. `kind` says what the address must be (its content type), `network` where it may
  * connect (the public network unless a test passes another).
  */
 export async function safeFetch(address: string, kind: FetchKind, network: Network = PUBLIC_NETWORK): Promise<Buffer> {
   const policy = networkOf(network);
-  const signal = AbortSignal.timeout(TIMEOUT_MS);
+  const limit = policy.timeoutMs ?? TIMEOUT_MS;
+  const signal = AbortSignal.timeout(limit);
   let url: URL;
   try {
     url = new URL(address);
@@ -250,21 +284,25 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       hop = await request(url, pinned, kind, signal);
     } catch (err) {
       if (err instanceof FetchRefused) throw new FetchRefused(`refused ${label(url)}: ${err.message}`, { cause: err });
-      throw new Error(`could not fetch ${label(url)}: ${timedOut(err) ? `no answer in ${TIMEOUT_MS / 1000} s` : reasonOf(err)}`, { cause: err });
+      throw new Error(`could not fetch ${label(url)}: ${timedOut(err) ? `no answer in ${limit / 1000} s` : reasonOf(err)}`, { cause: err });
     }
     const location = hop.headers.location;
     if (hop.status >= 300 && hop.status < 400 && location) {
-      hop.body.resume();
+      hop.body.destroy();
       if (redirects >= MAX_REDIRECTS) throw new FetchRefused(`refused ${first}: more than ${MAX_REDIRECTS} redirects`);
+      let next: URL;
       try {
-        url = new URL(location, url);
+        next = new URL(location, url);
       } catch {
         throw new FetchRefused(`refused ${label(url)}: it redirects to "${location}", which is not a web address`);
       }
+      const downgrade = redirectRefusal(url, next);
+      if (downgrade) throw new FetchRefused(`refused ${label(url)}: ${downgrade}`);
+      url = next;
       continue;
     }
     if (hop.status < 200 || hop.status >= 300) {
-      hop.body.resume();
+      hop.body.destroy();
       throw new Error(`could not fetch ${label(url)}: ${hop.status} ${hop.statusText}`.trim());
     }
     const type = String(hop.headers['content-type'] ?? '')
@@ -272,7 +310,7 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       .trim()
       .toLowerCase();
     if (!ACCEPT[kind].types(type)) {
-      hop.body.resume();
+      hop.body.destroy();
       throw new FetchRefused(`refused ${label(url)}: blazon wanted ${ACCEPT[kind].what}, and the server ${type ? `says it is ${type}` : 'sent no content type'}`);
     }
     if (Number(hop.headers['content-length'] ?? 0) > MAX_BYTES) {
@@ -293,7 +331,9 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       }
     } catch (err) {
       if (err instanceof FetchRefused) throw err;
-      throw new Error(`could not read ${label(url)}: ${timedOut(err) ? `no answer in ${TIMEOUT_MS / 1000} s` : reasonOf(err)}`, { cause: err });
+      // A body that stops early is an error with its reason, never a short page: `drift` would compare a part and could pass
+      const why = timedOut(err) ? `no answer in ${limit / 1000} s` : endedEarly(err) ? `the connection closed before the whole body arrived (${reasonOf(err)})` : reasonOf(err);
+      throw new Error(`could not read ${label(url)}: ${why}`, { cause: err });
     }
     return Buffer.concat(chunks);
   }

@@ -1,7 +1,9 @@
+import { randomBytes } from 'node:crypto';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { refusedAddress, safeFetch, type Network } from '../../src/core/drift/fetch.js';
+import zlib from 'node:zlib';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { redirectRefusal, refusedAddress, safeFetch, type Network } from '../../src/core/drift/fetch.js';
 import { readPage } from '../../src/core/drift/read.js';
 import { stubNetwork } from '../support/network.js';
 
@@ -81,6 +83,39 @@ describe('the addresses blazon refuses', () => {
   });
 });
 
+describe('the special ranges, each with an address inside and its neighbour outside', () => {
+  // `outside` is the nearest address that is not in the range. It is public (allowed) where one exists; where every neighbour is itself
+  // special, it is refused for another reason, never this range's. A range written too wide fails on its neighbour.
+  it.each([
+    ['192.0.2.0/24 (TEST-NET-1)', ['192.0.2.1', '192.0.2.255'], /documentation.*TEST-NET-1/, ['192.0.3.1', '192.0.1.255']],
+    ['198.51.100.0/24 (TEST-NET-2)', ['198.51.100.1', '198.51.100.254'], /documentation.*TEST-NET-2/, ['198.51.101.1', '198.51.99.255']],
+    ['203.0.113.0/24 (TEST-NET-3)', ['203.0.113.1', '203.0.113.254'], /documentation.*TEST-NET-3/, ['203.0.114.1', '203.0.112.255']],
+    ['192.88.99.0/24 (6to4 relay anycast)', ['192.88.99.1', '192.88.99.254'], /6to4 relay/, ['192.88.100.1', '192.88.98.255']],
+    ['64:ff9b:1::/48 (local-use NAT64)', ['64:ff9b:1::808:808', '64:ff9b:1:ffff:ffff::1', '64:ff9b:1::a00:1'], /local-use NAT64/, ['64:ff9b::808:808', '64:ff9b:2::808:808']],
+    ['::ffff:0:0/96 (IPv4-translated)', ['::ffff:0:7f00:1', '::ffff:0:808:808', '::ffff:0:127.0.0.1'], /IPv4-translated/, ['::ffff:808:808']],
+    ['2001::/32 (Teredo)', ['2001::1', '2001:0:ffff:ffff::1'], /Teredo/, ['2001:200::1', '2001:4860::8888']],
+    ['2001:db8::/32 (documentation)', ['2001:db8::1', '2001:db8:ffff:ffff::1'], /documentation.*2001:db8/, ['2001:db9::1', '2001:db7:ffff::1']],
+    ['3fff::/20 (documentation)', ['3fff::1', '3fff:fff:ffff::1'], /documentation.*3fff::\/20/, ['3fff:1000::1', '3ffe:ffff::1']],
+    ['5f00::/16 (SRv6 segment identifiers)', ['5f00::1', '5f00:ffff:ffff::1'], /SRv6/, ['5f01::1', '5eff:ffff::1']],
+  ])('%s', (_range, inside, reason, outside) => {
+    for (const address of inside) expect(refusedAddress(address), address).toMatch(reason);
+    for (const address of outside) expect(refusedAddress(address) ?? 'allowed', address).not.toMatch(reason);
+  });
+
+  it.each(['192.0.3.1', '198.51.101.1', '203.0.114.1', '192.88.100.1', '64:ff9b::808:808', '2001:200::1', '2001:db9::1', '3fff:1000::1'])(
+    'allows the public neighbour %s',
+    (address) => {
+      expect(refusedAddress(address)).toBeUndefined();
+    },
+  );
+
+  it('refuses the IPv4-translated form of a loopback address in a URL', async () => {
+    const network = stubNetwork({});
+    await expect(safeFetch('http://[::ffff:0:7f00:1]/', 'page', network)).rejects.toThrow(/IPv4-translated/);
+    expect(network.calls).toEqual([]);
+  });
+});
+
 describe('a fetch to a refused address', () => {
   // No server listens on these: the refusal comes before a connection, so the test never waits on the network
   it.each([
@@ -138,6 +173,15 @@ describe('redirects', () => {
     await expect(safeFetch(`http://acme.test:${port}/to-file`, 'page', net())).rejects.toThrow(/only http and https/);
   });
 
+  it('refuses a redirect from https to http, and takes one that keeps or raises the scheme', () => {
+    // No test serves TLS: the decision is the function safeFetch calls on every redirect, tested on its own
+    expect(redirectRefusal(new URL('https://acme.test/a'), new URL('http://acme.test/b'))).toMatch(/from https to http.*downgrade/);
+    expect(redirectRefusal(new URL('https://acme.test/a'), new URL('HTTP://cdn.acme.test:80/b'))).toMatch(/downgrade/);
+    expect(redirectRefusal(new URL('https://acme.test/a'), new URL('https://cdn.acme.test/b'))).toBeUndefined();
+    expect(redirectRefusal(new URL('http://acme.test/a'), new URL('https://acme.test/b'))).toBeUndefined();
+    expect(redirectRefusal(new URL('http://acme.test/a'), new URL('http://acme.test/b'))).toBeUndefined();
+  });
+
   it('sends no cookie or credentials, even after a redirect sets one', async () => {
     seen.length = 0;
     await safeFetch(`http://acme.test:${port}/r2`, 'page', net());
@@ -173,5 +217,60 @@ describe('content types', () => {
     await expect(safeFetch(`http://acme.test:${port}/plain`, 'page', net())).rejects.toThrow(/wanted an HTML page, and the server says it is text\/plain/);
     await expect(safeFetch(`http://acme.test:${port}/untyped`, 'page', net())).rejects.toThrow(/sent no content type/);
     await expect(readPage(`http://acme.test:${port}/css-as-html`, net())).rejects.toThrow(/fake\.css.*wanted a stylesheet \(text\/css\).*text\/html/);
+  });
+});
+
+describe('a response that ends early', () => {
+  // A server that answers 200, sends the first 60 bytes of a compressed page and then drops the connection, or drips a byte at a time. A
+  // decompressor that never hears its source died leaves the read unsettled, and `blazon drift` would then exit 0 with no output.
+  const big = `<html>${randomBytes(4000).toString('hex')}</html>`;
+  const encoders: Record<string, (b: Buffer) => Buffer> = { gzip: zlib.gzipSync, deflate: zlib.deflateSync, br: zlib.brotliCompressSync };
+  const timers: NodeJS.Timeout[] = [];
+  const closed: string[] = [];
+  let cut: http.Server;
+  let cutPort: number;
+  beforeAll(async () => {
+    cut = http.createServer((req, res) => {
+      const [, how = '', encoding = ''] = (req.url ?? '').split('/');
+      req.socket.on('close', () => closed.push(req.url ?? ''));
+      if (how === 'elsewhere') return void res.writeHead(404).end();
+      if (how === 'redirect-drip' || how === 'plain-drip') {
+        res.writeHead(how === 'plain-drip' ? 200 : 302, how === 'plain-drip' ? { 'content-type': 'text/plain' } : { location: '/elsewhere' });
+        timers.push(setInterval(() => res.write('a'), 20));
+        return;
+      }
+      const encode = encoders[encoding];
+      const body = encode ? encode(Buffer.from(big)) : Buffer.from(big);
+      res.writeHead(200, { 'content-type': 'text/html', ...(encode ? { 'content-encoding': encoding } : {}) });
+      if (how === 'cut') return void res.write(body.subarray(0, 60), () => res.socket?.destroy());
+      res.write(body.subarray(0, 60));
+      let at = 60;
+      timers.push(setInterval(() => at < body.length - 1 && res.write(body.subarray(at, ++at)), 20));
+    });
+    await new Promise<void>((done) => cut.listen(0, '127.0.0.1', done));
+    cutPort = (cut.address() as AddressInfo).port;
+  });
+  afterAll(() => {
+    for (const t of timers) clearInterval(t);
+    cut.closeAllConnections();
+    return new Promise<void>((done) => cut.close(() => done()));
+  });
+  const quick = (timeoutMs?: number): Network => ({ ...stubNetwork({ 'acme.test': [['127.0.0.1']] }, loopbackOk), timeoutMs });
+
+  it.each(['gzip', 'deflate', 'br', 'identity'])('a %s body cut off mid-stream fails with a named reason', { timeout: 3000 }, async (encoding) => {
+    await expect(safeFetch(`http://acme.test:${cutPort}/cut/${encoding}`, 'page', quick())).rejects.toThrow(
+      new RegExp(`could not read http://acme\\.test:${cutPort}/cut/${encoding}: the connection closed before the whole body arrived`),
+    );
+  });
+
+  it.each(['gzip', 'deflate', 'br', 'identity'])('a %s body that drips past the time limit fails with the limit', { timeout: 3000 }, async (encoding) => {
+    await expect(safeFetch(`http://acme.test:${cutPort}/drip/${encoding}`, 'page', quick(300))).rejects.toThrow(/could not read .*: no answer in 0\.3 s/);
+  });
+
+  it('closes the connection of a refused content type and of a redirect at once, not at the time limit', { timeout: 3000 }, async () => {
+    closed.length = 0;
+    await expect(safeFetch(`http://acme.test:${cutPort}/plain-drip`, 'page', quick())).rejects.toThrow(/text\/plain/);
+    await expect(safeFetch(`http://acme.test:${cutPort}/redirect-drip`, 'page', quick())).rejects.toThrow(/elsewhere.*404/);
+    await vi.waitFor(() => expect(closed).toEqual(expect.arrayContaining(['/plain-drip', '/redirect-drip'])), { timeout: 1000 });
   });
 });

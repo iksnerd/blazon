@@ -109,8 +109,18 @@ export function writeProof(ctx: Ctx, skipVars?: Set<string>): void {
       selector: logo.locator,
       property: logo.kind === 'inline' ? 'svg' : 'src',
       count: 1,
+      ...(ctx.logoRefused ? { refused: ctx.logoRefused } : {}),
     });
-  else if (icon) values.push({ kind: 'icon', value: icon.url, source: pageSource, selector: icon.locator, property: 'href', count: 1 });
+  else if (icon)
+    values.push({
+      kind: 'icon',
+      value: icon.url,
+      source: pageSource,
+      selector: icon.locator,
+      property: 'href',
+      count: 1,
+      ...(ctx.logoRefused ? { refused: ctx.logoRefused } : {}),
+    });
   const metas: [string, string | undefined, string, string][] = [
     ['title', pageTitle(page.html), 'title', 'text'],
     ['description', metaContent(page.html, 'description'), 'meta[name="description"]', 'content'],

@@ -34,7 +34,8 @@ body { font-family: var(--font-body); }
 h1, h2 { font-family: "Fancy Display", Georgia, serif; }
 `;
 
-const LOGO = '<svg viewBox="0 0 10 10"><script>alert(1)</script><path onclick="x()" fill="currentColor" d="M0 0h10v10z"/></svg>';
+// A logo with a script or an event handler is not imported at all (test/init/untrusted-svg.test.ts)
+const LOGO = '<svg viewBox="0 0 10 10"><path fill="currentColor" d="M0 0h10v10z"/></svg>';
 
 const PAGE = `<!doctype html><html><head>
 <title>Acme Corp | Payments for everyone</title>
@@ -154,7 +155,6 @@ describe('blazon init --from', () => {
 
     const dark = fs.readFileSync(path.join(dir, 'assets/logos/site.svg'), 'utf8');
     expect(dark).toContain('fill="#111111"');
-    expect(dark).not.toMatch(/script|onclick/);
     expect(fs.readFileSync(path.join(dir, 'assets/logos/site-white.svg'), 'utf8')).toContain('fill="#ffffff"');
     const lightSidecar = json(dir, 'assets/logos/site.json');
     expect(lightSidecar.minSize).toBeUndefined(); // blazon's 32px belongs to blazon's mark

@@ -38,7 +38,7 @@ a:hover { color: #1d4ed8; }
 .muted { color: #6b7280; border-color: #e5e7eb; }
 `;
 
-export const ACME_LOGO = '<svg viewBox="0 0 40 10"><script>alert(1)</script><path fill="currentColor" d="M0 0h40v10H0z"/></svg>';
+export const ACME_LOGO = '<svg viewBox="0 0 40 10"><path fill="currentColor" d="M0 0h40v10H0z"/></svg>';
 
 export const ACME_PAGE = `<!doctype html>
 <html><head>
