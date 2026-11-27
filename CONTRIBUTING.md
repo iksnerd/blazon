@@ -191,6 +191,22 @@ The first-run expectation: `test/first-run/expected.json` lists the finding code
 
 The `publish` job puts that same tarball on npm with provenance. It is skipped until the owner does two things, once: add a trusted publisher on npmjs.com for the package (GitHub Actions, repository `iksnerd/blazon`, workflow `ci.yml`), and set the repository variable `NPM_PUBLISH` to `true`. A trusted publisher can be added only to a package that exists on npm; `@iksnerd/blazon` does, because 0.1.0 was published by hand from the tarball the tagged release built. No npm token is stored.
 
+## Releasing
+
+The order that has been used:
+
+1. `npm run check:linux`, on a committed `main`.
+2. `npm run release -- X`: assembles the fragments, bumps the version, commits and tags. It pushes nothing.
+3. Review the commit with `git show`.
+4. `git push origin main vX`.
+5. Wait for CI on the tag to finish its `release` job.
+6. `npm run verify-release -- X`: downloads the GitHub release into a new `~/blazon-release-X`, then checks the checksum, the attestation (signer `ci.yml` on the tag, source digest equal to the tag's commit), the tarball's contents (version, no `/Users/`, no private marker), a fresh install (`npm audit`, `npm audit signatures`) and `init`, `check` and `build` of the installed package. It prints the exact `npm publish` line.
+7. The owner publishes that tarball by hand.
+8. `npm run verify-release -- X --registry`: waits for the package on npm, compares `dist.shasum` with the tarball, checks `latest` and repeats the install checks from the registry.
+9. The website resync, in its own repo.
+
+The script needs `gh` signed in and `~/.config/blazon/private-markers.json`; a missing or empty marker file is a failure, not a pass. It removes its scratch folders and keeps the release folder with the tarball and `SHA256SUMS`.
+
 ## The release audit gate
 
 The release job runs `node scripts/audit-gate.mjs` instead of a bare `npm audit --omit=dev`. It audits the root and the `mcp` workspace and fails on any high or critical advisory that `.github/audit-allowlist.json` does not allow, on an entry whose `expires` date has passed, on an entry that no longer matches an advisory (remove it), and when `npm audit` itself did not run (a registry outage is a failure, not a pass). Low and moderate advisories are printed and do not fail it. Run it by hand before a release.
