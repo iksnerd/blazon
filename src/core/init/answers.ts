@@ -3,7 +3,7 @@ import path from 'node:path';
 import { googleFontsUrl } from './shared/google-fonts.js';
 import { toHex } from './shared/hex.js';
 import { cleanSvg } from './shared/svg.js';
-import { flagReview, readJson, setSignal, STARTER_LOGOS, STARTER_LOGO_FILES, tokenAt, withFontStylesheets, writeJson } from './vocabulary.js';
+import { estimateClearSpace, flagReview, LOGO_RULES_NOTE, readJson, setSignal, STARTER_LOGOS, STARTER_LOGO_FILES, tokenAt, withFontStylesheets, writeJson } from './vocabulary.js';
 
 export type Parsed<T> = { value: T } | { hint: string };
 
@@ -62,6 +62,10 @@ export function inspectLogo(file: string): LogoInfo {
   const svg = path.extname(file).toLowerCase() === '.svg';
   return { bytes: data.length, svg, usesCurrentColor: svg && /currentColor/i.test(data.toString('utf8')) };
 }
+
+/** Said when a brand's logo replaces blazon's: the numbers in blazon's sidecars belong to blazon's mark. */
+export const LOGO_RULES_NOT_CARRIED =
+  "The clear space and minimum size of blazon's mark were not carried to your logo's sidecar: it has a stand-in clear space and no minimum size, so set both in assets/logos/";
 
 export const isWebAddress = (text: string): boolean => /^https?:\/\/[^\s/]/i.test(text);
 
@@ -155,12 +159,7 @@ export function applyAnswers(destDir: string, answers: Answers, created: Set<str
       for (const f of taken) kept(`assets/logos/${f}`);
       applied.hints.push(`the logo ${answers.logo} was not copied: pick another file name, or remove the existing file`);
     } else {
-      const starterRules = path.join(logos, `${STARTER_LOGOS[0]}.json`);
-      let rules: Json = {};
-      if (created.has(`assets/logos/${STARTER_LOGOS[0]}.json`) && fs.existsSync(starterRules)) {
-        const { description: _d, background: _b, ...rest } = JSON.parse(fs.readFileSync(starterRules, 'utf-8')) as Json;
-        rules = rest;
-      }
+      const replacedStarterRules = created.has(`assets/logos/${STARTER_LOGOS[0]}.json`);
       for (const name of STARTER_LOGO_FILES) {
         for (const ext of ['svg', 'json']) {
           if (created.has(`assets/logos/${name}.${ext}`)) fs.rmSync(path.join(logos, `${name}.${ext}`), { force: true });
@@ -171,11 +170,12 @@ export function applyAnswers(destDir: string, answers: Answers, created: Set<str
       fs.writeFileSync(path.join(logos, base), base.toLowerCase().endsWith('.svg') ? cleanSvg(bytes.toString('utf8')) : bytes);
       fs.writeFileSync(
         path.join(logos, `${stem}.json`),
-        `${JSON.stringify({ title: 'Logo', description: "The brand's logo. Clear space, minimum size, lockup, placement and partnership are blazon's, not the brand's: set them.", ...rules }, null, 2)}\n`,
+        `${JSON.stringify({ title: 'Logo', description: `The brand's logo. ${LOGO_RULES_NOTE}`, clearSpace: estimateClearSpace({ svg: base.toLowerCase().endsWith('.svg'), text: bytes.toString('utf8') }) }, null, 2)}\n`,
       );
       config!['logo'] = `./assets/logos/${base}`;
       applied.files.push(`assets/logos/${base}`, `assets/logos/${stem}.json`);
       applied.set.push(`logo ${base}`);
+      if (replacedStarterRules) applied.hints.push(LOGO_RULES_NOT_CARRIED);
     }
   }
 

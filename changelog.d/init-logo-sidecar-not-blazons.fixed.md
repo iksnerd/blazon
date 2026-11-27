@@ -1,0 +1,1 @@
+Init no longer copies the clear space and minimum size of blazon's own mark into the sidecar of a logo that replaces it (`--logo`, the guided start and `--from`). The sidecar gets a stand-in clear space measured on the new artwork and no minimum size, and init says so.

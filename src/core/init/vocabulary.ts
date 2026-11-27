@@ -125,3 +125,17 @@ export const STARTER_LOGOS = ['blazon-graphite', 'blazon-bone'];
 
 /** Every logo asset the starter has: the two above and blazon's mark. A brand's own logo replaces all of them, and none stays behind under the brand's name. */
 export const STARTER_LOGO_FILES = [...STARTER_LOGOS, 'blazon-mark'];
+
+/**
+ * A clear space for a logo that replaces blazon's mark: 0.3 of the artwork's height in px (the share blazon's own mark uses, measured on the
+ * brand's file), or 16px when the file has no readable height (a raster). It is a stand-in, not a rule: the sidecar says so. Blazon's own
+ * numbers are never carried, and the starter's logo page needs some clear space or minimum size in a sidecar to draw.
+ */
+export function estimateClearSpace(file: { svg: boolean; text?: string }): { value: number; unit: 'px' } {
+  const art = file.svg ? ((file.text ?? '').match(/<svg\b[^>]*>/i)?.[0] ?? '') : '';
+  const box = art.match(/viewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+[\d.]+[\s,]+([\d.]+)/i)?.[1] ?? art.match(/\sheight\s*=\s*["']?([\d.]+)/i)?.[1];
+  return { value: box && Number(box) > 0 ? Math.max(1, Math.round(Number(box) * 0.3 * 100) / 100) : 16, unit: 'px' };
+}
+
+/** What a sidecar says of the clear space and minimum size it holds in place of blazon's. */
+export const LOGO_RULES_NOTE = 'Clear space is a stand-in: 0.3 of the artwork height, or 16px for a raster. Minimum size is not set. Set both.';

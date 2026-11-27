@@ -365,6 +365,19 @@ describe('without questions', () => {
     expect(text(dir, 'blazon.json')).toContain('"title": "Mine"');
   });
 
+  it("does not carry blazon's own logo text or numbers into the sidecar of --logo, and says so", async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const dir = project();
+    expect(await runInit(dir, { logo: logoFile('acme.svg'), yes: true })).toBe(0);
+    const sidecar = json(dir, 'assets/logos/acme.json');
+    expect(sidecar.clearSpace).toEqual({ value: 3, unit: 'px' }); // 0.3 of the 10-unit artwork, not blazon's 24px
+    expect(sidecar.minSize).toBeUndefined();
+    expect(sidecar.title).toBe('Logo');
+    expect(JSON.stringify(sidecar)).not.toMatch(/fold|folded|80px|blazon/i);
+    expect(log.mock.calls.flat().join('\n')).toMatch(/clear space and minimum size of blazon's mark were not carried/i);
+  });
+
   it('keeps an existing logo and sidecar of the same name instead of overwriting them', async () => {
     quiet();
     const dir = project();

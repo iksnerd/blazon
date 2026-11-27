@@ -149,6 +149,11 @@ describe('blazon init --from', () => {
     expect(dark).toContain('fill="#111111"');
     expect(dark).not.toMatch(/script|onclick/);
     expect(fs.readFileSync(path.join(dir, 'assets/logos/site-white.svg'), 'utf8')).toContain('fill="#ffffff"');
+    const lightSidecar = json(dir, 'assets/logos/site.json');
+    expect(lightSidecar.minSize).toBeUndefined(); // blazon's 32px belongs to blazon's mark
+    expect(lightSidecar.clearSpace).not.toEqual({ value: 24, unit: 'px' });
+    expect(lightSidecar.description).toMatch(/Minimum size is not set/);
+    expect(lightSidecar.description).not.toMatch(/fold|80px/);
     const sidecar = json(dir, 'assets/logos/site-white.json');
     expect(sidecar).toMatchObject({ background: 'dark', review: { status: 'needs-review' } });
 
