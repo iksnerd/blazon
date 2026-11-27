@@ -5,12 +5,72 @@ import { MAX_BYTES, safeFetch, TIMEOUT_MS, type FetchKind, type Network } from '
 // The CSS `blazon drift` compares with: a local file, or the stylesheets a live page links.
 
 export const MAX_STYLESHEETS = 20;
+/** Stylesheet reads in flight at once, and the bytes one page read may hold in all: with the 5 MB of a single read, 20 sheets could hold 100 MB */
+export const MAX_CONCURRENT_SHEETS = 4;
+export const MAX_PAGE_BYTES = 25 * 1024 * 1024;
 export { MAX_BYTES, TIMEOUT_MS };
 
 export interface CssSource {
   css: string;
   /** Where the text came from: the file, or each stylesheet URL that was read */
   sources: string[];
+  /** Stylesheets that were left unread, and why */
+  notRead?: string[];
+}
+
+/**
+ * Reads stylesheets in order, at most `MAX_CONCURRENT_SHEETS` at a time and `MAX_PAGE_BYTES` in all. A read is started only when the bytes already
+ * read, plus the most each read in flight may still bring (`MAX_BYTES`), leave room for it; when no read is in flight and the next one still has
+ * no room, it and every later sheet are left unread and said so in `notRead`. The sheets read are a prefix of `links`, so what is kept does not
+ * depend on which read finished first. A read that fails rejects, as it did when they were all started at once.
+ */
+export async function readSheets(links: string[], network?: Network): Promise<{ sheets: { source: string; css: string }[]; notRead: string[] }> {
+  const texts: string[] = [];
+  let next = 0;
+  let inFlight = 0;
+  let used = 0;
+  let stopped = false;
+  let waiting: (() => void)[] = [];
+  const wake = () => {
+    const list = waiting;
+    waiting = [];
+    for (const resume of list) resume();
+  };
+  const worker = async (): Promise<void> => {
+    while (next < links.length && !stopped) {
+      if (used + (inFlight + 1) * MAX_BYTES > MAX_PAGE_BYTES) {
+        if (inFlight === 0) {
+          stopped = true;
+          wake();
+          return;
+        }
+        await new Promise<void>((resume) => waiting.push(resume));
+        continue;
+      }
+      const at = next++;
+      inFlight++;
+      try {
+        const bytes = await fetchBytes(links[at]!, 'stylesheet', network);
+        used += bytes.length;
+        texts[at] = bytes.toString('utf8');
+      } finally {
+        inFlight--;
+        wake();
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_SHEETS, links.length) }, worker));
+  const sheets = links.slice(0, next).map((source, i) => ({ source, css: texts[i]! }));
+  const left = links.length - next;
+  return {
+    sheets,
+    notRead:
+      left > 0
+        ? [
+            `${left} of the ${links.length} stylesheets (from ${links[next]}) were not read: a page read holds at most ${MAX_PAGE_BYTES / 1024 / 1024} MB of stylesheets, and ${sheets.length} were read`,
+          ]
+        : [],
+  };
 }
 
 /** The bytes of an http(s) address, held to the fetch policy in fetch.ts: public addresses only, at most 5 redirects, 5 MB and 10 s, and the content type `kind` asks for. */
@@ -56,8 +116,8 @@ export async function readCss(target: string, network?: Network): Promise<CssSou
     if (!/^https?:\/\//i.test(target)) throw new Error(`${target} is not an http(s) address or a file`);
     const page = await fetchText(target, 'page', network);
     const links = stylesheetLinks(page, target).slice(0, MAX_STYLESHEETS);
-    const sheets = await Promise.all(links.map((link) => fetchText(link, 'stylesheet', network)));
-    return { css: sheets.join('\n'), sources: links };
+    const { sheets, notRead } = await readSheets(links, network);
+    return { css: sheets.map((sheet) => sheet.css).join('\n'), sources: sheets.map((sheet) => sheet.source), ...(notRead.length > 0 && { notRead }) };
   }
   const file = path.resolve(target);
   let css: string;
@@ -72,11 +132,13 @@ export async function readCss(target: string, network?: Network): Promise<CssSou
   return { css, sources: [file] };
 }
 
-/** A page and the CSS of the stylesheets it links (at most 20). Only http(s) addresses are read. */
-export async function readPage(url: string, network?: Network): Promise<{ html: string; css: string; sources: string[]; sheets: { source: string; css: string }[] }> {
+/** A page and the CSS of the stylesheets it links (at most 20, read 4 at a time and 25 MB in all). Only http(s) addresses are read. */
+export async function readPage(
+  url: string,
+  network?: Network,
+): Promise<{ html: string; css: string; sources: string[]; sheets: { source: string; css: string }[]; notRead: string[] }> {
   if (!/^https?:\/\//i.test(url)) throw new Error(`${url} is not an http(s) address`);
   const html = await fetchText(url, 'page', network);
-  const sources = stylesheetLinks(html, url).slice(0, MAX_STYLESHEETS);
-  const sheets = await Promise.all(sources.map((link) => fetchText(link, 'stylesheet', network)));
-  return { html, css: sheets.join('\n'), sources, sheets: sources.map((source, i) => ({ source, css: sheets[i]! })) };
+  const { sheets, notRead } = await readSheets(stylesheetLinks(html, url).slice(0, MAX_STYLESHEETS), network);
+  return { html, css: sheets.map((sheet) => sheet.css).join('\n'), sources: sheets.map((sheet) => sheet.source), sheets, notRead };
 }

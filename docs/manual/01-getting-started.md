@@ -204,7 +204,7 @@ A stylesheet says what a page draws, not what the brand is. Read what init found
 - Blazon connects to the address it checked. The name is not resolved a second time for the connection, so a DNS answer that changes in between (DNS rebinding) is never used.
 - A redirect is a new request under the same rules, and at most 5 are followed.
 - A redirect from `https` to `http` is refused: blazon never downgrades a read to clear text.
-- Each response is at most 5 MB and the whole read, redirects included, at most 10 seconds.
+- Each response is at most 5 MB and the whole read, redirects included, at most 10 seconds. A page's stylesheets are read four at a time and at most 25 MB in all: past that, the sheets that are left are not read and the output says how many, and what was read is still used.
 - An SVG logo with scripts, event handlers or remote references (a `<script>`, a `<foreignObject>`, an `on...` attribute, an `href` that is not `#id`, a `javascript:`, `data:` or remote URL, in `style` and `<style>` too), or one that is not well-formed XML, is never imported: init keeps its placeholder logo, prints the reason on one line and records it as `refused` in `extract.json`.
 - A response that ends before its body is complete (the connection drops, or a compressed body is cut short) is an error with that reason, and `blazon drift` exits 2. It is never read as a short page, and never as "no drift".
 - The content type must be what was asked for: `text/html` or `application/xhtml+xml` for the page, `text/css` for a stylesheet, JSON for a web app manifest, an image for a logo or icon. Anything else is refused with the type the server sent.

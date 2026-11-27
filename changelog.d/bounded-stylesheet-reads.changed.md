@@ -1,0 +1,1 @@
+A page read by `blazon init --from` or `blazon drift` reads its stylesheets four at a time and at most 25 MB in all, so a site with many large stylesheets no longer holds up to 100 MB at once. Sheets past the limit are named in the notes (`notRead` in the `drift` JSON) and the colors of the sheets already read are still used.

@@ -33,12 +33,14 @@ export async function runDrift(target: string | undefined, options: DriftOptions
   if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(target) && !fs.existsSync(path.resolve(target)))
     return cannot('no-file', `there is no file "${target}"`, 'Give the path of a CSS file, or the http(s) address of a page.');
   let sources: string[];
+  let notRead: string[];
   let findings: DriftFinding[];
   try {
     const config = await loadProject(cwd, options.tokens ? { tokensDir: options.tokens } : undefined);
     const data = await compileBlazonData(config, cwd);
     const css = await readCss(target, options.network);
     sources = css.sources;
+    notRead = css.notRead ?? [];
     const vars = customProperties(css.css);
     findings = data.tokens.items.flatMap((item) => {
       const cssVar = item.blazon.source?.cssVar;
@@ -60,9 +62,10 @@ export async function runDrift(target: string | undefined, options: DriftOptions
   const code = summary.drift + summary.missing > 0 ? 1 : 0;
 
   if (options.json) {
-    console.log(JSON.stringify({ target, sources, summary, tokens: findings }, null, 2));
+    console.log(JSON.stringify({ target, sources, ...(notRead.length > 0 && { notRead }), summary, tokens: findings }, null, 2));
     return code;
   }
+  for (const note of notRead) console.error(pc.yellow(`note: ${note}, so a missing variable may be in one of them`));
   const width = Math.max(...findings.map((f) => f.path.length));
   for (const f of findings) {
     const name = f.path.padEnd(width);
