@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
+import zlib from 'node:zlib';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { runDrift as runDriftReal } from '../../src/cli/commands/drift.js';
 import { compareValues, customProperties, normalizeColor, normalizeDimension } from '../../src/core/drift/compare.js';
@@ -48,6 +49,11 @@ beforeAll(async () => {
     if (req.url === '/site.css') return void res.setHeader('content-type', 'text/css').end(SHEET);
     if (req.url === '/big') return void res.setHeader('content-type', 'text/html').end(Buffer.alloc(5 * 1024 * 1024 + 1, 97));
     if (req.url === '/broken') return void res.setHeader('content-type', 'text/html').end('<link rel="stylesheet" href="/missing.css">');
+    if (req.url === '/cut') {
+      // The first 60 bytes of a gzip page, then the connection drops
+      res.writeHead(200, { 'content-type': 'text/html', 'content-encoding': 'gzip' });
+      return void res.write(zlib.gzipSync(PAGE + 'x'.repeat(4000)).subarray(0, 60), () => res.socket?.destroy());
+    }
     res.statusCode = 404;
     res.end('not found');
   });
@@ -206,6 +212,14 @@ describe('blazon drift', () => {
     expect(await runDrift(undefined, { cwd: project() })).toBe(2);
     expect(await runDrift(`${base}/gone`, { cwd: project() })).toBe(2);
     expect(err).toHaveBeenCalledTimes(2);
+  });
+
+  it('exits 2 with the reason when the page ends early, never 0 as if nothing drifted', { timeout: 3000 }, async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = capture();
+    expect(await runDrift(`${base}/cut`, { cwd: project() })).toBe(2);
+    expect(err.mock.calls.join('\n')).toMatch(/could not read .*\/cut: the connection closed before the whole body arrived/);
+    expect(out.join('\n')).not.toMatch(/ok/);
   });
 });
 

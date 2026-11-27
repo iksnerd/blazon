@@ -204,6 +204,7 @@ A stylesheet says what a page draws, not what the brand is. Read what init found
 - Blazon connects to the address it checked. The name is not resolved a second time for the connection, so a DNS answer that changes in between (DNS rebinding) is never used.
 - A redirect is a new request under the same rules, and at most 5 are followed.
 - Each response is at most 5 MB and the whole read, redirects included, at most 10 seconds.
+- A response that ends before its body is complete (the connection drops, or a compressed body is cut short) is an error with that reason, and `blazon drift` exits 2. It is never read as a short page, and never as "no drift".
 - The content type must be what was asked for: `text/html` or `application/xhtml+xml` for the page, `text/css` for a stylesheet, JSON for a web app manifest, an image for a logo or icon. Anything else is refused with the type the server sent.
 
 There is no flag or environment variable that turns these rules off. A site on your own network cannot be read with `--from`: save it and use `--from-dir`.

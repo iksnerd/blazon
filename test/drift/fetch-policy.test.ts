@@ -1,6 +1,8 @@
+import { randomBytes } from 'node:crypto';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import zlib from 'node:zlib';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { refusedAddress, safeFetch, type Network } from '../../src/core/drift/fetch.js';
 import { readPage } from '../../src/core/drift/read.js';
 import { stubNetwork } from '../support/network.js';
@@ -173,5 +175,60 @@ describe('content types', () => {
     await expect(safeFetch(`http://acme.test:${port}/plain`, 'page', net())).rejects.toThrow(/wanted an HTML page, and the server says it is text\/plain/);
     await expect(safeFetch(`http://acme.test:${port}/untyped`, 'page', net())).rejects.toThrow(/sent no content type/);
     await expect(readPage(`http://acme.test:${port}/css-as-html`, net())).rejects.toThrow(/fake\.css.*wanted a stylesheet \(text\/css\).*text\/html/);
+  });
+});
+
+describe('a response that ends early', () => {
+  // A server that answers 200, sends the first 60 bytes of a compressed page and then drops the connection, or drips a byte at a time. A
+  // decompressor that never hears its source died leaves the read unsettled, and `blazon drift` would then exit 0 with no output.
+  const big = `<html>${randomBytes(4000).toString('hex')}</html>`;
+  const encoders: Record<string, (b: Buffer) => Buffer> = { gzip: zlib.gzipSync, deflate: zlib.deflateSync, br: zlib.brotliCompressSync };
+  const timers: NodeJS.Timeout[] = [];
+  const closed: string[] = [];
+  let cut: http.Server;
+  let cutPort: number;
+  beforeAll(async () => {
+    cut = http.createServer((req, res) => {
+      const [, how = '', encoding = ''] = (req.url ?? '').split('/');
+      req.socket.on('close', () => closed.push(req.url ?? ''));
+      if (how === 'elsewhere') return void res.writeHead(404).end();
+      if (how === 'redirect-drip' || how === 'plain-drip') {
+        res.writeHead(how === 'plain-drip' ? 200 : 302, how === 'plain-drip' ? { 'content-type': 'text/plain' } : { location: '/elsewhere' });
+        timers.push(setInterval(() => res.write('a'), 20));
+        return;
+      }
+      const encode = encoders[encoding];
+      const body = encode ? encode(Buffer.from(big)) : Buffer.from(big);
+      res.writeHead(200, { 'content-type': 'text/html', ...(encode ? { 'content-encoding': encoding } : {}) });
+      if (how === 'cut') return void res.write(body.subarray(0, 60), () => res.socket?.destroy());
+      res.write(body.subarray(0, 60));
+      let at = 60;
+      timers.push(setInterval(() => at < body.length - 1 && res.write(body.subarray(at, ++at)), 20));
+    });
+    await new Promise<void>((done) => cut.listen(0, '127.0.0.1', done));
+    cutPort = (cut.address() as AddressInfo).port;
+  });
+  afterAll(() => {
+    for (const t of timers) clearInterval(t);
+    cut.closeAllConnections();
+    return new Promise<void>((done) => cut.close(() => done()));
+  });
+  const quick = (timeoutMs?: number): Network => ({ ...stubNetwork({ 'acme.test': [['127.0.0.1']] }, loopbackOk), timeoutMs });
+
+  it.each(['gzip', 'deflate', 'br', 'identity'])('a %s body cut off mid-stream fails with a named reason', { timeout: 3000 }, async (encoding) => {
+    await expect(safeFetch(`http://acme.test:${cutPort}/cut/${encoding}`, 'page', quick())).rejects.toThrow(
+      new RegExp(`could not read http://acme\\.test:${cutPort}/cut/${encoding}: the connection closed before the whole body arrived`),
+    );
+  });
+
+  it.each(['gzip', 'deflate', 'br', 'identity'])('a %s body that drips past the time limit fails with the limit', { timeout: 3000 }, async (encoding) => {
+    await expect(safeFetch(`http://acme.test:${cutPort}/drip/${encoding}`, 'page', quick(300))).rejects.toThrow(/could not read .*: no answer in 0\.3 s/);
+  });
+
+  it('closes the connection of a refused content type and of a redirect at once, not at the time limit', { timeout: 3000 }, async () => {
+    closed.length = 0;
+    await expect(safeFetch(`http://acme.test:${cutPort}/plain-drip`, 'page', quick())).rejects.toThrow(/text\/plain/);
+    await expect(safeFetch(`http://acme.test:${cutPort}/redirect-drip`, 'page', quick())).rejects.toThrow(/elsewhere.*404/);
+    await vi.waitFor(() => expect(closed).toEqual(expect.arrayContaining(['/plain-drip', '/redirect-drip'])), { timeout: 1000 });
   });
 });

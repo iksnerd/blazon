@@ -2,7 +2,7 @@ import dns from 'node:dns';
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
-import type { Readable } from 'node:stream';
+import { pipeline, type Readable } from 'node:stream';
 import zlib from 'node:zlib';
 
 // How blazon reads a public web page (`init --from`, `drift <url>`). The address is a stranger's, so the fetch is held to a policy:
@@ -36,6 +36,8 @@ export interface Network {
   resolve: (host: string) => Promise<ResolvedAddress[]>;
   /** Why an address may not be connected to, in words; undefined when it may */
   refused: (address: string) => string | undefined;
+  /** The time limit of a whole read, in milliseconds; TIMEOUT_MS when absent. Only a test sets it, so that it need not wait 10 s */
+  timeoutMs?: number;
 }
 
 export type FetchKind = 'page' | 'stylesheet' | 'manifest' | 'image';
@@ -211,10 +213,13 @@ function decoded(hop: Hop, label: string): Readable {
     .toLowerCase()
     .trim();
   if (encoding === 'identity' || encoding === '') return hop.body;
-  if (encoding === 'gzip' || encoding === 'x-gzip') return hop.body.pipe(zlib.createGunzip());
-  if (encoding === 'deflate') return hop.body.pipe(zlib.createInflate());
-  if (encoding === 'br') return hop.body.pipe(zlib.createBrotliDecompress());
-  hop.body.resume();
+  // pipeline, not pipe: pipe does not pass the source's error or early close on, so a connection that dies mid-body (or the time limit)
+  // would leave the decompressor open and the read waiting forever. pipeline destroys the decompressor with the source's error.
+  const through = (decompressor: zlib.Gunzip | zlib.Inflate | zlib.BrotliDecompress) => pipeline(hop.body, decompressor, () => {});
+  if (encoding === 'gzip' || encoding === 'x-gzip') return through(zlib.createGunzip());
+  if (encoding === 'deflate') return through(zlib.createInflate());
+  if (encoding === 'br') return through(zlib.createBrotliDecompress());
+  hop.body.destroy();
   throw new FetchRefused(`refused ${label}: the server sent it in an encoding blazon does not read (${encoding})`);
 }
 
@@ -225,13 +230,21 @@ function reasonOf(err: unknown): string {
   return cause instanceof Error && cause.message && cause.message !== message ? `${message}: ${cause.message}` : message;
 }
 
+/** Whether a read failed because the body stopped before its end: the connection closed, or the compressed stream was cut short. */
+function endedEarly(err: unknown): boolean {
+  const code = (err as { code?: unknown } | undefined)?.code;
+  const message = err instanceof Error ? err.message : '';
+  return code === 'ECONNRESET' || code === 'ERR_STREAM_PREMATURE_CLOSE' || code === 'Z_BUF_ERROR' || message === 'aborted' || /unexpected end of file/i.test(message);
+}
+
 /**
  * The bytes at an http(s) address, held to the policy above. `kind` says what the address must be (its content type), `network` where it may
  * connect (the public network unless a test passes another).
  */
 export async function safeFetch(address: string, kind: FetchKind, network: Network = PUBLIC_NETWORK): Promise<Buffer> {
   const policy = networkOf(network);
-  const signal = AbortSignal.timeout(TIMEOUT_MS);
+  const limit = policy.timeoutMs ?? TIMEOUT_MS;
+  const signal = AbortSignal.timeout(limit);
   let url: URL;
   try {
     url = new URL(address);
@@ -250,11 +263,11 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       hop = await request(url, pinned, kind, signal);
     } catch (err) {
       if (err instanceof FetchRefused) throw new FetchRefused(`refused ${label(url)}: ${err.message}`, { cause: err });
-      throw new Error(`could not fetch ${label(url)}: ${timedOut(err) ? `no answer in ${TIMEOUT_MS / 1000} s` : reasonOf(err)}`, { cause: err });
+      throw new Error(`could not fetch ${label(url)}: ${timedOut(err) ? `no answer in ${limit / 1000} s` : reasonOf(err)}`, { cause: err });
     }
     const location = hop.headers.location;
     if (hop.status >= 300 && hop.status < 400 && location) {
-      hop.body.resume();
+      hop.body.destroy();
       if (redirects >= MAX_REDIRECTS) throw new FetchRefused(`refused ${first}: more than ${MAX_REDIRECTS} redirects`);
       try {
         url = new URL(location, url);
@@ -264,7 +277,7 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       continue;
     }
     if (hop.status < 200 || hop.status >= 300) {
-      hop.body.resume();
+      hop.body.destroy();
       throw new Error(`could not fetch ${label(url)}: ${hop.status} ${hop.statusText}`.trim());
     }
     const type = String(hop.headers['content-type'] ?? '')
@@ -272,7 +285,7 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       .trim()
       .toLowerCase();
     if (!ACCEPT[kind].types(type)) {
-      hop.body.resume();
+      hop.body.destroy();
       throw new FetchRefused(`refused ${label(url)}: blazon wanted ${ACCEPT[kind].what}, and the server ${type ? `says it is ${type}` : 'sent no content type'}`);
     }
     if (Number(hop.headers['content-length'] ?? 0) > MAX_BYTES) {
@@ -293,7 +306,9 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
       }
     } catch (err) {
       if (err instanceof FetchRefused) throw err;
-      throw new Error(`could not read ${label(url)}: ${timedOut(err) ? `no answer in ${TIMEOUT_MS / 1000} s` : reasonOf(err)}`, { cause: err });
+      // A body that stops early is an error with its reason, never a short page: `drift` would compare a part and could pass
+      const why = timedOut(err) ? `no answer in ${limit / 1000} s` : endedEarly(err) ? `the connection closed before the whole body arrived (${reasonOf(err)})` : reasonOf(err);
+      throw new Error(`could not read ${label(url)}: ${why}`, { cause: err });
     }
     return Buffer.concat(chunks);
   }
