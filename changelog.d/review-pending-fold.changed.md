@@ -1,0 +1,1 @@
+`blazon check` prints all `review-pending` warnings as one line (`WARN review-pending (11): a, b, c, d, e and 6 more`) whatever their notes say, after the other warnings, so a real warning no longer sits among them. `--json` keeps every finding and note, and `counts` gains `byCode`, the number of findings for each code.

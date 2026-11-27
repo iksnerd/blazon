@@ -144,6 +144,33 @@ describe('blazon check --json, the line of a finding', () => {
     expect(report.findings).toContainEqual(expect.objectContaining({ code: 'token-file-invalid', path: 'tokens/colors.json', line: 3 }));
   });
 
+  it('folds review-pending by code in the text, after the other warnings, and keeps every finding in --json with byCode', async () => {
+    const root = await starterProject();
+    const tokens: Record<string, unknown> = { $type: 'color' };
+    for (let i = 1; i <= 11; i++) {
+      tokens[`t${String(i).padStart(2, '0')}`] = { $value: `#3366${10 + i}`, $extensions: { 'dev.blazon': { review: { status: 'needs-review', note: `Acme question ${i}` } } } };
+    }
+    const file = path.join(root, 'tokens/colors.json'); // the resolver lists the starter's token files, so the group goes into one of them
+    fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf-8')), acme: tokens }));
+
+    const text = blazon('check', root).stdout;
+    const warnings = text.split('\n').filter((line) => line.includes(' WARN '));
+    const folded = warnings.filter((line) => line.includes('review-pending ('));
+    expect(folded).toHaveLength(1);
+    expect(folded[0]).toContain('review-pending (11): acme.t01, acme.t02, acme.t03, acme.t04, acme.t05 and 6 more');
+    expect(warnings.at(-1)).toBe(folded[0]); // a real warning does not sit among them
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(text).not.toContain('Acme question 7');
+
+    const report = JSON.parse(blazon('check', root, '--json').stdout);
+    expect(report.findings.filter((f: { code: string }) => f.code === 'review-pending')).toHaveLength(11);
+    expect(report.findings.filter((f: { code: string }) => f.code === 'review-pending').map((f: { message: string }) => f.message)).toContain('Acme question 7');
+    expect(report.counts.byCode['review-pending']).toBe(11);
+    expect(report.counts.byCode['starter-logo-unchanged']).toBe(2);
+    expect(Object.values(report.counts.byCode).reduce((a: number, b) => a + (b as number), 0)).toBe(report.findings.length);
+    expect(report.counts).toMatchObject({ errors: 0, warnings: 13 });
+  });
+
   it('leaves line out when the finding is not about a token', async () => {
     const report = JSON.parse(blazon('check', await starterProject(), '--json').stdout);
     const starter = report.findings.find((f: { code: string }) => f.code === 'starter-file-unchanged');
