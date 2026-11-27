@@ -39,6 +39,19 @@ export interface Network {
   refused: (address: string) => string | undefined;
   /** The time limit of a whole read, in milliseconds; TIMEOUT_MS when absent. Only a test sets it, so that it need not wait 10 s */
   timeoutMs?: number;
+  /**
+   * Certificate authorities (PEM text) an https read trusts instead of Node's own store. Only a test sets it, to trust the throwaway CA of
+   * its local TLS server; anything that is not PEM text is ignored. The certificate is still checked against the host name of the address.
+   */
+  ca?: string | string[];
+}
+
+/** The `ca` of a network when it is certificate text, else undefined (Node's own store). */
+function trustedCa(network: Network): string | string[] | undefined {
+  const { ca } = network;
+  if (typeof ca === 'string') return ca;
+  if (Array.isArray(ca) && ca.length > 0 && ca.every((c) => typeof c === 'string')) return ca;
+  return undefined;
 }
 
 export type FetchKind = 'page' | 'stylesheet' | 'manifest' | 'image';
@@ -207,8 +220,11 @@ interface Hop {
   body: Readable;
 }
 
-function request(url: URL, pinned: ResolvedAddress, kind: FetchKind, signal: AbortSignal): Promise<Hop> {
-  const get = url.protocol === 'https:' ? https.get : http.get;
+function request(url: URL, pinned: ResolvedAddress, kind: FetchKind, signal: AbortSignal, network: Network): Promise<Hop> {
+  const secure = url.protocol === 'https:';
+  const get = secure ? https.get : http.get;
+  // The URL's host name, not the pinned address, is the TLS server name (SNI) and the name the certificate must hold
+  const ca = secure ? trustedCa(network) : undefined;
   // The name is resolved once, above. The socket takes the checked address from this lookup, whatever the resolver would say now.
   const lookup: net.LookupFunction = (_host, options, callback) => {
     if ((options as dns.LookupOptions).all) (callback as unknown as (e: null, a: dns.LookupAddress[]) => void)(null, [pinned]);
@@ -221,6 +237,7 @@ function request(url: URL, pinned: ResolvedAddress, kind: FetchKind, signal: Abo
         agent: false,
         lookup,
         signal,
+        ...(ca !== undefined && { ca }),
         headers: { accept: ACCEPT[kind].header, 'accept-encoding': 'gzip, deflate, br', 'user-agent': 'blazon' },
       },
       (res) => resolve({ status: res.statusCode ?? 0, statusText: res.statusMessage ?? '', headers: res.headers, body: res }),
@@ -281,7 +298,7 @@ export async function safeFetch(address: string, kind: FetchKind, network: Netwo
     let hop: Hop;
     try {
       const pinned = await checkedAddress(url, policy, signal);
-      hop = await request(url, pinned, kind, signal);
+      hop = await request(url, pinned, kind, signal, policy);
     } catch (err) {
       if (err instanceof FetchRefused) throw new FetchRefused(`refused ${label(url)}: ${err.message}`, { cause: err });
       throw new Error(`could not fetch ${label(url)}: ${timedOut(err) ? `no answer in ${limit / 1000} s` : reasonOf(err)}`, { cause: err });
