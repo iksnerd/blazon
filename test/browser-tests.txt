@@ -9,6 +9,7 @@ test/plugins/shipped/brand-deck/chrome*.test.ts
 test/plugins/shipped/favicons.test.ts
 test/plugins/shipped/logo-geometry/plugin.test.ts
 test/plugins/shipped/logo-kit.test.ts
+test/plugins/shipped/network-guard.test.ts
 test/plugins/shipped/press-kit.test.ts
 test/plugins/shipped/print-book*.test.ts
 test/plugins/shipped/social-cards/browser.test.ts
