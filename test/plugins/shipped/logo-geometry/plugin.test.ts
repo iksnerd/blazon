@@ -120,6 +120,19 @@ describe('the entry, as blazon starts it', () => {
     expect(figure({ accent: 'red" onload="x' })).toContain('stroke="#0a1b2c"');
   });
 
+  it("sets the figure's caption in the brand's body font, with a generic fallback, and keeps the old stack when the brand names none", () => {
+    const text = (roles: object) => {
+      const w = world({ 'brand-assets/logos/plus.svg': PLUS }, [asset('logos/plus')], { roles });
+      const svg = fs.readFileSync(path.join(run(w, {}).outDir, 'plus-construction.svg'), 'utf-8');
+      return [...svg.matchAll(/<text [^>]*>/g)].map((m) => m[0]);
+    };
+    const named = text({ fontBody: '"Acme Sans", system-ui, sans-serif' });
+    expect(named).toHaveLength(3);
+    for (const tag of named) expect(tag).toContain('font-family="&quot;Acme Sans&quot;, system-ui, sans-serif, Helvetica, Arial, sans-serif"');
+    for (const tag of text({})) expect(tag).toContain('font-family="Helvetica, Arial, sans-serif"');
+    expect(text({ fontBody: 'x" onload="y' })[0]).not.toContain('onload="y"');
+  });
+
   it('answers a wrong option with a finding and exit 0, and measures the rest', () => {
     const { ran, findings, files } = run(SITE(), { tolerance: 7 });
     expect(ran.status).toBe(0);

@@ -17,6 +17,8 @@ export interface BrandRead {
   assets: Map<string, LogoAsset & { category: string }>;
   /** The theme's accent, when the brand states one */
   accent?: string;
+  /** The theme's body font stack (the `fontBody` role), when the brand states one */
+  bodyFont?: string;
 }
 
 /** The formats this plugin measures. */
@@ -31,7 +33,8 @@ export function readBrand(brand: unknown): BrandRead {
   }
   const roles = isObject(root.theme) && isObject(root.theme.roles) ? root.theme.roles : {};
   const accent = text(roles.accent);
-  return { assets, ...(accent && { accent }) };
+  const bodyFont = text(roles.fontBody);
+  return { assets, ...(accent && { accent }), ...(bodyFont && { bodyFont }) };
 }
 
 /** The ids of the logos to measure when the options name none: the `logos` category, in a format this plugin reads. */

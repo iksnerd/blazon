@@ -7,8 +7,11 @@ import { readSvg } from './svg.js';
 
 const escape = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** The figure for an SVG logo already measured, as text. The same measurement draws the same bytes. */
-export function constructionSvg(svgText: string, result: Measurement & { box: NonNullable<Measurement['box']> }, accent: string, name: string): string {
+/** The stack the caption falls back to, and the whole stack when the brand names no body font */
+const FALLBACK_FONTS = 'Helvetica, Arial, sans-serif';
+
+/** The figure for an SVG logo already measured, as text. The same measurement draws the same bytes. The caption is set in `bodyFont` (the brand's `fontBody` role) before the fallback stack. */
+export function constructionSvg(svgText: string, result: Measurement & { box: NonNullable<Measurement['box']> }, accent: string, name: string, bodyFont?: string): string {
   const { viewBox } = readSvg(svgText);
   const { box } = result;
   const pad = Math.max(box.w, box.h) * 0.12;
@@ -53,9 +56,10 @@ export function constructionSvg(svgText: string, result: Measurement & { box: No
     `center of mass (dot) ${signed(result.balance.x * 100, 1)}% x, ${signed(result.balance.y * 100, 1)}% y from the box center (ring)${step ? ` · grid ${step}` : ''}`,
   ];
   const size = unit * 3.2;
+  const family = bodyFont ? `${bodyFont}, ${FALLBACK_FONTS}` : FALLBACK_FONTS;
   lines.forEach((line, n) =>
     parts.push(
-      `<text x="${fmt(x0 + pad * 0.5)}" y="${fmt(y0 + h + size * (1.6 + 1.5 * n))}" font-family="Helvetica, Arial, sans-serif" font-size="${fmt(size)}" fill="#1e1f21">${escape(line)}</text>`,
+      `<text x="${fmt(x0 + pad * 0.5)}" y="${fmt(y0 + h + size * (1.6 + 1.5 * n))}" font-family="${escape(family)}" font-size="${fmt(size)}" fill="#1e1f21">${escape(line)}</text>`,
     ),
   );
   parts.push('</svg>');
