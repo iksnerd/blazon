@@ -56,22 +56,53 @@ tests_gate() {
     return 1
 }
 
-# --- the test lock. Test steps run one gate at a time for each repository: every session's hook builds the viewer and starts Chrome,
-# so two or three gates at once oversubscribe the cores and each takes several times longer. The lock is a directory in the COMMON git
-# folder (every worktree of the checkout queues on it, like the hook cache); mkdir is atomic and macOS has no flock. Its `owner` file
-# records pid, hook, worktree, start time and the process start time (`ps lstart`, so a reused pid is not taken for the holder).
-# Only the test steps are behind it (test_step), so format and lint errors show at once; it is taken lazily, when a test step is
-# about to run, never on a cache hit; held across the test steps of one hook run and released when the hook ends, however it ends
-# (release_test_lock, from the hooks' EXIT trap). A holder that is gone is taken over. After BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) a
-# gate runs its tests without the lock: the lock costs time and never skips a test. BLAZON_HOOK_NO_LOCK=1 does not use it.
-# BLAZON_HOOK_LOCK_POLL_SECONDS (2) and BLAZON_HOOK_LOCK_NOTICE_SECONDS (30) exist for the tests of the hooks.
-TEST_LOCK_DIR=""      # set while this hook holds the lock
-LOCK_WAITED=0         # seconds this hook waited for it, for the line at the end
+# --- the test slots. The test steps of a gate (test_step) run in one of a few slots shared by every worktree and session of the
+# checkout. The limit is for the CPU only: each test run is vitest with four workers (TEST_ARGS), and it builds the viewer and the
+# plugin programs into its own snapshot, so two gates share no build output and no port (each tests an exported snapshot; the servers
+# in the tests listen on port 0; Chrome has its own machine-wide limit, test/support/chrome-limits.ts). What they share is the cores:
+# five gates at once on a 12-core Mac put the load average past 30, and every run took several times longer. The slots are
+# BLAZON_HOOK_TEST_SLOTS, else a quarter of the cores, at least 1 and at most 3 (test_slots), so the workers of all the slots are
+# about the cores. A pre-push full suite takes one slot like a commit does: it runs the same four workers, only for longer.
+#
+# A slot is a directory slot-<i> in blazon-hook-test-slots in the COMMON git folder (every worktree of the checkout shares it, like the
+# hook cache); mkdir is atomic and macOS has no flock. Its `owner` file records pid, hook, worktree, start time and the process start
+# time (`ps lstart`, so a reused pid is not taken for the holder). A gate that finds no slot free waits its turn: it makes a ticket in
+# queue/, named by the time it arrived and its pid, and takes a slot only when fewer live tickets are ahead of it than slots are free,
+# so a gate that came later does not go first. While it waits it says, every BLAZON_HOOK_LOCK_NOTICE_SECONDS, who holds each slot and
+# for how long, how many gates are ahead, and how to look at them. A slot or ticket whose process is gone is removed by the next gate
+# that looks. (The folder is not blazon-hook-test.lock, the single lock it replaces: a hook from before would take that directory, with
+# no owner file in it, for a lock left behind, and remove it.)
+#
+# Only the test steps take a slot, so format and lint errors show at once. It is taken lazily, when a test step is about to run, never
+# on a cache hit; held across the test steps of one hook run and given back when the hook ends, however it ends (release_test_lock,
+# from the hooks' EXIT trap). After BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) a gate runs its tests without a slot: the wait costs time and
+# never skips a test. BLAZON_HOOK_NO_LOCK=1 takes no slot. BLAZON_HOOK_LOCK_POLL_SECONDS (2) and BLAZON_HOOK_LOCK_NOTICE_SECONDS (30)
+# exist for the tests of the hooks.
+TEST_LOCK_DIR=""      # the slot this hook holds
+TEST_TICKET=""        # this hook's place in the queue, while it waits
+LOCK_WAITED=0         # seconds this hook waited for a slot, for the line at the end
 
-lock_dir() {
+slots_dir() {
     local common
     common="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
-    echo "$common/blazon-hook-test.lock"
+    echo "$common/blazon-hook-test-slots"
+}
+# test_slots: how many gates run tests at once. BLAZON_HOOK_TEST_SLOTS when it is a positive whole number, else a quarter of the cores,
+# from 1 to 3. getconf answers on macOS and Linux.
+test_slots() {
+    local n="${BLAZON_HOOK_TEST_SLOTS:-}" cores
+    case "$n" in '' | *[!0-9]*) ;; *) n=$(( 10#$n )); if [ "$n" -gt 0 ]; then echo "$n"; return; fi ;; esac
+    cores="$(getconf _NPROCESSORS_ONLN 2>/dev/null)"
+    case "$cores" in '' | *[!0-9]*) cores="$(sysctl -n hw.ncpu 2>/dev/null)" ;; esac
+    case "$cores" in '' | *[!0-9]*) cores=4 ;; esac
+    n=$(( cores / 4 ))
+    [ "$n" -lt 1 ] && n=1
+    [ "$n" -gt 3 ] && n=3
+    echo "$n"
+}
+# now_us: the time in microseconds, 20 digits, so that the names of the tickets sort by arrival as text
+now_us() {
+    if command -v perl >/dev/null 2>&1; then perl -MTime::HiRes=time -e 'printf "%020d", time * 1000000'; else printf '%020d' $(( $(date +%s) * 1000000 )); fi
 }
 # fmt_dur SECONDS: 4m10s
 fmt_dur() {
@@ -104,60 +135,114 @@ lock_is_stale() {
     # the pid is alive but is another process than the one that took the lock: the pid was reused
     [ -n "$recorded" ] && [ -n "$current" ] && [ "$recorded" != "$current" ]
 }
+# clear_stale DIR: removes DIR (a slot or a ticket) when its holder is gone, and succeeds then
+clear_stale() {
+    local dir="$1" pid
+    { [ -d "$dir" ] && lock_is_stale "$dir"; } || return 1
+    pid="$(owner_field "$dir" pid)"
+    # the record is read again just before the removal, so a directory another gate took in between is not removed
+    [ "$(owner_field "$dir" pid)" = "$pid" ] || return 1
+    rm -rf "$dir"
+}
+# write_owner DIR: the record of this hook, written whole (a reader sees no record or all of it)
+write_owner() {
+    {
+        echo "pid=$$"
+        echo "hook=$(basename "$0")"
+        echo "worktree=$(git rev-parse --show-toplevel 2>/dev/null)"
+        echo "started=$(date +%s)"
+        echo "lstart=$(proc_start $$)"
+    } > "$1/owner.tmp" && mv "$1/owner.tmp" "$1/owner"
+}
 
-# acquire_test_lock: wait for the lock and take it; returns 0 either way (a gate that cannot take it still runs its tests)
+# slots_notice DIR SLOTS AHEAD NOW: what a waiting gate prints: how full the slots are, who holds each and for how long, and how to look
+slots_notice() {
+    local dir="$1" slots="$2" ahead="$3" now="$4" i slot used=0 pids="" since
+    for (( i = 0; i < slots; i++ )); do [ -d "$dir/slot-$i" ] && used=$(( used + 1 )); done
+    printf '  – tests: waiting for a test slot: %d of %d in use, %d ahead of this one\n' "$used" "$slots" "$ahead"
+    for (( i = 0; i < slots; i++ )); do
+        slot="$dir/slot-$i"
+        [ -d "$slot" ] || continue
+        since="$(owner_field "$slot" started)"
+        pids="${pids:+$pids,}$(owner_field "$slot" pid)"
+        printf '      %s in %s, pid %s, for %s\n' "$(owner_field "$slot" hook)" "$(owner_field "$slot" worktree)" "$(owner_field "$slot" pid)" \
+            "$(fmt_dur $(( now - ${since:-$now} )))"
+    done
+    printf '      stuck? the slots are in %s; `ps -o pid,lstart,command -p %s` shows whether their holders still run. A slot whose process is gone is freed by the next gate on its own; remove one by hand only when ps shows no such process\n' \
+        "$dir" "${pids:-0}"
+}
+
+# acquire_test_lock: wait for a test slot and take it; returns 0 either way (a gate that cannot take one still runs its tests)
 acquire_test_lock() {
     [ -n "$TEST_LOCK_DIR" ] && return 0
     [ -n "${BLAZON_HOOK_NO_LOCK:-}" ] && return 0
-    local dir limit poll notice start now waited last="" pid since
-    dir="$(lock_dir)"
+    local dir slots limit poll notice start now waited last="" i slot free nfree ahead entry me pid
+    dir="$(slots_dir)"
+    slots="$(test_slots)"
     limit="${BLAZON_HOOK_LOCK_WAIT_SECONDS:-2400}"
     poll="${BLAZON_HOOK_LOCK_POLL_SECONDS:-2}"
     notice="${BLAZON_HOOK_LOCK_NOTICE_SECONDS:-30}"
     start="$(date +%s)"
-    until mkdir "$dir" 2>/dev/null; do
-        [ -d "$dir" ] || return 0   # the folder cannot be written: no lock, the tests still run
-        if lock_is_stale "$dir"; then
-            pid="$(owner_field "$dir" pid)"
-            printf '  – tests: the test lock was left by pid %s, which is not running; taking it over\n' "${pid:-unknown}"
-            # the record is read again just before the removal, so a lock another gate took in between is not removed
-            if [ "$(owner_field "$dir" pid)" = "$pid" ]; then rm -rf "$dir"; fi
-            continue
+    mkdir -p "$dir/queue" 2>/dev/null || return 0   # the folder cannot be written: no slot, the tests still run
+    me="$(now_us)-$$"
+    while :; do
+        # this gate's ticket, made again if something removed it
+        if [ ! -d "$dir/queue/$me" ]; then
+            mkdir "$dir/queue/$me" 2>/dev/null || return 0
+            write_owner "$dir/queue/$me"
+        fi
+        TEST_TICKET="$dir/queue/$me"
+        free=""; nfree=0
+        for (( i = 0; i < slots; i++ )); do
+            slot="$dir/slot-$i"
+            pid="$(owner_field "$slot" pid)"
+            if clear_stale "$slot"; then
+                printf '  – tests: the test slot slot-%d was left by pid %s, which is not running; taking it over\n' "$i" "${pid:-unknown}"
+            fi
+            if [ ! -d "$slot" ]; then free="$free $i"; nfree=$(( nfree + 1 )); fi
+        done
+        # the live tickets ahead of this one: their names sort by arrival, and a glob expands sorted
+        ahead=0
+        for entry in "$dir/queue"/*; do
+            [ "$entry" = "$TEST_TICKET" ] && break
+            clear_stale "$entry" && continue
+            [ -d "$entry" ] && ahead=$(( ahead + 1 ))
+        done
+        if [ "$ahead" -lt "$nfree" ]; then
+            for i in $free; do
+                slot="$dir/slot-$i"
+                mkdir "$slot" 2>/dev/null || continue
+                write_owner "$slot"
+                TEST_LOCK_DIR="$slot"
+                rm -rf "$TEST_TICKET"; TEST_TICKET=""
+                LOCK_WAITED=$(( $(date +%s) - start ))
+                return 0
+            done
         fi
         now="$(date +%s)"; waited=$(( now - start ))
         if [ "$waited" -ge "$limit" ]; then
+            rm -rf "$TEST_TICKET"; TEST_TICKET=""
             LOCK_WAITED="$waited"
-            printf '  – tests: waited %s for the test lock; running the tests without it\n' "$(fmt_dur "$waited")"
+            printf '  – tests: waited %s for a test slot; running the tests without one\n' "$(fmt_dur "$waited")"
             return 0
         fi
         if [ -z "$last" ] || [ $(( waited - last )) -ge "$notice" ]; then
             last="$waited"
-            since="$(owner_field "$dir" started)"
-            printf '  – tests: waiting for another gate to finish: %s in %s, pid %s, running for %s\n' \
-                "$(owner_field "$dir" hook)" "$(owner_field "$dir" worktree)" "$(owner_field "$dir" pid)" \
-                "$(fmt_dur $(( now - ${since:-$now} )))"
+            slots_notice "$dir" "$slots" "$ahead" "$now"
         fi
         sleep "$poll"
     done
-    {
-        echo "pid=$$"
-        echo "hook=$(basename "$0")"
-        echo "worktree=$(git rev-parse --show-toplevel)"
-        echo "started=$(date +%s)"
-        echo "lstart=$(proc_start $$)"
-    } > "$dir/owner.tmp" && mv "$dir/owner.tmp" "$dir/owner"
-    TEST_LOCK_DIR="$dir"
-    LOCK_WAITED=$(( $(date +%s) - start ))
 }
 
-# release_test_lock: give it back, when this hook holds it (the record names this process). Safe to call twice.
+# release_test_lock: give the slot back when this hook holds it (the record names this process), and leave the queue. Safe to call twice.
 release_test_lock() {
+    if [ -n "$TEST_TICKET" ]; then rm -rf "$TEST_TICKET"; TEST_TICKET=""; fi
     [ -n "$TEST_LOCK_DIR" ] || return 0
     if [ "$(owner_field "$TEST_LOCK_DIR" pid)" = "$$" ]; then rm -rf "$TEST_LOCK_DIR"; fi
     TEST_LOCK_DIR=""
 }
 
-# test_step KEY LABEL COMMAND...: cached_step for a test step; the lock is taken here, only when the step is about to run
+# test_step KEY LABEL COMMAND...: cached_step for a test step; the test slot is taken here, only when the step is about to run
 test_step() {
     local key="$1" label="$2"
     if ! passed_before "$key"; then acquire_test_lock; fi
@@ -315,7 +400,7 @@ classify_lint() {
 finish() {
     local hook="$1" bypass="$2"
     release_test_lock
-    if [ "$LOCK_WAITED" -gt 0 ]; then echo "  waited $(fmt_dur "$LOCK_WAITED") for the test lock"; fi
+    if [ "$LOCK_WAITED" -gt 0 ]; then echo "  waited $(fmt_dur "$LOCK_WAITED") for a test slot"; fi
     if [ "$fail" -ne 0 ]; then
         echo
         echo "$hook failed. Fix the above, or '$bypass' to skip."

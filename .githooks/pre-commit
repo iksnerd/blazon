@@ -44,10 +44,11 @@
 #                       conformance golden, the tokens-plugins fixtures, the logo-geometry oracle) -> those tests, not the whole suite
 # The mapping is classify_paths in lib.sh, and pre-push uses it too. A tree that already passed a step is not run through it again.
 #
-# Test lock: the test steps (not the cheap ones) run one gate at a time for each repository, across worktrees and sessions: a lock
-# directory in the common git folder, taken only when a test step is about to run (never on a cache hit) and released when the hook ends.
-# A gate that waits says who holds it; a holder that is gone is taken over; after BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) it runs without
-# the lock, never skipping a test. BLAZON_HOOK_NO_LOCK=1 does not use it. See lib.sh (acquire_test_lock) and CONTRIBUTING, "The hooks".
+# Test slots: the test steps (not the cheap ones) run in one of a few slots for each repository (BLAZON_HOOK_TEST_SLOTS, else a quarter
+# of the cores, 1 to 3), across worktrees and sessions: directories in the common git folder, taken only when a test step is about to
+# run (never on a cache hit) and given back when the hook ends. Gates that wait queue in the order they came and say who holds the slots;
+# a holder that is gone is taken over; after BLAZON_HOOK_LOCK_WAIT_SECONDS (2400) a gate runs without a slot, never skipping a test.
+# BLAZON_HOOK_NO_LOCK=1 takes none. See lib.sh (acquire_test_lock) and CONTRIBUTING, "The hooks".
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
