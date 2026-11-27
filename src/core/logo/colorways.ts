@@ -27,7 +27,7 @@ export interface ColorwayResult {
 }
 
 /** The color a logo file is measured as: the ink its sidecar declares, else the one its background implies. Undefined when it states neither. */
-export function inkOf(asset: Asset): string | undefined {
+export function inkOf(asset: Pick<Asset, 'meta'>): string | undefined {
   const meta = asset.meta;
   if (meta?.ink) return meta.ink;
   if (meta?.background === 'dark') return '#ffffff';

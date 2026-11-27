@@ -360,6 +360,33 @@ describe('logo.deny on the surfaces', () => {
     expect(logosBySurface(read, chooseLogos(read, {})).logos.inverse?.id).toBe('logos/mark-ink');
   });
 
+  // One surface, the inverse, on a given color, with the rules the manual states for `blazon logo --on`
+  const onInverse = (value: string, deny: string[], assets: object[], logo = brandOf().logo) => {
+    const read = readBrand(
+      brandOf({
+        tokens: [{ path: 'color.paper', type: 'color', value: '#F2F0EB' }, { path: 'color.acme.ground', type: 'color', value, blazon: { logo: { deny } } }],
+        theme: { roles, tokens: { background: 'color.paper', inverse: 'color.acme.ground' } },
+        assets: [LOGOS[0]!, LOGOS[1]!, ...assets],
+        logo,
+      }),
+    );
+    return logosBySurface(read, chooseLogos(read, {})).logos.inverse?.id;
+  };
+
+  it('takes an asset that declares an ink before the plain white file, as core does, though white has the higher ratio', () => {
+    // mark-light is denied; the plain onDark file reads at about 15:1, the gold ink at about 8:1, and the inked asset still wins
+    expect(onInverse('#1E1F21', ['logos/mark-light'], [asset('logos/mark-gold', { meta: { background: 'dark', ink: '#D4AF37' } })])).toBe('logos/mark-gold');
+  });
+
+  it('uses the dark-surface file wherever white reaches 3:1, though black has the higher ratio', () => {
+    // on #808080 white is 3.95:1 and black 5.32:1; the navy asset is the denied one
+    expect(onInverse('#808080', ['logos/mark-navy'], [asset('logos/mark-navy', { meta: { ink: '#102030' } })])).toBe('logos/mark-dark');
+  });
+
+  it('falls to the light-surface file when white does not reach 3:1', () => {
+    expect(onInverse('#C0C0C0', ['logos/mark-navy'], [asset('logos/mark-navy', { meta: { ink: '#102030' } })])).toBe('logos/mark-light');
+  });
+
   it('keeps the old choice when the brand names no surface tokens', () => {
     const read = readBrand(brandOf());
     expect(logosBySurface(read, chooseLogos(read, {}))).toEqual({ logos: {}, findings: [] });

@@ -42,6 +42,12 @@ export interface Judged {
   weak: string[];
 }
 
+/** The colorway that names this background for this asset, when there is one, and the ratio the logo must reach there: its level, else AA-large (3:1) */
+function barOf(asset: string | undefined, on: string | undefined, colorways: readonly BarColorway[]): { cw: BarColorway | undefined; min: number } {
+  const cw = asset === undefined ? undefined : colorways.find((w) => w.on === on && w.asset === asset);
+  return { cw, min: CONTRAST_MINIMUM[cw?.min ?? DEFAULT_COLORWAY_LEVEL] };
+}
+
 /**
  * Judges candidates on one background, as `pickLogo` does and as a plugin that holds brand.json must: a `logo.deny` on the background (or a token it
  * aliases) removes a candidate, the rest need the shared contrast measure to reach the bar, which a colorway naming this background for the logo may set.
@@ -63,8 +69,7 @@ export function judgeLogos(input: {
       out.denied.push({ name: denial.name, from: denial.path, ...(denial.reason && { reason: denial.reason }), file: c.file });
       continue;
     }
-    const cw = c.asset === undefined ? undefined : colorways.find((w) => w.on === background?.path && w.asset === c.asset);
-    const min = CONTRAST_MINIMUM[cw?.min ?? DEFAULT_COLORWAY_LEVEL];
+    const { cw, min } = barOf(c.asset, background?.path, colorways);
     const ratio = ratioOn(c.ink);
     if (ratio === undefined || ratio < min) {
       out.weak.push(`${c.asset ?? c.file} ${ratio === undefined ? 'cannot be measured' : `${ratioMessage(ratio)}:1, below ${min}:1`}`);
@@ -161,12 +166,37 @@ function select(data: BlazonData, input: SelectInput, plain: boolean): Selection
   const { background, ratioOn, files, lockup } = input;
   const { configured, others } = logoCandidatesOf(data, files);
   const lockupOf = (id: string) => data.assets.logos.find((a) => a.id === id)?.meta?.lockup;
-  const withLockup = (list: Candidate[]) => (lockup === undefined ? list : list.filter((c) => c.asset !== undefined && lockupOf(c.asset) === lockup));
   const colorways: BarColorway[] = data.assets.logos.flatMap((owner) => (owner.meta?.colorways ?? []).map((cw) => ({ ...cw, asset: cw.variant ?? owner.id })));
+  return chooseLogo({ background, items: data.tokens.items, ratioOn, configured, others, colorways, lockupOf, ...(lockup !== undefined && { lockup }), plain });
+}
+
+export interface ChooseInput {
+  background: LogoBackground | undefined;
+  items: readonly LogoRuleItem[];
+  ratioOn: (ink: string) => number | undefined;
+  /** The configured files (`logo.onLight`, `logo.onDark`) as candidates, and the other `logos` assets that state an ink */
+  configured: Candidate[];
+  others: Candidate[];
+  colorways: readonly BarColorway[];
+  /** The lockup of an asset id, and the lockup that is asked for: then the assets of that lockup compete together */
+  lockupOf?: (id: string) => string | undefined;
+  lockup?: string;
+  /** Whether the plain configured files are judged when no declared ink reaches the bar */
+  plain: boolean;
+}
+
+/**
+ * The order itself, on candidates the caller has built: `selectLogo` builds them from core's data, and a plugin that reads brand.json builds them from
+ * what it holds. Declared inks first (the highest ratio, a tie to the configured file), then, when `plain`, the dark-surface file wherever it reaches
+ * the bar, else the light-surface one. With a lockup, the assets of that lockup compete together.
+ */
+export function chooseLogo(input: ChooseInput): Selection {
+  const { background, items, ratioOn, configured, others, colorways, lockupOf, lockup, plain } = input;
+  const withLockup = (list: Candidate[]) => (lockup === undefined ? list : list.filter((c) => c.asset !== undefined && lockupOf?.(c.asset) === lockup));
   const denied: Judged['denied'] = [];
   const weak: string[] = [];
   const judge = (list: Candidate[]): Judged['chosen'] => {
-    const result = judgeLogos({ background, items: data.tokens.items, ratioOn, candidates: list, colorways });
+    const result = judgeLogos({ background, items, ratioOn, candidates: list, colorways });
     denied.push(...result.denied);
     weak.push(...result.weak);
     return result.chosen;
@@ -178,4 +208,19 @@ function select(data: BlazonData, input: SelectInput, plain: boolean): Selection
   if (!winner) return { winner: undefined, denied, weak };
   const { configured: _configured, ...rest } = winner;
   return { winner: rest, denied, weak };
+}
+
+/**
+ * Whether a background is one the dark-surface artwork (`onDark`, white) is made for: white reaches the bar there. The bar is the level of a colorway that
+ * names this background for the `onDark` asset, else 3:1: the same bar `selectLogo` holds the plain `onDark` file to, so a viewer that states a surface as
+ * dark and `blazon logo --on` agree. It does not read `logo.deny`: a surface is dark or light whether or not the brand allows a logo on it.
+ */
+export function darkSurfaceOn(
+  data: Pick<BlazonData, 'logo' | 'assets'>,
+  input: { background: Pick<TokenItem, 'path'> | undefined; ratioOn: (ink: string) => number | undefined },
+): boolean {
+  const colorways: BarColorway[] = data.assets.logos.flatMap((owner) => (owner.meta?.colorways ?? []).map((cw) => ({ ...cw, asset: cw.variant ?? owner.id })));
+  const { min } = barOf(data.logo?.onDarkAsset, input.background?.path, colorways);
+  const ratio = input.ratioOn('#ffffff');
+  return ratio !== undefined && ratio >= min;
 }
