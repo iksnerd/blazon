@@ -65,8 +65,8 @@ jobs:
           node scripts/audit-gate.mjs
       - name: Check the tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
-      # Built here, from this clone, not taken from any earlier job: the tarball is made of what this step writes.
-      - run: npm run build
+      # Built here, from this clone, not taken from any earlier job: `npm pack` runs `prepack` (`npm run build` and the starter),
+      # so the tarball is made of what this step writes. A separate `npm run build` before it built everything twice.
       - name: Pack
         id: pack
         run: |
