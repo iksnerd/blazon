@@ -66,3 +66,34 @@ describe('an oklch or oklab color', () => {
     expect(found[0]![1]).toMatch(/lightness/);
   });
 });
+
+describe('a typography lineHeight that is not a number', () => {
+  const type = (lineHeight: unknown, fontSize: unknown = '16px') => ({ $type: 'typography', t: { $value: { fontFamily: 'Acme Sans', fontSize, fontWeight: 400, lineHeight } } });
+  const message = async (lineHeight: unknown, fontSize?: unknown) => {
+    const found = await problems(type(lineHeight, fontSize));
+    expect(found).toHaveLength(1);
+    return found[0]![1] as string;
+  };
+
+  it('says 38px at 16px is 2.375, from the string and from the object form', async () => {
+    expect(await message('38px')).toContain('lineHeight is a number, a multiple of fontSize: 38px at fontSize 16px is 2.375 (38/16)');
+    expect(await message({ value: 38, unit: 'px' }, { value: 16, unit: 'px' })).toContain('38px at fontSize 16px is 2.375 (38/16)');
+    expect(await message('1.5rem', '1rem')).toContain('1.5rem at fontSize 1rem is 1.5 (1.5/1)');
+  });
+  it('names the rule without a ratio when the font size cannot be divided into it', async () => {
+    const text = await message('38px', '1rem');
+    expect(text).toContain('lineHeight is a number, a multiple of fontSize');
+    expect(text).not.toContain('is 2.375');
+  });
+  it('says to divide a percentage by 100', async () => {
+    expect(await message('150%')).toContain('150% is 1.5: divide by 100');
+  });
+  it('says normal is not DTCG and to write a number', async () => {
+    expect(await message('normal')).toContain('write a number such as 1.2 because DTCG has no keyword');
+  });
+  it('keeps the original complaint and still takes a number', async () => {
+    expect(await message('38px')).toContain('Expected a number, got "38px"');
+    expect(await problems(type(1.5))).toEqual([]);
+    expect(await problems(type('1.5'))).toEqual([]);
+  });
+});

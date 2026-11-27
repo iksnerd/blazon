@@ -32,6 +32,36 @@ function part(value: unknown, partType: TokenType): string | number {
   return simple(partType, value);
 }
 
+/** A measure written as "16px" or {"value": 16, "unit": "px"}, or undefined for anything else. */
+function measureOf(value: unknown): { amount: number; unit: string } | undefined {
+  if (isObject(value) && typeof value.value === 'number' && typeof value.unit === 'string') return { amount: value.value, unit: value.unit };
+  const m = typeof value === 'string' ? /^\s*(-?\d*\.?\d+)\s*([a-z%]+)\s*$/i.exec(value) : null;
+  return m ? { amount: Number(m[1]), unit: m[2]!.toLowerCase() } : undefined;
+}
+
+const round = (n: number): number => Math.round(n * 1e4) / 1e4;
+
+/** A typography lineHeight. DTCG 2025.10 defines it as a number, a multiple of the font size: when it is written as anything else, say what to write. */
+function lineHeight(value: unknown, fontSize: unknown): string | number {
+  try {
+    return part(value, 'number');
+  } catch (err) {
+    if (!(err instanceof InvalidValue)) throw err;
+    const rule = 'lineHeight is a number, a multiple of fontSize';
+    const height = measureOf(value);
+    const size = measureOf(fontSize);
+    let hint = rule;
+    if (typeof value === 'string' && value.trim().toLowerCase() === 'normal') {
+      hint = `${rule}: write a number such as 1.2 because DTCG has no keyword`;
+    } else if (height?.unit === '%') {
+      hint = `${rule}: ${height.amount}% is ${round(height.amount / 100)}: divide by 100`;
+    } else if (height && size && height.unit === size.unit && size.amount > 0 && (height.unit === 'px' || height.unit === 'rem')) {
+      hint = `${rule}: ${height.amount}${height.unit} at fontSize ${size.amount}${size.unit} is ${round(height.amount / size.amount)} (${height.amount}/${size.amount})`;
+    }
+    return fail(`${err.message}. ${hint}`);
+  }
+}
+
 function shadow(value: unknown): string {
   const layers = Array.isArray(value) ? value : [value];
   return layers
@@ -59,7 +89,7 @@ function typography(value: unknown): string {
   const missing = required.filter((k) => value[k] === undefined);
   if (missing.length) fail(`typography is missing ${missing.join(', ')}`);
   // CSS `font` shorthand; letterSpacing has no place in it and is emitted separately.
-  return `${part(value.fontWeight, 'fontWeight')} ${part(value.fontSize, 'dimension')}/${part(value.lineHeight, 'number')} ${part(value.fontFamily, 'fontFamily')}`;
+  return `${part(value.fontWeight, 'fontWeight')} ${part(value.fontSize, 'dimension')}/${lineHeight(value.lineHeight, value.fontSize)} ${part(value.fontFamily, 'fontFamily')}`;
 }
 
 export function css(type: TokenType, value: unknown, blazon: BlazonExtension): string | number {
@@ -99,7 +129,7 @@ export function compositeParts(type: TokenType | undefined, value: unknown): Rec
   try {
     const parts: Record<string, string | number> = {};
     for (const [key, partType] of Object.entries(partTypes)) {
-      if (value[key] !== undefined) parts[key] = part(value[key], partType);
+      if (value[key] !== undefined) parts[key] = key === 'lineHeight' ? lineHeight(value[key], value.fontSize) : part(value[key], partType);
     }
     return parts;
   } catch (err) {
