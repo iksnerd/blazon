@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runInit } from '../../src/cli/commands/init.js';
-import { folderPath } from '../../src/core/init/from-site/folder.js';
+import { folderPath, readSavedPage } from '../../src/core/init/from-site/folder.js';
 import { inspectSite, savedSite } from '../../src/core/init/from-site/index.js';
 import { stubNetwork } from '../support/network.js';
 import { tempDir } from '../support/project';
@@ -123,6 +123,24 @@ describe('blazon init --from-dir', () => {
     expect(noPage.code).toBe(2);
     expect(noPage.out).toMatch(/there is no index\.html/);
     expect(fs.existsSync(path.join(dir, 'blazon.json'))).toBe(false);
+  });
+
+  it('refuses a page that is a link leading out of the folder, the way it refuses such a stylesheet, before copying anything', async () => {
+    const site = acmeSavedSite();
+    const outside = path.join(site, '..', 'outside.html');
+    fs.writeFileSync(outside, '<html><head><title>Not Acme</title></head></html>');
+    fs.rmSync(path.join(site, 'index.html'));
+    fs.symlinkSync(outside, path.join(site, 'index.html'));
+    fs.symlinkSync(outside, path.join(site, 'home.html'));
+    expect(() => readSavedPage(site, 'index.html')).toThrow(/index\.html.*is a link that leads out of the folder/);
+    for (const target of [site, path.join(site, 'home.html')]) {
+      const dir = path.join(tempDir(), 'acme');
+      const { code, out } = await init(dir, { fromDir: target });
+      expect(code).toBe(2);
+      expect(out).toMatch(/(index|home)\.html.*is a link that leads out of the folder/);
+      expect(out).not.toContain('Not Acme');
+      expect(fs.existsSync(path.join(dir, 'blazon.json'))).toBe(false);
+    }
   });
 
   it('inspects a saved folder the way it inspects a site', async () => {

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { inProject } from '../../confine.js';
+import { canonical, inProject, isWithin } from '../../confine.js';
 import { MAX_BYTES, type FetchKind } from '../../drift/fetch.js';
 import { MAX_STYLESHEETS, stylesheetHrefs } from '../../drift/read.js';
 import type { SiteInput, SitePage } from './types.js';
@@ -28,12 +28,37 @@ export function folderPath(folder: string, from: string, href: string): { file: 
   return { file };
 }
 
+/**
+ * A file of the folder, opened once and read from that descriptor. `folderPath` checks a path and this opens it again, so a link swapped in
+ * between (check, then open) would be read: the check is therefore made again on what was opened. Its real path must be inside the folder,
+ * and the file there must be the one the descriptor holds (same device and inode). What is left: a folder on that real path replaced by a link
+ * between `realpath` and `stat`, by a process changing the folder while blazon reads it; that needs code already running on the machine.
+ */
 function readInside(folder: string, file: string): Buffer {
   const full = path.join(folder, file);
-  const stat = fs.statSync(full);
-  if (!stat.isFile()) throw new Error(`${file} is not a file`);
-  if (stat.size > MAX_BYTES) throw new Error(`${file} is larger than 5 MB`);
-  return fs.readFileSync(full);
+  // O_NONBLOCK: opening a FIFO saved under a page's name returns at once instead of waiting for a writer; it then fails the file check
+  const fd = fs.openSync(full, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK);
+  try {
+    const opened = fs.fstatSync(fd);
+    const real = fs.realpathSync.native(full);
+    if (!isWithin(canonical(folder), real)) throw new Error(`(${file}) is a link that leads out of the folder`);
+    const there = fs.statSync(real);
+    if (there.dev !== opened.dev || there.ino !== opened.ino) throw new Error(`${file} changed while it was read`);
+    if (!opened.isFile()) throw new Error(`${file} is not a file`);
+    if (opened.size > MAX_BYTES) throw new Error(`${file} is larger than 5 MB`);
+    const bytes = fs.readFileSync(fd);
+    if (bytes.byteLength > MAX_BYTES) throw new Error(`${file} is larger than 5 MB`);
+    return bytes;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+/** The page, held to the confinement of the stylesheets: a page that is a link out of the folder is refused with the same reason. */
+function pagePath(folder: string, page: string): string {
+  const where = folderPath(folder, '', page);
+  if ('reason' in where) throw new Error(`the page ${where.reason}, so it was not read`);
+  return where.file;
 }
 
 const IMPORT = /@import\s+(?:url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)|"([^"]*)"|'([^']*)')[^;]*;/gi;
@@ -41,7 +66,7 @@ const IMPORT = /@import\s+(?:url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)|"([^
 /** The page and the stylesheets it links (and their `@import`s), read from the folder; what was skipped, and why, in `notRead`. */
 export function readSavedPage(folder: string, page: string): SitePage {
   const notRead: string[] = [];
-  const html = readInside(folder, page).toString('utf8');
+  const html = readInside(folder, pagePath(folder, page)).toString('utf8');
   const sources: string[] = [];
   const sheets: string[] = [];
   const queue: { href: string; from: string; via: string }[] = stylesheetHrefs(html).map((href) => ({ href, from: page, via: page }));
@@ -95,6 +120,7 @@ export function savedSite(target: string): SiteInput {
   }
   if (!fs.existsSync(folder) || !fs.statSync(folder).isDirectory()) throw new Error(`--from-dir needs a folder, and there is no folder "${target}"`);
   if (!fs.existsSync(path.join(folder, page))) throw new Error(`there is no ${page} in "${target}": name the page, as --from-dir <folder>/<page>.html`);
+  pagePath(folder, page);
   const name = path.basename(folder);
   return {
     label: `${path.basename(folder)}/${page} (a saved copy)`,
