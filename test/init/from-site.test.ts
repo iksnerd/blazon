@@ -44,6 +44,8 @@ const PAGE_NAMED = `<html><head><title>Complete Digital Solution for Your Busine
 
 const SHEET_BLUE = ':root { --brand-primary: #2563eb; }';
 const PAGE_BLUE = `<html><head><title>Blue</title><link rel="stylesheet" href="/blue.css"></head><body></body></html>`;
+const SHEET_RED = ':root { --brand-primary: #e00000; }';
+const PAGE_RED = `<html><head><title>Red</title><link rel="stylesheet" href="/red.css"></head><body></body></html>`;
 const SHEET_VARIANT = ':root { --brand-primary: #ff4f40; --brand-primary-hover: #d54438; --color-foreground: #0b1120; --surface-card: #ffffff; }';
 const SHEET_NOISE =
   ':root { --brand-primary: #ff4f40; --surface-tint: #ffdcd9; --foreground: #0b1120; --business-blue-foreground: #ffffff; --destructive-foreground: #fafafa; --pm-surface-on-dark: #ffffff0d; --text-on-light: #111111; --brand-glow: rgba(255, 79, 64, 0.4); --brand-wash: rgb(255 79 64 / 20%); }';
@@ -62,7 +64,9 @@ beforeAll(async () => {
     if (req.url === '/named') return void res.setHeader('content-type', 'text/html').end(PAGE_NAMED);
     if (req.url === '/noise') return void res.setHeader('content-type', 'text/html').end(PAGE_NOISE);
     if (req.url === '/noise.css') return void res.setHeader('content-type', 'text/css').end(SHEET_NOISE);
+    if (req.url === '/red') return void res.setHeader('content-type', 'text/html').end(PAGE_RED);
     if (req.url === '/blue') return void res.setHeader('content-type', 'text/html').end(PAGE_BLUE);
+    if (req.url === '/red.css') return void res.setHeader('content-type', 'text/css').end(SHEET_RED);
     if (req.url === '/blue.css') return void res.setHeader('content-type', 'text/css').end(SHEET_BLUE);
     if (req.url === '/variant') return void res.setHeader('content-type', 'text/html').end(PAGE_VARIANT);
     if (req.url === '/variant.css') return void res.setHeader('content-type', 'text/css').end(SHEET_VARIANT);
@@ -321,6 +325,14 @@ describe('blazon init --from', () => {
       expect(pair.bg).toBe('{color.brand.primary}');
       expect(await errors(dark)).toEqual([]);
 
+      const red = path.join(tempDir(), 'red');
+      expect(await runInit(red, { from: `${base}/red` })).toBe(0); // #e00000: only white reaches AA
+      const white = json(red, 'tokens/colors.json');
+      expect(white.text.onSignal.$value).toBe('{color.base.white}');
+      expect(white.color.base.white.$value).toBe('#FFFFFF');
+      expect(white.text.$extensions['dev.blazon'].pairs.find((p: { fg: string }) => p.fg === '{text.onSignal}').bg).toBe('{color.brand.primary}');
+      expect(await errors(red)).toEqual([]);
+
       const light = path.join(tempDir(), 'light');
       expect(await runInit(light, { from: `${base}/named` })).toBe(0); // #ff4f40: graphite reaches AA
       const kept = json(light, 'tokens/colors.json');
@@ -336,8 +348,9 @@ describe('blazon init --from', () => {
         expect(fs.existsSync(path.join(dir, `assets/logos/${name}.svg`))).toBe(false);
         expect(fs.existsSync(path.join(dir, `assets/logos/${name}.json`))).toBe(false);
       }
-      // the site's #635dff is under AA with both of blazon's inks: init said so, and blazon check reports exactly that
-      expect((await errors(dir)).map((f) => f.code)).toEqual(['contrast-insufficient']);
+      // the site's #635dff is under AA with both of blazon's inks, and white reaches it: the label is white and the check is clean
+      expect(json(dir, 'tokens/colors.json').text.onSignal.$value).toBe('{color.base.white}');
+      expect(await errors(dir)).toEqual([]);
 
       const bare = path.join(tempDir(), 'b');
       expect(await runInit(bare, { from: `${base}/named` })).toBe(0);

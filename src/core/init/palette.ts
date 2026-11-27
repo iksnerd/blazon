@@ -52,9 +52,23 @@ export function contrastOf(hex: string): Contrast {
 export const GRAPHITE = '#1E1F21';
 export const BONE = '#F2F0EB';
 
-/** Which of blazon's inks reads best as a label on this color, and whether it reaches AA (4.5:1). */
-export function labelOn(hex: string): { ink: 'graphite' | 'bone'; ratio: number; aa: boolean } {
+/** Near-black (NEAR_BLACK), the last resort ink: used only where graphite and bone fail AA and white reaches it less well. */
+export const BLACK = NEAR_BLACK;
+
+export type LabelInk = 'graphite' | 'bone' | 'white' | 'black';
+
+/**
+ * Which ink reads best as a label on this color, and whether it reaches AA (4.5:1). Blazon's own inks, graphite and bone, come
+ * first; only when neither reaches AA are white and black tried, and the one that does (the higher ratio) wins. When nothing
+ * reaches AA, the best of graphite and bone is returned with `aa: false`.
+ */
+export function labelOn(hex: string): { ink: LabelInk; ratio: number; aa: boolean } {
   const g = contrast(hex, GRAPHITE);
   const b = contrast(hex, BONE);
-  return g >= b ? { ink: 'graphite', ratio: g, aa: g >= 4.5 } : { ink: 'bone', ratio: b, aa: b >= 4.5 };
+  const starter = g >= b ? { ink: 'graphite' as const, ratio: g, aa: g >= 4.5 } : { ink: 'bone' as const, ratio: b, aa: b >= 4.5 };
+  if (starter.aa) return starter;
+  const w = contrast(hex, WHITE);
+  const k = contrast(hex, BLACK);
+  const extra = w >= k ? { ink: 'white' as const, ratio: w, aa: w >= 4.5 } : { ink: 'black' as const, ratio: k, aa: k >= 4.5 };
+  return extra.aa ? extra : starter;
 }
