@@ -4,7 +4,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import type { Browser, Route } from 'playwright-core';
-import { launchBrowser } from '../../support/chrome';
+import { closeBrowser, launchBrowser } from '../../support/chrome';
 import { tempDir } from '../../support/project';
 import { refusedAddress, type Network } from '../../../src/core/drift/fetch.js';
 import { MAX_REMOTE_BYTES, MAX_REMOTE_REQUESTS, guardHandler, guardNetwork, originOf, takeBlocked } from '../../../src/shipped/shared/network.js';
@@ -54,7 +54,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
-  await browser?.close();
+  await closeBrowser(browser);
   await new Promise<void>((done) => listener.close(() => done()));
 });
 

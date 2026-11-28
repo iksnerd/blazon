@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { launchBrowser } from '../../support/chrome';
+import { closeBrowser, launchBrowser } from '../../support/chrome';
 import { spawnSync } from '../../support/spawn';
 import { pathToFileURL } from 'node:url';
 import fs from 'node:fs';
@@ -518,7 +518,7 @@ describe.skipIf(!CHROME)('the favicons plugin, in a real browser', () => {
       for (let i = 0; i < 100; i++) seen.add(createHash('sha1').update(await sheet(chrome, html, 1200, 300, STYLE)).digest('hex'));
       expect(seen.size).toBe(1);
     } finally {
-      await chrome.close();
+      await closeBrowser(chrome);
     }
   }, 120_000);
 
