@@ -13,3 +13,4 @@ test/plugins/shipped/network-guard.test.ts
 test/plugins/shipped/press-kit.test.ts
 test/plugins/shipped/print-book*.test.ts
 test/plugins/shipped/social-cards/browser.test.ts
+test/support/chrome.test.ts

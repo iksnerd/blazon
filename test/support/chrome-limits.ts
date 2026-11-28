@@ -19,7 +19,15 @@ export const CHROME_LAUNCH_TIMEOUT_MS = 30_000;
 export const SLOT_WAIT_MS = 15 * 60_000;
 /** A slot held longer than this, or by a process that is gone, is taken over. A file runs in well under this, even on a loaded machine. */
 export const SLOT_STALE_MS = 20 * 60_000;
-/** Closing what a file left open, at the end of it. */
+/**
+ * How long `closeBrowser` waits for Chrome to shut down by itself before it kills it. On a loaded machine a Chrome's own shutdown, after
+ * every assertion of the file passed, has taken 11 to 30 s and longer: the main process stays runnable for seconds after its pages are gone,
+ * and a helper that outlives it holds the stdio pipe Playwright waits on. A test file's afterAll has 30 s, so the bound is well under it.
+ */
+export const CHROME_CLOSE_MS = 8_000;
+/** After the kill, how long `closeBrowser` waits for Playwright to see the process gone and remove its profile folder. */
+export const CHROME_KILL_WAIT_MS = 4_000;
+/** Closing what a file left open, at the end of it: more than the longest `closeBrowser` (CHROME_CLOSE_MS + CHROME_KILL_WAIT_MS). */
 export const CLOSE_TIMEOUT_MS = 15_000;
 
 export interface SlotOptions {
