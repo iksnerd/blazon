@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Browser } from 'playwright-core';
-import { launchBrowser } from '../../support/chrome';
+import { closeBrowser, launchBrowser } from '../../support/chrome';
 import { loadConfig } from '../../../src/core/config/index.js';
 import { buildSite } from '../../../src/builder/site-builder.js';
 import { serve } from '../../../src/shipped/print-book/site.js';
@@ -38,7 +38,7 @@ beforeAll(async () => {
 }, 180_000);
 
 afterAll(async () => {
-  await browser?.close();
+  await closeBrowser(browser);
   await site?.close();
 }, 30_000);
 
