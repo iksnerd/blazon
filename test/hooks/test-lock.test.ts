@@ -19,7 +19,9 @@ const STUB = [
   'const log = (what) => fs.appendFileSync(process.env.STUB_LOG, what + " " + id + " " + Date.now() + "\\n");',
   "log('start');",
   'if (process.env.STUB_PID_FILE) fs.writeFileSync(process.env.STUB_PID_FILE, String(process.pid));',
-  "setTimeout(() => { log('end'); process.exit(Number(process.env.STUB_EXIT || 0)); }, Number(process.env.STUB_MS || 0));",
+  "const finish = () => { log('end'); process.exit(Number(process.env.STUB_EXIT || 0)); };",
+  // STUB_GO holds the step until the test writes that file, so a test that needs the holder to still be holding does not race a timer
+  'if (process.env.STUB_GO) { const t = setInterval(() => { if (fs.existsSync(process.env.STUB_GO)) { clearInterval(t); finish(); } }, 50); } else setTimeout(finish, Number(process.env.STUB_MS || 0));',
 ].join('\n');
 
 const manifest = () => {
@@ -125,9 +127,14 @@ describe('the test slots, end to end', () => {
     const log = logFile();
     edit(main, 2);
     edit(other, 3);
-    const first = startCommit(main, { STUB_LOG: log, STUB_ID: 'A', STUB_MS: '2500' });
+    // The first gate holds its test step until the second has said it waits: a fixed hold raced the second gate's own earlier
+    // steps (secret scan, typecheck, lint, format), which on a loaded machine take longer than the hold, so it never waited.
+    const go = `${log}.go`;
+    const first = startCommit(main, { STUB_LOG: log, STUB_ID: 'A', STUB_GO: go });
     await until('the first stub to start', () => order(log).includes('start A'));
     const second = startCommit(other, { STUB_LOG: log, STUB_ID: 'B', STUB_MS: '300' });
+    await until('the second gate to say it waits', () => second.out().includes('waiting for a test slot'), 120_000);
+    fs.writeFileSync(go, '');
     const [one, two] = await Promise.all([first.done, second.done]);
     expect(one.status, one.out).toBe(0);
     expect(two.status, two.out).toBe(0);
