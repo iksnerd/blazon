@@ -1,1 +1,0 @@
-`blazon init --minimal --font <family>` no longer leaves `font.family.mono` naming blazon's mono family, which a minimal book has no file for and which `blazon check` reported as `font-family-missing`. The mono stack is the system's and the token is flagged for review.

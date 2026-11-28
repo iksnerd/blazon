@@ -1,1 +1,0 @@
-The starter brand forbids its logo on Signal Orange on the color itself (`color.signal.orange`), not only on `interactive.primary`, so `blazon logo --on color.signal.orange` and the logo-on tile now refuse it as they do for the action color.

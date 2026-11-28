@@ -6,6 +6,25 @@ All notable changes are listed here. Blazon follows [semantic versioning](https:
 
 <!-- Do not write here. A change adds a file under changelog.d/; see changelog.d/README.md. -->
 
+## 0.10.2 (2026-11-28)
+
+### Added
+
+- blazon.shadcn takes `destructive-foreground` in `variables` and, with `themeInline` on and `destructive` supplied but no foreground, reports the info finding `blazon.shadcn/destructive-foreground-missing`. Adding the variable silences it. The default output is unchanged.
+
+### Changed
+
+- A page read by `blazon init --from` or `blazon drift` reads its stylesheets four at a time and at most 25 MB in all, so a site with many large stylesheets no longer holds up to 100 MB at once. Sheets past the limit are named in the notes (`notRead` in the `drift` JSON) and the colors of the sheets already read are still used.
+- The shadcn docs now say that Tailwind v4 needs `themeInline`: without `shadcn-theme.css`, `bg-primary` and the other color utilities generate no CSS and `rounded-md` keeps Tailwind's 6px. They give the two-file import, checked with a real Tailwind 4 compile. The default output is unchanged.
+- The `shadcn-theme.css` that `themeInline` writes now defines `--radius-2xl`, `--radius-3xl` and `--radius-4xl` as well, with the multiples shadcn v4 uses, so `rounded-2xl` and larger follow the brand radius. `shadcn.css` is unchanged.
+
+### Fixed
+
+- `blazon init --minimal --font <family>` no longer leaves `font.family.mono` naming blazon's mono family, which a minimal book has no file for and which `blazon check` reported as `font-family-missing`. The mono stack is the system's and the token is flagged for review.
+- The Office template picks the logo for a surface the brand forbids a logo on in the same order as `blazon logo --on`: a logo that declares an `ink` first, then the dark-surface file wherever white reaches the bar, else the light-surface file. It used the highest ratio.
+- The starter brand forbids its logo on Signal Orange on the color itself (`color.signal.orange`), not only on `interactive.primary`, so `blazon logo --on color.signal.orange` and the logo-on tile now refuse it as they do for the action color.
+- The logo-on figure in the brand book states a surface as dark by the same bar `blazon logo --on` uses for the plain dark-surface logo: 3:1, or the level of a colorway that names the color for the `onDark` asset. It was always 3:1.
+
 ## 0.10.1 (2026-11-27)
 
 ### Fixed

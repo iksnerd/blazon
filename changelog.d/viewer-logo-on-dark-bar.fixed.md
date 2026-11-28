@@ -1,1 +1,0 @@
-The logo-on figure in the brand book states a surface as dark by the same bar `blazon logo --on` uses for the plain dark-surface logo: 3:1, or the level of a colorway that names the color for the `onDark` asset. It was always 3:1.

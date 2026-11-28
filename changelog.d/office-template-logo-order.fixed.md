@@ -1,1 +1,0 @@
-The Office template picks the logo for a surface the brand forbids a logo on in the same order as `blazon logo --on`: a logo that declares an `ink` first, then the dark-surface file wherever white reaches the bar, else the light-surface file. It used the highest ratio.
